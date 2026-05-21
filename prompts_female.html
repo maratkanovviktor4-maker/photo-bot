@@ -13,35 +13,58 @@
             background: #201F28;
             color: #fff;
             min-height: 100vh;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -30%;
+            left: -20%;
+            width: 140%;
+            height: 140%;
+            background: radial-gradient(ellipse at 25% 30%, rgba(0,203,245,0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse at 75% 50%, rgba(20,233,252,0.04) 0%, transparent 50%),
+                        radial-gradient(ellipse at 40% 80%, rgba(255,255,255,0.02) 0%, transparent 50%);
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .header, .container, .back-link, .toast {
+            position: relative;
+            z-index: 1;
         }
         .header {
             text-align: center;
-            padding: 40px 20px 20px;
-            position: sticky;
-            top: 0;
+            padding: 20px 20px 10px;
             background: #201F28;
-            z-index: 10;
         }
         .logo-pb {
-            font-size: 36px;
+            font-size: 28px;
             font-weight: 700;
             letter-spacing: 3px;
         }
         .logo-pb .p { color: #00CBF5; }
         .logo-pb .b { color: #14E9FC; }
         .logo-sub {
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 600;
             letter-spacing: 2px;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
         }
         .logo-sub .photo { color: #00CBF5; }
         .logo-sub .bot { color: #14E9FC; }
         .header h1 {
-            font-size: 20px;
+            font-size: 16px;
             color: #fff;
             font-weight: 600;
-            margin-top: 8px;
+            margin-top: 4px;
+        }
+        .header .intro {
+            font-size: 12px;
+            color: #888;
+            max-width: 600px;
+            margin: 8px auto 0;
+            line-height: 1.5;
         }
         .container {
             max-width: 700px;
@@ -57,18 +80,19 @@
         }
         .prompt-card .image-placeholder {
             width: 100%;
-            aspect-ratio: 16/9;
+            max-width: 550px;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #444;
             font-size: 14px;
+            margin: 0 auto;
         }
         .prompt-card .image-placeholder img {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            height: auto;
+            display: block;
         }
         .prompt-card .card-body {
             padding: 16px;
@@ -165,7 +189,8 @@
     <div class="header">
         <div class="logo-pb"><span class="p">P</span><span class="b">B</span></div>
         <div class="logo-sub"><span class="photo">Photo</span><span class="bot">Bot</span></div>
-        <h1>🌸 Женская фотосессия с ИИ<br>10 промтов для создания женских образов</h1>
+        <h1>Женская фотосессия с ИИ<br>10 промтов для создания женских образов</h1>
+        <p class="intro">Создание профессиональных женских портретов с помощью искусственного интеллекта стало доступно каждому — без фотографа, студии и дорогостоящего оборудования. Современные нейросети генерируют изображения, визуально неотличимые от работы профессионалов, за считанные минуты. Достаточно загрузить своё фото и указать желаемый образ через текстовую инструкцию — промпт.</p>
     </div>
 
     <div class="container" id="container"></div>
@@ -175,16 +200,16 @@
 
     <script>
         const prompts = [
-            { img: "prompts_img/female_1.jpg", text: "" },
-            { img: "prompts_img/female_2.jpg", text: "" },
-            { img: "prompts_img/female_3.jpg", text: "" },
-            { img: "prompts_img/female_4.jpg", text: "" },
-            { img: "prompts_img/female_5.jpg", text: "" },
-            { img: "prompts_img/female_6.jpg", text: "" },
-            { img: "prompts_img/female_7.jpg", text: "" },
-            { img: "prompts_img/female_8.jpg", text: "" },
-            { img: "prompts_img/female_9.jpg", text: "" },
-            { img: "prompts_img/female_10.jpg", text: "" }
+            { img: "prompts_img/female_1.jpg", text: "Портрет молодой женщины в стиле 90-х, сидящей у окна, освещенной мягким дневным светом. На ней простая футболка и джинсы, естественный макияж, подчеркивающий реалистичность кожи. Фотография выполнена в стиле пленочной фотографии, с легким зерном, передающим аутентичную европейскую эстетику. Акцент на естественную красоту и непринужденную атмосферу, как будто сделано на камеру 35mm film." },
+            { img: "prompts_img/female_2.jpg", text: "Женщина в элегантном черном кожаном пальто с поясом, стоит рядом с доберманом на поводке. Пес сидит, а женщина смотрит прямо в объектив, держа поводок в руках. Задний план — стена в индустриальном стиле с металлическими элементами. Контрастное освещение подчеркивает ее уверенность и грацию." },
+            { img: "prompts_img/female_3.jpg", text: "Женщина в укороченных джинсах голубого цвета с высокой посадкой и базовом хлопковом лонгсливе светло-серого оттенка. На ней простые белые слипоны. Она расположилась на низкой деревянной скамье у стены студии, закинув ногу на ногу, локоть уперла в колено и смотрит в объектив. Крупный план, светлый фон в стиле минимализм." },
+            { img: "prompts_img/female_4.jpg", text: "Футуристичный портрет девушки в чёрной технологичной куртке с неоновыми вставками и киберпанк-аксессуарами на фоне ночной улицы города будущего с гигантской голографической рекламой и неоновыми вывесками, синий и фиолетовый неоновый свет, дерзкая футуристическая атмосфера" },
+            { img: "prompts_img/female_5.jpg", text: "Детальный фэшн-портрет высокой детализации, молодая женщина стоит на улице в сельском поле. На ней тёмно-коричневая широкополая ковбойская шляпа с маленьким логотипом-нашивкой, длиннорукавая полосатая рубашка-поло коричневого и белого цвета с белым воротником и планкой, белые рюшевые слоистые шорты. Поза: стоит, руки на бёдрах, корпус слегка развёрнут, смотрит прямо в камеру с уверенным выражением лица. Естественный дневной свет с мягкими тенями, фон: деревянный забор, сухая трава и голые деревья. Богатая текстура ткани шляпы, полосатой рубашки и рюшевых шорт, фотореалистичные детали кожи. Точно такая же поза, одежда, ракурс и освещение, как на референсном изображении" },
+            { img: "prompts_img/female_6.jpg", text: "Close-up portrait, same face as uploaded reference photo, identity preserved. Studio photoshoot with a rose. Warm dark background, milky silk dress, soft golden light, tender atmosphere. High detail, photorealistic photography." },
+            { img: "prompts_img/female_7.jpg", text: "Same face as uploaded reference photo, facial features unchanged, identity preserved. Premium business photoshoot in studio. White pantsuit, dark background, soft studio lighting, confident gaze, minimalist aesthetic. Realistic photography, high detail." },
+            { img: "prompts_img/female_8.jpg", text: "Seaside cliff photoshoot, warm sunset light. Woman in white strapless top, loose hair slightly blowing in wind, hand near neck or shoulder, calm look at camera. Golden hour lighting, soft shadows, realistic skin, natural hair texture, warm colors. No plastic look, no AI effect." },
+            { img: "prompts_img/female_9.jpg", text: "Hyper-realistic close-up portrait of left half of face, partially submerged in water. Dramatic soft neon blue and pink ambient light, colorful reflections on wet skin and hair. Water droplets and tiny bubbles clinging to face. Cinematic atmosphere, visible skin texture, intense gaze." },
+            { img: "prompts_img/female_10.jpg", text: "Ultra-detailed urban lifestyle portrait of a stylish woman leaning against retro fast-food counter. Oversized dark navy bomber jacket, white fitted crop top, extremely wide-leg dark trousers, red sneakers. Red baseball cap with white lettering, black sunglasses, small red handbag. Leaning casually holding glass soda bottle, one hand on counter edge. Retro diner interior with stainless steel kitchen equipment, menu boards above counter, hanging sign reading \"PLEASE ORDER HERE\". Slightly low street-style angle, oversized streetwear silhouette, relaxed attitude. Soft sculpted face, rosy cheeks, glossy lips, clean defined brows. Neutral warm lighting with slight smartphone front camera flash, balanced shadows. Fine film grain, realistic skin pores, subtle glow." }
         ];
 
         const container = document.getElementById('container');
