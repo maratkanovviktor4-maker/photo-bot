@@ -714,21 +714,20 @@
                 canvas.width = drawWidth;
                 canvas.height = drawHeight;
                 ctx.drawImage(img, 0, 0, drawWidth, drawHeight);
-                ctx.fillStyle = "rgba(128, 128, 128, 0.25)";
-                ctx.font = `bold ${Math.max(drawWidth, drawHeight) / 6}px Montserrat, Arial`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                const spacing = Math.max(drawWidth, drawHeight) / 3;
-                for (let y = -spacing; y < drawHeight + spacing; y += spacing) {
-                    for (let x = -spacing; x < drawWidth + spacing; x += spacing) {
-                        ctx.save();
-                        ctx.translate(x, y);
-                        ctx.rotate(-25 * Math.PI / 180);
-                        ctx.fillText("ОБРАЗЕЦ", 0, 0);
-                        ctx.restore();
-                    }
-                }
                 document.getElementById("resultContainer").style.display = "block";
+                canvas.style.cursor = "pointer";
+                canvas.onclick = function() {
+                    const modal = document.createElement('div');
+                    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+                    const img = new Image();
+                    img.src = url;
+                    img.style.maxWidth = '95%';
+                    img.style.maxHeight = '95%';
+                    img.style.objectFit = 'contain';
+                    modal.appendChild(img);
+                    modal.onclick = () => modal.remove();
+                    document.body.appendChild(modal);
+                };
                 URL.revokeObjectURL(url);
             };
             img.src = url;
