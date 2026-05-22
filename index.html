@@ -668,6 +668,7 @@
                 formData.append("caption", caption);
                 formData.append("token", API_TOKEN);
                 formData.append("user_id", currentUserId);
+                formData.append("source", "web");
                 document.getElementById("status").textContent = "⚡ Добавлено в очередь...";
                 
                 const enqResp = await fetch(`${SERVER_URL}/enqueue`, {
@@ -686,7 +687,7 @@
                 document.getElementById("status").textContent = "⏳ Ожидание генерации...";
                 for (let i = 0; i < 180; i++) {
                     await new Promise(r => setTimeout(r, 2000));
-                    const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&after=${enqData.job_id}&token=${API_TOKEN}`);
+                    const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&token=${API_TOKEN}`);
                     const pendData = await pendResp.json();
                     if (pendData.results && pendData.results.length > 0) {
                         const result = pendData.results[0];
