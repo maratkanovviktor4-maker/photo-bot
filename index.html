@@ -541,6 +541,7 @@
             document.getElementById('authInfo').style.display = 'block';
             document.getElementById('authName').textContent = name;
             document.querySelector('button[onclick="openBot()"]').style.display = 'none';
+            loadHistory();
         }
 
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
@@ -755,6 +756,36 @@
                 };
             };
             img.src = url;
+        }
+        async function loadHistory() {
+            if (!currentUserId) return;
+            try {
+                const resp = await fetch(`${SERVER_URL}/history?user_id=${currentUserId}&source=web`);
+                const data = await resp.json();
+                if (data.files) {
+                    for (const file of data.files) {
+                        const img = document.createElement('img');
+                        img.src = `${SERVER_URL}/history_file?file=${file}`;
+                        img.style.width = '100%';
+                        img.style.borderRadius = '8px';
+                        img.style.marginBottom = '8px';
+                        img.style.cursor = 'pointer';
+                        img.onclick = function() {
+                            const modal = document.createElement('div');
+                            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+                            const full = new Image();
+                            full.src = img.src;
+                            full.style.maxWidth = '95%';
+                            full.style.maxHeight = '95%';
+                            full.style.objectFit = 'contain';
+                            modal.appendChild(full);
+                            modal.onclick = () => modal.remove();
+                            document.body.appendChild(modal);
+                        };
+                        document.getElementById('resultPanel').appendChild(img);
+                    }
+                }
+            } catch (err) {}
         }
         async function checkEtalonAvailability() {
             if (!currentUserId) return;
