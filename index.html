@@ -667,33 +667,57 @@
                 formData.append("mode", selectedMode);
                 formData.append("caption", caption);
                 formData.append("token", API_TOKEN);
-                document.getElementById("status").textContent = "⚡ Генерация...";
-                const resp = await fetch(`${SERVER_URL}/generate`, {
+                formData.append("user_id", currentUserId);
+                document.getElementById("status").textContent = "⚡ Добавлено в очередь...";
+                
+                const enqResp = await fetch(`${SERVER_URL}/enqueue`, {
                     method: "POST",
                     body: formData,
                     headers: { "X-API-Token": API_TOKEN }
                 });
-                if (resp.ok) {
-                    resultBlob = await resp.blob();
-                    await drawWatermarkedPreview(resultBlob);
-                    document.querySelector(".result-panel .placeholder").style.display = "none";
-                    document.getElementById("previewNote").textContent = getPreviewNote();
-                    document.getElementById("previewNote").style.display = "block";
-                    document.getElementById("resultActions").style.display = "flex";
-                    document.getElementById("status").textContent = "";
-                    document.getElementById("saveBtn").onclick = function() {
-                        const url = URL.createObjectURL(resultBlob);
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = "photobot_result.jpg";
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        setTimeout(() => URL.revokeObjectURL(url), 1000);
-                    };
-                } else {
-                    document.getElementById("status").textContent = "⚠️ Ошибка генерации. Попробуйте ещё раз.";
+                const enqData = await enqResp.json();
+                if (!enqData.job_id) {
+                    document.getElementById("status").textContent = "⚠️ Ошибка очереди.";
+                    genBtn.disabled = false;
+                    genBtn.textContent = "⚡ Сгенерировать";
+                    return;
                 }
+                
+                document.getElementById("status").textContent = "⏳ Ожидание генерации...";
+                for (let i = 0; i < 180; i++) {
+                    await new Promise(r => setTimeout(r, 2000));
+                    const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&after=${enqData.job_id}&token=${API_TOKEN}`);
+                    const pendData = await pendResp.json();
+                    if (pendData.results && pendData.results.length > 0) {
+                        const result = pendData.results[0];
+                        const byteString = atob(result.data);
+                        const bytes = new Uint8Array(byteString.length);
+                        for (let j = 0; j < byteString.length; j++) {
+                            bytes[j] = byteString.charCodeAt(j);
+                        }
+                        resultBlob = new Blob([bytes], {type: 'image/jpeg'});
+                        await drawWatermarkedPreview(resultBlob);
+                        document.querySelector(".result-panel .placeholder").style.display = "none";
+                        document.getElementById("previewNote").textContent = getPreviewNote();
+                        document.getElementById("previewNote").style.display = "block";
+                        document.getElementById("resultActions").style.display = "flex";
+                        document.getElementById("status").textContent = "";
+                        document.getElementById("saveBtn").onclick = function() {
+                            const url = URL.createObjectURL(resultBlob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = "photobot_result.jpg";
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 1000);
+                        };
+                        genBtn.disabled = false;
+                        genBtn.textContent = "⚡ Сгенерировать";
+                        return;
+                    }
+                }
+                document.getElementById("status").textContent = "⚠️ Время ожидания истекло.";
             } catch (err) {
                 document.getElementById("status").textContent = "🔧 Ошибка: " + err.message;
             }
