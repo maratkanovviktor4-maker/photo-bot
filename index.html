@@ -439,6 +439,7 @@
 
     <script>
         const SERVER_URL = "https://api.фото-бот.рф";
+        const API_TOKEN = "PhotoBot2026SecretKey";
         let selectedMode = "documents";
         let uploadedFile = null;
         let resultBlob = null;
@@ -446,7 +447,6 @@
         let currentUserId = null;
         let currentUsername = null;
         let isSubscribed = false;
-        let sessionToken = '';
 
         const hints = {
             documents: "📄 Фото на документы: укажите одежду (например: серая рубашка)",
@@ -469,7 +469,6 @@
             const auth = JSON.parse(savedAuth);
             currentUserId = auth.user_id;
             currentUsername = auth.username;
-            sessionToken = auth.session_token || '';
             showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId);
             showSubscribeBlock();
             checkSubscription();
@@ -523,7 +522,7 @@
                     currentUsername = data.username;
                     isSubscribed = data.subscribed;
                     const displayName = currentUsername ? '@' + currentUsername : 'ID:' + currentUserId;
-                    localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: data.session_token }));
+                    localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername }));
                     showAuthInfo(displayName);
                     document.getElementById('authBlock').style.display = 'none';
                     if (isSubscribed) {
@@ -668,6 +667,7 @@
                 if (uploadedFile) formData.append("image", uploadedFile);
                 formData.append("mode", selectedMode);
                 formData.append("caption", caption);
+                formData.append("token", API_TOKEN);
                 formData.append("user_id", currentUserId);
                 formData.append("source", "web");
                 document.getElementById("status").textContent = "⚡ Добавлено в очередь...";
@@ -675,7 +675,7 @@
                 const enqResp = await fetch(`${SERVER_URL}/enqueue`, {
                     method: "POST",
                     body: formData,
-                    headers: sessionToken ? { "X-Session-Token": sessionToken } : {}
+                    headers: { "X-API-Token": API_TOKEN }
                 });
                 const enqData = await enqResp.json();
                 if (!enqData.job_id) {
@@ -688,7 +688,7 @@
                 document.getElementById("status").textContent = "⏳ Ожидание генерации...";
                 for (let i = 0; i < 180; i++) {
                     await new Promise(r => setTimeout(r, 2000));
-                    const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&session_token=${sessionToken}`);
+                    const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&token=${API_TOKEN}`);
                     const pendData = await pendResp.json();
                     if (pendData.results && pendData.results.length > 0) {
                         const result = pendData.results[0];
@@ -760,12 +760,12 @@
         async function loadHistory() {
             if (!currentUserId) return;
             try {
-                const resp = await fetch(`${SERVER_URL}/history?user_id=${currentUserId}&source=web&session_token=${sessionToken}`);
+                const resp = await fetch(`${SERVER_URL}/history?user_id=${currentUserId}&source=web`);
                 const data = await resp.json();
                 if (data.files) {
                     for (const file of data.files) {
                         const img = document.createElement('img');
-                        img.src = `${SERVER_URL}/history_file?file=${file}&source=web&session_token=${sessionToken}`;
+                        img.src = `${SERVER_URL}/history_file?file=${file}`;
                         img.style.width = '100%';
                         img.style.borderRadius = '8px';
                         img.style.marginBottom = '8px';
