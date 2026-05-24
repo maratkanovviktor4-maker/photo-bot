@@ -61,10 +61,13 @@
         .center-panel { width: 420px; flex-shrink: 0; }
         .header {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            justify-content: center;
+            gap: 20px;
             align-items: center;
             margin-bottom: 16px;
         }
+        .header a { text-decoration: none; display: flex; flex-direction: column; align-items: center; }
         .logo-pb {
             font-size: 48px;
             font-weight: 700;
@@ -81,6 +84,8 @@
         }
         .logo-sub .photo { color: #00CBF5; }
         .logo-sub .bot { color: #14E9FC; }
+        .header .deepseek-label { font-size: 10px; color: #888; }
+        .header .deepseek-icon { height: 48px; }
         .sub-block {
             background: #222;
             border-radius: 12px;
@@ -174,7 +179,7 @@
             font-size: 12px;
             font-family: 'Montserrat', sans-serif;
         }
-        input[type="text"] {
+        #caption {
             width: 100%;
             padding: 10px;
             margin: 6px 0;
@@ -186,8 +191,10 @@
             font-family: 'Montserrat', sans-serif;
             outline: none;
             transition: 0.2s;
+            resize: vertical;
+            overflow-y: auto;
         }
-        input[type="text"]:focus { border-color: #00CBF5; }
+        #caption:focus { border-color: #00CBF5; }
         .hint { font-size: 10px; color: #888; margin: 3px 0 6px 0; letter-spacing: 0.3px; }
         .preview-note { text-align: center; font-size: 11px; color: #E67E22; margin: 6px 0; font-weight: 500; }
         .result-panel {
@@ -362,8 +369,18 @@
 
         <div class="center-panel">
             <div class="header">
-                <div class="logo-pb"><span class="p">P</span><span class="b">B</span></div>
-                <div class="logo-sub"><span class="photo">Photo</span><span class="bot">Bot</span></div>
+                <a href="index.html">
+                    <div class="logo-pb"><span class="p">P</span><span class="b">B</span></div>
+                    <div class="logo-sub"><span class="photo">Photo</span><span class="bot">Bot</span></div>
+                </a>
+                <a href="v4flash.html">
+                    <img src="deepseek_flash.png" alt="V4 Flash" class="deepseek-icon">
+                    <span class="deepseek-label">V4 Flash</span>
+                </a>
+                <a href="v4pro.html">
+                    <img src="deepseek_pro.png" alt="V4 Pro" class="deepseek-icon">
+                    <span class="deepseek-label">V4 Pro</span>
+                </a>
             </div>
 
             <button class="mode-btn" onclick="openBot()" style="text-align:center;background:linear-gradient(90deg,#00CBF5,#14E9FC);color:#201F28;margin-bottom:8px;font-weight:600;">🔑 Войти через Telegram</button>
@@ -400,7 +417,7 @@
                 </div>
             </div>
 
-            <input type="text" id="caption" placeholder="Подпись (например: серая рубашка / 23 красное)">
+            <textarea id="caption" placeholder="Подпись (например: серая рубашка / 23 красное)" rows="10"></textarea>
             <div class="hint" id="modeHint">📄 Фото на документы: в подписи укажите одежду (например: серая рубашка)</div>
             <button id="etalonBtn" class="mode-btn" style="display:none;text-align:center;color:#00CBF5;" onclick="useEtalon()">⭐ Использовать эталон</button>
             <input type="file" id="photoInput" accept="image/*">
