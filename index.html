@@ -8,350 +8,68 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background: #201F28;
-            color: #fff;
-            min-height: 100vh;
-            position: relative;
-        }
-        body::before {
-            content: '';
-            position: fixed;
-            top: -30%;
-            left: -20%;
-            width: 140%;
-            height: 140%;
-            background: radial-gradient(ellipse at 25% 30%, rgba(0,203,245,0.15) 0%, transparent 50%),
-                        radial-gradient(ellipse at 75% 50%, rgba(20,233,252,0.12) 0%, transparent 50%),
-                        radial-gradient(ellipse at 40% 80%, rgba(255,255,255,0.05) 0%, transparent 50%);
-            filter: blur(60px);
-            pointer-events: none;
-            z-index: 0;
-        }
-        .container, .result-panel, #cookie-banner {
-            position: relative;
-            z-index: 1;
-        }
-        .container {
-            display: flex;
-            max-width: 1800px;
-            width: 100%;
-            padding: 20px;
-            gap: 24px;
-        }
-        .collages {
-            width: 920px;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            gap: 16px;
-            padding-top: 20px;
-        }
-        .collages img {
-            width: 440px;
-            border-radius: 12px;
-            border: 2px solid #2A2A2A;
-            transition: 0.2s;
-            cursor: pointer;
-        }
+        body { font-family: 'Montserrat', sans-serif; background: #201F28; color: #fff; min-height: 100vh; position: relative; }
+        body::before { content: ''; position: fixed; top: -30%; left: -20%; width: 140%; height: 140%; background: radial-gradient(ellipse at 25% 30%, rgba(0,203,245,0.15) 0%, transparent 50%), radial-gradient(ellipse at 75% 50%, rgba(20,233,252,0.12) 0%, transparent 50%), radial-gradient(ellipse at 40% 80%, rgba(255,255,255,0.05) 0%, transparent 50%); filter: blur(60px); pointer-events: none; z-index: 0; }
+        .container, .result-panel, #cookie-banner { position: relative; z-index: 1; }
+        .container { display: flex; max-width: 1800px; width: 100%; padding: 20px; gap: 24px; }
+        .collages { width: 920px; flex-shrink: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: 16px; padding-top: 20px; }
+        .collages img { width: 440px; border-radius: 12px; border: 2px solid #2A2A2A; transition: 0.2s; cursor: pointer; }
         .collages img:hover { border-color: #00CBF5; }
         .collages img.active { border-color: #00CBF5; }
         .center-panel { width: 420px; flex-shrink: 0; }
-        .header {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            gap: 20px;
-            align-items: center;
-            margin-bottom: 16px;
-        }
+        .header { display: flex; flex-direction: row; justify-content: center; gap: 20px; align-items: center; margin-bottom: 16px; }
         .header a { text-decoration: none; display: flex; flex-direction: column; align-items: center; }
-        .logo-pb {
-            font-size: 48px;
-            font-weight: 700;
-            letter-spacing: 4px;
-            line-height: 1;
-        }
+        .logo-pb { font-size: 48px; font-weight: 700; letter-spacing: 4px; line-height: 1; }
         .logo-pb .p { color: #00CBF5; }
         .logo-pb .b { color: #14E9FC; }
-        .logo-sub {
-            font-size: 16px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            margin-top: -2px;
-        }
+        .logo-sub { font-size: 16px; font-weight: 700; letter-spacing: 2px; margin-top: -2px; }
         .logo-sub .photo { color: #00CBF5; }
         .logo-sub .bot { color: #14E9FC; }
-        .header .deepseek-label { font-size: 10px; color: #888; }
-        .header .deepseek-icon { height: 48px; }
-        .sub-block {
-            background: #222;
-            border-radius: 12px;
-            padding: 14px;
-            margin: 10px 0;
-            text-align: center;
-            font-size: 13px;
-            color: #aaa;
-            display: none;
-            border: 1px solid #2A2A2A;
-        }
-        .sub-block a {
-            display: inline-block;
-            padding: 8px 16px;
-            background: linear-gradient(90deg, #00CBF5, #14E9FC);
-            color: #201F28;
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            margin: 6px 0;
-            letter-spacing: 0.5px;
-        }
+        .sub-block { background: #222; border-radius: 12px; padding: 14px; margin: 10px 0; text-align: center; font-size: 13px; color: #aaa; display: none; border: 1px solid #2A2A2A; }
+        .sub-block a { display: inline-block; padding: 8px 16px; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; text-decoration: none; border-radius: 8px; font-size: 12px; font-weight: 600; margin: 6px 0; letter-spacing: 0.5px; }
         .sub-block img { margin-top: 8px; border-radius: 8px; }
-        .sub-ok {
-            background: #222;
-            border-radius: 12px;
-            padding: 14px;
-            margin: 10px 0;
-            text-align: center;
-            font-size: 13px;
-            color: #00CBF5;
-            display: none;
-            border: 1px solid #2A2A2A;
-            font-weight: 600;
-        }
-        .mode-btn {
-            display: block;
-            width: 100%;
-            padding: 10px 14px;
-            margin: 4px 0;
-            background: #222;
-            border: 1px solid #2A2A2A;
-            color: #fff;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 13px;
-            text-align: left;
-            transition: 0.2s;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 500;
-            letter-spacing: 0.3px;
-        }
+        .sub-ok { background: #222; border-radius: 12px; padding: 14px; margin: 10px 0; text-align: center; font-size: 13px; color: #00CBF5; display: none; border: 1px solid #2A2A2A; font-weight: 600; }
+        .mode-btn { display: block; width: 100%; padding: 10px 14px; margin: 4px 0; background: #222; border: 1px solid #2A2A2A; color: #fff; border-radius: 10px; cursor: pointer; font-size: 13px; text-align: left; transition: 0.2s; font-family: 'Montserrat', sans-serif; font-weight: 500; letter-spacing: 0.3px; }
         .mode-btn.active { background: #00CBF5; border-color: #00CBF5; color: #201F28; font-weight: 600; }
         .mode-btn:hover { background: #2A2A2A; border-color: #00CBF5; }
         .mode-btn.active:hover { background: #14E9FC; }
-        #preview {
-            width: 100%;
-            max-height: 180px;
-            object-fit: contain;
-            margin: 8px 0;
-            border-radius: 10px;
-            display: none;
-        }
+        #preview { width: 100%; max-height: 180px; object-fit: contain; margin: 8px 0; border-radius: 10px; display: none; }
         #status { text-align: center; color: #aaa; margin: 6px 0; font-size: 12px; }
         .actions { display: flex; gap: 8px; margin-top: 8px; }
-        .actions button {
-            flex: 1;
-            padding: 10px;
-            background: linear-gradient(90deg, #00CBF5, #14E9FC);
-            border: none;
-            color: #201F28;
-            border-radius: 10px;
-            font-size: 13px;
-            cursor: pointer;
-            font-weight: 600;
-            font-family: 'Montserrat', sans-serif;
-            letter-spacing: 0.5px;
-            transition: 0.2s;
-        }
+        .actions button { flex: 1; padding: 10px; background: linear-gradient(90deg, #00CBF5, #14E9FC); border: none; color: #201F28; border-radius: 10px; font-size: 13px; cursor: pointer; font-weight: 600; font-family: 'Montserrat', sans-serif; letter-spacing: 0.5px; transition: 0.2s; }
         .actions button:hover { opacity: 0.9; }
         .actions button:disabled { background: #333; color: #888; cursor: not-allowed; }
         .actions button.retry-btn { background: #E67E22; color: #fff; }
         .actions button.retry-btn:hover { background: #F09030; }
         .actions button.save-btn { background: #27AE60; color: #fff; }
         .actions button.save-btn:hover { background: #2ECC71; }
-        input[type="file"] {
-            width: 100%;
-            margin: 6px 0;
-            color: #fff;
-            font-size: 12px;
-            font-family: 'Montserrat', sans-serif;
-        }
-        #caption {
-            width: 100%;
-            padding: 10px;
-            margin: 6px 0;
-            border-radius: 10px;
-            border: 1px solid #2A2A2A;
-            background: #222;
-            color: #fff;
-            font-size: 13px;
-            font-family: 'Montserrat', sans-serif;
-            outline: none;
-            transition: 0.2s;
-            resize: vertical;
-            overflow-y: auto;
-        }
+        input[type="file"] { width: 100%; margin: 6px 0; color: #fff; font-size: 12px; font-family: 'Montserrat', sans-serif; }
+        #caption { width: 100%; padding: 10px; margin: 6px 0; border-radius: 10px; border: 1px solid #2A2A2A; background: #222; color: #fff; font-size: 13px; font-family: 'Montserrat', sans-serif; outline: none; transition: 0.2s; resize: vertical; overflow-y: auto; }
         #caption:focus { border-color: #00CBF5; }
         .hint { font-size: 10px; color: #888; margin: 3px 0 6px 0; letter-spacing: 0.3px; }
         .preview-note { text-align: center; font-size: 11px; color: #E67E22; margin: 6px 0; font-weight: 500; }
-        .result-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: 20px;
-            min-width: 0;
-        }
+        .result-panel { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 20px; min-width: 0; }
         .result-panel .placeholder { color: #444; font-size: 14px; text-align: center; font-weight: 500; }
-        .result-container {
-            position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            display: none;
-            max-width: 300px;
-        }
+        .result-container { position: relative; border-radius: 12px; overflow: hidden; display: none; max-width: 300px; }
         #resultCanvas { width: 100%; border-radius: 12px; display: block; }
         .size-btns { display: flex; gap: 6px; margin-top: 8px; }
-        .size-btn {
-            flex: 1;
-            padding: 8px;
-            background: #222;
-            border: 1px solid #2A2A2A;
-            color: #fff;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 11px;
-            text-align: center;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 500;
-            transition: 0.2s;
-        }
+        .size-btn { flex: 1; padding: 8px; background: #222; border: 1px solid #2A2A2A; color: #fff; border-radius: 8px; cursor: pointer; font-size: 11px; text-align: center; font-family: 'Montserrat', sans-serif; font-weight: 500; transition: 0.2s; }
         .size-btn.active { background: #00CBF5; border-color: #00CBF5; color: #201F28; font-weight: 600; }
         .size-btn:hover { background: #2A2A2A; border-color: #00CBF5; }
-        .auth-block {
-            background: #222;
-            border-radius: 12px;
-            padding: 18px;
-            margin: 10px 0;
-            text-align: center;
-            display: none;
-            border: 1px solid #2A2A2A;
-        }
-        .auth-block input {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 10px;
-            border: 1px solid #2A2A2A;
-            background: #201F28;
-            color: #fff;
-            font-size: 18px;
-            text-align: center;
-            letter-spacing: 8px;
-            font-family: 'Montserrat', sans-serif;
-            outline: none;
-        }
+        .auth-block { background: #222; border-radius: 12px; padding: 18px; margin: 10px 0; text-align: center; display: none; border: 1px solid #2A2A2A; }
+        .auth-block input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 10px; border: 1px solid #2A2A2A; background: #201F28; color: #fff; font-size: 18px; text-align: center; letter-spacing: 8px; font-family: 'Montserrat', sans-serif; outline: none; }
         .auth-block input:focus { border-color: #00CBF5; }
-        .auth-block .send-btn {
-            width: 100%;
-            padding: 10px;
-            background: #333;
-            border: none;
-            color: #888;
-            border-radius: 10px;
-            font-size: 14px;
-            cursor: not-allowed;
-            font-weight: 600;
-            font-family: 'Montserrat', sans-serif;
-            letter-spacing: 0.5px;
-            transition: 0.2s;
-        }
-        .auth-block .send-btn.active {
-            background: linear-gradient(90deg, #00CBF5, #14E9FC);
-            color: #201F28;
-            cursor: pointer;
-        }
+        .auth-block .send-btn { width: 100%; padding: 10px; background: #333; border: none; color: #888; border-radius: 10px; font-size: 14px; cursor: not-allowed; font-weight: 600; font-family: 'Montserrat', sans-serif; letter-spacing: 0.5px; transition: 0.2s; }
+        .auth-block .send-btn.active { background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; cursor: pointer; }
         .auth-block .send-btn.active:hover { opacity: 0.9; }
-        .auth-info {
-            text-align: center;
-            color: #00CBF5;
-            font-size: 13px;
-            padding: 10px;
-            display: none;
-            font-weight: 600;
-        }
-        .legal-footer {
-            text-align: center;
-            padding: 20px 0 0 0;
-            margin-top: 16px;
-            border-top: 1px solid #2A2A2A;
-        }
-        .legal-footer a {
-            color: #888;
-            text-decoration: none;
-            margin: 0 10px;
-            font-size: 11px;
-            font-weight: 500;
-            letter-spacing: 0.3px;
-            transition: 0.2s;
-        }
+        .auth-info { text-align: center; color: #00CBF5; font-size: 13px; padding: 10px; display: none; font-weight: 600; }
+        .legal-footer { text-align: center; padding: 20px 0 0 0; margin-top: 16px; border-top: 1px solid #2A2A2A; }
+        .legal-footer a { color: #888; text-decoration: none; margin: 0 10px; font-size: 11px; font-weight: 500; letter-spacing: 0.3px; transition: 0.2s; }
         .legal-footer a:hover { color: #00CBF5; }
-        #generation-warning {
-            display: none;
-            text-align: center;
-            color: #E67E22;
-            font-size: 10px;
-            margin: 4px 0;
-            font-weight: 500;
-        }
-        #cookie-banner {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #1A1A1A;
-            padding: 12px 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #888;
-            border-top: 1px solid #2A2A2A;
-            z-index: 1000;
-        }
-        #cookie-banner button {
-            background: #00CBF5;
-            color: #201F28;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 6px;
-            margin-left: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 11px;
-        }
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-                align-items: center;
-                padding: 12px;
-                gap: 16px;
-            }
-            .collages {
-                width: 100%;
-                order: 1;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
-            .collages img { width: 100%; max-width: 100%; }
-            .center-panel { width: 100%; order: 2; }
-            .result-panel { width: 100%; order: 3; padding-top: 0; }
-        }
+        #generation-warning { display: none; text-align: center; color: #E67E22; font-size: 10px; margin: 4px 0; font-weight: 500; }
+        #cookie-banner { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #1A1A1A; padding: 12px 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #2A2A2A; z-index: 1000; }
+        #cookie-banner button { background: #00CBF5; color: #201F28; border: none; padding: 6px 16px; border-radius: 6px; margin-left: 10px; cursor: pointer; font-weight: 600; font-family: 'Montserrat', sans-serif; font-size: 11px; }
+        @media (max-width: 768px) { .container { flex-direction: column; align-items: center; padding: 12px; gap: 16px; } .collages { width: 100%; order: 1; display: flex; flex-direction: column; gap: 10px; } .collages img { width: 100%; max-width: 100%; } .center-panel { width: 100%; order: 2; } .result-panel { width: 100%; order: 3; padding-top: 0; } }
     </style>
 </head>
 <body>
@@ -373,32 +91,21 @@
                     <div class="logo-pb"><span class="p">P</span><span class="b">B</span></div>
                     <div class="logo-sub"><span class="photo">Photo</span><span class="bot">Bot</span></div>
                 </a>
-                <a href="v4flash.html">
-                    <img src="deepseek_logo.png" alt="V4 Flash" class="deepseek-icon">
-                    <span class="deepseek-label">V4 Flash</span>
-                </a>
-                <a href="v4pro.html">
-                    <img src="deepseek_logo.png" alt="V4 Pro" class="deepseek-icon">
-                    <span class="deepseek-label">V4 Pro</span>
-                </a>
+                <div style="position:relative; display:flex; flex-direction:column; align-items:center; cursor:pointer;" onclick="toggleDeepSeekMenu()">
+                    <img src="deepseek_logo.png" alt="DeepSeek" style="height:40px;">
+                    <span style="font-size:10px; color:#888;">DeepSeek</span>
+                    <div id="deepseekMenu" style="display:none; position:absolute; top:100%; left:50%; transform:translateX(-50%); background:#1a2a4a; border:1px solid #2a2a4a; border-radius:8px; padding:4px; z-index:10; min-width:120px;">
+                        <a href="v4flash.html" style="display:block; padding:8px 12px; color:#8B5CF6; text-decoration:none; font-size:12px; border-radius:4px;">V4 Flash</a>
+                        <a href="v4pro.html" style="display:block; padding:8px 12px; color:#F59E0B; text-decoration:none; font-size:12px; border-radius:4px;">V4 Pro</a>
+                    </div>
+                </div>
             </div>
 
             <button class="mode-btn" onclick="openBot()" style="text-align:center;background:linear-gradient(90deg,#00CBF5,#14E9FC);color:#201F28;margin-bottom:8px;font-weight:600;">🔑 Войти через Telegram</button>
-
-            <div class="auth-block" id="authBlock">
-                <div style="font-size:13px;color:#aaa;margin-bottom:8px;">Введите код авторизации из бота</div>
-                <input type="text" id="authCode" maxlength="4" placeholder="0000" inputmode="numeric" pattern="[0-9]*">
-                <button class="send-btn" id="sendBtn" disabled>Отправить</button>
-            </div>
-
+            <div class="auth-block" id="authBlock"><div style="font-size:13px;color:#aaa;margin-bottom:8px;">Введите код авторизации из бота</div><input type="text" id="authCode" maxlength="4" placeholder="0000" inputmode="numeric" pattern="[0-9]*"><button class="send-btn" id="sendBtn" disabled>Отправить</button></div>
             <div class="auth-info" id="authInfo">👤 Вошли как <span id="authName"></span></div>
-
-            <div class="sub-block" id="subscribeBlock">
-                📛 Подпишитесь на нас в <a href="https://t.me/PhotoDocumentsBot_bot" target="_blank">Telegram</a>
-                <br><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://t.me/PhotoDocumentsBot_bot" width="200" height="200" alt="QR-код">
-            </div>
+            <div class="sub-block" id="subscribeBlock">📛 Подпишитесь на нас в <a href="https://t.me/PhotoDocumentsBot_bot" target="_blank">Telegram</a><br><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://t.me/PhotoDocumentsBot_bot" width="200" height="200" alt="QR-код"></div>
             <div class="sub-ok" id="subscribeOk">✅ Вы подписаны</div>
-            
             <div id="modes">
                 <button class="mode-btn active" data-mode="documents">📄 Фото на документы</button>
                 <button class="mode-btn" data-mode="beach">🌅 Закат на пляже</button>
@@ -409,429 +116,59 @@
                 <button class="mode-btn" data-mode="svoboda_male">🎨 Свободный (м)</button>
                 <button class="mode-btn" data-mode="wallpaper">📝 Текст в изображение</button>
             </div>
-
-            <div id="wallpaperSize" style="display:none;">
-                <div class="size-btns">
-                    <button class="size-btn active" data-wp="phone">📱 9:16</button>
-                    <button class="size-btn" data-wp="pc">🖥️ 16:9</button>
-                </div>
-            </div>
-
+            <div id="wallpaperSize" style="display:none;"><div class="size-btns"><button class="size-btn active" data-wp="phone">📱 9:16</button><button class="size-btn" data-wp="pc">🖥️ 16:9</button></div></div>
             <textarea id="caption" placeholder="Подпись (например: серая рубашка / 23 красное)" rows="10"></textarea>
             <div class="hint" id="modeHint">📄 Фото на документы: в подписи укажите одежду (например: серая рубашка)</div>
             <button id="etalonBtn" class="mode-btn" style="display:none;text-align:center;color:#00CBF5;" onclick="useEtalon()">⭐ Использовать эталон</button>
             <input type="file" id="photoInput" accept="image/*">
             <img id="preview" alt="Превью">
-            
             <div id="generation-warning">⚠️ Результат не является официальным документом</div>
-            <div class="actions">
-                <button id="generate" onclick="startGeneration()">⚡ Сгенерировать</button>
-            </div>
+            <div class="actions"><button id="generate" onclick="startGeneration()">⚡ Сгенерировать</button></div>
             <div id="status"></div>
             <a href="prompts.html" style="display:block;text-align:center;background:#00CBF5;color:#201F28;font-size:15px;font-weight:700;padding:12px 0;text-decoration:none;border-radius:10px;margin:8px 0;">📋 База промтов</a>
-
-            <div class="legal-footer">
-                <a href="agreement.txt" target="_blank">Пользовательское соглашение</a>
-                <a href="privacy.txt" target="_blank">Политика конфиденциальности</a>
-            </div>
+            <div class="legal-footer"><a href="agreement.txt" target="_blank">Пользовательское соглашение</a><a href="privacy.txt" target="_blank">Политика конфиденциальности</a></div>
         </div>
 
         <div class="result-panel" id="resultPanel">
             <div class="placeholder">🖼️ Здесь появится результат</div>
-            <div class="result-container" id="resultContainer">
-                <canvas id="resultCanvas"></canvas>
-            </div>
+            <div class="result-container" id="resultContainer"><canvas id="resultCanvas"></canvas></div>
             <div class="preview-note" id="previewNote" style="display:none;"></div>
-            <div class="actions" id="resultActions" style="display:none;">
-                <button class="save-btn" id="saveBtn">💾 Сохранить</button>
-                <button class="retry-btn" onclick="retryGeneration()">🔄 Попробовать ещё раз</button>
-            </div>
+            <div class="actions" id="resultActions" style="display:none;"><button class="save-btn" id="saveBtn">💾 Сохранить</button><button class="retry-btn" onclick="retryGeneration()">🔄 Попробовать ещё раз</button></div>
         </div>
     </div>
-
-    <div id="cookie-banner">
-        Мы используем необходимые cookie-файлы для авторизации и работы сервиса.
-        <button onclick="acceptCookies()">OK</button>
-    </div>
-
+    <div id="cookie-banner">Мы используем необходимые cookie-файлы для авторизации и работы сервиса.<button onclick="acceptCookies()">OK</button></div>
     <script>
         const SERVER_URL = "https://api.фото-бот.рф";
-        let selectedMode = "documents";
-        let uploadedFile = null;
-        let resultBlob = null;
-        let wallpaperSize = "pc";
-        let currentUserId = null;
-        let currentUsername = null;
-        let isSubscribed = false;
-        let sessionToken = '';
-
-        const hints = {
-            documents: "📄 Фото на документы: укажите одежду (например: серая рубашка)",
-            beach: "🌅 Закат на пляже: укажите одежду (например: белое платье)",
-            birthday: "🎂👑 День рождения: укажите число и цвет платья (например: 23 красное)",
-            flowers: "🌸 Цветы в авто: укажите одежду (например: черное платье)",
-            mirror_male: "🕶️💪 Мужское в зеркале: опишите одежду, очки, телефон",
-            svoboda: "🎨 Свободный (ж): введите промт",
-            svoboda_male: "🎨 Свободный (м): введите промт",
-            wallpaper: "🖼️ Обои: введите промт в поле подписи"
-        };
-
-        const wallpaperSizes = {
-            phone: [1440, 2560],
-            pc: [2560, 1440],
-        };
-
+        let selectedMode = "documents", uploadedFile = null, resultBlob = null, wallpaperSize = "pc", currentUserId = null, currentUsername = null, isSubscribed = false, sessionToken = '';
+        const hints = { documents: "📄 Фото на документы: укажите одежду (например: серая рубашка)", beach: "🌅 Закат на пляже: укажите одежду (например: белое платье)", birthday: "🎂👑 День рождения: укажите число и цвет платья (например: 23 красное)", flowers: "🌸 Цветы в авто: укажите одежду (например: черное платье)", mirror_male: "🕶️💪 Мужское в зеркале: опишите одежду, очки, телефон", svoboda: "🎨 Свободный (ж): введите промт", svoboda_male: "🎨 Свободный (м): введите промт", wallpaper: "🖼️ Обои: введите промт в поле подписи" };
+        const wallpaperSizes = { phone: [1440, 2560], pc: [2560, 1440] };
         const savedAuth = localStorage.getItem('photobot_auth');
-        if (savedAuth) {
-            const auth = JSON.parse(savedAuth);
-            currentUserId = auth.user_id;
-            currentUsername = auth.username;
-            sessionToken = auth.session_token || '';
-            showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId);
-            showSubscribeBlock();
-            checkSubscription();
-        }
-
-        if (!localStorage.getItem('cookies_accepted')) {
-            document.getElementById('cookie-banner').style.display = 'block';
-        }
-
-        function acceptCookies() {
-            localStorage.setItem('cookies_accepted', '1');
-            document.getElementById('cookie-banner').style.display = 'none';
-        }
-
-        window.addEventListener('focus', function() {
-            if (!currentUserId) document.getElementById('authBlock').style.display = 'block';
-            if (currentUserId) checkSubscription();
-            if (currentUserId) checkEtalonAvailability();
-        });
-
-        function openBot() {
-            document.getElementById('authBlock').style.display = 'block';
-            window.open('https://t.me/PhotoDocumentsBot_bot?start=site', '_blank');
-        }
-
-        document.getElementById('authCode').addEventListener('input', function() {
-            const btn = document.getElementById('sendBtn');
-            if (this.value.length === 4) {
-                btn.classList.add('active');
-                btn.disabled = false;
-                btn.style.cursor = 'pointer';
-            } else {
-                btn.classList.remove('active');
-                btn.disabled = true;
-                btn.style.cursor = 'not-allowed';
-            }
-        });
-
-        document.getElementById('sendBtn').addEventListener('click', async function() {
-            const code = document.getElementById('authCode').value;
-            if (code.length !== 4) return;
-            try {
-                const resp = await fetch(`${SERVER_URL}/verify_code`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ code: code })
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    currentUserId = data.user_id;
-                    currentUsername = data.username;
-                    isSubscribed = data.subscribed;
-                    sessionToken = data.session_token || '';
-                    const displayName = currentUsername ? '@' + currentUsername : 'ID:' + currentUserId;
-                    localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken }));
-                    showAuthInfo(displayName);
-                    document.getElementById('authBlock').style.display = 'none';
-                    if (isSubscribed) {
-                        document.getElementById('subscribeBlock').style.display = 'none';
-                        document.getElementById('subscribeOk').style.display = 'block';
-                    } else {
-                        document.getElementById('subscribeBlock').style.display = 'block';
-                    }
-                } else {
-                    alert(data.error === 'Not subscribed' ? 'Вы не подписаны на бота. Подпишитесь и попробуйте снова.' : 'Неверный код авторизации');
-                }
-            } catch (err) { alert('Ошибка соединения с сервером'); }
-        });
-
-        function showAuthInfo(name) {
-            document.getElementById('authInfo').style.display = 'block';
-            document.getElementById('authName').textContent = name;
-            document.querySelector('button[onclick="openBot()"]').style.display = 'none';
-            loadHistory();
-        }
-
+        if (savedAuth) { const auth = JSON.parse(savedAuth); currentUserId = auth.user_id; currentUsername = auth.username; sessionToken = auth.session_token || ''; showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); showSubscribeBlock(); checkSubscription(); }
+        if (!localStorage.getItem('cookies_accepted')) document.getElementById('cookie-banner').style.display = 'block';
+        function acceptCookies() { localStorage.setItem('cookies_accepted', '1'); document.getElementById('cookie-banner').style.display = 'none'; }
+        window.addEventListener('focus', function() { if (!currentUserId) document.getElementById('authBlock').style.display = 'block'; if (currentUserId) checkSubscription(); if (currentUserId) checkEtalonAvailability(); });
+        function openBot() { document.getElementById('authBlock').style.display = 'block'; window.open('https://t.me/PhotoDocumentsBot_bot?start=site', '_blank'); }
+        function toggleDeepSeekMenu() { const m = document.getElementById('deepseekMenu'); m.style.display = m.style.display === 'block' ? 'none' : 'block'; }
+        document.addEventListener('click', function(e) { if (!e.target.closest('[onclick="toggleDeepSeekMenu()"]')) document.getElementById('deepseekMenu').style.display = 'none'; });
+        document.getElementById('authCode').addEventListener('input', function() { const b = document.getElementById('sendBtn'); if (this.value.length === 4) { b.classList.add('active'); b.disabled = false; b.style.cursor = 'pointer'; } else { b.classList.remove('active'); b.disabled = true; b.style.cursor = 'not-allowed'; } });
+        document.getElementById('sendBtn').addEventListener('click', async function() { const c = document.getElementById('authCode').value; if (c.length !== 4) return; try { const r = await fetch(`${SERVER_URL}/verify_code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: c }) }); const d = await r.json(); if (d.success) { currentUserId = d.user_id; currentUsername = d.username; isSubscribed = d.subscribed; sessionToken = d.session_token || ''; localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken })); showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); document.getElementById('authBlock').style.display = 'none'; if (isSubscribed) { document.getElementById('subscribeBlock').style.display = 'none'; document.getElementById('subscribeOk').style.display = 'block'; } else { document.getElementById('subscribeBlock').style.display = 'block'; } } else { alert(d.error === 'Not subscribed' ? 'Вы не подписаны на бота. Подпишитесь и попробуйте снова.' : 'Неверный код авторизации'); } } catch (err) { alert('Ошибка соединения с сервером'); } });
+        function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; loadHistory(); }
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
-
-        document.querySelectorAll("#collages img").forEach(img => {
-            img.addEventListener("click", function() { selectMode(this.dataset.mode); });
-        });
-        document.querySelectorAll(".mode-btn").forEach(btn => {
-            if (!btn.onclick) btn.addEventListener("click", function() { selectMode(this.dataset.mode); });
-        });
-        document.querySelectorAll(".size-btn").forEach(btn => {
-            btn.addEventListener("click", function() {
-                document.querySelectorAll(".size-btn").forEach(b => b.classList.remove("active"));
-                this.classList.add("active");
-                wallpaperSize = this.dataset.wp;
-            });
-        });
-
-        function selectMode(mode) {
-            selectedMode = mode;
-            document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
-            const btn = document.querySelector(`.mode-btn[data-mode="${mode}"]`);
-            if (btn) btn.classList.add("active");
-            document.querySelectorAll("#collages img").forEach(i => i.classList.remove("active"));
-            const collage = document.querySelector(`#collages img[data-mode="${mode}"]`);
-            if (collage) collage.classList.add("active");
-            document.getElementById("modeHint").textContent = hints[mode];
-            
-            const warning = document.getElementById('generation-warning');
-            warning.style.display = mode === 'documents' ? 'block' : 'none';
-
-            if (mode === "wallpaper") {
-                document.getElementById("wallpaperSize").style.display = "block";
-                document.getElementById("photoInput").style.display = "none";
-                document.getElementById("preview").style.display = "none";
-            } else {
-                document.getElementById("wallpaperSize").style.display = "none";
-                document.getElementById("photoInput").style.display = "block";
-            }
-            resetResult();
-        }
-
-        async function checkSubscription() {
-            if (!currentUserId) return;
-            try {
-                const resp = await fetch(`${SERVER_URL}/check_subscription`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ user_id: currentUserId })
-                });
-                const data = await resp.json();
-                isSubscribed = data.subscribed;
-                if (isSubscribed) {
-                    document.getElementById("subscribeBlock").style.display = "none";
-                    document.getElementById("subscribeOk").style.display = "block";
-                } else {
-                    document.getElementById("subscribeBlock").style.display = "block";
-                    document.getElementById("subscribeOk").style.display = "none";
-                }
-            } catch (err) {}
-        }
-
-        document.getElementById("photoInput").addEventListener("change", function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                uploadedFile = file;
-                const reader = new FileReader();
-                reader.onload = function(ev) {
-                    document.getElementById("preview").src = ev.target.result;
-                    document.getElementById("preview").style.display = "block";
-                };
-                reader.readAsDataURL(file);
-                resetResult();
-            }
-        });
-
-        function resetResult() {
-            document.getElementById("resultContainer").style.display = "none";
-            document.getElementById("resultActions").style.display = "none";
-            document.getElementById("previewNote").style.display = "none";
-            document.getElementById("status").textContent = "";
-            document.querySelector(".result-panel .placeholder").style.display = "block";
-            resultBlob = null;
-        }
-
-        async function startGeneration() {
-            if (!currentUserId) { document.getElementById('authBlock').style.display = 'block'; return; }
-            await checkSubscription();
-            if (!isSubscribed) {
-                document.getElementById("subscribeBlock").style.display = "block";
-                document.getElementById("subscribeOk").style.display = "none";
-                return;
-            }
-            await runGeneration();
-        }
-
-        async function retryGeneration() {
-            document.getElementById("resultContainer").style.display = "none";
-            document.getElementById("resultActions").style.display = "none";
-            document.getElementById("previewNote").style.display = "none";
-            document.getElementById("status").textContent = "";
-            await runGeneration();
-        }
-
-        function getPreviewNote() {
-            if (selectedMode === "documents") return "👆 Это образец. Полный размер 832×1152";
-            if (selectedMode === "wallpaper") {
-                const [w, h] = wallpaperSizes[wallpaperSize];
-                return `👆 Это образец. Полный размер ${w}×${h}`;
-            }
-            return "👆 Это образец. Полный размер 1080×1344";
-        }
-
-        async function runGeneration() {
-            const genBtn = document.getElementById("generate");
-            genBtn.disabled = true;
-            genBtn.textContent = "⏳ Генерация...";
-            document.getElementById("resultActions").style.display = "none";
-            const caption = document.getElementById("caption").value || "черная рубашка";
-            try {
-                if (selectedMode !== "wallpaper" && !uploadedFile) return;
-                const formData = new FormData();
-                if (uploadedFile) formData.append("image", uploadedFile);
-                formData.append("mode", selectedMode);
-                formData.append("caption", caption);
-                formData.append("user_id", currentUserId);
-                formData.append("source", "web");
-                document.getElementById("status").textContent = "⚡ Добавлено в очередь...";
-                
-                const enqResp = await fetch(`${SERVER_URL}/enqueue`, {
-                    method: "POST",
-                    body: formData,
-                    headers: sessionToken ? { "X-Session-Token": sessionToken } : {}
-                });
-                const enqData = await enqResp.json();
-                if (!enqData.job_id) {
-                    document.getElementById("status").textContent = "⚠️ Ошибка очереди.";
-                    genBtn.disabled = false;
-                    genBtn.textContent = "⚡ Сгенерировать";
-                    return;
-                }
-                
-                document.getElementById("status").textContent = "⏳ Ожидание генерации...";
-                for (let i = 0; i < 180; i++) {
-                    await new Promise(r => setTimeout(r, 2000));
-                    const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&session_token=${sessionToken}`);
-                    const pendData = await pendResp.json();
-                    if (pendData.results && pendData.results.length > 0) {
-                        const result = pendData.results[0];
-                        const byteString = atob(result.data);
-                        const bytes = new Uint8Array(byteString.length);
-                        for (let j = 0; j < byteString.length; j++) {
-                            bytes[j] = byteString.charCodeAt(j);
-                        }
-                        resultBlob = new Blob([bytes], {type: 'image/jpeg'});
-                        await drawWatermarkedPreview(resultBlob);
-                        document.querySelector(".result-panel .placeholder").style.display = "none";
-                        document.getElementById("previewNote").textContent = getPreviewNote();
-                        document.getElementById("previewNote").style.display = "block";
-                        document.getElementById("resultActions").style.display = "flex";
-                        document.getElementById("status").textContent = "";
-                        document.getElementById("saveBtn").onclick = function() {
-                            const url = URL.createObjectURL(resultBlob);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = "photobot_result.jpg";
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            setTimeout(() => URL.revokeObjectURL(url), 1000);
-                        };
-                        genBtn.disabled = false;
-                        genBtn.textContent = "⚡ Сгенерировать";
-                        return;
-                    }
-                }
-                document.getElementById("status").textContent = "⚠️ Время ожидания истекло.";
-            } catch (err) {
-                document.getElementById("status").textContent = "🔧 Ошибка: " + err.message;
-            }
-            genBtn.disabled = false;
-            genBtn.textContent = "⚡ Сгенерировать";
-        }
-
-        async function drawWatermarkedPreview(blob) {
-            const img = new Image();
-            const url = URL.createObjectURL(blob);
-            img.onload = function() {
-                const canvas = document.getElementById("resultCanvas");
-                const ctx = canvas.getContext("2d");
-                let drawWidth = img.width, drawHeight = img.height;
-                const ratio = Math.min(400 / img.width, 400 / img.height);
-                drawWidth = Math.round(img.width * ratio);
-                drawHeight = Math.round(img.height * ratio);
-                canvas.width = drawWidth;
-                canvas.height = drawHeight;
-                ctx.drawImage(img, 0, 0, drawWidth, drawHeight);
-                document.getElementById("resultContainer").style.display = "block";
-                canvas.style.cursor = "pointer";
-                canvas.onclick = function() {
-                    const modal = document.createElement('div');
-                    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
-                    const img = new Image();
-                    img.src = url;
-                    img.style.maxWidth = '95%';
-                    img.style.maxHeight = '95%';
-                    img.style.objectFit = 'contain';
-                    modal.appendChild(img);
-                    modal.onclick = () => modal.remove();
-                    document.body.appendChild(modal);
-                };
-            };
-            img.src = url;
-        }
-        async function loadHistory() {
-            if (!currentUserId) return;
-            try {
-                const resp = await fetch(`${SERVER_URL}/history?user_id=${currentUserId}&source=web&session_token=${sessionToken}`);
-                const data = await resp.json();
-                if (data.files) {
-                    for (const file of data.files) {
-                        const img = document.createElement('img');
-                        img.src = `${SERVER_URL}/history_file?file=${file}&source=web&session_token=${sessionToken}`;
-                        img.style.width = '100%';
-                        img.style.borderRadius = '8px';
-                        img.style.marginBottom = '8px';
-                        img.style.cursor = 'pointer';
-                        img.onclick = function() {
-                            const modal = document.createElement('div');
-                            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
-                            const full = new Image();
-                            full.src = img.src;
-                            full.style.maxWidth = '95%';
-                            full.style.maxHeight = '95%';
-                            full.style.objectFit = 'contain';
-                            modal.appendChild(full);
-                            modal.onclick = () => modal.remove();
-                            document.body.appendChild(modal);
-                        };
-                        document.getElementById('resultPanel').appendChild(img);
-                    }
-                }
-            } catch (err) {}
-        }
-        async function checkEtalonAvailability() {
-            if (!currentUserId) return;
-            try {
-                const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`);
-                const data = await resp.json();
-                if (data.has_etalon) {
-                    document.getElementById('etalonBtn').style.display = 'block';
-                }
-            } catch (err) {}
-        }
-
-        async function useEtalon() {
-            try {
-                const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`);
-                if (!resp.ok) { alert('Эталон не найден'); return; }
-                const blob = await resp.blob();
-                uploadedFile = new File([blob], 'etalon.jpg', {type: 'image/jpeg'});
-                const reader = new FileReader();
-                reader.onload = function(ev) {
-                    document.getElementById('preview').src = ev.target.result;
-                    document.getElementById('preview').style.display = 'block';
-                };
-                reader.readAsDataURL(blob);
-                resetResult();
-                document.getElementById('status').textContent = 'Эталон загружен';
-            } catch (err) { alert('Ошибка загрузки эталона'); }
-        }
+        document.querySelectorAll("#collages img").forEach(img => { img.addEventListener("click", function() { selectMode(this.dataset.mode); }); });
+        document.querySelectorAll(".mode-btn").forEach(btn => { if (!btn.onclick) btn.addEventListener("click", function() { selectMode(this.dataset.mode); }); });
+        document.querySelectorAll(".size-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".size-btn").forEach(b => b.classList.remove("active")); this.classList.add("active"); wallpaperSize = this.dataset.wp; }); });
+        function selectMode(mode) { selectedMode = mode; document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active")); const btn = document.querySelector(`.mode-btn[data-mode="${mode}"]`); if (btn) btn.classList.add("active"); document.querySelectorAll("#collages img").forEach(i => i.classList.remove("active")); const collage = document.querySelector(`#collages img[data-mode="${mode}"]`); if (collage) collage.classList.add("active"); document.getElementById("modeHint").textContent = hints[mode]; document.getElementById('generation-warning').style.display = mode === 'documents' ? 'block' : 'none'; if (mode === "wallpaper") { document.getElementById("wallpaperSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; } else { document.getElementById("wallpaperSize").style.display = "none"; document.getElementById("photoInput").style.display = "block"; } resetResult(); }
+        async function checkSubscription() { if (!currentUserId) return; try { const r = await fetch(`${SERVER_URL}/check_subscription`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserId }) }); const d = await r.json(); isSubscribed = d.subscribed; if (isSubscribed) { document.getElementById("subscribeBlock").style.display = "none"; document.getElementById("subscribeOk").style.display = "block"; } else { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; } } catch (err) {} }
+        document.getElementById("photoInput").addEventListener("change", function(e) { const file = e.target.files[0]; if (file) { uploadedFile = file; const reader = new FileReader(); reader.onload = function(ev) { document.getElementById("preview").src = ev.target.result; document.getElementById("preview").style.display = "block"; }; reader.readAsDataURL(file); resetResult(); } });
+        function resetResult() { document.getElementById("resultContainer").style.display = "none"; document.getElementById("resultActions").style.display = "none"; document.getElementById("previewNote").style.display = "none"; document.getElementById("status").textContent = ""; document.querySelector(".result-panel .placeholder").style.display = "block"; resultBlob = null; }
+        async function startGeneration() { if (!currentUserId) { document.getElementById('authBlock').style.display = 'block'; return; } await checkSubscription(); if (!isSubscribed) { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; return; } await runGeneration(); }
+        async function retryGeneration() { document.getElementById("resultContainer").style.display = "none"; document.getElementById("resultActions").style.display = "none"; document.getElementById("previewNote").style.display = "none"; document.getElementById("status").textContent = ""; await runGeneration(); }
+        function getPreviewNote() { if (selectedMode === "documents") return "👆 Это образец. Полный размер 832×1152"; if (selectedMode === "wallpaper") { const [w, h] = wallpaperSizes[wallpaperSize]; return `👆 Это образец. Полный размер ${w}×${h}`; } return "👆 Это образец. Полный размер 1080×1344"; }
+        async function runGeneration() { const genBtn = document.getElementById("generate"); genBtn.disabled = true; genBtn.textContent = "⏳ Генерация..."; document.getElementById("resultActions").style.display = "none"; const caption = document.getElementById("caption").value || "черная рубашка"; try { if (selectedMode !== "wallpaper" && !uploadedFile) return; const formData = new FormData(); if (uploadedFile) formData.append("image", uploadedFile); formData.append("mode", selectedMode); formData.append("caption", caption); formData.append("user_id", currentUserId); formData.append("source", "web"); document.getElementById("status").textContent = "⚡ Добавлено в очередь..."; const enqResp = await fetch(`${SERVER_URL}/enqueue`, { method: "POST", body: formData, headers: sessionToken ? { "X-Session-Token": sessionToken } : {} }); const enqData = await enqResp.json(); if (!enqData.job_id) { document.getElementById("status").textContent = "⚠️ Ошибка очереди."; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } document.getElementById("status").textContent = "⏳ Ожидание генерации..."; for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { const result = pendData.results[0]; const bytes = Uint8Array.from(atob(result.data), c => c.charCodeAt(0)); resultBlob = new Blob([bytes], { type: 'image/jpeg' }); await drawWatermarkedPreview(resultBlob); document.querySelector(".result-panel .placeholder").style.display = "none"; document.getElementById("previewNote").textContent = getPreviewNote(); document.getElementById("previewNote").style.display = "block"; document.getElementById("resultActions").style.display = "flex"; document.getElementById("status").textContent = ""; document.getElementById("saveBtn").onclick = function() { const url = URL.createObjectURL(resultBlob); const a = document.createElement("a"); a.href = url; a.download = "photobot_result.jpg"; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 1000); }; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } } document.getElementById("status").textContent = "⚠️ Время ожидания истекло."; } catch (err) { document.getElementById("status").textContent = "🔧 Ошибка: " + err.message; } genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; }
+        async function drawWatermarkedPreview(blob) { const img = new Image(); const url = URL.createObjectURL(blob); img.onload = function() { const canvas = document.getElementById("resultCanvas"); const ctx = canvas.getContext("2d"); let dw = img.width, dh = img.height; const ratio = Math.min(400 / img.width, 400 / img.height); dw = Math.round(img.width * ratio); dh = Math.round(img.height * ratio); canvas.width = dw; canvas.height = dh; ctx.drawImage(img, 0, 0, dw, dh); document.getElementById("resultContainer").style.display = "block"; canvas.style.cursor = "pointer"; canvas.onclick = function() { const modal = document.createElement('div'); modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer'; const img = new Image(); img.src = url; img.style.maxWidth = '95%'; img.style.maxHeight = '95%'; img.style.objectFit = 'contain'; modal.appendChild(img); modal.onclick = () => modal.remove(); document.body.appendChild(modal); }; }; img.src = url; }
+        async function loadHistory() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/history?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); const data = await resp.json(); if (data.files) { for (const file of data.files) { const img = document.createElement('img'); img.src = `${SERVER_URL}/history_file?file=${file}&source=web&session_token=${sessionToken}`; img.style.width = '100%'; img.style.borderRadius = '8px'; img.style.marginBottom = '8px'; img.style.cursor = 'pointer'; img.onclick = function() { const modal = document.createElement('div'); modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer'; const full = new Image(); full.src = img.src; full.style.maxWidth = '95%'; full.style.maxHeight = '95%'; full.style.objectFit = 'contain'; modal.appendChild(full); modal.onclick = () => modal.remove(); document.body.appendChild(modal); }; document.getElementById('resultPanel').appendChild(img); } } } catch (err) {} }
+        async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); const data = await resp.json(); if (data.has_etalon) document.getElementById('etalonBtn').style.display = 'block'; } catch (err) {} }
+        async function useEtalon() { try { const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`); if (!resp.ok) { alert('Эталон не найден'); return; } const blob = await resp.blob(); uploadedFile = new File([blob], 'etalon.jpg', { type: 'image/jpeg' }); const reader = new FileReader(); reader.onload = function(ev) { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display = 'block'; }; reader.readAsDataURL(blob); resetResult(); document.getElementById('status').textContent = 'Эталон загружен'; } catch (err) { alert('Ошибка загрузки эталона'); } }
     </script>
 </body>
 </html>
