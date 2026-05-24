@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PhotoBot — DeepSeek V4 Pro</title>
     <link rel="icon" type="image/png" href="favicon.png">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Montserrat', sans-serif; background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; }
@@ -16,9 +16,18 @@
         .new-chat { width: 100%; padding: 10px; background: #0f3460; color: #fff; border: 1px solid #1a5276; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 500; margin-bottom: 12px; transition: 0.2s; }
         .new-chat:hover { background: #1a5276; }
         .chat-list { flex: 1; overflow-y: auto; }
-        .chat-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #a0a0b0; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: 0.15s; }
+        .chat-item { display: flex; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #a0a0b0; margin-bottom: 2px; transition: 0.15s; position: relative; }
         .chat-item:hover { background: #1a2a4a; color: #e0e0e0; }
         .chat-item.active { background: #1a2a4a; color: #fff; font-weight: 500; }
+        .chat-item .chat-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-item .chat-menu-btn { width: 24px; height: 24px; border-radius: 4px; border: none; background: transparent; color: #666; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: 6px; }
+        .chat-item .chat-menu-btn:hover { background: #2a2a4a; color: #e0e0e0; }
+        .chat-menu-dropdown { position: absolute; right: 0; top: 100%; background: #1a2a4a; border: 1px solid #2a2a4a; border-radius: 8px; padding: 4px; z-index: 10; display: none; min-width: 140px; }
+        .chat-menu-dropdown.show { display: block; }
+        .chat-menu-dropdown button { display: block; width: 100%; padding: 8px 12px; border: none; background: transparent; color: #e0e0e0; font-size: 12px; cursor: pointer; text-align: left; border-radius: 4px; font-family: 'Montserrat', sans-serif; }
+        .chat-menu-dropdown button:hover { background: #0f3460; }
+        .chat-menu-dropdown button.delete { color: #e74c3c; }
+        .chat-menu-dropdown button.delete:hover { background: #3a1a1a; }
         .sidebar-footer { border-top: 1px solid #1a2a4a; padding-top: 12px; margin-top: 8px; }
         .sidebar-footer a { color: #666; text-decoration: none; font-size: 12px; display: block; text-align: center; transition: 0.2s; }
         .sidebar-footer a:hover { color: #4A90D9; }
@@ -42,9 +51,9 @@
         .message-row.user .message-content { background: #0f3460; }
         .message-content pre { background: #0a0a1a; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 12px; margin: 8px 0; border: 1px solid #1a2a4a; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 12px; background: #0a0a1a; padding: 2px 6px; border-radius: 4px; }
-        .message-actions { display: flex; gap: 8px; margin-top: 6px; opacity: 0; transition: 0.2s; }
+        .message-actions { display: flex; gap: 6px; margin-top: 6px; opacity: 0; transition: 0.2s; }
         .message-row:hover .message-actions { opacity: 1; }
-        .message-actions button { background: #2a2a4a; border: none; color: #888; cursor: pointer; font-size: 11px; padding: 4px 8px; border-radius: 4px; font-family: 'Montserrat', sans-serif; transition: 0.2s; }
+        .message-actions button { background: #2a2a4a; border: none; color: #888; cursor: pointer; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-family: 'Montserrat', sans-serif; transition: 0.2s; }
         .message-actions button:hover { background: #3a3a5a; color: #e0e0e0; }
         .input-area { padding: 14px 20px; border-top: 1px solid #16213e; display: flex; gap: 10px; background: #1a1a2e; }
         .input-area textarea { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid #2a2a4a; background: #16213e; color: #e0e0e0; font-family: 'Montserrat', sans-serif; font-size: 13px; outline: none; resize: none; height: 44px; transition: 0.2s; }
@@ -57,8 +66,8 @@
 <body>
     <div class="sidebar">
         <div class="logo-row">
-            <img src="deepseek_pro.png" alt="Pro" onerror="this.style.display='none'">
-            <span class="logo-text">V4 Pro</span>
+            <img src="deepseek_pro.png" alt="DeepSeek Pro" onerror="this.style.display='none'">
+            <span class="logo-text">DeepSeek V4 Pro</span>
         </div>
         <button class="new-chat" onclick="newChat()">+ Новый чат</button>
         <div class="chat-list" id="chatList"></div>
@@ -73,7 +82,7 @@
         </div>
         <div class="chat-area" id="chatArea">
             <div class="empty-state">
-                <img src="deepseek_pro.png" class="logo-lg" alt="DeepSeek" onerror="this.style.display='none'">
+                <img src="deepseek_pro.png" class="logo-lg" alt="DeepSeek Pro" onerror="this.style.display='none'">
                 <div class="title">DeepSeek V4 Pro</div>
                 <div style="color:#666;font-size:13px;">Задайте любой вопрос</div>
             </div>
@@ -103,47 +112,52 @@
 
         function loadChats() {
             const saved = localStorage.getItem('v4pro_chats');
-            if (saved) {
-                chats = JSON.parse(saved);
-                renderChatList();
-                if (chats.length > 0) openChat(chats[0].id);
-            }
+            if (saved) { chats = JSON.parse(saved); renderChatList(); if (chats.length > 0) openChat(chats[0].id); }
         }
         function saveChats() { localStorage.setItem('v4pro_chats', JSON.stringify(chats)); }
         function newChat() {
             const chat = { id: Date.now(), title: 'Новый чат', messages: [] };
-            chats.unshift(chat);
-            currentChatId = chat.id;
-            saveChats();
-            renderChatList();
-            renderMessages();
+            chats.unshift(chat); currentChatId = chat.id;
+            saveChats(); renderChatList(); renderMessages();
         }
         function openChat(id) { currentChatId = id; renderChatList(); renderMessages(); }
+        function toggleChatMenu(e, id) {
+            e.stopPropagation();
+            document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
+            const dropdown = document.getElementById('menu_' + id);
+            if (dropdown) dropdown.classList.toggle('show');
+        }
+        function renameChat(id) {
+            const chat = chats.find(c => c.id === id);
+            const newName = prompt('Новое название:', chat?.title || '');
+            if (newName && chat) { chat.title = newName; saveChats(); renderChatList(); }
+            document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
+        }
         function deleteChat(id) {
+            if (!confirm('Удалить чат?')) return;
             chats = chats.filter(c => c.id !== id);
-            if (currentChatId === id) {
-                currentChatId = chats.length > 0 ? chats[0].id : null;
-            }
-            saveChats();
-            renderChatList();
-            renderMessages();
+            if (currentChatId === id) currentChatId = chats.length > 0 ? chats[0].id : null;
+            saveChats(); renderChatList(); renderMessages();
+            document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
         }
         function renderChatList() {
             const list = document.getElementById('chatList');
-            list.innerHTML = chats.map(c => 
-                `<div class="chat-item${c.id === currentChatId ? ' active' : ''}" onclick="openChat(${c.id})" oncontextmenu="event.preventDefault();deleteChat(${c.id})">${c.title}</div>`
-            ).join('');
+            list.innerHTML = chats.map(c => `
+                <div class="chat-item${c.id === currentChatId ? ' active' : ''}" onclick="openChat(${c.id})">
+                    <span class="chat-name">${c.title}</span>
+                    <button class="chat-menu-btn" onclick="toggleChatMenu(event, ${c.id})">⋯</button>
+                    <div class="chat-menu-dropdown" id="menu_${c.id}">
+                        <button onclick="renameChat(${c.id})">✏️ Переименовать</button>
+                        <button class="delete" onclick="deleteChat(${c.id})">🗑️ Удалить</button>
+                    </div>
+                </div>
+            `).join('');
         }
         function renderMessages() {
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
             if (!chat || chat.messages.length === 0) {
-                area.innerHTML = `
-                    <div class="empty-state">
-                        <img src="deepseek_pro.png" class="logo-lg" alt="DeepSeek" onerror="this.style.display='none'">
-                        <div class="title">DeepSeek V4 Pro</div>
-                        <div style="color:#666;font-size:13px;">Задайте любой вопрос</div>
-                    </div>`;
+                area.innerHTML = `<div class="empty-state"><img src="deepseek_pro.png" class="logo-lg" alt="DeepSeek Pro" onerror="this.style.display='none'"><div class="title">DeepSeek V4 Pro</div><div style="color:#666;font-size:13px;">Задайте любой вопрос</div></div>`;
             } else {
                 area.innerHTML = chat.messages.map((m, i) => `
                     <div class="message-row ${m.role}">
@@ -151,7 +165,8 @@
                         <div>
                             <div class="message-content">${formatMessage(m.content)}</div>
                             <div class="message-actions">
-                                <button onclick="copyMessage(${i})">📋 Копировать</button>
+                                ${m.role === 'user' ? `<button onclick="editMessage(${i})">✏️</button>` : ''}
+                                <button onclick="copyMessage(${i})">📋</button>
                             </div>
                         </div>
                     </div>
@@ -169,9 +184,20 @@
             const chat = chats.find(c => c.id === currentChatId);
             if (chat) navigator.clipboard.writeText(chat.messages[index].content);
         }
-        function setMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+        function editMessage(index) {
+            const chat = chats.find(c => c.id === currentChatId);
+            if (chat) {
+                document.getElementById('userInput').value = chat.messages[index].content;
+                document.getElementById('userInput').focus();
+            }
+        }
+        function setMode(mode) { currentMode = mode; document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode)); }
+        function autoNameChat(chat) {
+            const lastAssistant = [...chat.messages].reverse().find(m => m.role === 'assistant');
+            if (lastAssistant && chat.title === 'Новый чат') {
+                chat.title = lastAssistant.content.replace(/[#*`>\n]/g, ' ').split(' ').slice(0, 6).join(' ') || 'Новый чат';
+                if (chat.title.length > 40) chat.title = chat.title.substring(0, 40) + '...';
+            }
         }
         async function sendMessage() {
             if (isSending) return;
@@ -179,55 +205,43 @@
             const text = input.value.trim();
             if (!text) return;
             if (!currentUserId) { alert('Авторизуйтесь на главной странице'); return; }
-
             if (!currentChatId) newChat();
-            input.value = '';
-            input.style.height = '44px';
-            isSending = true;
-            document.getElementById('sendBtn').disabled = true;
+            input.value = ''; input.style.height = '44px';
+            isSending = true; document.getElementById('sendBtn').disabled = true;
 
             const chat = chats.find(c => c.id === currentChatId);
             chat.messages.push({ role: 'user', content: text });
-            if (chat.title === 'Новый чат' && chat.messages.length === 1) chat.title = text.substring(0, 30);
-            saveChats();
-            renderChatList();
-            renderMessages();
+            saveChats(); renderChatList(); renderMessages();
 
             const placeholderId = 'msg_' + Date.now();
             const area = document.getElementById('chatArea');
             const typingRow = document.createElement('div');
-            typingRow.className = 'message-row assistant';
-            typingRow.id = placeholderId;
+            typingRow.className = 'message-row assistant'; typingRow.id = placeholderId;
             typingRow.innerHTML = '<div class="avatar assistant-avatar">🐋</div><div><div class="message-content">Думаю...</div></div>';
-            area.appendChild(typingRow);
-            area.scrollTop = area.scrollHeight;
+            area.appendChild(typingRow); area.scrollTop = area.scrollHeight;
 
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
                     body: JSON.stringify({ user_id: currentUserId, message: text, model: 'pro', mode: currentMode })
                 });
                 const data = await resp.json();
-                const el = document.getElementById(placeholderId);
-                if (el) el.remove();
+                const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (data.reply) {
                     chat.messages.push({ role: 'assistant', content: data.reply });
+                    autoNameChat(chat);
                 } else {
                     chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка. Попробуйте позже.' });
                 }
-                saveChats();
-                renderMessages();
+                saveChats(); renderChatList(); renderMessages();
             } catch (e) {
-                const el = document.getElementById(placeholderId);
-                if (el) el.remove();
+                const el = document.getElementById(placeholderId); if (el) el.remove();
                 chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка соединения.' });
-                saveChats();
-                renderMessages();
+                saveChats(); renderMessages();
             }
-            isSending = false;
-            document.getElementById('sendBtn').disabled = false;
+            isSending = false; document.getElementById('sendBtn').disabled = false;
         }
+        document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
     </script>
 </body>
 </html>
