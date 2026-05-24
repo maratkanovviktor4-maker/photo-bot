@@ -94,6 +94,11 @@
                 <div style="position:relative; display:flex; flex-direction:column; align-items:center; cursor:pointer;" onclick="toggleDeepSeekMenu()">
                     <img src="deepseek_logo.png" alt="DeepSeek" style="height:40px;">
                     <span style="font-size:10px; color:#888;">DeepSeek</span>
+                    <div id="deepseekMenu" style="display:none; position:absolute; top:110%; left:50%; transform:translateX(-50%); background:#1a1a2e; border:1px solid #2a2a4a; border-radius:12px; padding:8px; z-index:100; min-width:160px; box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+                        <div style="color:#888; font-size:10px; padding:4px 12px 8px; text-transform:uppercase; letter-spacing:1px;">Выберите модель</div>
+                        <a href="v4flash.html" style="display:flex; align-items:center; gap:8px; padding:10px 12px; color:#8B5CF6; text-decoration:none; font-size:13px; border-radius:8px; font-weight:500; transition:0.15s;" onmouseover="this.style.background='#1a2a4a'" onmouseout="this.style.background='transparent'">⚡ V4 Flash <span style="font-size:10px;color:#666;margin-left:auto;">Fast</span></a>
+                        <a href="v4pro.html" style="display:flex; align-items:center; gap:8px; padding:10px 12px; color:#F59E0B; text-decoration:none; font-size:13px; border-radius:8px; font-weight:500; transition:0.15s;" onmouseover="this.style.background='#1a2a4a'" onmouseout="this.style.background='transparent'">🧠 V4 Pro <span style="font-size:10px;color:#666;margin-left:auto;">Best</span></a>
+                    </div>
                     <div id="deepseekMenu" style="display:none; position:absolute; top:100%; left:50%; transform:translateX(-50%); background:#1a2a4a; border:1px solid #2a2a4a; border-radius:8px; padding:4px; z-index:10; min-width:120px;">
                         <a href="v4flash.html" style="display:block; padding:8px 12px; color:#8B5CF6; text-decoration:none; font-size:12px; border-radius:4px;">V4 Flash</a>
                         <a href="v4pro.html" style="display:block; padding:8px 12px; color:#F59E0B; text-decoration:none; font-size:12px; border-radius:4px;">V4 Pro</a>
@@ -148,8 +153,33 @@
         function acceptCookies() { localStorage.setItem('cookies_accepted', '1'); document.getElementById('cookie-banner').style.display = 'none'; }
         window.addEventListener('focus', function() { if (!currentUserId) document.getElementById('authBlock').style.display = 'block'; if (currentUserId) checkSubscription(); if (currentUserId) checkEtalonAvailability(); });
         function openBot() { document.getElementById('authBlock').style.display = 'block'; window.open('https://t.me/PhotoDocumentsBot_bot?start=site', '_blank'); }
-        function toggleDeepSeekMenu() { const m = document.getElementById('deepseekMenu'); m.style.display = m.style.display === 'block' ? 'none' : 'block'; }
-        document.addEventListener('click', function(e) { if (!e.target.closest('[onclick="toggleDeepSeekMenu()"]')) document.getElementById('deepseekMenu').style.display = 'none'; });
+        function toggleDeepSeekMenu() {
+            const menu = document.getElementById('deepseekMenu');
+            if (menu.style.display === 'block') {
+                menu.style.opacity = '0';
+                menu.style.transform = 'translateX(-50%) translateY(-4px)';
+                setTimeout(() => { menu.style.display = 'none'; }, 150);
+            } else {
+                menu.style.display = 'block';
+                menu.style.opacity = '0';
+                menu.style.transform = 'translateX(-50%) translateY(-4px)';
+                requestAnimationFrame(() => {
+                    menu.style.transition = 'opacity 0.15s, transform 0.15s';
+                    menu.style.opacity = '1';
+                    menu.style.transform = 'translateX(-50%) translateY(0)';
+                });
+            }
+        }
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('[onclick="toggleDeepSeekMenu()"]')) {
+                const menu = document.getElementById('deepseekMenu');
+                if (menu.style.display === 'block') {
+                    menu.style.opacity = '0';
+                    menu.style.transform = 'translateX(-50%) translateY(-4px)';
+                    setTimeout(() => { menu.style.display = 'none'; }, 150);
+                }
+            }
+        });
         document.getElementById('authCode').addEventListener('input', function() { const b = document.getElementById('sendBtn'); if (this.value.length === 4) { b.classList.add('active'); b.disabled = false; b.style.cursor = 'pointer'; } else { b.classList.remove('active'); b.disabled = true; b.style.cursor = 'not-allowed'; } });
         document.getElementById('sendBtn').addEventListener('click', async function() { const c = document.getElementById('authCode').value; if (c.length !== 4) return; try { const r = await fetch(`${SERVER_URL}/verify_code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: c }) }); const d = await r.json(); if (d.success) { currentUserId = d.user_id; currentUsername = d.username; isSubscribed = d.subscribed; sessionToken = d.session_token || ''; localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken })); showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); document.getElementById('authBlock').style.display = 'none'; if (isSubscribed) { document.getElementById('subscribeBlock').style.display = 'none'; document.getElementById('subscribeOk').style.display = 'block'; } else { document.getElementById('subscribeBlock').style.display = 'block'; } } else { alert(d.error === 'Not subscribed' ? 'Вы не подписаны на бота. Подпишитесь и попробуйте снова.' : 'Неверный код авторизации'); } } catch (err) { alert('Ошибка соединения с сервером'); } });
         function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; loadHistory(); }
