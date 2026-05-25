@@ -88,6 +88,8 @@
             </div>
         </div>
         <div class="input-area">
+            <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
+            <button onclick="document.getElementById('fileInput').click()" style="padding:10px;background:#16213e;border:1px solid #2a2a4a;border-radius:10px;color:#888;cursor:pointer;font-family:'Montserrat',sans-serif;font-size:18px;">📎</button>
             <textarea id="userInput" placeholder="Введите сообщение..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='44px';this.style.height=Math.min(this.scrollHeight,200)+'px';"></textarea>
             <button id="sendBtn" onclick="sendMessage()">➤</button>
         </div>
@@ -101,6 +103,25 @@
         let sessionToken = '';
         let currentUserId = null;
         let isSending = false;
+        let pendingFileId = null;
+        async function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const resp = await fetch(`${SERVER_URL}/upload_file`, {
+                    method: 'POST',
+                    headers: { 'X-Session-Token': sessionToken },
+                    body: formData
+                });
+                const data = await resp.json();
+                if (data.file_id) {
+                    pendingFileId = data.file_id;
+                    document.getElementById('userInput').placeholder = 'Файл прикреплён. Введите сообщение...';
+                }
+            } catch (e) {}
+        }
 
         const savedAuth = localStorage.getItem('photobot_auth');
         if (savedAuth) {
@@ -207,6 +228,8 @@
             if (!currentUserId) { alert('Авторизуйтесь на главной странице'); return; }
             if (!currentChatId) newChat();
             input.value = ''; input.style.height = '44px';
+            pendingFileId = null;
+            document.getElementById('userInput').placeholder = 'Введите сообщение...';
             isSending = true; document.getElementById('sendBtn').disabled = true;
 
             const chat = chats.find(c => c.id === currentChatId);
@@ -223,7 +246,7 @@
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId })
+                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, file_id: pendingFileId || '' })
                 });
                 const data = await resp.json();
                 const el = document.getElementById(placeholderId); if (el) el.remove();
