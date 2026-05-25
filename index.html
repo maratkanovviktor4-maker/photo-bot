@@ -43,15 +43,30 @@
         .actions button.retry-btn:hover { background: #F09030; }
         .actions button.save-btn { background: #27AE60; color: #fff; }
         .actions button.save-btn:hover { background: #2ECC71; }
+        .actions button.clear-btn { background: #E74C3C; color: #fff; }
+        .actions button.clear-btn:hover { background: #FF6B6B; }
+        .actions button.storage-btn { background: #8E44AD; color: #fff; }
+        .actions button.storage-btn:hover { background: #A569BD; }
         input[type="file"] { width: 100%; margin: 6px 0; color: #fff; font-size: 12px; font-family: 'Montserrat', sans-serif; }
         #caption { width: 100%; padding: 10px; margin: 6px 0; border-radius: 10px; border: 1px solid #2A2A2A; background: #222; color: #fff; font-size: 13px; font-family: 'Montserrat', sans-serif; outline: none; transition: 0.2s; resize: vertical; overflow-y: auto; }
         #caption:focus { border-color: #00CBF5; }
         .hint { font-size: 10px; color: #888; margin: 3px 0 6px 0; letter-spacing: 0.3px; }
         .preview-note { text-align: center; font-size: 11px; color: #E67E22; margin: 6px 0; font-weight: 500; }
-        .result-panel { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 20px; min-width: 0; }
+        .result-panel { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 20px; min-width: 0; max-height: calc(100vh - 40px); overflow-y: auto; }
         .result-panel .placeholder { color: #444; font-size: 14px; text-align: center; font-weight: 500; }
-        .result-container { position: relative; border-radius: 12px; overflow: hidden; display: none; max-width: 300px; }
-        #resultCanvas { width: 100%; border-radius: 12px; display: block; }
+        .result-item { position: relative; border-radius: 12px; overflow: hidden; margin-bottom: 16px; max-width: 300px; width: 100%; }
+        .result-item canvas { width: 100%; border-radius: 12px; display: block; cursor: pointer; }
+        .result-item .result-info { text-align: center; font-size: 11px; color: #E67E22; margin: 6px 0; font-weight: 500; }
+        .result-item .result-actions { display: flex; gap: 6px; }
+        .result-item .result-actions button { flex: 1; padding: 8px 6px; border: none; border-radius: 8px; font-size: 11px; cursor: pointer; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: 0.2s; }
+        .result-item .result-actions .save-btn { background: #27AE60; color: #fff; }
+        .result-item .result-actions .save-btn:hover { background: #2ECC71; }
+        .result-item .result-actions .retry-btn { background: #E67E22; color: #fff; }
+        .result-item .result-actions .retry-btn:hover { background: #F09030; }
+        .result-item .result-actions .clear-btn { background: #E74C3C; color: #fff; }
+        .result-item .result-actions .clear-btn:hover { background: #FF6B6B; }
+        .result-item .result-actions .storage-btn { background: #8E44AD; color: #fff; }
+        .result-item .result-actions .storage-btn:hover { background: #A569BD; }
         .size-btns { display: flex; gap: 6px; margin-top: 8px; }
         .size-btn { flex: 1; padding: 8px; background: #222; border: 1px solid #2A2A2A; color: #fff; border-radius: 8px; cursor: pointer; font-size: 11px; text-align: center; font-family: 'Montserrat', sans-serif; font-weight: 500; transition: 0.2s; }
         .size-btn.active { background: #00CBF5; border-color: #00CBF5; color: #201F28; font-weight: 600; }
@@ -67,6 +82,8 @@
         .legal-footer a { color: #888; text-decoration: none; margin: 0 10px; font-size: 11px; font-weight: 500; letter-spacing: 0.3px; transition: 0.2s; }
         .legal-footer a:hover { color: #00CBF5; }
         #generation-warning { display: none; text-align: center; color: #E67E22; font-size: 10px; margin: 4px 0; font-weight: 500; }
+        .nav-btn { display: block; text-align: center; background: #00CBF5; color: #201F28; font-size: 15px; font-weight: 700; padding: 12px 0; text-decoration: none; border-radius: 10px; margin: 8px 0; font-family: 'Montserrat', sans-serif; }
+        .nav-btn:hover { background: #14E9FC; }
         #cookie-banner { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #1A1A1A; padding: 12px 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #2A2A2A; z-index: 1000; }
         #cookie-banner button { background: #00CBF5; color: #201F28; border: none; padding: 6px 16px; border-radius: 6px; margin-left: 10px; cursor: pointer; font-weight: 600; font-family: 'Montserrat', sans-serif; font-size: 11px; }
         @media (max-width: 768px) { .container { flex-direction: column; align-items: center; padding: 12px; gap: 16px; } .collages { width: 100%; order: 1; display: flex; flex-direction: column; gap: 10px; } .collages img { width: 100%; max-width: 100%; } .center-panel { width: 100%; order: 2; } .result-panel { width: 100%; order: 3; padding-top: 0; } }
@@ -98,10 +115,6 @@
                         <a href="v4flash.html" style="display:flex; align-items:center; gap:8px; padding:10px 12px; color:#8B5CF6; text-decoration:none; font-size:13px; border-radius:8px; font-weight:500; transition:0.15s;" onmouseover="this.style.background='#1a2a4a'" onmouseout="this.style.background='transparent'">⚡ V4 Flash <span style="font-size:10px;color:#666;margin-left:auto;">Fast</span></a>
                         <a href="v4pro.html" style="display:flex; align-items:center; gap:8px; padding:10px 12px; color:#F59E0B; text-decoration:none; font-size:13px; border-radius:8px; font-weight:500; transition:0.15s;" onmouseover="this.style.background='#1a2a4a'" onmouseout="this.style.background='transparent'">🧠 V4 Pro <span style="font-size:10px;color:#666;margin-left:auto;">Best</span></a>
                     </div>
-                    <div id="deepseekMenu" style="display:none; position:absolute; top:100%; left:50%; transform:translateX(-50%); background:#1a2a4a; border:1px solid #2a2a4a; border-radius:8px; padding:4px; z-index:10; min-width:120px;">
-                        <a href="v4flash.html" style="display:block; padding:8px 12px; color:#8B5CF6; text-decoration:none; font-size:12px; border-radius:4px;">V4 Flash</a>
-                        <a href="v4pro.html" style="display:block; padding:8px 12px; color:#F59E0B; text-decoration:none; font-size:12px; border-radius:4px;">V4 Pro</a>
-                    </div>
                 </div>
             </div>
 
@@ -129,21 +142,21 @@
             <div id="generation-warning">⚠️ Результат не является официальным документом</div>
             <div class="actions"><button id="generate" onclick="startGeneration()">⚡ Сгенерировать</button></div>
             <div id="status"></div>
-            <a href="prompts.html" style="display:block;text-align:center;background:#00CBF5;color:#201F28;font-size:15px;font-weight:700;padding:12px 0;text-decoration:none;border-radius:10px;margin:8px 0;">📋 База промтов</a>
+            <a href="prompts.html" class="nav-btn">📋 База промтов</a>
+            <a href="storage.html" class="nav-btn">📦 Хранилище генераций</a>
             <div class="legal-footer"><a href="agreement.txt" target="_blank">Пользовательское соглашение</a><a href="privacy.txt" target="_blank">Политика конфиденциальности</a></div>
         </div>
 
         <div class="result-panel" id="resultPanel">
             <div class="placeholder">🖼️ Здесь появится результат</div>
-            <div class="result-container" id="resultContainer"><canvas id="resultCanvas"></canvas></div>
-            <div class="preview-note" id="previewNote" style="display:none;"></div>
-            <div class="actions" id="resultActions" style="display:none;"><button class="save-btn" id="saveBtn">💾 Сохранить</button><button class="retry-btn" onclick="retryGeneration()">🔄 Попробовать ещё раз</button></div>
         </div>
     </div>
     <div id="cookie-banner">Мы используем необходимые cookie-файлы для авторизации и работы сервиса.<button onclick="acceptCookies()">OK</button></div>
     <script>
         const SERVER_URL = "https://api.фото-бот.рф";
-        let selectedMode = "documents", uploadedFile = null, resultBlob = null, wallpaperSize = "pc", currentUserId = null, currentUsername = null, isSubscribed = false, sessionToken = '';
+        let selectedMode = "documents", uploadedFile = null, wallpaperSize = "pc", currentUserId = null, currentUsername = null, isSubscribed = false, sessionToken = '';
+        let resultItems = [];
+        const MAX_PREVIEWS = 3;
         const hints = { documents: "📄 Фото на документы: укажите одежду (например: серая рубашка)", beach: "🌅 Закат на пляже: укажите одежду (например: белое платье)", birthday: "🎂👑 День рождения: укажите число и цвет платья (например: 23 красное)", flowers: "🌸 Цветы в авто: укажите одежду (например: черное платье)", mirror_male: "🕶️💪 Мужское в зеркале: опишите одежду, очки, телефон", svoboda: "🎨 Свободный (ж): введите промт", svoboda_male: "🎨 Свободный (м): введите промт", wallpaper: "🖼️ Обои: введите промт в поле подписи" };
         const wallpaperSizes = { phone: [1440, 2560], pc: [2560, 1440] };
         const savedAuth = localStorage.getItem('photobot_auth');
@@ -189,13 +202,145 @@
         function selectMode(mode) { selectedMode = mode; document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active")); const btn = document.querySelector(`.mode-btn[data-mode="${mode}"]`); if (btn) btn.classList.add("active"); document.querySelectorAll("#collages img").forEach(i => i.classList.remove("active")); const collage = document.querySelector(`#collages img[data-mode="${mode}"]`); if (collage) collage.classList.add("active"); document.getElementById("modeHint").textContent = hints[mode]; document.getElementById('generation-warning').style.display = mode === 'documents' ? 'block' : 'none'; if (mode === "wallpaper") { document.getElementById("wallpaperSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; } else { document.getElementById("wallpaperSize").style.display = "none"; document.getElementById("photoInput").style.display = "block"; } resetResult(); }
         async function checkSubscription() { if (!currentUserId) return; try { const r = await fetch(`${SERVER_URL}/check_subscription`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserId }) }); const d = await r.json(); isSubscribed = d.subscribed; if (isSubscribed) { document.getElementById("subscribeBlock").style.display = "none"; document.getElementById("subscribeOk").style.display = "block"; } else { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; } } catch (err) {} }
         document.getElementById("photoInput").addEventListener("change", function(e) { const file = e.target.files[0]; if (file) { uploadedFile = file; const reader = new FileReader(); reader.onload = function(ev) { document.getElementById("preview").src = ev.target.result; document.getElementById("preview").style.display = "block"; }; reader.readAsDataURL(file); resetResult(); } });
-        function resetResult() { document.getElementById("resultContainer").style.display = "none"; document.getElementById("resultActions").style.display = "none"; document.getElementById("previewNote").style.display = "none"; document.getElementById("status").textContent = ""; document.querySelector(".result-panel .placeholder").style.display = "block"; resultBlob = null; }
+        function resetResult() { resultBlob = null; }
+        function getPreviewNote() { if (selectedMode === "documents") return "Образец. Полный размер 832×1152"; if (selectedMode === "wallpaper") { const [w, h] = wallpaperSizes[wallpaperSize]; return `Образец. Полный размер ${w}×${h}`; } return "Образец. Полный размер 1080×1344"; }
+
+        function renderResultPanel() {
+            const panel = document.getElementById('resultPanel');
+            panel.innerHTML = '';
+            if (resultItems.length === 0) {
+                panel.innerHTML = '<div class="placeholder">🖼️ Здесь появится результат</div>';
+                return;
+            }
+            for (let i = 0; i < resultItems.length; i++) {
+                const item = resultItems[i];
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                const canvas = document.createElement('canvas');
+                canvas.id = 'resultCanvas_' + i;
+                div.appendChild(canvas);
+                const note = document.createElement('div');
+                note.className = 'result-info';
+                note.textContent = item.note;
+                div.appendChild(note);
+                const actions = document.createElement('div');
+                actions.className = 'result-actions';
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'save-btn';
+                saveBtn.textContent = '💾 Скачать';
+                saveBtn.onclick = function() { downloadItem(i); };
+                actions.appendChild(saveBtn);
+                const retryBtn = document.createElement('button');
+                retryBtn.className = 'retry-btn';
+                retryBtn.textContent = '🔄 Ещё раз';
+                retryBtn.onclick = function() { retryGeneration(); };
+                actions.appendChild(retryBtn);
+                const clearBtn = document.createElement('button');
+                clearBtn.className = 'clear-btn';
+                clearBtn.textContent = '🗑️ Очистить';
+                clearBtn.onclick = function() { clearItem(i); };
+                actions.appendChild(clearBtn);
+                const storageBtn = document.createElement('button');
+                storageBtn.className = 'storage-btn';
+                storageBtn.textContent = '📥 В хранилище';
+                storageBtn.onclick = function() { moveToStorage(i); };
+                actions.appendChild(storageBtn);
+                div.appendChild(actions);
+                panel.appendChild(div);
+                drawResultCanvas(i);
+            }
+        }
+
+        function drawResultCanvas(index) {
+            const item = resultItems[index];
+            const canvas = document.getElementById('resultCanvas_' + index);
+            if (!canvas || !item.blob) return;
+            const img = new Image();
+            const url = URL.createObjectURL(item.blob);
+            img.onload = function() {
+                let dw = img.width, dh = img.height;
+                const ratio = Math.min(300 / img.width, 300 / img.height);
+                dw = Math.round(img.width * ratio);
+                dh = Math.round(img.height * ratio);
+                canvas.width = dw;
+                canvas.height = dh;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, dw, dh);
+                canvas.style.cursor = 'pointer';
+                canvas.onclick = function() {
+                    const modal = document.createElement('div');
+                    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+                    const full = new Image();
+                    full.src = url;
+                    full.style.maxWidth = '95%';
+                    full.style.maxHeight = '95%';
+                    full.style.objectFit = 'contain';
+                    modal.appendChild(full);
+                    modal.onclick = () => modal.remove();
+                    document.body.appendChild(modal);
+                };
+            };
+            img.src = url;
+        }
+
+        function downloadItem(index) {
+            const item = resultItems[index];
+            if (!item.blob) return;
+            const url = URL.createObjectURL(item.blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'photobot_result.jpg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        function clearItem(index) {
+            resultItems.splice(index, 1);
+            renderResultPanel();
+        }
+
+        function moveToStorage(index) {
+            const item = resultItems[index];
+            let storage = JSON.parse(localStorage.getItem('photobot_storage') || '[]');
+            const reader = new FileReader();
+            reader.onload = function() {
+                storage.push({
+                    data: reader.result,
+                    note: item.note,
+                    date: new Date().toISOString()
+                });
+                localStorage.setItem('photobot_storage', JSON.stringify(storage));
+                resultItems.splice(index, 1);
+                renderResultPanel();
+            };
+            reader.readAsDataURL(item.blob);
+        }
+
+        function addResult(blob, note) {
+            resultItems.push({ blob: blob, note: note });
+            if (resultItems.length > MAX_PREVIEWS) {
+                const removed = resultItems.shift();
+                let storage = JSON.parse(localStorage.getItem('photobot_storage') || '[]');
+                const reader = new FileReader();
+                reader.onload = function() {
+                    storage.push({
+                        data: reader.result,
+                        note: removed.note,
+                        date: new Date().toISOString()
+                    });
+                    localStorage.setItem('photobot_storage', JSON.stringify(storage));
+                };
+                reader.readAsDataURL(removed.blob);
+            }
+            renderResultPanel();
+        }
+
         async function startGeneration() { if (!currentUserId) { document.getElementById('authBlock').style.display = 'block'; return; } await checkSubscription(); if (!isSubscribed) { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; return; } await runGeneration(); }
-        async function retryGeneration() { document.getElementById("resultContainer").style.display = "none"; document.getElementById("resultActions").style.display = "none"; document.getElementById("previewNote").style.display = "none"; document.getElementById("status").textContent = ""; await runGeneration(); }
-        function getPreviewNote() { if (selectedMode === "documents") return "👆 Это образец. Полный размер 832×1152"; if (selectedMode === "wallpaper") { const [w, h] = wallpaperSizes[wallpaperSize]; return `👆 Это образец. Полный размер ${w}×${h}`; } return "👆 Это образец. Полный размер 1080×1344"; }
-        async function runGeneration() { const genBtn = document.getElementById("generate"); genBtn.disabled = true; genBtn.textContent = "⏳ Генерация..."; document.getElementById("resultActions").style.display = "none"; const caption = document.getElementById("caption").value || "черная рубашка"; try { if (selectedMode !== "wallpaper" && !uploadedFile) return; const formData = new FormData(); if (uploadedFile) formData.append("image", uploadedFile); formData.append("mode", selectedMode); formData.append("caption", caption); formData.append("user_id", currentUserId); formData.append("source", "web"); document.getElementById("status").textContent = "⚡ Добавлено в очередь..."; const enqResp = await fetch(`${SERVER_URL}/enqueue`, { method: "POST", body: formData, headers: sessionToken ? { "X-Session-Token": sessionToken } : {} }); const enqData = await enqResp.json(); if (!enqData.job_id) { document.getElementById("status").textContent = "⚠️ Ошибка очереди."; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } document.getElementById("status").textContent = "⏳ Ожидание генерации..."; for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { const result = pendData.results[0]; const bytes = Uint8Array.from(atob(result.data), c => c.charCodeAt(0)); resultBlob = new Blob([bytes], { type: 'image/jpeg' }); await drawWatermarkedPreview(resultBlob); document.querySelector(".result-panel .placeholder").style.display = "none"; document.getElementById("previewNote").textContent = getPreviewNote(); document.getElementById("previewNote").style.display = "block"; document.getElementById("resultActions").style.display = "flex"; document.getElementById("status").textContent = ""; document.getElementById("saveBtn").onclick = function() { const url = URL.createObjectURL(resultBlob); const a = document.createElement("a"); a.href = url; a.download = "photobot_result.jpg"; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 1000); }; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } } document.getElementById("status").textContent = "⚠️ Время ожидания истекло."; } catch (err) { document.getElementById("status").textContent = "🔧 Ошибка: " + err.message; } genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; }
-        async function drawWatermarkedPreview(blob) { const img = new Image(); const url = URL.createObjectURL(blob); img.onload = function() { const canvas = document.getElementById("resultCanvas"); const ctx = canvas.getContext("2d"); let dw = img.width, dh = img.height; const ratio = Math.min(400 / img.width, 400 / img.height); dw = Math.round(img.width * ratio); dh = Math.round(img.height * ratio); canvas.width = dw; canvas.height = dh; ctx.drawImage(img, 0, 0, dw, dh); document.getElementById("resultContainer").style.display = "block"; canvas.style.cursor = "pointer"; canvas.onclick = function() { const modal = document.createElement('div'); modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer'; const img = new Image(); img.src = url; img.style.maxWidth = '95%'; img.style.maxHeight = '95%'; img.style.objectFit = 'contain'; modal.appendChild(img); modal.onclick = () => modal.remove(); document.body.appendChild(modal); }; }; img.src = url; }
-        async function loadHistory() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/history?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); const data = await resp.json(); if (data.files) { for (const file of data.files) { const img = document.createElement('img'); img.src = `${SERVER_URL}/history_file?file=${file}&source=web&session_token=${sessionToken}`; img.style.width = '100%'; img.style.borderRadius = '8px'; img.style.marginBottom = '8px'; img.style.cursor = 'pointer'; img.onclick = function() { const modal = document.createElement('div'); modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer'; const full = new Image(); full.src = img.src; full.style.maxWidth = '95%'; full.style.maxHeight = '95%'; full.style.objectFit = 'contain'; modal.appendChild(full); modal.onclick = () => modal.remove(); document.body.appendChild(modal); }; document.getElementById('resultPanel').appendChild(img); } } } catch (err) {} }
+        async function retryGeneration() { await runGeneration(); }
+        async function runGeneration() { const genBtn = document.getElementById("generate"); genBtn.disabled = true; genBtn.textContent = "⏳ Генерация..."; const caption = document.getElementById("caption").value || "черная рубашка"; try { if (selectedMode !== "wallpaper" && !uploadedFile) return; const formData = new FormData(); if (uploadedFile) formData.append("image", uploadedFile); formData.append("mode", selectedMode); formData.append("caption", caption); formData.append("user_id", currentUserId); formData.append("source", "web"); document.getElementById("status").textContent = "⚡ Добавлено в очередь..."; const enqResp = await fetch(`${SERVER_URL}/enqueue`, { method: "POST", body: formData, headers: sessionToken ? { "X-Session-Token": sessionToken } : {} }); const enqData = await enqResp.json(); if (!enqData.job_id) { document.getElementById("status").textContent = "⚠️ Ошибка очереди."; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } document.getElementById("status").textContent = "⏳ Ожидание генерации..."; for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { const result = pendData.results[0]; const bytes = Uint8Array.from(atob(result.data), c => c.charCodeAt(0)); const blob = new Blob([bytes], { type: 'image/jpeg' }); addResult(blob, getPreviewNote()); document.getElementById("status").textContent = ""; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } } document.getElementById("status").textContent = "⚠️ Время ожидания истекло."; } catch (err) { document.getElementById("status").textContent = "🔧 Ошибка: " + err.message; } genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; }
+        async function loadHistory() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/history?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); const data = await resp.json(); if (data.files) { for (const file of data.files) { try { const fileResp = await fetch(`${SERVER_URL}/history_file?file=${file}&source=web&session_token=${sessionToken}`); const blob = await fileResp.blob(); addResult(blob, 'Из истории'); } catch (err) {} } } } catch (err) {} }
         async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); const data = await resp.json(); if (data.has_etalon) document.getElementById('etalonBtn').style.display = 'block'; } catch (err) {} }
         async function useEtalon() { try { const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`); if (!resp.ok) { alert('Эталон не найден'); return; } const blob = await resp.blob(); uploadedFile = new File([blob], 'etalon.jpg', { type: 'image/jpeg' }); const reader = new FileReader(); reader.onload = function(ev) { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display = 'block'; }; reader.readAsDataURL(blob); resetResult(); document.getElementById('status').textContent = 'Эталон загружен'; } catch (err) { alert('Ошибка загрузки эталона'); } }
     </script>
