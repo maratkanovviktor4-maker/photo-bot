@@ -119,6 +119,12 @@
                 if (data.file_id) {
                     pendingFileId = data.file_id;
                     document.getElementById('userInput').placeholder = 'Файл прикреплён. Введите сообщение...';
+                    const fileName = file.name;
+                    const fileIndicator = document.createElement('div');
+                    fileIndicator.id = 'fileIndicator';
+                    fileIndicator.style.cssText = 'padding:6px 12px;background:#16213e;border-radius:8px;font-size:11px;color:#00CBF5;margin-bottom:4px;';
+                    fileIndicator.textContent = '📎 ' + fileName;
+                    document.querySelector('.input-area').insertBefore(fileIndicator, document.getElementById('userInput'));
                 }
             } catch (e) {}
         }
@@ -230,6 +236,8 @@
             input.value = ''; input.style.height = '44px';
             pendingFileId = null;
             document.getElementById('userInput').placeholder = 'Введите сообщение...';
+            const ind = document.getElementById('fileIndicator');
+            if (ind) ind.remove();
             isSending = true; document.getElementById('sendBtn').disabled = true;
 
             const chat = chats.find(c => c.id === currentChatId);
