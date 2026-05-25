@@ -228,7 +228,8 @@
                 const data = await resp.json();
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (data.reply) {
-                    chat.messages.push({ role: 'assistant', content: data.reply });
+                    const content = data.reasoning ? `💭 Размышление:\n${data.reasoning}\n\n📝 Ответ:\n${data.reply}` : data.reply;
+                    chat.messages.push({ role: 'assistant', content: content });
                     autoNameChat(chat);
                 } else {
                     chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка. Попробуйте позже.' });
