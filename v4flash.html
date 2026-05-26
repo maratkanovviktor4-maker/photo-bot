@@ -178,7 +178,7 @@
                             <div class="message-actions">
                                 ${m.role === 'user' ? `<button onclick="editMessage(${i})">✏️</button>` : ''}
                                 <button onclick="copyMessage(${i})">📋</button>
-                                ${m.role === 'assistant' && !m.finished && i === chat.messages.length - 1 ? `<button onclick="continueMessage(${i})">⏯ Продолжить</button>` : ''}
+                                ${m.role === 'assistant' && !m.finished ? `<button onclick="continueMessage(${i})">⏯ Продолжить</button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -247,7 +247,7 @@
             if (!currentUserId) { alert('Авторизуйтесь на главной странице'); return; }
             if (!currentChatId) newChat();
             input.value = ''; input.style.height = 'auto'; input._init = false;
-            isSending = true; document.getElementById('sendBtn').disabled = false;
+            isSending = true; document.getElementById('sendBtn').disabled = true;
             document.getElementById('sendBtn').textContent = '⏹';
             document.getElementById('sendBtn').onclick = stopTyping;
 
@@ -272,7 +272,7 @@
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (data.reply) {
                     const fullContent = data.reasoning ? `💭 Размышление:\n${data.reasoning}\n\n📝 Ответ:\n${data.reply}` : data.reply;
-                    chat.messages.push({ role: 'assistant', content: '' });
+                    chat.messages.push({ role: 'assistant', content: '', finished: false });
                     const msgIndex = chat.messages.length - 1;
                     saveChats(); renderChatList(); renderMessages();
                     let i = 0;
@@ -308,7 +308,7 @@
                 }
             } catch (e) {
                 const el = document.getElementById(placeholderId); if (el) el.remove();
-                chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка соединения.' });
+                chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка соединения.', finished: true });
                 saveChats(); renderMessages();
                 isSending = false; document.getElementById('sendBtn').disabled = false;
                 document.getElementById('sendBtn').textContent = '➤';
@@ -334,40 +334,28 @@
             if (isSending) return;
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
-            const partialText = chat.messages[index].content;
-            chat.messages[index].finished = true;
             isSending = true; document.getElementById('sendBtn').disabled = false;
             document.getElementById('sendBtn').textContent = '⏹';
             document.getElementById('sendBtn').onclick = stopTyping;
 
-            const placeholderId = 'msg_' + Date.now();
-            const area = document.getElementById('chatArea');
-            const typingRow = document.createElement('div');
-            typingRow.className = 'message-row assistant'; typingRow.id = placeholderId;
-            typingRow.innerHTML = '<div><div class="message-content">Думаю...</div></div>';
-            area.appendChild(typingRow); area.scrollTop = area.scrollHeight;
-
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: 'продолжи ровно с того места где остановился, не повторяй уже написанное', model: 'flash', mode: currentMode, chat_id: currentChatId, continue_from: partialText.substring(Math.max(0, partialText.length - 500)) })
-                });;
+                    body: JSON.stringify({ user_id: currentUserId, message: 'продолжи', model: 'flash', mode: currentMode, chat_id: currentChatId, continue_msg_index: index })
+                });
                 const data = await resp.json();
-                const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (data.reply) {
                     const fullContent = data.reply;
-                    chat.messages.push({ role: 'assistant', content: '' });
-                    const msgIndex = chat.messages.length - 1;
-                    saveChats(); renderChatList(); renderMessages();
+                    const startLen = chat.messages[index].content.length;
+                    chat.messages[index].finished = false;
                     let i = 0;
                     typingInterval = setInterval(() => {
                         if (i < fullContent.length) {
-                            chat.messages[msgIndex].content = fullContent.substring(0, i + 1);
+                            chat.messages[index].content = fullContent.substring(0, startLen + i + 1);
                             const area2 = document.getElementById('chatArea');
                             const msgDivs = area2.querySelectorAll('.message-row.assistant .message-content');
-                            if (msgDivs.length > 0) {
-                                const lastDiv = msgDivs[msgDivs.length - 1];
-                                lastDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
+                            if (msgDivs.length > index) {
+                                msgDivs[index].innerHTML = formatMessage(chat.messages[index].content);
                                 area2.scrollTop = area2.scrollHeight;
                             }
                             i++;
@@ -375,24 +363,21 @@
                         } else {
                             clearInterval(typingInterval);
                             typingInterval = null;
-                            chat.messages[msgIndex].finished = true;
+                            chat.messages[index].finished = true;
                             autoNameChat(chat);
-                            saveChats(); renderChatList(); renderMessages();
+                            saveChats(); renderMessages();
                             isSending = false; document.getElementById('sendBtn').disabled = false;
                             document.getElementById('sendBtn').textContent = '➤';
                             document.getElementById('sendBtn').onclick = sendMessage;
                         }
                     }, 30);
                 } else {
-                    chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка. Попробуйте позже.' });
-                    saveChats(); renderChatList(); renderMessages();
+                    saveChats(); renderMessages();
                     isSending = false; document.getElementById('sendBtn').disabled = false;
                     document.getElementById('sendBtn').textContent = '➤';
                     document.getElementById('sendBtn').onclick = sendMessage;
                 }
             } catch (e) {
-                const el = document.getElementById(placeholderId); if (el) el.remove();
-                chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка соединения.' });
                 saveChats(); renderMessages();
                 isSending = false; document.getElementById('sendBtn').disabled = false;
                 document.getElementById('sendBtn').textContent = '➤';
