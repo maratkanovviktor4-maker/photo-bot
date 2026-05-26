@@ -66,7 +66,19 @@
         .nav-btn:hover { background: #14E9FC; }
         #cookie-banner { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #1A1A1A; padding: 12px 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #2A2A2A; z-index: 1000; }
         #cookie-banner button { background: #00CBF5; color: #201F28; border: none; padding: 6px 16px; border-radius: 6px; margin-left: 10px; cursor: pointer; font-weight: 600; font-family: 'Montserrat', sans-serif; font-size: 11px; }
-        @media (max-width: 768px) { .container { flex-direction: column; align-items: center; padding: 12px; gap: 16px; } .collages { width: 100%; order: 1; display: flex; flex-direction: column; gap: 10px; } .collages img { width: 100%; max-width: 100%; } .center-panel { width: 100%; order: 2; } }
+        .free-chat-panel { width: 420px; flex-shrink: 0; background: #1a1a2e; border-radius: 16px; display: flex; flex-direction: column; height: calc(100vh - 40px); position: sticky; top: 20px; border: 1px solid #2A2A2A; }
+        .free-chat-header { padding: 14px; text-align: center; font-weight: 600; font-size: 14px; color: #00CBF5; border-bottom: 1px solid #2A2A2A; }
+        .free-chat-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+        .free-chat-placeholder { color: #555; text-align: center; font-size: 13px; margin-top: 40px; }
+        .free-chat-msg { padding: 8px 12px; border-radius: 10px; font-size: 12px; line-height: 1.5; max-width: 90%; word-break: break-word; }
+        .free-chat-msg.user { background: #0f3460; align-self: flex-end; color: #e0e0e0; }
+        .free-chat-msg.assistant { background: #16213e; align-self: flex-start; color: #e0e0e0; border: 1px solid #1a2a4a; }
+        .free-chat-input-area { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #2A2A2A; }
+        .free-chat-input-area input { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #2A2A2A; background: #222; color: #fff; font-size: 13px; font-family: 'Montserrat', sans-serif; outline: none; }
+        .free-chat-input-area input:focus { border-color: #00CBF5; }
+        .free-chat-input-area button { padding: 10px 16px; background: #00CBF5; color: #1a1a2e; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 14px; }
+        .free-chat-input-area button:hover { background: #14E9FC; }
+        @media (max-width: 768px) { .container { flex-direction: column; align-items: center; padding: 12px; gap: 16px; } .collages { width: 100%; order: 1; display: flex; flex-direction: column; gap: 10px; } .collages img { width: 100%; max-width: 100%; } .center-panel { width: 100%; order: 2; } .free-chat-panel { width: 100%; height: 400px; position: static; } }
     </style>
 </head>
 <body>
@@ -126,6 +138,17 @@
             <a href="storage.html" class="nav-btn">📦 Хранилище генераций</a>
             <div class="legal-footer"><a href="agreement.txt" target="_blank">Пользовательское соглашение</a><a href="privacy.txt" target="_blank">Политика конфиденциальности</a></div>
         </div>
+
+        <div class="free-chat-panel" id="freeChatPanel">
+            <div class="free-chat-header">💬 Ассистент PhotoBot</div>
+            <div class="free-chat-messages" id="freeChatMessages">
+                <div class="free-chat-placeholder">Задайте вопрос о сервисе</div>
+            </div>
+            <div class="free-chat-input-area">
+                <input type="text" id="freeChatInput" placeholder="Введите сообщение..." onkeydown="if(event.key==='Enter'){sendFreeMessage();}">
+                <button onclick="sendFreeMessage()">➤</button>
+            </div>
+        </div>
     </div>
     <div id="cookie-banner">Мы используем необходимые cookie-файлы для авторизации и работы сервиса.<button onclick="acceptCookies()">OK</button></div>
     <script>
@@ -133,7 +156,6 @@
         let selectedMode = "documents", uploadedFile = null, wallpaperSize = "pc", currentUserId = null, currentUsername = null, isSubscribed = false, sessionToken = '';
         const hints = { documents: "📄 Фото на документы: укажите одежду (например: серая рубашка)", beach: "🌅 Закат на пляже: укажите одежду (например: белое платье)", birthday: "🎂👑 День рождения: укажите число и цвет платья (например: 23 красное)", flowers: "🌸 Цветы в авто: укажите одежду (например: черное платье)", mirror_male: "🕶️💪 Мужское в зеркале: опишите одежду, очки, телефон", svoboda: "🎨 Свободный (ж): введите промт", svoboda_male: "🎨 Свободный (м): введите промт", wallpaper: "🖼️ Обои: введите промт в поле подписи" };
         const wallpaperSizes = { phone: [1440, 2560], pc: [2560, 1440] };
-
 
         const savedAuth = localStorage.getItem('photobot_auth');
         if (savedAuth) { const auth = JSON.parse(savedAuth); currentUserId = auth.user_id; currentUsername = auth.username; sessionToken = auth.session_token || ''; showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); showSubscribeBlock(); checkSubscription(); }
@@ -145,7 +167,7 @@
         document.addEventListener('click', function(e) { if (!e.target.closest('[onclick="toggleDeepSeekMenu()"]')) { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } } });
         document.getElementById('authCode').addEventListener('input', function() { const b = document.getElementById('sendBtn'); if (this.value.length === 4) { b.classList.add('active'); b.disabled = false; b.style.cursor = 'pointer'; } else { b.classList.remove('active'); b.disabled = true; b.style.cursor = 'not-allowed'; } });
         document.getElementById('sendBtn').addEventListener('click', async function() { const c = document.getElementById('authCode').value; if (c.length !== 4) return; try { const r = await fetch(`${SERVER_URL}/verify_code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: c }) }); const d = await r.json(); if (d.success) { currentUserId = d.user_id; currentUsername = d.username; isSubscribed = d.subscribed; sessionToken = d.session_token || ''; localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken })); showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); document.getElementById('authBlock').style.display = 'none'; if (isSubscribed) { document.getElementById('subscribeBlock').style.display = 'none'; document.getElementById('subscribeOk').style.display = 'block'; } else { document.getElementById('subscribeBlock').style.display = 'block'; } } else { alert(d.error === 'Not subscribed' ? 'Вы не подписаны на бота. Подпишитесь и попробуйте снова.' : 'Неверный код авторизации'); } } catch (err) { alert('Ошибка соединения с сервером'); } });
-        function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; }
+        function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; loadFreeChatHistory(); }
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
         document.querySelectorAll("#collages img").forEach(img => { img.addEventListener("click", function() { selectMode(this.dataset.mode); }); });
         document.querySelectorAll(".mode-btn").forEach(btn => { if (!btn.onclick) btn.addEventListener("click", function() { selectMode(this.dataset.mode); }); });
@@ -156,10 +178,65 @@
         function getPreviewNote() { if (selectedMode === "documents") return "Образец. Полный размер 832×1152"; if (selectedMode === "wallpaper") { const [w, h] = wallpaperSizes[wallpaperSize]; return `Образец. Полный размер ${w}×${h}`; } return "Образец. Полный размер 1080×1344"; }
 
         async function startGeneration() { if (!currentUserId) { document.getElementById('authBlock').style.display = 'block'; return; } await checkSubscription(); if (!isSubscribed) { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; return; } await runGeneration(); }
-        async function runGeneration() { const genBtn = document.getElementById("generate"); genBtn.disabled = true; genBtn.textContent = "⏳ Генерация..."; const caption = document.getElementById("caption").value || "черная рубашка"; try { if (selectedMode !== "wallpaper" && !uploadedFile) { genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } const formData = new FormData(); if (uploadedFile) formData.append("image", uploadedFile); formData.append("mode", selectedMode); formData.append("caption", caption); formData.append("user_id", currentUserId); formData.append("source", "web"); document.getElementById("status").textContent = "⚡ Добавлено в очередь..."; const enqResp = await fetch(`${SERVER_URL}/enqueue`, { method: "POST", body: formData, headers: sessionToken ? { "X-Session-Token": sessionToken } : {} }); const enqData = await enqResp.json(); if (!enqData.job_id) { document.getElementById("status").textContent = "⚠️ Ошибка очереди."; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } document.getElementById("status").textContent = "⏳ Ожидание генерации..."; for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { const result = pendData.results[0]; const bytes = Uint8Array.from(atob(result.data), c => c.charCodeAt(0)); const blob = new Blob([bytes], { type: 'image/jpeg' });                     document.getElementById("status").textContent = "✅ Готово! Сохранено в хранилище."; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } } document.getElementById("status").textContent = "⚠️ Время ожидания истекло."; } catch (err) { document.getElementById("status").textContent = "🔧 Ошибка: " + err.message; } genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; }
+        async function runGeneration() { const genBtn = document.getElementById("generate"); genBtn.disabled = true; genBtn.textContent = "⏳ Генерация..."; const caption = document.getElementById("caption").value || "черная рубашка"; try { if (selectedMode !== "wallpaper" && !uploadedFile) { genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } const formData = new FormData(); if (uploadedFile) formData.append("image", uploadedFile); formData.append("mode", selectedMode); formData.append("caption", caption); formData.append("user_id", currentUserId); formData.append("source", "web"); document.getElementById("status").textContent = "⚡ Добавлено в очередь..."; const enqResp = await fetch(`${SERVER_URL}/enqueue`, { method: "POST", body: formData, headers: sessionToken ? { "X-Session-Token": sessionToken } : {} }); const enqData = await enqResp.json(); if (!enqData.job_id) { document.getElementById("status").textContent = "⚠️ Ошибка очереди."; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } document.getElementById("status").textContent = "⏳ Ожидание генерации..."; for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { const result = pendData.results[0]; const bytes = Uint8Array.from(atob(result.data), c => c.charCodeAt(0)); const blob = new Blob([bytes], { type: 'image/jpeg' }); document.getElementById("status").textContent = "✅ Готово! Сохранено в хранилище."; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } } document.getElementById("status").textContent = "⚠️ Время ожидания истекло."; } catch (err) { document.getElementById("status").textContent = "🔧 Ошибка: " + err.message; } genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; }
 
         async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); const data = await resp.json(); if (data.has_etalon) document.getElementById('etalonBtn').style.display = 'block'; } catch (err) {} }
         async function useEtalon() { try { const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`); if (!resp.ok) { alert('Эталон не найден'); return; } const blob = await resp.blob(); uploadedFile = new File([blob], 'etalon.jpg', { type: 'image/jpeg' }); const reader = new FileReader(); reader.onload = function(ev) { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display = 'block'; }; reader.readAsDataURL(blob); document.getElementById('status').textContent = 'Эталон загружен'; } catch (err) { alert('Ошибка загрузки эталона'); } }
+
+        let freeChatLoaded = false;
+        async function loadFreeChatHistory() {
+            if (freeChatLoaded || !currentUserId) return;
+            freeChatLoaded = true;
+            try {
+                const resp = await fetch(`${SERVER_URL}/get_free_chat_history?user_id=${currentUserId}`);
+                const data = await resp.json();
+                const container = document.getElementById('freeChatMessages');
+                if (data.history && data.history.length > 0) {
+                    container.innerHTML = '';
+                    data.history.forEach(m => {
+                        if (m.role === 'system') return;
+                        const div = document.createElement('div');
+                        div.className = 'free-chat-msg ' + m.role;
+                        div.textContent = m.content;
+                        container.appendChild(div);
+                    });
+                    container.scrollTop = container.scrollHeight;
+                }
+            } catch(e) {}
+        }
+        async function sendFreeMessage() {
+            const input = document.getElementById('freeChatInput');
+            const text = input.value.trim();
+            if (!text) return;
+            if (!currentUserId) { alert('Авторизуйтесь'); return; }
+            input.value = '';
+            const container = document.getElementById('freeChatMessages');
+            if (container.querySelector('.free-chat-placeholder')) container.innerHTML = '';
+            const userDiv = document.createElement('div');
+            userDiv.className = 'free-chat-msg user';
+            userDiv.textContent = text;
+            container.appendChild(userDiv);
+            const loaderDiv = document.createElement('div');
+            loaderDiv.className = 'free-chat-msg assistant';
+            loaderDiv.textContent = '...';
+            container.appendChild(loaderDiv);
+            container.scrollTop = container.scrollHeight;
+            try {
+                const resp = await fetch(`${SERVER_URL}/chat_free`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUserId, message: text })
+                });
+                const data = await resp.json();
+                loaderDiv.remove();
+                const asstDiv = document.createElement('div');
+                asstDiv.className = 'free-chat-msg assistant';
+                asstDiv.textContent = data.reply || 'Ошибка';
+                container.appendChild(asstDiv);
+                container.scrollTop = container.scrollHeight;
+            } catch(e) {
+                loaderDiv.textContent = 'Ошибка соединения';
+            }
+        }
     </script>
 </body>
 </html>
