@@ -8,6 +8,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
         body { font-family: 'Montserrat', sans-serif; background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; }
         .sidebar { width: 280px; background: #16213e; display: flex; flex-direction: column; padding: 16px; border-right: 1px solid #0f3460; flex-shrink: 0; }
         .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
@@ -43,9 +47,6 @@
         .message-row { display: flex; gap: 12px; align-items: flex-start; max-width: 85%; }
         .message-row.user { align-self: flex-end; flex-direction: row-reverse; }
         .message-row.assistant { align-self: flex-start; }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
-        .avatar.assistant-avatar { background: #0f3460; color: #00CBF5; }
-        .avatar.user-avatar { background: #2a2a4a; color: #14E9FC; }
         .message-content { padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; }
         .message-row.assistant .message-content { background: #16213e; border: 1px solid #1a2a4a; }
         .message-row.user .message-content { background: #0f3460; }
@@ -55,15 +56,15 @@
         .message-row:hover .message-actions { opacity: 1; }
         .message-actions button { background: #2a2a4a; border: none; color: #888; cursor: pointer; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-family: 'Montserrat', sans-serif; transition: 0.2s; }
         .message-actions button:hover { background: #3a3a5a; color: #e0e0e0; }
-        .input-area { padding: 14px 20px; border-top: 1px solid #16213e; display: flex; gap: 10px; background: #1a1a2e; }
-        .input-area textarea { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid #2a2a4a; background: #16213e; color: #e0e0e0; font-family: 'Montserrat', sans-serif; font-size: 13px; outline: none; resize: none; height: 44px; transition: 0.2s; }
+        .input-area { padding: 14px 20px; border-top: 1px solid #16213e; display: flex; gap: 10px; align-items: flex-end; background: #1a1a2e; }
+        .input-area textarea { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid #2a2a4a; background: #16213e; color: #e0e0e0; font-family: 'Montserrat', sans-serif; font-size: 13px; outline: none; resize: none; max-height: 280px; overflow-y: auto; transition: border-color 0.2s; }
         .input-area textarea:focus { border-color: #00CBF5; }
-        .input-area button { padding: 10px 18px; background: #00CBF5; color: #1a1a2e; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 14px; transition: 0.2s; }
+        .input-area button { padding: 10px 18px; background: #00CBF5; color: #1a1a2e; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 14px; transition: 0.2s; flex-shrink: 0; }
         .input-area button:hover { background: #14E9FC; }
         .input-area button:disabled { background: #2a2a4a; color: #666; cursor: not-allowed; }
-        .attach-btn { padding: 10px; background: #16213e; border: 1px solid #2a2a4a; border-radius: 10px; color: #00CBF5; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 18px; }
+        .attach-btn { padding: 10px; background: #16213e; border: 1px solid #2a2a4a; border-radius: 10px; color: #00CBF5; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 18px; flex-shrink: 0; }
         .attach-btn:hover { color: #14E9FC; border-color: #00CBF5; }
-        .remove-attach-btn { padding: 10px; background: #16213e; border: 1px solid #2a2a4a; border-radius: 10px; color: #E74C3C; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 16px; display: none; }
+        .remove-attach-btn { padding: 10px; background: #16213e; border: 1px solid #2a2a4a; border-radius: 10px; color: #E74C3C; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 16px; display: none; flex-shrink: 0; }
         .remove-attach-btn:hover { color: #FF6B6B; border-color: #E74C3C; }
     </style>
 </head>
@@ -95,7 +96,7 @@
             <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
             <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл">📎</button>
             <button class="remove-attach-btn" id="removeFileBtn" onclick="removeFile()" title="Удалить вложение">✕</button>
-            <textarea id="userInput" placeholder="Введите сообщение..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='44px';this.style.height=Math.min(this.scrollHeight,200)+'px';"></textarea>
+            <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,280)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,280)+'px';this._init=true;}"></textarea>
             <button id="sendBtn" onclick="sendMessage()">➤</button>
         </div>
     </div>
@@ -108,6 +109,7 @@
         let sessionToken = '';
         let currentUserId = null;
         let isSending = false;
+        let typingInterval = null;
         let pendingFileData = null;
         let pendingFileName = '';
         let pendingFileMime = '';
@@ -171,12 +173,12 @@
             } else {
                 area.innerHTML = chat.messages.map((m, i) => `
                     <div class="message-row ${m.role}">
-                        <div class="avatar ${m.role}-avatar">${m.role === 'user' ? '👤' : '🐋'}</div>
                         <div>
                             <div class="message-content">${formatMessage(m.content)}</div>
                             <div class="message-actions">
                                 ${m.role === 'user' ? `<button onclick="editMessage(${i})">✏️</button>` : ''}
                                 <button onclick="copyMessage(${i})">📋</button>
+                                ${m.role === 'assistant' && m.interrupted && !m.finished ? `<button onclick="continueMessage(${i})">⏯ Продолжить</button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -237,6 +239,11 @@
             };
             reader.readAsDataURL(file);
         }
+        function resetSendBtn() {
+            isSending = false;
+            document.getElementById('sendBtn').textContent = '➤';
+            document.getElementById('sendBtn').onclick = sendMessage;
+        }
         async function sendMessage() {
             if (isSending) return;
             const input = document.getElementById('userInput');
@@ -244,8 +251,10 @@
             if (!text && !pendingFileData) return;
             if (!currentUserId) { alert('Авторизуйтесь на главной странице'); return; }
             if (!currentChatId) newChat();
-            input.value = ''; input.style.height = '44px';
-            isSending = true; document.getElementById('sendBtn').disabled = true;
+            input.value = ''; input.style.height = 'auto'; input._init = false;
+            isSending = true;
+            document.getElementById('sendBtn').textContent = '⏹';
+            document.getElementById('sendBtn').onclick = stopTyping;
 
             const chat = chats.find(c => c.id === currentChatId);
             const displayText = text || (pendingFileName ? `[Файл: ${pendingFileName}]` : '');
@@ -256,7 +265,7 @@
             const area = document.getElementById('chatArea');
             const typingRow = document.createElement('div');
             typingRow.className = 'message-row assistant'; typingRow.id = placeholderId;
-            typingRow.innerHTML = '<div class="avatar assistant-avatar">🐋</div><div><div class="message-content">Думаю...</div></div>';
+            typingRow.innerHTML = '<div><div class="message-content">Думаю...</div></div>';
             area.appendChild(typingRow); area.scrollTop = area.scrollHeight;
 
             try {
@@ -267,22 +276,112 @@
                 const data = await resp.json();
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (data.reply) {
-                    const content = data.reasoning ? `💭 Размышление:\n${data.reasoning}\n\n📝 Ответ:\n${data.reply}` : data.reply;
-                    chat.messages.push({ role: 'assistant', content: content });
-                    autoNameChat(chat);
+                    const fullContent = data.reasoning ? `💭 Размышление:\n${data.reasoning}\n\n📝 Ответ:\n${data.reply}` : data.reply;
+                    chat.messages.push({ role: 'assistant', content: '', finished: false, interrupted: false });
+                    const msgIndex = chat.messages.length - 1;
+                    saveChats(); renderChatList(); renderMessages();
+                    let i = 0;
+                    typingInterval = setInterval(() => {
+                        if (i < fullContent.length) {
+                            chat.messages[msgIndex].content = fullContent.substring(0, i + 1);
+                            const area2 = document.getElementById('chatArea');
+                            const msgDivs = area2.querySelectorAll('.message-row.assistant .message-content');
+                            if (msgDivs.length > 0) {
+                                const lastDiv = msgDivs[msgDivs.length - 1];
+                                lastDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
+                                area2.scrollTop = area2.scrollHeight;
+                            }
+                            i++;
+                            if (i % 10 === 0) saveChats();
+                        } else {
+                            clearInterval(typingInterval);
+                            typingInterval = null;
+                            chat.messages[msgIndex].finished = true;
+                            autoNameChat(chat);
+                            saveChats(); renderMessages();
+                            resetSendBtn();
+                        }
+                    }, 30);
                 } else {
-                    chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка. Попробуйте позже.' });
+                    chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка. Попробуйте позже.', finished: true, interrupted: false });
+                    saveChats(); renderMessages();
+                    resetSendBtn();
                 }
-                saveChats(); renderChatList(); renderMessages();
             } catch (e) {
                 const el = document.getElementById(placeholderId); if (el) el.remove();
-                chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка соединения.' });
+                chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка соединения.', finished: false, interrupted: true });
                 saveChats(); renderMessages();
+                resetSendBtn();
             }
             pendingFileData = null; pendingFileName = ''; pendingFileMime = '';
             const ind = document.getElementById('fileIndicator'); if (ind) ind.remove();
             document.getElementById('removeFileBtn').style.display = 'none';
-            isSending = false; document.getElementById('sendBtn').disabled = false;
+        }
+        function stopTyping() {
+            if (typingInterval) {
+                clearInterval(typingInterval);
+                typingInterval = null;
+                const chat = chats.find(c => c.id === currentChatId);
+                if (chat) {
+                    const lastMsg = chat.messages[chat.messages.length - 1];
+                    if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.finished) {
+                        lastMsg.interrupted = true;
+                    }
+                }
+                saveChats();
+                renderMessages();
+            }
+            resetSendBtn();
+        }
+        async function continueMessage(index) {
+            if (isSending) return;
+            const chat = chats.find(c => c.id === currentChatId);
+            if (!chat) return;
+            isSending = true;
+            document.getElementById('sendBtn').textContent = '⏹';
+            document.getElementById('sendBtn').onclick = stopTyping;
+
+            try {
+                const resp = await fetch(`${SERVER_URL}/chat`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ user_id: currentUserId, message: 'продолжи', model: 'flash', mode: currentMode, chat_id: currentChatId, continue_msg_index: index })
+                });
+                const data = await resp.json();
+                if (data.reply) {
+                    const fullContent = data.reply;
+                    const startLen = chat.messages[index].content.length;
+                    chat.messages[index].finished = false;
+                    chat.messages[index].interrupted = true;
+                    let i = 0;
+                    typingInterval = setInterval(() => {
+                        if (i < fullContent.length) {
+                            chat.messages[index].content = fullContent.substring(0, startLen + i + 1);
+                            const area2 = document.getElementById('chatArea');
+                            const msgDivs = area2.querySelectorAll('.message-row.assistant .message-content');
+                            if (msgDivs.length > index) {
+                                msgDivs[index].innerHTML = formatMessage(chat.messages[index].content);
+                                area2.scrollTop = area2.scrollHeight;
+                            }
+                            i++;
+                            if (i % 10 === 0) saveChats();
+                        } else {
+                            clearInterval(typingInterval);
+                            typingInterval = null;
+                            chat.messages[index].finished = true;
+                            chat.messages[index].interrupted = false;
+                            autoNameChat(chat);
+                            saveChats(); renderMessages();
+                            resetSendBtn();
+                        }
+                    }, 30);
+                } else {
+                    saveChats(); renderMessages();
+                    resetSendBtn();
+                }
+            } catch (e) {
+                saveChats(); renderMessages();
+                resetSendBtn();
+            }
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
     </script>
