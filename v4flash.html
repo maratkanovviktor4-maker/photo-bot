@@ -195,6 +195,7 @@
                             <div class="message-actions">
                                 ${m.role === 'user' ? `<button onclick="editMessage(${i})">✏️</button>` : ''}
                                 <button onclick="copyMessage(${i})">📋</button>
+                                ${m.role === 'assistant' && m.interrupted ? `<button onclick="continueMessage(${i})">⏯ Продолжить</button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -333,6 +334,68 @@
             if (typingInterval) {
                 clearInterval(typingInterval);
                 typingInterval = null;
+                const chat = chats.find(c => c.id === currentChatId);
+                if (chat && chat.messages.length > 0) {
+                    const lastMsg = chat.messages[chat.messages.length - 1];
+                    if (lastMsg.role === 'assistant' && !lastMsg.finished) {
+                        lastMsg.interrupted = true;
+                    }
+                }
+                renderMessages();
+                isSending = false;
+                document.getElementById('sendBtn').textContent = '➤';
+                document.getElementById('sendBtn').onclick = sendMessage;
+            }
+        }
+        async function continueMessage(index) {
+            if (isSending) return;
+            const chat = chats.find(c => c.id === currentChatId);
+            if (!chat) return;
+            isSending = true;
+            document.getElementById('sendBtn').textContent = '⏹';
+            document.getElementById('sendBtn').onclick = stopTyping;
+
+            try {
+                const resp = await fetch(`${SERVER_URL}/chat`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ user_id: currentUserId, message: 'продолжи', model: 'flash', mode: currentMode, chat_id: currentChatId, continue_msg_index: index })
+                });
+                const data = await resp.json();
+                if (data.reply) {
+                    const fullContent = data.reply;
+                    const startLen = chat.messages[index].content.length;
+                    chat.messages[index].finished = false;
+                    chat.messages[index].interrupted = true;
+                    let i = 0;
+                    typingInterval = setInterval(() => {
+                        if (i < fullContent.length) {
+                            chat.messages[index].content = fullContent.substring(0, startLen + i + 1);
+                            const area2 = document.getElementById('chatArea');
+                            const msgDivs = area2.querySelectorAll('.message-row.assistant .message-content');
+                            if (msgDivs.length > index) {
+                                msgDivs[index].innerHTML = formatMessage(chat.messages[index].content);
+                                area2.scrollTop = area2.scrollHeight;
+                            }
+                            i++;
+                        } else {
+                            clearInterval(typingInterval);
+                            typingInterval = null;
+                            chat.messages[index].finished = true;
+                            chat.messages[index].interrupted = false;
+                            autoNameChat(chat);
+                            renderMessages();
+                            isSending = false;
+                            document.getElementById('sendBtn').textContent = '➤';
+                            document.getElementById('sendBtn').onclick = sendMessage;
+                        }
+                    }, 15);
+                } else {
+                    renderMessages();
+                    isSending = false;
+                    document.getElementById('sendBtn').textContent = '➤';
+                    document.getElementById('sendBtn').onclick = sendMessage;
+                }
+            } catch (e) {
                 renderMessages();
                 isSending = false;
                 document.getElementById('sendBtn').textContent = '➤';
