@@ -25,14 +25,11 @@
         .storage-item { margin-bottom: 16px; background: #222; border-radius: 16px; overflow: hidden; border: 1px solid #2A2A2A; display: flex; align-items: center; padding: 12px; gap: 12px; }
         .storage-item img { width: 100px; height: 100px; object-fit: cover; border-radius: 10px; cursor: pointer; flex-shrink: 0; }
         .storage-item .item-info { flex: 1; min-width: 0; }
-        .storage-item .item-date { color: #888; font-size: 11px; margin-bottom: 4px; }
-        .storage-item .item-note { color: #aaa; font-size: 12px; margin-bottom: 8px; }
+        .storage-item .item-date { color: #888; font-size: 11px; margin-bottom: 8px; }
         .storage-item .item-actions { display: flex; gap: 6px; }
         .storage-item .item-actions button { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; font-family: 'Montserrat', sans-serif; transition: 0.2s; }
-        .storage-item .btn-download { background: #27AE60; color: #fff; }
-        .storage-item .btn-download:hover { background: #2ECC71; }
-        .storage-item .btn-delete { background: #E74C3C; color: #fff; }
-        .storage-item .btn-delete:hover { background: #FF6B6B; }
+        .btn-delete { background: #E74C3C; color: #fff; }
+        .btn-delete:hover { background: #FF6B6B; }
         .empty-state { text-align: center; color: #555; padding: 60px 20px; font-size: 14px; }
         .nav-links { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
         .nav-links a { padding: 10px 20px; background: #222; border: 1px solid #2A2A2A; color: #fff; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: 0.2s; text-align: center; }
@@ -128,8 +125,7 @@
                     div.className = 'storage-item';
                     const img = document.createElement('img');
                     img.src = `${SERVER_URL}/history_file?file=${file}&source=web&session_token=${sessionToken}`;
-                    img.onclick = function(e) {
-                        if (e.target.tagName === 'BUTTON') return;
+                    img.onclick = function() {
                         const modal = document.createElement('div');
                         modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
                         const full = new Image();
@@ -157,19 +153,6 @@
                     info.appendChild(date);
                     const actions = document.createElement('div');
                     actions.className = 'item-actions';
-                    const downloadBtn = document.createElement('button');
-                    downloadBtn.className = 'btn-download';
-                    downloadBtn.textContent = '💾 Скачать';
-                    downloadBtn.onclick = function(e) {
-                        e.stopPropagation();
-                        const a = document.createElement('a');
-                        a.href = img.src;
-                        a.download = 'photobot.jpg';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                    };
-                    actions.appendChild(downloadBtn);
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'btn-delete';
                     deleteBtn.textContent = '🗑️ Удалить';
