@@ -61,7 +61,7 @@
     </div>
 
     <div class="container" id="container">
-        <div class="empty-state" id="emptyState">Здесь пока ничего нет</div>
+        <div class="empty-state" id="emptyState">Загрузка...</div>
     </div>
 
     <div class="nav-links">
@@ -70,6 +70,17 @@
     </div>
 
     <script>
+        const SERVER_URL = "https://api.фото-бот.рф";
+        let sessionToken = '';
+        let currentUserId = null;
+
+        const savedAuth = localStorage.getItem('photobot_auth');
+        if (savedAuth) {
+            const auth = JSON.parse(savedAuth);
+            currentUserId = auth.user_id;
+            sessionToken = auth.session_token || '';
+        }
+
         function toggleDeepSeekMenu() {
             const menu = document.getElementById('deepseekMenu');
             if (menu.style.display === 'block') {
@@ -98,69 +109,83 @@
             }
         });
 
-        function loadStorage() {
-            const container = document.getElementById('container');
-            const storage = JSON.parse(localStorage.getItem('photobot_storage') || '[]');
-            if (storage.length === 0) {
-                container.innerHTML = '<div class="empty-state">Здесь пока ничего нет</div>';
+        async function loadStorage() {
+            if (!currentUserId) {
+                document.getElementById('container').innerHTML = '<div class="empty-state">Авторизуйтесь на главной странице</div>';
                 return;
             }
-            container.innerHTML = '';
-            storage.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'storage-item';
-                const img = document.createElement('img');
-                img.src = item.data;
-                img.onclick = function() {
-                    const modal = document.createElement('div');
-                    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
-                    const full = new Image();
-                    full.src = item.data;
-                    full.style.maxWidth = '95%';
-                    full.style.maxHeight = '95%';
-                    full.style.objectFit = 'contain';
-                    modal.appendChild(full);
-                    modal.onclick = () => modal.remove();
-                    document.body.appendChild(modal);
-                };
-                div.appendChild(img);
-                const info = document.createElement('div');
-                info.className = 'item-info';
-                const date = document.createElement('div');
-                date.className = 'item-date';
-                date.textContent = new Date(item.date).toLocaleString('ru-RU');
-                info.appendChild(date);
-                const note = document.createElement('div');
-                note.className = 'item-note';
-                note.textContent = item.note || '';
-                info.appendChild(note);
-                const actions = document.createElement('div');
-                actions.className = 'item-actions';
-                const downloadBtn = document.createElement('button');
-                downloadBtn.className = 'btn-download';
-                downloadBtn.textContent = '💾 Скачать';
-                downloadBtn.onclick = function() {
-                    const a = document.createElement('a');
-                    a.href = item.data;
-                    a.download = 'photobot_' + index + '.jpg';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                };
-                actions.appendChild(downloadBtn);
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn-delete';
-                deleteBtn.textContent = '🗑️ Удалить';
-                deleteBtn.onclick = function() {
-                    storage.splice(index, 1);
-                    localStorage.setItem('photobot_storage', JSON.stringify(storage));
-                    loadStorage();
-                };
-                actions.appendChild(deleteBtn);
-                info.appendChild(actions);
-                div.appendChild(info);
-                container.appendChild(div);
-            });
+            try {
+                const resp = await fetch(`${SERVER_URL}/history?user_id=${currentUserId}&source=web&session_token=${sessionToken}`);
+                const data = await resp.json();
+                const container = document.getElementById('container');
+                if (!data.files || data.files.length === 0) {
+                    container.innerHTML = '<div class="empty-state">Здесь пока ничего нет</div>';
+                    return;
+                }
+                container.innerHTML = '';
+                data.files.forEach((file) => {
+                    const div = document.createElement('div');
+                    div.className = 'storage-item';
+                    const img = document.createElement('img');
+                    img.src = `${SERVER_URL}/history_file?file=${file}&source=web&session_token=${sessionToken}`;
+                    img.onclick = function() {
+                        const modal = document.createElement('div');
+                        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+                        const full = new Image();
+                        full.src = img.src;
+                        full.style.maxWidth = '95%';
+                        full.style.maxHeight = '95%';
+                        full.style.objectFit = 'contain';
+                        modal.appendChild(full);
+                        modal.onclick = () => modal.remove();
+                        document.body.appendChild(modal);
+                    };
+                    div.appendChild(img);
+                    const info = document.createElement('div');
+                    info.className = 'item-info';
+                    const date = document.createElement('div');
+                    date.className = 'item-date';
+                    const match = file.match(/(\d{8})_(\d{6})/);
+                    if (match) {
+                        const d = match[1];
+                        const t = match[2];
+                        date.textContent = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)} ${t.slice(0,2)}:${t.slice(2,4)}:${t.slice(4,6)}`;
+                    } else {
+                        date.textContent = file;
+                    }
+                    info.appendChild(date);
+                    const actions = document.createElement('div');
+                    actions.className = 'item-actions';
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'btn-download';
+                    downloadBtn.textContent = '💾 Скачать';
+                    downloadBtn.onclick = function() {
+                        const a = document.createElement('a');
+                        a.href = img.src;
+                        a.download = 'photobot.jpg';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    };
+                    actions.appendChild(downloadBtn);
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn-delete';
+                    deleteBtn.textContent = '🗑️ Удалить';
+                    deleteBtn.onclick = async function() {
+                        if (!confirm('Удалить файл?')) return;
+                        try {
+                            await fetch(`${SERVER_URL}/delete_history_file?file=${file}&source=web&session_token=${sessionToken}`, { method: 'DELETE' });
+                            loadStorage();
+                        } catch (e) {}
+                    };
+                    actions.appendChild(deleteBtn);
+                    info.appendChild(actions);
+                    div.appendChild(info);
+                    container.appendChild(div);
+                });
+            } catch (e) {
+                document.getElementById('container').innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
+            }
         }
 
         loadStorage();
