@@ -191,7 +191,6 @@
             } else {
                 area.innerHTML = chat.messages.map((m, i) => `
                     <div class="message-row ${m.role}">
-                        <div class="avatar ${m.role}-avatar">${m.role === 'user' ? '👤' : '🐋'}</div>
                         <div>
                             <div class="message-content">${formatMessage(m.content)}</div>
                             <div class="message-actions">
@@ -265,7 +264,9 @@
             if (!currentUserId) { alert('Авторизуйтесь на главной странице'); return; }
             if (!currentChatId) { newChat(); }
             input.value = ''; input.style.height = 'auto'; input._init = false;
-            isSending = true; document.getElementById('sendBtn').disabled = true;
+            isSending = true;
+            document.getElementById('sendBtn').textContent = '⏹';
+            document.getElementById('sendBtn').onclick = stopTyping;
 
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
@@ -277,7 +278,7 @@
             const area = document.getElementById('chatArea');
             const typingRow = document.createElement('div');
             typingRow.className = 'message-row assistant'; typingRow.id = placeholderId;
-            typingRow.innerHTML = '<div class="avatar assistant-avatar">🐋</div><div><div class="message-content">Думаю...</div></div>';
+            typingRow.innerHTML = '<div><div class="message-content">Думаю...</div></div>';
             area.appendChild(typingRow); area.scrollTop = area.scrollHeight;
 
             try {
@@ -293,7 +294,7 @@
                     const msgIndex = chat.messages.length - 1;
                     renderChatList(); renderMessages();
                     let i = 0;
-                    const typingInterval = setInterval(() => {
+                    typingInterval = setInterval(() => {
                         if (i < fullContent.length) {
                             chat.messages[msgIndex].content = fullContent.substring(0, i + 1);
                             const area2 = document.getElementById('chatArea');
@@ -306,11 +307,15 @@
                             i++;
                         } else {
                             clearInterval(typingInterval);
+                            typingInterval = null;
                             chat.messages[msgIndex].finished = true;
                             autoNameChat(chat);
                             renderChatList(); renderMessages();
+                            isSending = false;
+                            document.getElementById('sendBtn').textContent = '➤';
+                            document.getElementById('sendBtn').onclick = sendMessage;
                         }
-                    }, 30);
+                    }, 30);;
                 } else {
                     chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка. Попробуйте позже.' });
                     renderChatList(); renderMessages();
@@ -324,6 +329,16 @@
             const ind = document.getElementById('fileIndicator'); if (ind) ind.remove();
             document.getElementById('removeFileBtn').style.display = 'none';
             isSending = false; document.getElementById('sendBtn').disabled = false;
+        }
+        function stopTyping() {
+            if (typingInterval) {
+                clearInterval(typingInterval);
+                typingInterval = null;
+                renderMessages();
+                isSending = false;
+                document.getElementById('sendBtn').textContent = '➤';
+                document.getElementById('sendBtn').onclick = sendMessage;
+            }
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
     </script>
