@@ -196,6 +196,7 @@
                             <div class="message-actions">
                                 ${m.role === 'user' ? `<button onclick="editMessage(${i})">✏️</button>` : ''}
                                 <button onclick="copyMessage(${i})">📋</button>
+                                ${m.role === 'assistant' && m.interrupted ? `<button onclick="continueMessage(${i})">⏯ Продолжить</button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -315,7 +316,7 @@
                             document.getElementById('sendBtn').textContent = '➤';
                             document.getElementById('sendBtn').onclick = sendMessage;
                         }
-                    }, 5);;
+                    }, 5);
                 } else {
                     chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка. Попробуйте позже.' });
                     renderChatList(); renderMessages();
@@ -334,6 +335,75 @@
             if (typingInterval) {
                 clearInterval(typingInterval);
                 typingInterval = null;
+                const chat = chats.find(c => c.id === currentChatId);
+                if (chat && chat.messages.length > 0) {
+                    const lastMsg = chat.messages[chat.messages.length - 1];
+                    if (lastMsg.role === 'assistant' && !lastMsg.finished) {
+                        lastMsg.interrupted = true;
+                    }
+                }
+                renderMessages();
+                isSending = false;
+                document.getElementById('sendBtn').textContent = '➤';
+                document.getElementById('sendBtn').onclick = sendMessage;
+            }
+        }
+        async function continueMessage(index) {
+            if (isSending) return;
+            const chat = chats.find(c => c.id === currentChatId);
+            if (!chat) return;
+            isSending = true;
+            document.getElementById('sendBtn').textContent = '⏹';
+            document.getElementById('sendBtn').onclick = stopTyping;
+
+            try {
+                const resp = await fetch(`${SERVER_URL}/get_full_response?user_id=${currentUserId}&model=pro&chat_id=${currentChatId}&session_token=${sessionToken}`);
+                const data = await resp.json();
+                if (data.full_text) {
+                    const fullContent = data.full_text;
+                    const startLen = chat.messages[index].content.length;
+                    if (fullContent.length <= startLen) {
+                        chat.messages[index].finished = true;
+                        chat.messages[index].interrupted = false;
+                        renderMessages();
+                        isSending = false;
+                        document.getElementById('sendBtn').textContent = '➤';
+                        document.getElementById('sendBtn').onclick = sendMessage;
+                        return;
+                    }
+                    chat.messages[index].finished = false;
+                    chat.messages[index].interrupted = true;
+                    let i = 0;
+                    const remaining = fullContent.substring(startLen);
+                    typingInterval = setInterval(() => {
+                        if (i < remaining.length) {
+                            chat.messages[index].content = fullContent.substring(0, startLen + i + 1);
+                            const area2 = document.getElementById('chatArea');
+                            const msgDivs = area2.querySelectorAll('.message-row.assistant .message-content');
+                            if (msgDivs.length > index) {
+                                msgDivs[index].innerHTML = formatMessage(chat.messages[index].content);
+                                area2.scrollTop = area2.scrollHeight;
+                            }
+                            i++;
+                        } else {
+                            clearInterval(typingInterval);
+                            typingInterval = null;
+                            chat.messages[index].finished = true;
+                            chat.messages[index].interrupted = false;
+                            autoNameChat(chat);
+                            renderMessages();
+                            isSending = false;
+                            document.getElementById('sendBtn').textContent = '➤';
+                            document.getElementById('sendBtn').onclick = sendMessage;
+                        }
+                    }, 15);
+                } else {
+                    renderMessages();
+                    isSending = false;
+                    document.getElementById('sendBtn').textContent = '➤';
+                    document.getElementById('sendBtn').onclick = sendMessage;
+                }
+            } catch (e) {
                 renderMessages();
                 isSending = false;
                 document.getElementById('sendBtn').textContent = '➤';
