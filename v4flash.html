@@ -339,11 +339,6 @@
                     const lastMsg = chat.messages[chat.messages.length - 1];
                     if (lastMsg.role === 'assistant' && !lastMsg.finished) {
                         lastMsg.interrupted = true;
-                        fetch(`${SERVER_URL}/stop_chat`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                            body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, partial_text: lastMsg.content })
-                        }).catch(() => {});
                     }
                 }
                 renderMessages();
