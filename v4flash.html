@@ -334,6 +334,7 @@
             if (isSending) return;
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
+            const partialText = chat.messages[index].content;
             chat.messages[index].finished = true;
             isSending = true; document.getElementById('sendBtn').disabled = false;
             document.getElementById('sendBtn').textContent = '⏹';
@@ -349,8 +350,8 @@
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: 'продолжи', model: 'flash', mode: currentMode, chat_id: currentChatId })
-                });
+                    body: JSON.stringify({ user_id: currentUserId, message: 'продолжи ровно с того места где остановился, не повторяй уже написанное', model: 'flash', mode: currentMode, chat_id: currentChatId, continue_from: partialText.substring(Math.max(0, partialText.length - 500)) })
+                });;
                 const data = await resp.json();
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (data.reply) {
