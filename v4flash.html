@@ -270,17 +270,26 @@
                 const data = await resp.json();
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (data.reply) {
-                    const content = data.reasoning ? `💭 Размышление:\n${data.reasoning}\n\n📝 Ответ:\n${data.reply}` : data.reply;
-                    chat.messages.push({ role: 'assistant', content: content });
-                    autoNameChat(chat);
+                    const fullContent = data.reasoning ? `💭 Размышление:\n${data.reasoning}\n\n📝 Ответ:\n${data.reply}` : data.reply;
+                    chat.messages.push({ role: 'assistant', content: '' });
+                    const msgIndex = chat.messages.length - 1;
+                    saveChats(); renderChatList(); renderMessages();
+                    let i = 0;
+                    const typingInterval = setInterval(() => {
+                        if (i < fullContent.length) {
+                            chat.messages[msgIndex].content = fullContent.substring(0, i + 1);
+                            renderMessages();
+                            i++;
+                        } else {
+                            clearInterval(typingInterval);
+                            autoNameChat(chat);
+                            saveChats(); renderChatList(); renderMessages();
+                        }
+                    }, 30);
                 } else {
                     chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка. Попробуйте позже.' });
+                    saveChats(); renderChatList(); renderMessages();
                 }
-                saveChats(); renderChatList(); renderMessages();
-            } catch (e) {
-                const el = document.getElementById(placeholderId); if (el) el.remove();
-                chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка соединения.' });
-                saveChats(); renderMessages();
             }
             pendingFileData = null; pendingFileName = ''; pendingFileMime = '';
             const ind = document.getElementById('fileIndicator'); if (ind) ind.remove();
