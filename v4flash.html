@@ -356,19 +356,26 @@
             document.getElementById('sendBtn').onclick = stopTyping;
 
             try {
-                const resp = await fetch(`${SERVER_URL}/chat`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: 'продолжи', model: 'flash', mode: currentMode, chat_id: currentChatId, continue_msg_index: index, partial_text: chat.messages[index].content })
-                });
+                const resp = await fetch(`${SERVER_URL}/get_full_response?user_id=${currentUserId}&model=flash&chat_id=${currentChatId}&session_token=${sessionToken}`);
                 const data = await resp.json();
-                if (data.reply) {
-                    const fullContent = data.reply;
+                if (data.full_text) {
+                    const fullContent = data.full_text;
                     const startLen = chat.messages[index].content.length;
+                    if (fullContent.length <= startLen) {
+                        chat.messages[index].finished = true;
+                        chat.messages[index].interrupted = false;
+                        renderMessages();
+                        isSending = false;
+                        document.getElementById('sendBtn').textContent = '➤';
+                        document.getElementById('sendBtn').onclick = sendMessage;
+                        return;
+                    }
                     chat.messages[index].finished = false;
                     chat.messages[index].interrupted = true;
                     let i = 0;
+                    const remaining = fullContent.substring(startLen);
                     typingInterval = setInterval(() => {
-                        if (i < fullContent.length) {
+                        if (i < remaining.length) {
                             chat.messages[index].content = fullContent.substring(0, startLen + i + 1);
                             const area2 = document.getElementById('chatArea');
                             const msgDivs = area2.querySelectorAll('.message-row.assistant .message-content');
