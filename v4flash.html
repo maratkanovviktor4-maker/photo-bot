@@ -271,19 +271,17 @@
                 const data = await resp.json();
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (data.reply) {
-                    const fullContent = data.reasoning ? `💭 Размышление:\n${data.reasoning}\n\n📝 Ответ:\n${data.reply}` : data.reply;
-                    chat.messages.push({ role: 'assistant', content: '' });
-                    const msgIndex = chat.messages.length - 1;
-                    saveChats(); renderChatList(); renderMessages();
+                    const fullContent = data.reply;
+                    const startLen = chat.messages[index].content.length;
                     let i = 0;
                     typingInterval = setInterval(() => {
                         if (i < fullContent.length) {
-                            chat.messages[msgIndex].content = fullContent.substring(0, i + 1);
+                            chat.messages[index].content = fullContent.substring(0, startLen + i + 1);
                             const area2 = document.getElementById('chatArea');
                             const msgDivs = area2.querySelectorAll('.message-row.assistant .message-content');
                             if (msgDivs.length > 0) {
-                                const lastDiv = msgDivs[msgDivs.length - 1];
-                                lastDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
+                                const targetDiv = msgDivs[Math.min(index, msgDivs.length - 1)];
+                                targetDiv.innerHTML = formatMessage(chat.messages[index].content);
                                 area2.scrollTop = area2.scrollHeight;
                             }
                             i++;
@@ -291,29 +289,26 @@
                         } else {
                             clearInterval(typingInterval);
                             typingInterval = null;
-                            chat.messages[msgIndex].finished = true;
                             autoNameChat(chat);
-                            saveChats(); renderChatList(); renderMessages();
+                            saveChats(); renderMessages();
                             isSending = false; document.getElementById('sendBtn').disabled = false;
                             document.getElementById('sendBtn').textContent = '➤';
                             document.getElementById('sendBtn').onclick = sendMessage;
                         }
                     }, 30);
                 } else {
-                    chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка. Попробуйте позже.' });
-                    saveChats(); renderChatList(); renderMessages();
+                    saveChats(); renderMessages();
                     isSending = false; document.getElementById('sendBtn').disabled = false;
                     document.getElementById('sendBtn').textContent = '➤';
                     document.getElementById('sendBtn').onclick = sendMessage;
                 }
             } catch (e) {
-                const el = document.getElementById(placeholderId); if (el) el.remove();
-                chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка соединения.' });
                 saveChats(); renderMessages();
                 isSending = false; document.getElementById('sendBtn').disabled = false;
                 document.getElementById('sendBtn').textContent = '➤';
                 document.getElementById('sendBtn').onclick = sendMessage;
             }
+        }
             pendingFileData = null; pendingFileName = ''; pendingFileMime = '';
             const ind = document.getElementById('fileIndicator'); if (ind) ind.remove();
             document.getElementById('removeFileBtn').style.display = 'none';
@@ -334,7 +329,6 @@
             if (isSending) return;
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
-            chat.messages[index].finished = true;
             isSending = true; document.getElementById('sendBtn').disabled = false;
             document.getElementById('sendBtn').textContent = '⏹';
             document.getElementById('sendBtn').onclick = stopTyping;
