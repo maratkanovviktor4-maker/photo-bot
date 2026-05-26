@@ -151,6 +151,15 @@
                         date.textContent = file;
                     }
                     info.appendChild(date);
+                    const promptEl = document.createElement('div');
+                    promptEl.style.cssText = 'color:#aaa;font-size:11px;margin-bottom:8px;word-break:break-all;';
+                    promptEl.textContent = 'Загрузка промта...';
+                    info.appendChild(promptEl);
+                    const txtFile = file.replace('.jpg', '.txt');
+                    fetch(`${SERVER_URL}/history_file?file=${txtFile}&source=web&session_token=${sessionToken}`)
+                        .then(r => r.text())
+                        .then(txt => { promptEl.textContent = txt || 'Без промта'; })
+                        .catch(() => { promptEl.textContent = 'Без промта'; });
                     const actions = document.createElement('div');
                     actions.className = 'item-actions';
                     const deleteBtn = document.createElement('button');
