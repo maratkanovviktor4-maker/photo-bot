@@ -127,19 +127,25 @@
                 if (data.history) {
                     chats = [];
                     for (const [chatId, messages] of Object.entries(data.history)) {
-                        chats.push({ id: parseInt(chatId), title: 'Чат ' + chatId, messages: messages });
+                        chats.push({ id: chatId, title: 'Чат ' + chatId, messages: messages });
                     }
-                    chats.sort((a, b) => b.id - a.id);
+                    chats.sort((a, b) => a.id.localeCompare(b.id));
                 }
             } catch (e) {}
-            if (chats.length === 0) { chats = []; }
+            if (chats.length === 0) {
+                const chat = { id: Date.now().toString(), title: 'Новый чат', messages: [] };
+                chats.push(chat);
+            }
             renderChatList();
-            if (chats.length > 0) openChat(chats[0].id);
+            currentChatId = chats[chats.length - 1].id;
+            openChat(currentChatId);
         }
         function newChat() {
-            const chat = { id: Date.now(), title: 'Новый чат', messages: [] };
-            chats.unshift(chat); currentChatId = chat.id;
-            renderChatList(); renderMessages();
+            const chat = { id: Date.now().toString(), title: 'Новый чат', messages: [] };
+            chats.push(chat);
+            currentChatId = chat.id;
+            renderChatList();
+            renderMessages();
         }
         function openChat(id) { currentChatId = id; renderChatList(); renderMessages(); }
         function toggleChatMenu(e, id) {
@@ -157,19 +163,20 @@
         function deleteChat(id) {
             if (!confirm('Удалить чат?')) return;
             chats = chats.filter(c => c.id !== id);
-            if (currentChatId === id) currentChatId = chats.length > 0 ? chats[0].id : null;
-            renderChatList(); renderMessages();
+            if (currentChatId === id) currentChatId = chats.length > 0 ? chats[chats.length - 1].id : null;
+            renderChatList();
+            renderMessages();
             document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
         }
         function renderChatList() {
             const list = document.getElementById('chatList');
             list.innerHTML = chats.map(c => `
-                <div class="chat-item${c.id === currentChatId ? ' active' : ''}" onclick="openChat(${c.id})">
+                <div class="chat-item${c.id === currentChatId ? ' active' : ''}" onclick="openChat('${c.id}')">
                     <span class="chat-name">${c.title}</span>
-                    <button class="chat-menu-btn" onclick="toggleChatMenu(event, ${c.id})">⋯</button>
+                    <button class="chat-menu-btn" onclick="toggleChatMenu(event, '${c.id}')">⋯</button>
                     <div class="chat-menu-dropdown" id="menu_${c.id}">
-                        <button onclick="renameChat(${c.id})">✏️ Переименовать</button>
-                        <button class="delete" onclick="deleteChat(${c.id})">🗑️ Удалить</button>
+                        <button onclick="renameChat('${c.id}')">✏️ Переименовать</button>
+                        <button class="delete" onclick="deleteChat('${c.id}')">🗑️ Удалить</button>
                     </div>
                 </div>
             `).join('');
@@ -254,11 +261,12 @@
             const text = input.value.trim();
             if (!text && !pendingFileData) return;
             if (!currentUserId) { alert('Авторизуйтесь на главной странице'); return; }
-            if (!currentChatId) newChat();
+            if (!currentChatId) { newChat(); }
             input.value = ''; input.style.height = '44px';
             isSending = true; document.getElementById('sendBtn').disabled = true;
 
             const chat = chats.find(c => c.id === currentChatId);
+            if (!chat) return;
             const displayText = text || (pendingFileName ? `[Файл: ${pendingFileName}]` : '');
             chat.messages.push({ role: 'user', content: displayText });
             renderChatList(); renderMessages();
@@ -273,7 +281,7 @@
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: String(currentChatId), file_data: pendingFileData || '', file_name: pendingFileName, file_mime: pendingFileMime })
+                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, file_data: pendingFileData || '', file_name: pendingFileName, file_mime: pendingFileMime })
                 });
                 const data = await resp.json();
                 const el = document.getElementById(placeholderId); if (el) el.remove();
