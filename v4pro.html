@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+        <style> ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; } </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PhotoBot — DeepSeek V4 Pro</title>
     <link rel="icon" type="image/png" href="favicon.png">
@@ -55,15 +56,15 @@
         .message-row:hover .message-actions { opacity: 1; }
         .message-actions button { background: #2a2a4a; border: none; color: #888; cursor: pointer; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-family: 'Montserrat', sans-serif; transition: 0.2s; }
         .message-actions button:hover { background: #3a3a5a; color: #e0e0e0; }
-        .input-area { padding: 14px 20px; border-top: 1px solid #16213e; display: flex; gap: 10px; background: #1a1a2e; }
-        .input-area textarea { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid #2a2a4a; background: #16213e; color: #e0e0e0; font-family: 'Montserrat', sans-serif; font-size: 13px; outline: none; resize: none; height: 44px; transition: 0.2s; }
+        .input-area { padding: 14px 20px; border-top: 1px solid #16213e; display: flex; gap: 10px; align-items: flex-end; background: #1a1a2e; }
+        .input-area textarea { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid #2a2a4a; background: #16213e; color: #e0e0e0; font-family: 'Montserrat', sans-serif; font-size: 13px; outline: none; resize: none; max-height: 280px; overflow-y: auto; transition: border-color 0.2s; }
         .input-area textarea:focus { border-color: #00CBF5; }
-        .input-area button { padding: 10px 18px; background: #00CBF5; color: #1a1a2e; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 14px; transition: 0.2s; }
+        .input-area button { padding: 10px 18px; background: #00CBF5; color: #1a1a2e; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 14px; transition: 0.2s; flex-shrink: 0; }
         .input-area button:hover { background: #14E9FC; }
         .input-area button:disabled { background: #2a2a4a; color: #666; cursor: not-allowed; }
-        .attach-btn { padding: 10px; background: #16213e; border: 1px solid #2a2a4a; border-radius: 10px; color: #00CBF5; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 18px; }
+        .attach-btn { padding: 10px; background: #16213e; border: 1px solid #2a2a4a; border-radius: 10px; color: #00CBF5; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 18px; flex-shrink: 0; }
         .attach-btn:hover { color: #14E9FC; border-color: #00CBF5; }
-        .remove-attach-btn { padding: 10px; background: #16213e; border: 1px solid #2a2a4a; border-radius: 10px; color: #E74C3C; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 16px; display: none; }
+        .remove-attach-btn { padding: 10px; background: #16213e; border: 1px solid #2a2a4a; border-radius: 10px; color: #E74C3C; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 16px; display: none; flex-shrink: 0; }
         .remove-attach-btn:hover { color: #FF6B6B; border-color: #E74C3C; }
     </style>
 </head>
@@ -95,7 +96,7 @@
             <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
             <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл">📎</button>
             <button class="remove-attach-btn" id="removeFileBtn" onclick="removeFile()" title="Удалить вложение">✕</button>
-            <textarea id="userInput" placeholder="Введите сообщение..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='44px';this.style.height=Math.min(this.scrollHeight,200)+'px';"></textarea>
+            <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,280)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,280)+'px';this._init=true;}"></textarea>
             <button id="sendBtn" onclick="sendMessage()">➤</button>
         </div>
     </div>
@@ -262,7 +263,7 @@
             if (!text && !pendingFileData) return;
             if (!currentUserId) { alert('Авторизуйтесь на главной странице'); return; }
             if (!currentChatId) { newChat(); }
-            input.value = ''; input.style.height = '44px';
+            input.value = ''; input.style.height = 'auto'; input._init = false;
             isSending = true; document.getElementById('sendBtn').disabled = true;
 
             const chat = chats.find(c => c.id === currentChatId);
