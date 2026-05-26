@@ -95,7 +95,7 @@
             <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
             <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл">📎</button>
             <button class="remove-attach-btn" id="removeFileBtn" onclick="removeFile()" title="Удалить вложение">✕</button>
-            <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" style="height:auto;min-height:52px;max-height:308px;overflow-y:hidden;resize:none;" oninput="this.style.height='auto';var h=Math.max(this.scrollHeight,52);this.style.height=Math.min(h,308)+'px';if(this.scrollHeight>308){this.style.overflowY='scroll';}else{this.style.overflowY='hidden';}"></textarea>
+            <textarea id="userInput" placeholder="Введите сообщение..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='44px';this.style.height=Math.min(this.scrollHeight,200)+'px';"></textarea>
             <button id="sendBtn" onclick="sendMessage()">➤</button>
         </div>
     </div>
@@ -117,18 +117,29 @@
             const auth = JSON.parse(savedAuth);
             currentUserId = auth.user_id;
             sessionToken = auth.session_token || '';
-            loadChats();
+            loadChatsFromServer();
         }
 
-        function loadChats() {
-            const saved = localStorage.getItem('v4pro_chats');
-            if (saved) { chats = JSON.parse(saved); renderChatList(); if (chats.length > 0) openChat(chats[0].id); }
+        async function loadChatsFromServer() {
+            try {
+                const resp = await fetch(`${SERVER_URL}/get_chat_history?user_id=${currentUserId}&model=pro&session_token=${sessionToken}`);
+                const data = await resp.json();
+                if (data.history) {
+                    chats = [];
+                    for (const [chatId, messages] of Object.entries(data.history)) {
+                        chats.push({ id: parseInt(chatId), title: 'Чат ' + chatId, messages: messages });
+                    }
+                    chats.sort((a, b) => b.id - a.id);
+                }
+            } catch (e) {}
+            if (chats.length === 0) { chats = []; }
+            renderChatList();
+            if (chats.length > 0) openChat(chats[0].id);
         }
-        function saveChats() { localStorage.setItem('v4pro_chats', JSON.stringify(chats)); }
         function newChat() {
             const chat = { id: Date.now(), title: 'Новый чат', messages: [] };
             chats.unshift(chat); currentChatId = chat.id;
-            saveChats(); renderChatList(); renderMessages();
+            renderChatList(); renderMessages();
         }
         function openChat(id) { currentChatId = id; renderChatList(); renderMessages(); }
         function toggleChatMenu(e, id) {
@@ -140,14 +151,14 @@
         function renameChat(id) {
             const chat = chats.find(c => c.id === id);
             const newName = prompt('Новое название:', chat?.title || '');
-            if (newName && chat) { chat.title = newName; saveChats(); renderChatList(); }
+            if (newName && chat) { chat.title = newName; renderChatList(); }
             document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
         }
         function deleteChat(id) {
             if (!confirm('Удалить чат?')) return;
             chats = chats.filter(c => c.id !== id);
             if (currentChatId === id) currentChatId = chats.length > 0 ? chats[0].id : null;
-            saveChats(); renderChatList(); renderMessages();
+            renderChatList(); renderMessages();
             document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
         }
         function renderChatList() {
@@ -204,7 +215,7 @@
         function setMode(mode) { currentMode = mode; document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode)); }
         function autoNameChat(chat) {
             const lastAssistant = [...chat.messages].reverse().find(m => m.role === 'assistant');
-            if (lastAssistant && chat.title === 'Новый чат') {
+            if (lastAssistant && chat.title.startsWith('Чат ')) {
                 chat.title = lastAssistant.content.replace(/[#*`>\n]/g, ' ').split(' ').slice(0, 6).join(' ') || 'Новый чат';
                 if (chat.title.length > 40) chat.title = chat.title.substring(0, 40) + '...';
             }
@@ -250,7 +261,7 @@
             const chat = chats.find(c => c.id === currentChatId);
             const displayText = text || (pendingFileName ? `[Файл: ${pendingFileName}]` : '');
             chat.messages.push({ role: 'user', content: displayText });
-            saveChats(); renderChatList(); renderMessages();
+            renderChatList(); renderMessages();
 
             const placeholderId = 'msg_' + Date.now();
             const area = document.getElementById('chatArea');
@@ -262,7 +273,7 @@
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'pro', mode: currentMode, chat_id: currentChatId, file_data: pendingFileData || '', file_name: pendingFileName, file_mime: pendingFileMime })
+                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'pro', mode: currentMode, chat_id: String(currentChatId), file_data: pendingFileData || '', file_name: pendingFileName, file_mime: pendingFileMime })
                 });
                 const data = await resp.json();
                 const el = document.getElementById(placeholderId); if (el) el.remove();
@@ -273,11 +284,11 @@
                 } else {
                     chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка. Попробуйте позже.' });
                 }
-                saveChats(); renderChatList(); renderMessages();
+                renderChatList(); renderMessages();
             } catch (e) {
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 chat.messages.push({ role: 'assistant', content: '⚠️ Ошибка соединения.' });
-                saveChats(); renderMessages();
+                renderMessages();
             }
             pendingFileData = null; pendingFileName = ''; pendingFileMime = '';
             const ind = document.getElementById('fileIndicator'); if (ind) ind.remove();
