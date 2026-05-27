@@ -120,11 +120,14 @@
             <div class="sub-block" id="subscribeBlock">📛 Подпишитесь на нас в <a href="https://t.me/PhotoDocumentsBot_bot" target="_blank">Telegram</a><br><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://t.me/PhotoDocumentsBot_bot" width="200" height="200" alt="QR-код"></div>
             <div class="sub-ok" id="subscribeOk">✅ Вы подписаны</div>
             <div id="modes">
-                <button class="mode-btn active" data-mode="documents">📄 Фото на документы</button>
-                <button class="mode-btn" data-mode="beach">🌅 Закат на пляже</button>
-                <button class="mode-btn" data-mode="birthday">🎂👑 День рождения</button>
-                <button class="mode-btn" data-mode="flowers">🌸 Цветы в авто</button>
-                <button class="mode-btn" data-mode="mirror_male">🕶️💪 Мужское в зеркале</button>
+                <button class="mode-btn" onclick="toggleReadyModes()" style="text-align:center;">📋 Готовые режимы ▼</button>
+                <div id="readyModes" style="display:none;">
+                    <button class="mode-btn active" data-mode="documents">📄 Фото на документы</button>
+                    <button class="mode-btn" data-mode="beach">🌅 Закат на пляже</button>
+                    <button class="mode-btn" data-mode="birthday">🎂👑 День рождения</button>
+                    <button class="mode-btn" data-mode="flowers">🌸 Цветы в авто</button>
+                    <button class="mode-btn" data-mode="mirror_male">🕶️💪 Мужское в зеркале</button>
+                </div>
                 <button class="mode-btn" data-mode="svoboda">🎨 Свободный (ж)</button>
                 <button class="mode-btn" data-mode="svoboda_male">🎨 Свободный (м)</button>
                 <button class="mode-btn" data-mode="wallpaper">📝 Текст в изображение</button>
@@ -144,7 +147,7 @@
         </div>
 
         <div class="free-chat-panel" id="freeChatPanel">
-            <div class="free-chat-header">💬 PhotoBot<br><span style="font-size:10px;color:#888;font-weight:400;">общая история с Вашим Ассистентом</span></div>
+            <div class="free-chat-header">💬 PhotoBot<br><span style="font-size:10px;color:#888;font-weight:400;">Ваш Ассистент</span></div>
             <div class="free-chat-messages" id="freeChatMessages">
                 <div class="free-chat-placeholder">Задайте вопрос о сервисе</div>
             </div>
@@ -167,6 +170,14 @@
         function acceptCookies() { localStorage.setItem('cookies_accepted', '1'); document.getElementById('cookie-banner').style.display = 'none'; }
         window.addEventListener('focus', function() { if (!currentUserId) document.getElementById('authBlock').style.display = 'block'; if (currentUserId) checkSubscription(); if (currentUserId) checkEtalonAvailability(); });
         function openBot() { document.getElementById('authBlock').style.display = 'block'; window.open('https://t.me/PhotoDocumentsBot_bot?start=site', '_blank'); }
+        function toggleReadyModes() {
+            const div = document.getElementById('readyModes');
+            if (div.style.display === 'none') {
+                div.style.display = 'block';
+            } else {
+                div.style.display = 'none';
+            }
+        }
         function toggleDeepSeekMenu() { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } else { menu.style.display = 'block'; menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; requestAnimationFrame(() => { menu.style.transition = 'opacity 0.15s, transform 0.15s'; menu.style.opacity = '1'; menu.style.transform = 'translateX(-50%) translateY(0)'; }); } }
         document.addEventListener('click', function(e) { if (!e.target.closest('[onclick="toggleDeepSeekMenu()"]')) { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } } });
         document.getElementById('authCode').addEventListener('input', function() { const b = document.getElementById('sendBtn'); if (this.value.length === 4) { b.classList.add('active'); b.disabled = false; b.style.cursor = 'pointer'; } else { b.classList.remove('active'); b.disabled = true; b.style.cursor = 'not-allowed'; } });
