@@ -13,10 +13,8 @@
         .container, #cookie-banner { position: relative; z-index: 1; }
         .container { display: flex; max-width: 1800px; width: 100%; padding: 20px; gap: 24px; }
         .collages { width: 920px; flex-shrink: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: 16px; padding-top: 20px; }
-        .collages img { width: 440px; height: 280px; object-fit: cover; border-radius: 12px; border: 2px solid #2A2A2A; transition: 0.2s; cursor: pointer; }
+        .collages img { width: 440px; height: 280px; object-fit: cover; border-radius: 12px; border: 2px solid #2A2A2A; transition: 0.2s; cursor: pointer; display: none; }
         .collages img:hover { border-color: #00CBF5; }
-        .collages img.active { border-color: #00CBF5; }
-        .collages-placeholder { width: 920px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #444; font-size: 18px; font-weight: 500; text-align: center; padding: 20px; }
         .center-panel { width: 420px; flex-shrink: 0; }
         .header { display: flex; flex-direction: row; justify-content: center; gap: 20px; align-items: center; margin-bottom: 16px; }
         .header a { text-decoration: none; display: flex; flex-direction: column; align-items: center; }
@@ -88,7 +86,7 @@
 <body>
     <div class="container">
         <div class="collages" id="collages">
-            <img src="collages/collage_documents.jpg" alt="Документы" data-mode="documents" class="active">
+            <img src="collages/collage_documents.jpg" alt="Документы" data-mode="documents">
             <img src="collages/collage_beach.jpg" alt="Пляж" data-mode="beach">
             <img src="collages/collage_birthday.jpg" alt="День рождения" data-mode="birthday">
             <img src="collages/collage_avto.jpg" alt="Цветы в авто" data-mode="flowers">
@@ -97,6 +95,7 @@
             <img src="collages/collage_svoboda_male.jpg" alt="Свободный (м)" data-mode="svoboda_male">
             <img src="collages/collage_wallpaper.jpg" alt="Обои" data-mode="wallpaper">
         </div>
+
         <div class="center-panel">
             <div class="header">
                 <a href="index.html">
@@ -169,6 +168,7 @@
         const hints = { documents: "📄 Фото на документы: укажите одежду (например: серая рубашка)", beach: "🌅 Закат на пляже: укажите одежду (например: белое платье)", birthday: "🎂👑 День рождения: укажите число и цвет платья (например: 23 красное)", flowers: "🌸 Цветы в авто: укажите одежду (например: черное платье)", mirror_male: "🕶️💪 Мужское в зеркале: опишите одежду, очки, телефон", svoboda: "🎨 Свободный (ж): введите промт", svoboda_male: "🎨 Свободный (м): введите промт", wallpaper: "🖼️ Обои: введите промт" };
         const wallpaperSizes = { phone: [1440, 2560], pc: [2560, 1440] };
         let currentGroup = null;
+
         const savedAuth = localStorage.getItem('photobot_auth');
         if (savedAuth) { const auth = JSON.parse(savedAuth); currentUserId = auth.user_id; currentUsername = auth.username; sessionToken = auth.session_token || ''; showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); showSubscribeBlock(); checkSubscription(); }
         if (!localStorage.getItem('cookies_accepted')) document.getElementById('cookie-banner').style.display = 'block';
@@ -188,32 +188,27 @@
                 const div = document.getElementById('group-' + g);
                 if (g === group && currentGroup !== group) {
                     div.style.maxHeight = '300px';
-                    currentGroup = group;
-                    showCollagesForGroup(group);
                 } else {
                     div.style.maxHeight = '0';
                 }
             });
-            if (currentGroup === group) { currentGroup = null; document.getElementById('collages').querySelectorAll('img').forEach(img => img.style.display = 'none'); }
+            if (currentGroup === group) {
+                currentGroup = null;
+                document.querySelectorAll('#collages img').forEach(img => img.style.display = 'none');
+            } else {
+                currentGroup = group;
+                showCollagesForGroup(group);
+            }
         }
 
         function showCollagesForGroup(group) {
             const collages = document.getElementById('collages');
             collages.querySelectorAll('img').forEach(img => img.style.display = 'none');
-            if (group === 'ready') {
-                ['documents','beach','birthday','flowers','mirror_male'].forEach(m => {
-                    const img = collages.querySelector(`[data-mode="${m}"]`);
-                    if (img) img.style.display = 'block';
-                });
-            } else if (group === 'free') {
-                ['svoboda','svoboda_male'].forEach(m => {
-                    const img = collages.querySelector(`[data-mode="${m}"]`);
-                    if (img) img.style.display = 'block';
-                });
-            } else if (group === 'wallpaper') {
-                const img = collages.querySelector('[data-mode="wallpaper"]');
+            const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'] };
+            (modes[group] || []).forEach(m => {
+                const img = collages.querySelector(`[data-mode="${m}"]`);
                 if (img) img.style.display = 'block';
-            }
+            });
         }
 
         document.querySelectorAll(".mode-sub-btn").forEach(btn => {
@@ -235,10 +230,8 @@
         async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); const data = await resp.json(); if (data.has_etalon) document.getElementById('etalonBtn').style.display = 'block'; } catch (err) {} }
         async function useEtalon() { try { const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`); if (!resp.ok) { alert('Эталон не найден'); return; } const blob = await resp.blob(); uploadedFile = new File([blob], 'etalon.jpg', { type: 'image/jpeg' }); const reader = new FileReader(); reader.onload = function(ev) { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display = 'block'; }; reader.readAsDataURL(blob); document.getElementById('status').textContent = 'Эталон загружен'; } catch (err) { alert('Ошибка загрузки эталона'); } }
 
-
         async function loadFreeChatHistory() {
-            if (freeChatLoaded || !currentUserId) return;
-            freeChatLoaded = true;
+            if (!currentUserId) return;
             try {
                 const resp = await fetch(`${SERVER_URL}/get_free_chat_history?user_id=${currentUserId}`);
                 const data = await resp.json();
