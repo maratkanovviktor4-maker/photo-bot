@@ -75,8 +75,8 @@
         .free-chat-msg.user { background: #0f3460; align-self: flex-end; color: #e0e0e0; }
         .free-chat-msg.assistant { background: #16213e; align-self: flex-start; color: #e0e0e0; border: 1px solid #1a2a4a; }
         .free-chat-input-area { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #2A2A2A; }
-        .free-chat-input-area input { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #2A2A2A; background: #222; color: #fff; font-size: 13px; font-family: 'Montserrat', sans-serif; outline: none; }
-        .free-chat-input-area input:focus { border-color: #00CBF5; }
+        .free-chat-input-area textarea { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #2A2A2A; background: #222; color: #fff; font-size: 13px; font-family: 'Montserrat', sans-serif; outline: none; resize: none; }
+        .free-chat-input-area textarea:focus { border-color: #00CBF5; }
         .free-chat-input-area button { padding: 10px 16px; background: #00CBF5; color: #1a1a2e; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 14px; }
         .free-chat-input-area button:hover { background: #14E9FC; }
         @media (max-width: 768px) { .container { flex-direction: column; align-items: center; padding: 12px; gap: 16px; } .collages { width: 100%; order: 1; display: flex; flex-direction: column; gap: 10px; } .collages img { width: 100%; max-width: 100%; } .center-panel { width: 100%; order: 2; } .free-chat-panel { width: 100%; height: 400px; position: static; } }
@@ -136,7 +136,7 @@
                 </div>
             </div>
             <div id="wallpaperSize" style="display:none;"><div class="size-btns"><button class="size-btn active" data-wp="phone">📱 9:16</button><button class="size-btn" data-wp="pc">🖥️ 16:9</button></div></div>
-            <textarea id="caption" placeholder="Подпись (например: серая рубашка / 23 красное)" rows="2" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,130)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px';this._init=true;}"></textarea>
+            <textarea id="caption" placeholder="Введите промт здесь..." rows="2" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,130)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px';this._init=true;}"></textarea>
             <div class="hint" id="modeHint">Выберите режим и укажите подпись</div>
             <button id="etalonBtn" class="mode-btn" style="display:none;text-align:center;color:#00CBF5;" onclick="useEtalon()">⭐ Использовать эталон</button>
             <input type="file" id="photoInput" accept="image/*">
@@ -154,7 +154,7 @@
                 <div class="free-chat-placeholder">Задайте вопрос о сервисе</div>
             </div>
             <div class="free-chat-input-area">
-                <input type="text" id="freeChatInput" placeholder="Введите сообщение..." onkeydown="if(event.key==='Enter'){sendFreeMessage();}">
+                <textarea id="freeChatInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFreeMessage();}" style="resize:none;min-height:52px;max-height:104px;overflow-y:auto;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,104)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,104)+'px';this._init=true;}"></textarea>
                 <button onclick="sendFreeMessage()">➤</button>
             </div>
         </div>
