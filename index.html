@@ -63,7 +63,6 @@
         .legal-footer { text-align: center; padding: 20px 0 0 0; margin-top: 16px; border-top: 1px solid #2A2A2A; }
         .legal-footer a { color: #888; text-decoration: none; margin: 0 10px; font-size: 11px; font-weight: 500; letter-spacing: 0.3px; transition: 0.2s; }
         .legal-footer a:hover { color: #00CBF5; }
-        #generation-warning { display: none; text-align: center; color: #E67E22; font-size: 10px; margin: 4px 0; font-weight: 500; }
         .nav-btn { display: block; text-align: center; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; font-size: 15px; font-weight: 700; padding: 12px 0; text-decoration: none; border-radius: 10px; margin: 8px 0; font-family: 'Montserrat', sans-serif; letter-spacing: 0.5px; transition: 0.2s; }
         .nav-btn:hover { background: #14E9FC; }
         #cookie-banner { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #1A1A1A; padding: 12px 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #2A2A2A; z-index: 1000; }
@@ -142,7 +141,6 @@
             <button id="etalonBtn" class="mode-btn" style="display:none;text-align:center;color:#00CBF5;" onclick="useEtalon()">⭐ Использовать эталон</button>
             <input type="file" id="photoInput" accept="image/*">
             <img id="preview" alt="Превью">
-            <div id="generation-warning">⚠️ Результат не является официальным документом</div>
             <div class="actions"><button id="generate" onclick="startGeneration()">⚡ Сгенерировать</button></div>
             <div id="status"></div>
             <a href="prompts.html" class="nav-btn">📋 База промтов</a>
@@ -218,8 +216,9 @@
                 selectMode(this.dataset.mode);
             });
         });
+        document.querySelectorAll("#collages img").forEach(img => { img.addEventListener("click", function() { selectMode(this.dataset.mode); }); });
         document.querySelectorAll(".size-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".size-btn").forEach(b => b.classList.remove("active")); this.classList.add("active"); wallpaperSize = this.dataset.wp; }); });
-        function selectMode(mode) { selectedMode = mode; document.getElementById("modeHint").textContent = hints[mode]; document.getElementById('generation-warning').style.display = mode === 'documents' ? 'block' : 'none'; if (mode === "wallpaper") { document.getElementById("wallpaperSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; } else { document.getElementById("wallpaperSize").style.display = "none"; document.getElementById("photoInput").style.display = "block"; } }
+        function selectMode(mode) { selectedMode = mode; document.getElementById("modeHint").textContent = hints[mode]; if (mode === "wallpaper") { document.getElementById("wallpaperSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; } else { document.getElementById("wallpaperSize").style.display = "none"; document.getElementById("photoInput").style.display = "block"; } }
         async function checkSubscription() { if (!currentUserId) return; try { const r = await fetch(`${SERVER_URL}/check_subscription`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserId }) }); const d = await r.json(); isSubscribed = d.subscribed; if (isSubscribed) { document.getElementById("subscribeBlock").style.display = "none"; document.getElementById("subscribeOk").style.display = "block"; } else { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; } } catch (err) {} }
         document.getElementById("photoInput").addEventListener("change", function(e) { const file = e.target.files[0]; if (file) { uploadedFile = file; const reader = new FileReader(); reader.onload = function(ev) { document.getElementById("preview").src = ev.target.result; document.getElementById("preview").style.display = "block"; }; reader.readAsDataURL(file); } });
         function getPreviewNote() { if (selectedMode === "documents") return "Образец. Полный размер 832×1152"; if (selectedMode === "wallpaper") { const [w, h] = wallpaperSizes[wallpaperSize]; return `Образец. Полный размер ${w}×${h}`; } return "Образец. Полный размер 1080×1344"; }
