@@ -241,7 +241,13 @@
             collages.querySelectorAll('img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; });
             const fluxVideo = document.getElementById('fluxVideo');
             if (fluxVideo) { fluxVideo.style.display = 'none'; fluxVideo.pause(); }
-            if (group === 'flux' && fluxVideo) { fluxVideo.style.display = 'block'; fluxVideo.play(); return; }
+            document.getElementById('bannerImg').style.display = 'block';
+            if (group === 'flux' && fluxVideo) {
+                document.getElementById('bannerImg').style.display = 'none';
+                fluxVideo.style.display = 'block';
+                fluxVideo.play();
+                return;
+            }
             const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'], flux: [], text: [] };
             (modes[group] || []).forEach(m => {
                 const img = collages.querySelector(`[data-mode="${m}"]`);
