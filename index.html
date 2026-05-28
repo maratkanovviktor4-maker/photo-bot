@@ -133,7 +133,6 @@
             <div class="sub-block" id="subscribeBlock"><span data-t="subscribe_block">📛 Подпишитесь на нас в <a href="https://t.me/PhotoDocumentsBot_bot" target="_blank">Telegram</a></span><br><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://t.me/PhotoDocumentsBot_bot" width="200" height="200" alt="QR-код"></div>
             <div class="sub-ok" id="subscribeOk" data-t="subscribe_ok">✅ Вы подписаны</div>
             <div id="modes">
-                
                 <button class="mode-group-btn" onclick="toggleModeGroup('flux')" data-t="flux">🌟 FLUX 2 <span style="font-size:10px;color:#888;" data-t="flux_sub">Black Forest Labs</span></button>
                 <div class="mode-sub-group" id="group-flux" style="max-height:0;">
                     <button class="mode-sub-btn" onclick="toggleFluxSubgroup('free')" style="text-align:left;" data-t="img2img">🖼️ Изображение в изображение ▾</button>
@@ -185,8 +184,15 @@
         </div>
     </div>
     <div id="cookie-banner"><span data-t="cookie">Мы используем необходимые cookie-файлы для авторизации и работы сервиса.</span><button onclick="acceptCookies()" data-t="cookie_btn">OK</button></div>
-    <script src="lang.js"></script>
     <script>
+        const translations = {
+            ru: {
+                title: "PhotoBot — Фото на документы", login: "🔑 Войти через Telegram", auth_code: "Введите код авторизации из бота", send: "Отправить", auth_info: "👤 Вошли как", subscribe_block: "📛 Подпишитесь на нас в Telegram", subscribe_ok: "✅ Вы подписаны", flux: "🌟 FLUX 2", flux_sub: "Black Forest Labs", img2img: "🖼️ Изображение в изображение", ready_modes: "📋 Готовые режимы", documents: "📄 Фото на документы", beach: "🌅 Закат на пляже", birthday: "🎂👑 День рождения", flowers: "🌸 Цветы в авто", mirror_male: "🕶️💪 Мужское в зеркале", svoboda_f: "🎨 Свободный (ж)", svoboda_m: "🎨 Свободный (м)", text2img: "📝 Текст в изображение", wallpaper: "🖼️ Обои", text_models: "💬 Текстовые модели", v4flash: "⚡ DeepSeek V4 Flash", v4pro: "🧠 DeepSeek V4 Pro", phone: "📱 9:16", pc: "🖥️ 16:9", prompt_placeholder: "Введите промт здесь...", hint: "Выберите режим и укажите подпись", etalon: "⭐ Использовать эталон", generate: "⚡ Сгенерировать", prompts: "📋 База промтов", storage: "📦 Хранилище генераций", agreement: "Пользовательское соглашение", privacy: "Политика конфиденциальности", chat_title: "💬 PhotoBot", chat_subtitle: "общая история с Вашим Ассистентом", chat_placeholder: "Задайте вопрос о сервисе", chat_input: "Введите сообщение...", cookie: "Мы используем необходимые cookie-файлы для авторизации и работы сервиса.", cookie_btn: "OK", wallpaper_hint: "🖼️ Обои: введите промт", documents_hint: "📄 Фото на документы: укажите одежду (например: серая рубашка)", beach_hint: "🌅 Закат на пляже: укажите одежду (например: белое платье)", birthday_hint: "🎂👑 День рождения: укажите число и цвет платья (например: 23 красное)", flowers_hint: "🌸 Цветы в авто: укажите одежду (например: черное платье)", mirror_male_hint: "🕶️💪 Мужское в зеркале: опишите одежду, очки, телефон", svoboda_hint: "🎨 Свободный (ж): введите промт", svoboda_male_hint: "🎨 Свободный (м): введите промт"
+            },
+            en: {
+                title: "PhotoBot — Photo for documents", login: "🔑 Log in with Telegram", auth_code: "Enter the authorization code from the bot", send: "Send", auth_info: "👤 Logged in as", subscribe_block: "📛 Subscribe to our Telegram", subscribe_ok: "✅ You are subscribed", flux: "🌟 FLUX 2", flux_sub: "Black Forest Labs", img2img: "🖼️ Image to Image", ready_modes: "📋 Ready Modes", documents: "📄 ID Photo", beach: "🌅 Beach Sunset", birthday: "🎂👑 Birthday", flowers: "🌸 Flowers in Car", mirror_male: "🕶️💪 Male Mirror Selfie", svoboda_f: "🎨 Free (F)", svoboda_m: "🎨 Free (M)", text2img: "📝 Text to Image", wallpaper: "🖼️ Wallpaper", text_models: "💬 Text Models", v4flash: "⚡ DeepSeek V4 Flash", v4pro: "🧠 DeepSeek V4 Pro", phone: "📱 9:16", pc: "🖥️ 16:9", prompt_placeholder: "Enter your prompt here...", hint: "Select mode and enter prompt", etalon: "⭐ Use Reference", generate: "⚡ Generate", prompts: "📋 Prompt Library", storage: "📦 Generation Storage", agreement: "User Agreement", privacy: "Privacy Policy", chat_title: "💬 PhotoBot", chat_subtitle: "shared history with your Assistant", chat_placeholder: "Ask a question about the service", chat_input: "Type a message...", cookie: "We use essential cookies for authorization and service operation.", cookie_btn: "OK", wallpaper_hint: "🖼️ Wallpaper: enter prompt", documents_hint: "📄 ID Photo: specify clothing (e.g., gray shirt)", beach_hint: "🌅 Beach Sunset: specify clothing (e.g., white dress)", birthday_hint: "🎂👑 Birthday: enter age and dress color (e.g., 23 red)", flowers_hint: "🌸 Flowers in Car: specify clothing (e.g., black dress)", mirror_male_hint: "🕶️💪 Mirror Selfie: describe clothes, glasses, phone", svoboda_hint: "🎨 Free (F): enter prompt", svoboda_male_hint: "🎨 Free (M): enter prompt"
+            }
+        };
         const SERVER_URL = "https://api.фото-бот.рф";
         let selectedMode = "documents", uploadedFile = null, wallpaperSize = "pc", currentUserId = null, currentUsername = null, isSubscribed = false, sessionToken = '';
         const hints = { documents: "📄 Фото на документы: укажите одежду (например: серая рубашка)", beach: "🌅 Закат на пляже: укажите одежду (например: белое платье)", birthday: "🎂👑 День рождения: укажите число и цвет платья (например: 23 красное)", flowers: "🌸 Цветы в авто: укажите одежду (например: черное платье)", mirror_male: "🕶️💪 Мужское в зеркале: опишите одежду, очки, телефон", svoboda: "🎨 Свободный (ж): введите промт", svoboda_male: "🎨 Свободный (м): введите промт", wallpaper: "🖼️ Обои: введите промт" };
@@ -214,21 +220,19 @@
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
         function toggleFluxSubgroup(sub) {
             const div = document.getElementById('group-' + sub);
-            if (div.style.maxHeight === '300px' || div.style.maxHeight === 'none') {
+            if (div.style.maxHeight === '300px') {
                 div.style.maxHeight = '0';
             } else {
-                div.style.maxHeight = sub === 'free' ? 'none' : '300px';
+                div.style.maxHeight = '300px';
                 showCollagesForGroup(sub);
             }
         }
         function toggleReadySubgroup() {
             const inner = document.getElementById('group-ready-inner');
-            const freeGroup = document.getElementById('group-free');
             if (inner.style.maxHeight === '300px') {
                 inner.style.maxHeight = '0';
             } else {
                 inner.style.maxHeight = '300px';
-                freeGroup.style.maxHeight = 'none';
                 showCollagesForGroup('ready');
             }
         }
@@ -255,7 +259,6 @@
                 showCollagesForGroup(group);
             }
         }
-
         function showCollagesForGroup(group) {
             const collages = document.getElementById('collages');
             collages.querySelectorAll('img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; });
@@ -275,13 +278,10 @@
                 if (img) {
                     img.style.display = 'block';
                     img.classList.add('appearing');
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => img.classList.add('show'));
-                    });
+                    requestAnimationFrame(() => { requestAnimationFrame(() => img.classList.add('show')); });
                 }
             });
         }
-
         document.querySelectorAll(".mode-sub-btn").forEach(btn => {
             btn.addEventListener("click", function() {
                 document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected"));
@@ -298,94 +298,44 @@
         async function checkSubscription() { if (!currentUserId) return; try { const r = await fetch(`${SERVER_URL}/check_subscription`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserId }) }); const d = await r.json(); isSubscribed = d.subscribed; if (isSubscribed) { document.getElementById("subscribeBlock").style.display = "none"; document.getElementById("subscribeOk").style.display = "block"; } else { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; } } catch (err) {} }
         document.getElementById("photoInput").addEventListener("change", function(e) { const file = e.target.files[0]; if (file) { uploadedFile = file; const reader = new FileReader(); reader.onload = function(ev) { document.getElementById("preview").src = ev.target.result; document.getElementById("preview").style.display = "block"; }; reader.readAsDataURL(file); } });
         function getPreviewNote() { if (selectedMode === "documents") return "Образец. Полный размер 832×1152"; if (selectedMode === "wallpaper") { const [w, h] = wallpaperSizes[wallpaperSize]; return `Образец. Полный размер ${w}×${h}`; } return "Образец. Полный размер 1080×1344"; }
-
         async function startGeneration() { if (!currentUserId) { document.getElementById('authBlock').style.display = 'block'; return; } const accessResp = await fetch(`${SERVER_URL}/check_generation_access?user_id=${currentUserId}`); const accessData = await accessResp.json(); if (!accessData.allowed) { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; document.getElementById("status").textContent = "⚠️ Бесплатные генерации закончились. Нужна подписка."; return; } await runGeneration(); }
         async function runGeneration() { const genBtn = document.getElementById("generate"); genBtn.disabled = true; genBtn.textContent = "⏳ Генерация..."; const caption = document.getElementById("caption").value || "черная рубашка"; try { if (selectedMode !== "wallpaper" && !uploadedFile) { genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } const formData = new FormData(); if (uploadedFile) formData.append("image", uploadedFile); formData.append("mode", selectedMode); formData.append("caption", caption); formData.append("user_id", currentUserId); formData.append("source", "web"); formData.append("size", wallpaperSize); document.getElementById("status").textContent = "⚡ Добавлено в очередь..."; const enqResp = await fetch(`${SERVER_URL}/enqueue`, { method: "POST", body: formData, headers: sessionToken ? { "X-Session-Token": sessionToken } : {} }); const enqData = await enqResp.json(); if (!enqData.job_id) { document.getElementById("status").textContent = "⚠️ Ошибка очереди."; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } document.getElementById("status").textContent = "⏳ Ожидание генерации..."; for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { const result = pendData.results[0]; const bytes = Uint8Array.from(atob(result.data), c => c.charCodeAt(0)); const blob = new Blob([bytes], { type: 'image/jpeg' }); document.getElementById("status").textContent = "✅ Готово! Сохранено в хранилище."; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } } document.getElementById("status").textContent = "⚠️ Время ожидания истекло."; } catch (err) { document.getElementById("status").textContent = "🔧 Ошибка: " + err.message; } genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; }
-
         async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); const data = await resp.json(); if (data.has_etalon) document.getElementById('etalonBtn').style.display = 'block'; } catch (err) {} }
         async function useEtalon() { try { const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`); if (!resp.ok) { alert('Эталон не найден'); return; } const blob = await resp.blob(); uploadedFile = new File([blob], 'etalon.jpg', { type: 'image/jpeg' }); const reader = new FileReader(); reader.onload = function(ev) { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display = 'block'; }; reader.readAsDataURL(blob); document.getElementById('status').textContent = 'Эталон загружен'; } catch (err) { alert('Ошибка загрузки эталона'); } }
-
         async function loadFreeChatHistory() {
             if (!currentUserId) return;
             try {
                 const resp = await fetch(`${SERVER_URL}/get_free_chat_history?user_id=${currentUserId}`);
                 const data = await resp.json();
                 const container = document.getElementById('freeChatMessages');
-                if (data.history && data.history.length > 0) {
-                    container.innerHTML = '';
-                    data.history.forEach(m => {
-                        if (m.role === 'system') return;
-                        const div = document.createElement('div');
-                        div.className = 'free-chat-msg ' + m.role;
-                        div.textContent = m.content;
-                        container.appendChild(div);
-                    });
-                    container.scrollTop = container.scrollHeight;
-                }
+                if (data.history && data.history.length > 0) { container.innerHTML = ''; data.history.forEach(m => { if (m.role === 'system') return; const div = document.createElement('div'); div.className = 'free-chat-msg ' + m.role; div.textContent = m.content; container.appendChild(div); }); container.scrollTop = container.scrollHeight; }
             } catch(e) {}
         }
         async function sendFreeMessage() {
-            const input = document.getElementById('freeChatInput');
-            const text = input.value.trim();
-            if (!text) return;
-            if (!currentUserId) { alert('Авторизуйтесь'); return; }
-            input.value = '';
-            const container = document.getElementById('freeChatMessages');
+            const input = document.getElementById('freeChatInput'); const text = input.value.trim();
+            if (!text) return; if (!currentUserId) { alert('Авторизуйтесь'); return; }
+            input.value = ''; const container = document.getElementById('freeChatMessages');
             if (container.querySelector('.free-chat-placeholder')) container.innerHTML = '';
-            const userDiv = document.createElement('div');
-            userDiv.className = 'free-chat-msg user';
-            userDiv.textContent = text;
-            container.appendChild(userDiv);
-            const loaderDiv = document.createElement('div');
-            loaderDiv.className = 'free-chat-msg assistant';
-            loaderDiv.textContent = '...';
-            container.appendChild(loaderDiv);
+            const userDiv = document.createElement('div'); userDiv.className = 'free-chat-msg user'; userDiv.textContent = text; container.appendChild(userDiv);
+            const loaderDiv = document.createElement('div'); loaderDiv.className = 'free-chat-msg assistant'; loaderDiv.textContent = '...'; container.appendChild(loaderDiv);
             container.scrollTop = container.scrollHeight;
             try {
-                const resp = await fetch(`${SERVER_URL}/chat_free`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUserId, message: text })
-                });
-                const data = await resp.json();
-                loaderDiv.remove();
-                const asstDiv = document.createElement('div');
-                asstDiv.className = 'free-chat-msg assistant';
-                asstDiv.textContent = data.reply || 'Ошибка';
-                container.appendChild(asstDiv);
+                const resp = await fetch(`${SERVER_URL}/chat_free`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, message: text }) });
+                const data = await resp.json(); loaderDiv.remove();
+                const asstDiv = document.createElement('div'); asstDiv.className = 'free-chat-msg assistant'; asstDiv.textContent = data.reply || 'Ошибка'; container.appendChild(asstDiv);
                 container.scrollTop = container.scrollHeight;
-            } catch(e) {
-                loaderDiv.textContent = 'Ошибка соединения';
-            }
+            } catch(e) { loaderDiv.textContent = 'Ошибка соединения'; }
         }
-        function setLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('photobot_lang', lang);
-            document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang));
-            applyTranslations();
-        }
+        function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); applyTranslations(); }
         function t(key) { return translations[currentLang][key] || key; }
         function applyTranslations() {
             document.querySelectorAll('[data-t]').forEach(el => {
                 const key = el.getAttribute('data-t');
-                if (el.placeholder !== undefined && el.tagName === 'TEXTAREA') {
-                    el.placeholder = t(key);
-                } else if (el.tagName === 'INPUT' && el.type === 'text') {
-                    el.placeholder = t(key);
-                } else {
-                    el.textContent = t(key);
-                }
+                if (el.placeholder !== undefined && el.tagName === 'TEXTAREA') { el.placeholder = t(key); }
+                else if (el.tagName === 'INPUT' && el.type === 'text') { el.placeholder = t(key); }
+                else { el.textContent = t(key); }
             });
-            // Обновить подсказки
-            if (typeof hints !== 'undefined') {
-                hints.documents = t('documents_hint');
-                hints.beach = t('beach_hint');
-                hints.birthday = t('birthday_hint');
-                hints.flowers = t('flowers_hint');
-                hints.mirror_male = t('mirror_male_hint');
-                hints.svoboda = t('svoboda_hint');
-                hints.svoboda_male = t('svoboda_male_hint');
-                hints.wallpaper = t('wallpaper_hint');
-            }
+            if (typeof hints !== 'undefined') { hints.documents = t('documents_hint'); hints.beach = t('beach_hint'); hints.birthday = t('birthday_hint'); hints.flowers = t('flowers_hint'); hints.mirror_male = t('mirror_male_hint'); hints.svoboda = t('svoboda_hint'); hints.svoboda_male = t('svoboda_male_hint'); hints.wallpaper = t('wallpaper_hint'); }
             document.title = t('title');
             if (typeof selectedMode !== 'undefined') document.getElementById('modeHint').textContent = hints[selectedMode] || t('hint');
         }
