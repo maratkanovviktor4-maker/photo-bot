@@ -253,15 +253,16 @@
         document.getElementById('generate').addEventListener('mouseleave', function() {
             this.style.boxShadow = '0 4px 16px rgba(0,203,245,0.3)';
         });
-        const fluxBtn = document.querySelector('[onclick="toggleModeGroup(\'flux\')"]');
-        fluxBtn.addEventListener('mousemove', function(e) {
-            const rect = this.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const pct = x / rect.width;
-            this.style.borderImage = `linear-gradient(90deg, #2A2A2A ${pct*100-5}%, #00CBF5 ${pct*100}%, #2A2A2A ${pct*100+5}%) 1`;
-        });
-        fluxBtn.addEventListener('mouseleave', function() {
-            this.style.borderImage = 'none';
+        document.querySelectorAll('.mode-group-btn, .mode-sub-btn').forEach(btn => {
+            btn.addEventListener('mousemove', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const pct = x / rect.width;
+                this.style.borderImage = `linear-gradient(90deg, #2A2A2A ${pct*100-5}%, #00CBF5 ${pct*100}%, #2A2A2A ${pct*100+5}%) 1`;
+            });
+            btn.addEventListener('mouseleave', function() {
+                this.style.borderImage = 'none';
+            });
         });
     </script>
 </body>
