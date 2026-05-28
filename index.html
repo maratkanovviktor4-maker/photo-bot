@@ -13,8 +13,10 @@
         .container, #cookie-banner { position: relative; z-index: 1; }
         .container { display: flex; max-width: 1800px; width: 100%; padding: 20px; gap: 24px; }
         .collages { width: 920px; flex-shrink: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: 16px; padding-top: 20px; }
-        .collages img { width: 440px; height: 280px; object-fit: cover; border-radius: 12px; border: 2px solid #2A2A2A; transition: 0.2s; cursor: pointer; display: none; }
-        .collages img:hover { border-color: #00CBF5; }
+        .collages img { width: 440px; height: 280px; object-fit: cover; border-radius: 12px; border: 2px solid transparent; transition: opacity 0.4s ease, filter 0.4s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; cursor: pointer; display: none; }
+        .collages img:hover { border-color: rgba(0,203,245,0.6); filter: brightness(1.1); box-shadow: 0 0 30px rgba(0,203,245,0.3), 0 0 60px rgba(0,203,245,0.1); transform: translateY(-2px); }
+        .collages img.appearing { display: block; opacity: 0; filter: brightness(0.8); }
+        .collages img.appearing.show { opacity: 1; filter: brightness(1); }
         .center-panel { width: 420px; flex-shrink: 0; }
         .header { display: flex; flex-direction: row; justify-content: center; gap: 20px; align-items: center; margin-bottom: 16px; }
         .header a { text-decoration: none; display: flex; flex-direction: column; align-items: center; }
@@ -184,7 +186,7 @@
         document.getElementById('sendBtn').addEventListener('click', async function() { const c = document.getElementById('authCode').value; if (c.length !== 4) return; try { const r = await fetch(`${SERVER_URL}/verify_code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: c }) }); const d = await r.json(); if (d.success) { currentUserId = d.user_id; currentUsername = d.username; isSubscribed = d.subscribed; sessionToken = d.session_token || ''; localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken })); showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); document.getElementById('authBlock').style.display = 'none'; if (isSubscribed) { document.getElementById('subscribeBlock').style.display = 'none'; document.getElementById('subscribeOk').style.display = 'block'; } else { document.getElementById('subscribeBlock').style.display = 'block'; } } else { alert(d.error === 'Not subscribed' ? 'Вы не подписаны на бота. Подпишитесь и попробуйте снова.' : 'Неверный код авторизации'); } } catch (err) { alert('Ошибка соединения с сервером'); } });
         function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; loadFreeChatHistory(); }
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
-        
+
         function toggleModeGroup(group) {
             const groups = ['ready', 'free', 'wallpaper'];
             groups.forEach(g => {
@@ -197,7 +199,7 @@
             });
             if (currentGroup === group) {
                 currentGroup = null;
-                document.querySelectorAll('#collages img').forEach(img => img.style.display = 'none');
+                document.querySelectorAll('#collages img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; });
                 const banner = document.getElementById('bannerImg');
                 if (banner) banner.style.display = 'block';
             } else {
@@ -208,13 +210,19 @@
 
         function showCollagesForGroup(group) {
             const collages = document.getElementById('collages');
-            collages.querySelectorAll('img').forEach(img => img.style.display = 'none');
+            collages.querySelectorAll('img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; });
             const banner = document.getElementById('bannerImg');
             if (banner) banner.style.display = 'none';
             const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'] };
             (modes[group] || []).forEach(m => {
                 const img = collages.querySelector(`[data-mode="${m}"]`);
-                if (img) img.style.display = 'block';
+                if (img) {
+                    img.style.display = 'block';
+                    img.classList.add('appearing');
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => img.classList.add('show'));
+                    });
+                }
             });
         }
 
