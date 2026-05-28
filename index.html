@@ -124,16 +124,18 @@
             <div class="sub-block" id="subscribeBlock">📛 Подпишитесь на нас в <a href="https://t.me/PhotoDocumentsBot_bot" target="_blank">Telegram</a><br><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://t.me/PhotoDocumentsBot_bot" width="200" height="200" alt="QR-код"></div>
             <div class="sub-ok" id="subscribeOk">✅ Вы подписаны</div>
             <div id="modes">
-                <button class="mode-group-btn" onclick="toggleModeGroup('ready')">📋 Готовые режимы</button>
-                <div class="mode-sub-group" id="group-ready" style="max-height:0;">
-                    <button class="mode-sub-btn" data-mode="documents">📄 Фото на документы</button>
-                    <button class="mode-sub-btn" data-mode="beach">🌅 Закат на пляже</button>
-                    <button class="mode-sub-btn" data-mode="birthday">🎂👑 День рождения</button>
-                    <button class="mode-sub-btn" data-mode="flowers">🌸 Цветы в авто</button>
-                    <button class="mode-sub-btn" data-mode="mirror_male">🕶️💪 Мужское в зеркале</button>
+                
                 </div>
                 <button class="mode-group-btn" onclick="toggleModeGroup('free')">🖼️ Изображение в изображение</button>
                 <div class="mode-sub-group" id="group-free" style="max-height:0;">
+                    <button class="mode-sub-btn" onclick="toggleReadySubgroup()" style="text-align:left;">📋 Готовые режимы ▾</button>
+                    <div class="mode-sub-group" id="group-ready-inner" style="max-height:0;padding-left:12px;">
+                        <button class="mode-sub-btn" data-mode="documents">📄 Фото на документы</button>
+                        <button class="mode-sub-btn" data-mode="beach">🌅 Закат на пляже</button>
+                        <button class="mode-sub-btn" data-mode="birthday">🎂👑 День рождения</button>
+                        <button class="mode-sub-btn" data-mode="flowers">🌸 Цветы в авто</button>
+                        <button class="mode-sub-btn" data-mode="mirror_male">🕶️💪 Мужское в зеркале</button>
+                    </div>
                     <button class="mode-sub-btn" data-mode="svoboda">🎨 Свободный (ж)</button>
                     <button class="mode-sub-btn" data-mode="svoboda_male">🎨 Свободный (м)</button>
                 </div>
@@ -186,9 +188,16 @@
         document.getElementById('sendBtn').addEventListener('click', async function() { const c = document.getElementById('authCode').value; if (c.length !== 4) return; try { const r = await fetch(`${SERVER_URL}/verify_code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: c }) }); const d = await r.json(); if (d.success) { currentUserId = d.user_id; currentUsername = d.username; isSubscribed = d.subscribed; sessionToken = d.session_token || ''; localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken })); showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); document.getElementById('authBlock').style.display = 'none'; if (isSubscribed) { document.getElementById('subscribeBlock').style.display = 'none'; document.getElementById('subscribeOk').style.display = 'block'; } else { document.getElementById('subscribeBlock').style.display = 'block'; } } else { alert(d.error === 'Not subscribed' ? 'Вы не подписаны на бота. Подпишитесь и попробуйте снова.' : 'Неверный код авторизации'); } } catch (err) { alert('Ошибка соединения с сервером'); } });
         function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; loadFreeChatHistory(); }
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
-
+        function toggleReadySubgroup() {
+            const inner = document.getElementById('group-ready-inner');
+            if (inner.style.maxHeight === '300px') {
+                inner.style.maxHeight = '0';
+            } else {
+                inner.style.maxHeight = '300px';
+            }
+        }
         function toggleModeGroup(group) {
-            const groups = ['ready', 'free', 'wallpaper'];
+            const groups = ['free', 'wallpaper'];
             groups.forEach(g => {
                 const div = document.getElementById('group-' + g);
                 if (g === group && currentGroup !== group) {
