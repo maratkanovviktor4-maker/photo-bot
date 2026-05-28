@@ -303,7 +303,8 @@
                             if (msgDivs.length > 0) {
                                 const lastDiv = msgDivs[msgDivs.length - 1];
                                 lastDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
-                                area2.scrollTop = area2.scrollHeight;
+                                const isAtBottom = area2.scrollHeight - area2.scrollTop - area2.clientHeight < 50;
+                                if (isAtBottom) area2.scrollTop = area2.scrollHeight;
                             }
                             i++;
                         } else {
@@ -382,7 +383,8 @@
                             const msgDivs = area2.querySelectorAll('.message-row.assistant .message-content');
                             if (msgDivs.length > index) {
                                 msgDivs[index].innerHTML = formatMessage(chat.messages[index].content);
-                                area2.scrollTop = area2.scrollHeight;
+                                const isAtBottom = area2.scrollHeight - area2.scrollTop - area2.clientHeight < 50;
+                                if (isAtBottom) area2.scrollTop = area2.scrollHeight;
                             }
                             i++;
                         } else {
