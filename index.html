@@ -33,13 +33,14 @@
         .sub-block a { display: inline-block; padding: 8px 16px; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; text-decoration: none; border-radius: 8px; font-size: 12px; font-weight: 600; margin: 6px 0; letter-spacing: 0.5px; }
         .sub-block img { margin-top: 8px; border-radius: 8px; }
         .sub-ok { background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border-radius: 16px; padding: 14px; margin: 10px 0; text-align: center; font-size: 13px; color: #00CBF5; display: none; border: 1px solid rgba(255,255,255,0.06); font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-        .mode-group-btn { display: block; width: 100%; padding: 12px 14px; margin: 4px 0; background: #222; border: 1px solid transparent; color: #fff; border-radius: 16px; cursor: pointer; font-size: 14px; text-align: center; transition: 0.3s ease; font-family: 'Montserrat', sans-serif; font-weight: 600; letter-spacing: 0.3px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .mode-group-btn { display: block; width: 100%; padding: 6px 14px; margin: 4px 0; background: #222; border: 1px solid transparent; color: #fff; border-radius: 16px; cursor: pointer; font-size: 13px; text-align: center; transition: 0.3s ease; font-family: 'Montserrat', sans-serif; font-weight: 600; letter-spacing: 0.3px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
         .mode-group-btn:hover { background: #2A2A2A; border-color: #00CBF5; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,203,245,0.15), 0 2px 8px rgba(0,0,0,0.3); }
         .mode-group-btn.active { background: #00CBF5; border-color: #00CBF5; color: #201F28; }
-        .mode-sub-btn { display: block; width: 100%; padding: 10px 14px; margin: 2px 0; background: #1a1a1a; border: 1px solid transparent; color: #aaa; border-radius: 14px; cursor: pointer; font-size: 13px; text-align: left; transition: 0.3s ease; font-family: 'Montserrat', sans-serif; font-weight: 500; letter-spacing: 0.3px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+        .mode-sub-btn { display: block; width: 100%; padding: 5px 14px; margin: 2px 0; background: #1a1a1a; border: 1px solid transparent; color: #aaa; border-radius: 14px; cursor: pointer; font-size: 12px; text-align: left; transition: 0.3s ease; font-family: 'Montserrat', sans-serif; font-weight: 500; letter-spacing: 0.3px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+        .mode-sub-btn[onclick*="toggleFluxSubgroup"] { padding: 8px 14px; font-size: 13px; }
         .mode-sub-btn:hover { background: #2A2A2A; border-color: #00CBF5; color: #fff; transform: translateX(4px); box-shadow: 0 4px 12px rgba(0,203,245,0.1); }
         .mode-sub-btn.selected { background: linear-gradient(90deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; font-weight: 600; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
-        .mode-sub-group { overflow: hidden; transition: max-height 0.3s ease; }
+        .mode-sub-group { overflow: hidden; transition: max-height 0.3s ease; padding-right: 12px; }
         #preview { width: 100%; max-height: 180px; object-fit: contain; margin: 8px 0; border-radius: 16px; display: none; }
         #status { text-align: center; color: #aaa; margin: 6px 0; font-size: 12px; }
         .actions { display: flex; gap: 8px; margin-top: 8px; }
@@ -73,7 +74,7 @@
         .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,203,245,0.4); }
         #cookie-banner { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #1A1A1A; padding: 12px 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #2A2A2A; z-index: 1000; }
         #cookie-banner button { background: #00CBF5; color: #201F28; border: none; padding: 6px 16px; border-radius: 6px; margin-left: 10px; cursor: pointer; font-weight: 600; font-family: 'Montserrat', sans-serif; font-size: 11px; }
-        .free-chat-panel { width: 420px; flex-shrink: 0; background: rgba(26,26,46,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; display: flex; flex-direction: column; height: calc(100vh - 40px); position: sticky; top: 20px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+        .free-chat-panel { width: 420px; flex-shrink: 0; margin-left: 20px; background: rgba(26,26,46,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; display: flex; flex-direction: column; height: calc(100vh - 40px); position: sticky; top: 20px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
         .free-chat-header { padding: 14px; text-align: center; font-weight: 600; font-size: 14px; color: #00CBF5; border-bottom: 1px solid rgba(255,255,255,0.06); }
         .free-chat-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
         .free-chat-placeholder { color: #555; text-align: center; font-size: 13px; margin-top: 40px; }
@@ -135,7 +136,8 @@
                 <button class="mode-group-btn" onclick="toggleModeGroup('flux')" data-t="flux">🌟 FLUX 2 <span style="font-size:10px;color:#888;" data-t="flux_sub">Black Forest Labs</span></button>
                 <div class="mode-sub-group" id="group-flux" style="max-height:0;">
                     <button class="mode-sub-btn" onclick="toggleFluxSubgroup('free')" style="text-align:left;" data-t="img2img">🖼️ Изображение в изображение ▾</button>
-                    <div class="mode-sub-group" id="group-free" style="max-height:0;padding-left:12px;">
+                    <div class="mode-sub-group" id="group-free" style="max-height:0;padding-left:12px;padding-right:12px;">
+
                         <button class="mode-sub-btn" onclick="toggleReadySubgroup()" style="text-align:left;" data-t="ready_modes">📋 Готовые режимы ▾</button>
                         <div class="mode-sub-group" id="group-ready-inner" style="max-height:0;padding-left:12px;">
                             <button class="mode-sub-btn" data-mode="documents" data-t="documents">📄 Фото на документы</button>
