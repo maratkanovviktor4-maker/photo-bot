@@ -13,7 +13,7 @@
         .container, #cookie-banner { position: relative; z-index: 1; }
         .container { display: flex; max-width: 1800px; width: 100%; padding: 20px; gap: 24px; }
         .collages { width: 920px; flex-shrink: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: 16px; padding-top: 20px; }
-        .collages img { width: 440px; height: 280px; object-fit: cover; border-radius: 12px; border: 2px solid #2A2A2A; transition: opacity 0.3s ease; cursor: pointer; display: none; opacity: 0; }
+        .collages img { width: 440px; height: 280px; object-fit: cover; border-radius: 12px; border: 2px solid #2A2A2A; transition: opacity 0.3s ease; cursor: pointer; display: block; opacity: 0; }
         .collages img:hover { border-color: #00CBF5; }
         .center-panel { width: 420px; flex-shrink: 0; }
         .header { display: flex; flex-direction: row; justify-content: center; gap: 20px; align-items: center; margin-bottom: 16px; }
@@ -198,9 +198,9 @@
             if (!mainExpanded) {
                 currentGroup = null;
                 document.querySelectorAll('.mode-sub-group').forEach(d => d.style.maxHeight = '0');
-                document.querySelectorAll('#collages img').forEach(img => { img.style.opacity = '0'; setTimeout(() => img.style.display = 'none', 300); });
+                document.querySelectorAll('#collages img').forEach(img => { img.style.opacity = '0'; });
                 const banner = document.getElementById('bannerImg');
-                if (banner) { banner.style.display = 'block'; banner.style.opacity = '1'; }
+                if (banner) { banner.style.opacity = '1'; }
                 document.getElementById('wallpaperSize').style.display = 'none';
             }
         }
@@ -214,9 +214,9 @@
             });
             if (currentGroup === group) {
                 currentGroup = null;
-                document.querySelectorAll('#collages img').forEach(img => { img.style.opacity = '0'; setTimeout(() => img.style.display = 'none', 300); });
+                document.querySelectorAll('#collages img').forEach(img => { img.style.opacity = '0'; });
                 const banner = document.getElementById('bannerImg');
-                if (banner) { banner.style.display = 'block'; banner.style.opacity = '1'; }
+                if (banner) { banner.style.opacity = '1'; }
             } else {
                 currentGroup = group;
                 showCollagesForGroup(group);
@@ -225,13 +225,13 @@
 
         function showCollagesForGroup(group) {
             const collages = document.getElementById('collages');
-            collages.querySelectorAll('img').forEach(img => { img.style.opacity = '0'; setTimeout(() => img.style.display = 'none', 300); });
+            collages.querySelectorAll('img').forEach(img => { img.style.opacity = '0'; });
             const banner = document.getElementById('bannerImg');
             if (banner) banner.style.display = 'none';
             const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'] };
             (modes[group] || []).forEach(m => {
                 const img = collages.querySelector(`[data-mode="${m}"]`);
-                if (img) { img.style.opacity = '0'; img.style.display = 'block'; setTimeout(() => img.style.opacity = '1', 10); }
+                if (img) { img.style.opacity = '1'; }
             });
         }
 
