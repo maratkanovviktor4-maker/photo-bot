@@ -250,16 +250,24 @@
                 const x = e.clientX - rect.left;
                 const pct = x / rect.width;
                 const isLight = this.closest('.actions') || this.classList.contains('nav-btn');
+                const glowX = (pct - 0.5) * 8;
                 if (isLight) {
-                    this.style.borderImage = `linear-gradient(90deg, #00CBF5 ${pct*100-10}%, #201F28 ${pct*100}%, #00CBF5 ${pct*100+10}%) 1`;
+                    this.style.boxShadow = `${glowX}px 0 12px rgba(32,31,40,0.6), 0 4px 16px rgba(0,203,245,0.3)`;
                 } else if (this.classList.contains('active') || this.classList.contains('selected')) {
-                    this.style.borderImage = `linear-gradient(90deg, #00CBF5 ${pct*100-10}%, #201F28 ${pct*100}%, #00CBF5 ${pct*100+10}%) 1`;
+                    this.style.boxShadow = `${glowX}px 0 12px rgba(32,31,40,0.6), 0 4px 16px rgba(0,203,245,0.3)`;
                 } else {
-                    this.style.borderImage = `linear-gradient(90deg, #2A2A2A ${pct*100-10}%, #00CBF5 ${pct*100}%, #2A2A2A ${pct*100+10}%) 1`;
+                    this.style.boxShadow = `${glowX}px 0 12px rgba(0,203,245,0.4), 0 2px 8px rgba(0,0,0,0.2)`;
                 }
             });
             btn.addEventListener('mouseleave', function() {
-                this.style.borderImage = 'none';
+                const isLight = this.closest('.actions') || this.classList.contains('nav-btn');
+                if (isLight) {
+                    this.style.boxShadow = '0 4px 16px rgba(0,203,245,0.3)';
+                } else if (this.classList.contains('active') || this.classList.contains('selected')) {
+                    this.style.boxShadow = '0 4px 16px rgba(0,203,245,0.3)';
+                } else {
+                    this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+                }
             });
         });
     </script>
