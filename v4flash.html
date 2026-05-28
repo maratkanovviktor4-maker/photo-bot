@@ -83,6 +83,7 @@
         <div class="top-bar">
             <button class="mode-btn active" data-mode="chat" onclick="setMode('chat')">💬 Chat</button>
             <button class="mode-btn" data-mode="reasoner" onclick="setMode('reasoner')">🧠 Reasoner</button>
+            <span id="balanceDisplay" style="margin-left:auto;font-size:12px;color:#00CBF5;">💰 ...</span>
         </div>
         <div class="chat-area" id="chatArea">
             <div class="empty-state">
@@ -118,7 +119,7 @@
             const auth = JSON.parse(savedAuth);
             currentUserId = auth.user_id;
             sessionToken = auth.session_token || '';
-            loadChatsFromServer();
+            updateBalance();
         }
 
         async function loadChatsFromServer() {
@@ -140,6 +141,13 @@
             renderChatList();
             currentChatId = chats[chats.length - 1].id;
             openChat(currentChatId);
+        }
+        async function updateBalance() {
+            try {
+                const resp = await fetch(`${SERVER_URL}/get_balance?user_id=${currentUserId}&session_token=${sessionToken}`);
+                const data = await resp.json();
+                document.getElementById('balanceDisplay').textContent = `💰 ${data.flash.toFixed(1)} ⭐`;
+            } catch(e) {}
         }
         function newChat() {
             const chat = { id: Date.now().toString(), title: 'Новый чат', messages: [] };
@@ -288,6 +296,17 @@
                 });
                 const data = await resp.json();
                 const el = document.getElementById(placeholderId); if (el) el.remove();
+                if (resp.status === 402) {
+                    const required = data.required || 0;
+                    const balance = data.balance || 0;
+                    chat.messages.push({ role: 'assistant', content: `⚠️ Недостаточно средств. Нужно ≈${required} ⭐, у вас ${balance} ⭐. Пополните баланс или начните новый чат.` });
+                    renderMessages();
+                    updateBalance();
+                    isSending = false;
+                    document.getElementById('sendBtn').textContent = '➤';
+                    document.getElementById('sendBtn').onclick = sendMessage;
+                    return;
+                }
                 if (data.reply) {
                     const fullContent = data.reasoning ? `💭 Размышление:\n${data.reasoning}\n\n📝 Ответ:\n${data.reply}` : data.reply;
                     chat.messages.push({ role: 'assistant', content: '', finished: false });
@@ -330,6 +349,7 @@
             const ind = document.getElementById('fileIndicator'); if (ind) ind.remove();
             document.getElementById('removeFileBtn').style.display = 'none';
             isSending = false; document.getElementById('sendBtn').disabled = false;
+            updateBalance();
         }
         function stopTyping() {
             if (typingInterval) {
