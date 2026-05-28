@@ -214,7 +214,7 @@
         function toggleReadySubgroup() { const inner = document.getElementById('group-ready-inner'); const freeGroup = document.getElementById('group-free'); if (inner.style.maxHeight === '300px') { inner.style.maxHeight = '0'; freeGroup.style.maxHeight = '300px'; } else { inner.style.maxHeight = '300px'; freeGroup.style.maxHeight = '600px'; showCollagesForGroup('ready'); } }
         function toggleModeGroup(group) {
             const groups = ['flux', 'text'];
-            groups.forEach(g => { const div = document.getElementById('group-' + g); if (g === group && currentGroup !== group) { div.style.maxHeight = '300px'; } else { div.style.maxHeight = '0'; } });
+            groups.forEach(g => { const div = document.getElementById('group-' + g); if (g === group && currentGroup !== group) { div.style.maxHeight = g === 'flux' ? '600px' : '300px'; } else { div.style.maxHeight = '0'; } });
             if (currentGroup === group) { currentGroup = null; document.querySelectorAll('#collages img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; }); const banner = document.getElementById('bannerImg'), fluxVideo = document.getElementById('fluxVideo'); if (fluxVideo) { fluxVideo.style.display = 'none'; fluxVideo.pause(); } if (banner) { banner.style.display = 'block'; banner.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => banner.classList.add('show')); }); } document.getElementById('wallpaperSize').style.display = 'none'; }
             else { currentGroup = group; showCollagesForGroup(group); }
         }
