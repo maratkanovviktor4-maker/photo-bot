@@ -89,6 +89,7 @@
 <body>
     <div class="container">
         <div class="collages" id="collages">
+            <img src="collages/banner.jpg" alt="PhotoBot" id="bannerImg" style="display:block;width:100%;height:auto;border-radius:12px;">
             <img src="collages/collage_documents.jpg" alt="Документы" data-mode="documents">
             <img src="collages/collage_beach.jpg" alt="Пляж" data-mode="beach">
             <img src="collages/collage_birthday.jpg" alt="День рождения" data-mode="birthday">
@@ -197,6 +198,8 @@
             if (currentGroup === group) {
                 currentGroup = null;
                 document.querySelectorAll('#collages img').forEach(img => img.style.display = 'none');
+                const banner = document.getElementById('bannerImg');
+                if (banner) banner.style.display = 'block';
             } else {
                 currentGroup = group;
                 showCollagesForGroup(group);
@@ -206,6 +209,8 @@
         function showCollagesForGroup(group) {
             const collages = document.getElementById('collages');
             collages.querySelectorAll('img').forEach(img => img.style.display = 'none');
+            const banner = document.getElementById('bannerImg');
+            if (banner) banner.style.display = 'none';
             const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'] };
             (modes[group] || []).forEach(m => {
                 const img = collages.querySelector(`[data-mode="${m}"]`);
