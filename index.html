@@ -18,11 +18,7 @@
         .collages img.appearing { display: block; opacity: 0; filter: brightness(0.8); }
         .collages img.appearing.show { opacity: 1; filter: brightness(1); }
         .center-panel { width: 420px; flex-shrink: 0; }
-        .header { display: flex; flex-direction: row; justify-content: center; gap: 20px; align-items: center; margin-bottom: 16px; position: relative; }
-        .lang-switch { margin-left: auto; display: flex; gap: 4px; align-self: flex-start; }
-        .lang-btn { padding: 4px 8px; background: #222; border: 1px solid #2A2A2A; color: #aaa; border-radius: 4px; cursor: pointer; font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; transition: 0.2s; }
-        .lang-btn.active { background: #00CBF5; border-color: #00CBF5; color: #201F28; }
-        .lang-btn:hover { border-color: #00CBF5; }
+        .header { display: flex; flex-direction: row; justify-content: center; gap: 20px; align-items: center; margin-bottom: 16px; }
         .header a { text-decoration: none; display: flex; flex-direction: column; align-items: center; }
         .logo-pb { font-size: 48px; font-weight: 700; letter-spacing: 4px; line-height: 1; }
         .logo-pb .p { color: #00CBF5; }
@@ -41,7 +37,6 @@
         .mode-sub-btn:hover { background: #2A2A2A; border-color: #00CBF5; color: #fff; }
         .mode-sub-btn.selected { background: #00CBF5; border-color: #00CBF5; color: #201F28; font-weight: 600; }
         .mode-sub-group { overflow: hidden; transition: max-height 0.3s ease; }
-        #group-free { max-height: 600px !important; }
         #preview { width: 100%; max-height: 180px; object-fit: contain; margin: 8px 0; border-radius: 10px; display: none; }
         #status { text-align: center; color: #aaa; margin: 6px 0; font-size: 12px; }
         .actions { display: flex; gap: 8px; margin-top: 8px; }
@@ -90,6 +85,9 @@
         .free-chat-input-area textarea::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
         .free-chat-input-area button { padding: 10px 16px; background: #00CBF5; color: #1a1a2e; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 14px; flex-shrink: 0; align-self: flex-end; }
         .free-chat-input-area button:hover { background: #14E9FC; }
+        .lang-btn { padding: 4px 8px; background: #222; border: 1px solid #2A2A2A; color: #aaa; border-radius: 4px; cursor: pointer; font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; transition: 0.2s; }
+        .lang-btn.active { background: #00CBF5; border-color: #00CBF5; color: #201F28; }
+        .lang-btn:hover { border-color: #00CBF5; }
         @media (max-width: 768px) { .container { flex-direction: column; align-items: center; padding: 12px; gap: 16px; } .collages { width: 100%; order: 1; display: flex; flex-direction: column; gap: 10px; } .collages img { width: 100%; max-width: 100%; } .center-panel { width: 100%; order: 2; } .free-chat-panel { width: 100%; height: 400px; position: static; } }
     </style>
 </head>
@@ -98,6 +96,8 @@
         <button class="lang-btn active" onclick="setLanguage('ru')">RU</button>
         <button class="lang-btn" onclick="setLanguage('en')">EN</button>
     </div>
+    <div class="container">
+        <div class="collages" id="collages">
             <img src="collages/banner.jpg" alt="PhotoBot" id="bannerImg" class="appearing show" style="width:100%;height:auto;border-radius:12px;">
             <video id="fluxVideo" src="collages/flux_video.mp4" muted loop playsinline style="display:none;width:100%;max-height:957px;object-fit:cover;border-radius:12px;"></video>
             <img src="collages/collage_documents.jpg" alt="Документы" data-mode="documents">
@@ -185,12 +185,8 @@
     <div id="cookie-banner"><span data-t="cookie">Мы используем необходимые cookie-файлы для авторизации и работы сервиса.</span><button onclick="acceptCookies()" data-t="cookie_btn">OK</button></div>
     <script>
         const translations = {
-            ru: {
-                title: "PhotoBot — Фото на документы", login: "🔑 Войти через Telegram", auth_code: "Введите код авторизации из бота", send: "Отправить", auth_info: "👤 Вошли как", subscribe_block: "📛 Подпишитесь на нас в Telegram", subscribe_ok: "✅ Вы подписаны", flux: "🌟 FLUX 2", flux_sub: "Black Forest Labs", img2img: "🖼️ Изображение в изображение", ready_modes: "📋 Готовые режимы", documents: "📄 Фото на документы", beach: "🌅 Закат на пляже", birthday: "🎂👑 День рождения", flowers: "🌸 Цветы в авто", mirror_male: "🕶️💪 Мужское в зеркале", svoboda_f: "🎨 Свободный (ж)", svoboda_m: "🎨 Свободный (м)", text2img: "📝 Текст в изображение", wallpaper: "🖼️ Обои", text_models: "💬 Текстовые модели", v4flash: "⚡ DeepSeek V4 Flash", v4pro: "🧠 DeepSeek V4 Pro", phone: "📱 9:16", pc: "🖥️ 16:9", prompt_placeholder: "Введите промт здесь...", hint: "Выберите режим и укажите подпись", etalon: "⭐ Использовать эталон", generate: "⚡ Сгенерировать", prompts: "📋 База промтов", storage: "📦 Хранилище генераций", agreement: "Пользовательское соглашение", privacy: "Политика конфиденциальности", chat_title: "💬 PhotoBot", chat_subtitle: "общая история с Вашим Ассистентом", chat_placeholder: "Задайте вопрос о сервисе", chat_input: "Введите сообщение...", cookie: "Мы используем необходимые cookie-файлы для авторизации и работы сервиса.", cookie_btn: "OK", wallpaper_hint: "🖼️ Обои: введите промт", documents_hint: "📄 Фото на документы: укажите одежду (например: серая рубашка)", beach_hint: "🌅 Закат на пляже: укажите одежду (например: белое платье)", birthday_hint: "🎂👑 День рождения: укажите число и цвет платья (например: 23 красное)", flowers_hint: "🌸 Цветы в авто: укажите одежду (например: черное платье)", mirror_male_hint: "🕶️💪 Мужское в зеркале: опишите одежду, очки, телефон", svoboda_hint: "🎨 Свободный (ж): введите промт", svoboda_male_hint: "🎨 Свободный (м): введите промт"
-            },
-            en: {
-                title: "PhotoBot — Photo for documents", login: "🔑 Log in with Telegram", auth_code: "Enter the authorization code from the bot", send: "Send", auth_info: "👤 Logged in as", subscribe_block: "📛 Subscribe to our Telegram", subscribe_ok: "✅ You are subscribed", flux: "🌟 FLUX 2", flux_sub: "Black Forest Labs", img2img: "🖼️ Image to Image", ready_modes: "📋 Ready Modes", documents: "📄 ID Photo", beach: "🌅 Beach Sunset", birthday: "🎂👑 Birthday", flowers: "🌸 Flowers in Car", mirror_male: "🕶️💪 Male Mirror Selfie", svoboda_f: "🎨 Free (F)", svoboda_m: "🎨 Free (M)", text2img: "📝 Text to Image", wallpaper: "🖼️ Wallpaper", text_models: "💬 Text Models", v4flash: "⚡ DeepSeek V4 Flash", v4pro: "🧠 DeepSeek V4 Pro", phone: "📱 9:16", pc: "🖥️ 16:9", prompt_placeholder: "Enter your prompt here...", hint: "Select mode and enter prompt", etalon: "⭐ Use Reference", generate: "⚡ Generate", prompts: "📋 Prompt Library", storage: "📦 Generation Storage", agreement: "User Agreement", privacy: "Privacy Policy", chat_title: "💬 PhotoBot", chat_subtitle: "shared history with your Assistant", chat_placeholder: "Ask a question about the service", chat_input: "Type a message...", cookie: "We use essential cookies for authorization and service operation.", cookie_btn: "OK", wallpaper_hint: "🖼️ Wallpaper: enter prompt", documents_hint: "📄 ID Photo: specify clothing (e.g., gray shirt)", beach_hint: "🌅 Beach Sunset: specify clothing (e.g., white dress)", birthday_hint: "🎂👑 Birthday: enter age and dress color (e.g., 23 red)", flowers_hint: "🌸 Flowers in Car: specify clothing (e.g., black dress)", mirror_male_hint: "🕶️💪 Mirror Selfie: describe clothes, glasses, phone", svoboda_hint: "🎨 Free (F): enter prompt", svoboda_male_hint: "🎨 Free (M): enter prompt"
-            }
+            ru: { title: "PhotoBot — Фото на документы", login: "🔑 Войти через Telegram", auth_code: "Введите код авторизации из бота", send: "Отправить", auth_info: "👤 Вошли как", subscribe_block: "📛 Подпишитесь на нас в Telegram", subscribe_ok: "✅ Вы подписаны", flux: "🌟 FLUX 2", flux_sub: "Black Forest Labs", img2img: "🖼️ Изображение в изображение", ready_modes: "📋 Готовые режимы", documents: "📄 Фото на документы", beach: "🌅 Закат на пляже", birthday: "🎂👑 День рождения", flowers: "🌸 Цветы в авто", mirror_male: "🕶️💪 Мужское в зеркале", svoboda_f: "🎨 Свободный (ж)", svoboda_m: "🎨 Свободный (м)", text2img: "📝 Текст в изображение", wallpaper: "🖼️ Обои", text_models: "💬 Текстовые модели", v4flash: "⚡ DeepSeek V4 Flash", v4pro: "🧠 DeepSeek V4 Pro", phone: "📱 9:16", pc: "🖥️ 16:9", prompt_placeholder: "Введите промт здесь...", hint: "Выберите режим и укажите подпись", etalon: "⭐ Использовать эталон", generate: "⚡ Сгенерировать", prompts: "📋 База промтов", storage: "📦 Хранилище генераций", agreement: "Пользовательское соглашение", privacy: "Политика конфиденциальности", chat_title: "💬 PhotoBot", chat_subtitle: "общая история с Вашим Ассистентом", chat_placeholder: "Задайте вопрос о сервисе", chat_input: "Введите сообщение...", cookie: "Мы используем необходимые cookie-файлы для авторизации и работы сервиса.", cookie_btn: "OK", wallpaper_hint: "🖼️ Обои: введите промт", documents_hint: "📄 Фото на документы: укажите одежду (например: серая рубашка)", beach_hint: "🌅 Закат на пляже: укажите одежду (например: белое платье)", birthday_hint: "🎂👑 День рождения: укажите число и цвет платья (например: 23 красное)", flowers_hint: "🌸 Цветы в авто: укажите одежду (например: черное платье)", mirror_male_hint: "🕶️💪 Мужское в зеркале: опишите одежду, очки, телефон", svoboda_hint: "🎨 Свободный (ж): введите промт", svoboda_male_hint: "🎨 Свободный (м): введите промт" },
+            en: { title: "PhotoBot — Photo for documents", login: "🔑 Log in with Telegram", auth_code: "Enter the authorization code from the bot", send: "Send", auth_info: "👤 Logged in as", subscribe_block: "📛 Subscribe to our Telegram", subscribe_ok: "✅ You are subscribed", flux: "🌟 FLUX 2", flux_sub: "Black Forest Labs", img2img: "🖼️ Image to Image", ready_modes: "📋 Ready Modes", documents: "📄 ID Photo", beach: "🌅 Beach Sunset", birthday: "🎂👑 Birthday", flowers: "🌸 Flowers in Car", mirror_male: "🕶️💪 Male Mirror Selfie", svoboda_f: "🎨 Free (F)", svoboda_m: "🎨 Free (M)", text2img: "📝 Text to Image", wallpaper: "🖼️ Wallpaper", text_models: "💬 Text Models", v4flash: "⚡ DeepSeek V4 Flash", v4pro: "🧠 DeepSeek V4 Pro", phone: "📱 9:16", pc: "🖥️ 16:9", prompt_placeholder: "Enter your prompt here...", hint: "Select mode and enter prompt", etalon: "⭐ Use Reference", generate: "⚡ Generate", prompts: "📋 Prompt Library", storage: "📦 Generation Storage", agreement: "User Agreement", privacy: "Privacy Policy", chat_title: "💬 PhotoBot", chat_subtitle: "shared history with your Assistant", chat_placeholder: "Ask a question about the service", chat_input: "Type a message...", cookie: "We use essential cookies for authorization and service operation.", cookie_btn: "OK", wallpaper_hint: "🖼️ Wallpaper: enter prompt", documents_hint: "📄 ID Photo: specify clothing (e.g., gray shirt)", beach_hint: "🌅 Beach Sunset: specify clothing (e.g., white dress)", birthday_hint: "🎂👑 Birthday: enter age and dress color (e.g., 23 red)", flowers_hint: "🌸 Flowers in Car: specify clothing (e.g., black dress)", mirror_male_hint: "🕶️💪 Mirror Selfie: describe clothes, glasses, phone", svoboda_hint: "🎨 Free (F): enter prompt", svoboda_male_hint: "🎨 Free (M): enter prompt" }
         };
         const SERVER_URL = "https://api.фото-бот.рф";
         let selectedMode = "documents", uploadedFile = null, wallpaperSize = "pc", currentUserId = null, currentUsername = null, isSubscribed = false, sessionToken = '';
@@ -204,10 +200,7 @@
         const savedAuth = localStorage.getItem('photobot_auth');
         if (savedAuth) { const auth = JSON.parse(savedAuth); currentUserId = auth.user_id; currentUsername = auth.username; sessionToken = auth.session_token || ''; showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); showSubscribeBlock(); checkSubscription(); }
         if (!localStorage.getItem('cookies_accepted')) document.getElementById('cookie-banner').style.display = 'block';
-        document.addEventListener('DOMContentLoaded', function() {
-            applyTranslations();
-            document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === currentLang));
-        });
+        document.addEventListener('DOMContentLoaded', function() { applyTranslations(); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === currentLang)); });
         function acceptCookies() { localStorage.setItem('cookies_accepted', '1'); document.getElementById('cookie-banner').style.display = 'none'; }
         window.addEventListener('focus', function() { if (!currentUserId) document.getElementById('authBlock').style.display = 'block'; if (currentUserId) checkSubscription(); if (currentUserId) checkEtalonAvailability(); });
         function openBot() { document.getElementById('authBlock').style.display = 'block'; window.open('https://t.me/PhotoDocumentsBot_bot?start=site', '_blank'); }
@@ -217,83 +210,25 @@
         document.getElementById('sendBtn').addEventListener('click', async function() { const c = document.getElementById('authCode').value; if (c.length !== 4) return; try { const r = await fetch(`${SERVER_URL}/verify_code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: c }) }); const d = await r.json(); if (d.success) { currentUserId = d.user_id; currentUsername = d.username; isSubscribed = d.subscribed; sessionToken = d.session_token || ''; localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken })); showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); document.getElementById('authBlock').style.display = 'none'; if (isSubscribed) { document.getElementById('subscribeBlock').style.display = 'none'; document.getElementById('subscribeOk').style.display = 'block'; } else { document.getElementById('subscribeBlock').style.display = 'block'; } } else { alert(d.error === 'Not subscribed' ? 'Вы не подписаны на бота. Подпишитесь и попробуйте снова.' : 'Неверный код авторизации'); } } catch (err) { alert('Ошибка соединения с сервером'); } });
         function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; loadFreeChatHistory(); }
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
-        function toggleFluxSubgroup(sub) {
-            const div = document.getElementById('group-' + sub);
-            if (div.style.maxHeight === '300px') {
-                div.style.maxHeight = '0';
-            } else {
-                div.style.maxHeight = '300px';
-                showCollagesForGroup(sub);
-            }
-        }
-        function toggleReadySubgroup() {
-            const inner = document.getElementById('group-ready-inner');
-            const freeGroup = document.getElementById('group-free');
-            if (inner.style.maxHeight === '300px') {
-                inner.style.maxHeight = '0';
-                freeGroup.style.maxHeight = '300px';
-            } else {
-                inner.style.maxHeight = '300px';
-                freeGroup.style.maxHeight = '600px';
-                showCollagesForGroup('ready');
-            }
-        }
+        function toggleFluxSubgroup(sub) { const div = document.getElementById('group-' + sub); if (div.style.maxHeight === '300px') { div.style.maxHeight = '0'; } else { div.style.maxHeight = '300px'; showCollagesForGroup(sub); } }
+        function toggleReadySubgroup() { const inner = document.getElementById('group-ready-inner'); const freeGroup = document.getElementById('group-free'); if (inner.style.maxHeight === '300px') { inner.style.maxHeight = '0'; freeGroup.style.maxHeight = '300px'; } else { inner.style.maxHeight = '300px'; freeGroup.style.maxHeight = '600px'; showCollagesForGroup('ready'); } }
         function toggleModeGroup(group) {
             const groups = ['flux', 'text'];
-            groups.forEach(g => {
-                const div = document.getElementById('group-' + g);
-                if (g === group && currentGroup !== group) {
-                    div.style.maxHeight = '300px';
-                } else {
-                    div.style.maxHeight = '0';
-                }
-            });
-            if (currentGroup === group) {
-                currentGroup = null;
-                document.querySelectorAll('#collages img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; });
-                const banner = document.getElementById('bannerImg');
-                const fluxVideo = document.getElementById('fluxVideo');
-                if (fluxVideo) { fluxVideo.style.display = 'none'; fluxVideo.pause(); }
-                if (banner) { banner.style.display = 'block'; banner.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => banner.classList.add('show')); }); }
-                document.getElementById('wallpaperSize').style.display = 'none';
-            } else {
-                currentGroup = group;
-                showCollagesForGroup(group);
-            }
+            groups.forEach(g => { const div = document.getElementById('group-' + g); if (g === group && currentGroup !== group) { div.style.maxHeight = '300px'; } else { div.style.maxHeight = '0'; } });
+            if (currentGroup === group) { currentGroup = null; document.querySelectorAll('#collages img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; }); const banner = document.getElementById('bannerImg'), fluxVideo = document.getElementById('fluxVideo'); if (fluxVideo) { fluxVideo.style.display = 'none'; fluxVideo.pause(); } if (banner) { banner.style.display = 'block'; banner.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => banner.classList.add('show')); }); } document.getElementById('wallpaperSize').style.display = 'none'; }
+            else { currentGroup = group; showCollagesForGroup(group); }
         }
         function showCollagesForGroup(group) {
-            const collages = document.getElementById('collages');
+            const collages = document.getElementById('collages'), fluxVideo = document.getElementById('fluxVideo');
             collages.querySelectorAll('img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; });
-            const fluxVideo = document.getElementById('fluxVideo');
             if (fluxVideo) { fluxVideo.style.display = 'none'; fluxVideo.pause(); }
             document.getElementById('bannerImg').style.display = 'block';
-            if (group === 'flux' && fluxVideo) {
-                document.getElementById('bannerImg').style.display = 'none';
-                fluxVideo.style.display = 'block';
-                fluxVideo.play();
-                return;
-            }
+            if (group === 'flux' && fluxVideo) { document.getElementById('bannerImg').style.display = 'none'; fluxVideo.style.display = 'block'; fluxVideo.play(); return; }
             document.getElementById('bannerImg').style.display = 'none';
             const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'], flux: [], text: [] };
-            (modes[group] || []).forEach(m => {
-                const img = collages.querySelector(`[data-mode="${m}"]`);
-                if (img) {
-                    img.style.display = 'block';
-                    img.classList.add('appearing');
-                    requestAnimationFrame(() => { requestAnimationFrame(() => img.classList.add('show')); });
-                }
-            });
+            (modes[group] || []).forEach(m => { const img = collages.querySelector(`[data-mode="${m}"]`); if (img) { img.style.display = 'block'; img.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => img.classList.add('show')); }); } });
         }
-        document.querySelectorAll(".mode-sub-btn").forEach(btn => {
-            btn.addEventListener("click", function() {
-                document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected"));
-                this.classList.add("selected");
-                selectMode(this.dataset.mode);
-                document.querySelectorAll('#collages img[data-mode]').forEach(img => img.style.borderColor = 'transparent');
-                const img = document.querySelector(`#collages img[data-mode="${this.dataset.mode}"]`);
-                if (img) img.style.borderColor = '#00CBF5';
-            });
-        });
+        document.querySelectorAll(".mode-sub-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected")); this.classList.add("selected"); selectMode(this.dataset.mode); document.querySelectorAll('#collages img[data-mode]').forEach(img => img.style.borderColor = 'transparent'); const img = document.querySelector(`#collages img[data-mode="${this.dataset.mode}"]`); if (img) img.style.borderColor = '#00CBF5'; }); });
         document.querySelectorAll("#collages img").forEach(img => { img.addEventListener("click", function() { selectMode(this.dataset.mode); document.querySelectorAll('#collages img[data-mode]').forEach(i => i.style.borderColor = 'transparent'); this.style.borderColor = '#00CBF5'; }); });
         document.querySelectorAll(".size-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".size-btn").forEach(b => b.classList.remove("active")); this.classList.add("active"); wallpaperSize = this.dataset.wp; }); });
         function selectMode(mode) { selectedMode = mode; document.getElementById("modeHint").textContent = hints[mode]; document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected")); const btn = document.querySelector(`.mode-sub-btn[data-mode="${mode}"]`); if (btn) btn.classList.add("selected"); if (mode === "wallpaper") { document.getElementById("wallpaperSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; } else { document.getElementById("wallpaperSize").style.display = "none"; document.getElementById("photoInput").style.display = "block"; } }
@@ -304,43 +239,11 @@
         async function runGeneration() { const genBtn = document.getElementById("generate"); genBtn.disabled = true; genBtn.textContent = "⏳ Генерация..."; const caption = document.getElementById("caption").value || "черная рубашка"; try { if (selectedMode !== "wallpaper" && !uploadedFile) { genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } const formData = new FormData(); if (uploadedFile) formData.append("image", uploadedFile); formData.append("mode", selectedMode); formData.append("caption", caption); formData.append("user_id", currentUserId); formData.append("source", "web"); formData.append("size", wallpaperSize); document.getElementById("status").textContent = "⚡ Добавлено в очередь..."; const enqResp = await fetch(`${SERVER_URL}/enqueue`, { method: "POST", body: formData, headers: sessionToken ? { "X-Session-Token": sessionToken } : {} }); const enqData = await enqResp.json(); if (!enqData.job_id) { document.getElementById("status").textContent = "⚠️ Ошибка очереди."; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } document.getElementById("status").textContent = "⏳ Ожидание генерации..."; for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { const result = pendData.results[0]; const bytes = Uint8Array.from(atob(result.data), c => c.charCodeAt(0)); const blob = new Blob([bytes], { type: 'image/jpeg' }); document.getElementById("status").textContent = "✅ Готово! Сохранено в хранилище."; genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; return; } } document.getElementById("status").textContent = "⚠️ Время ожидания истекло."; } catch (err) { document.getElementById("status").textContent = "🔧 Ошибка: " + err.message; } genBtn.disabled = false; genBtn.textContent = "⚡ Сгенерировать"; }
         async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); const data = await resp.json(); if (data.has_etalon) document.getElementById('etalonBtn').style.display = 'block'; } catch (err) {} }
         async function useEtalon() { try { const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`); if (!resp.ok) { alert('Эталон не найден'); return; } const blob = await resp.blob(); uploadedFile = new File([blob], 'etalon.jpg', { type: 'image/jpeg' }); const reader = new FileReader(); reader.onload = function(ev) { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display = 'block'; }; reader.readAsDataURL(blob); document.getElementById('status').textContent = 'Эталон загружен'; } catch (err) { alert('Ошибка загрузки эталона'); } }
-        async function loadFreeChatHistory() {
-            if (!currentUserId) return;
-            try {
-                const resp = await fetch(`${SERVER_URL}/get_free_chat_history?user_id=${currentUserId}`);
-                const data = await resp.json();
-                const container = document.getElementById('freeChatMessages');
-                if (data.history && data.history.length > 0) { container.innerHTML = ''; data.history.forEach(m => { if (m.role === 'system') return; const div = document.createElement('div'); div.className = 'free-chat-msg ' + m.role; div.textContent = m.content; container.appendChild(div); }); container.scrollTop = container.scrollHeight; }
-            } catch(e) {}
-        }
-        async function sendFreeMessage() {
-            const input = document.getElementById('freeChatInput'); const text = input.value.trim();
-            if (!text) return; if (!currentUserId) { alert('Авторизуйтесь'); return; }
-            input.value = ''; const container = document.getElementById('freeChatMessages');
-            if (container.querySelector('.free-chat-placeholder')) container.innerHTML = '';
-            const userDiv = document.createElement('div'); userDiv.className = 'free-chat-msg user'; userDiv.textContent = text; container.appendChild(userDiv);
-            const loaderDiv = document.createElement('div'); loaderDiv.className = 'free-chat-msg assistant'; loaderDiv.textContent = '...'; container.appendChild(loaderDiv);
-            container.scrollTop = container.scrollHeight;
-            try {
-                const resp = await fetch(`${SERVER_URL}/chat_free`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, message: text }) });
-                const data = await resp.json(); loaderDiv.remove();
-                const asstDiv = document.createElement('div'); asstDiv.className = 'free-chat-msg assistant'; asstDiv.textContent = data.reply || 'Ошибка'; container.appendChild(asstDiv);
-                container.scrollTop = container.scrollHeight;
-            } catch(e) { loaderDiv.textContent = 'Ошибка соединения'; }
-        }
+        async function loadFreeChatHistory() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/get_free_chat_history?user_id=${currentUserId}`); const data = await resp.json(); const container = document.getElementById('freeChatMessages'); if (data.history && data.history.length > 0) { container.innerHTML = ''; data.history.forEach(m => { if (m.role === 'system') return; const div = document.createElement('div'); div.className = 'free-chat-msg ' + m.role; div.textContent = m.content; container.appendChild(div); }); container.scrollTop = container.scrollHeight; } } catch(e) {} }
+        async function sendFreeMessage() { const input = document.getElementById('freeChatInput'); const text = input.value.trim(); if (!text) return; if (!currentUserId) { alert('Авторизуйтесь'); return; } input.value = ''; const container = document.getElementById('freeChatMessages'); if (container.querySelector('.free-chat-placeholder')) container.innerHTML = ''; const userDiv = document.createElement('div'); userDiv.className = 'free-chat-msg user'; userDiv.textContent = text; container.appendChild(userDiv); const loaderDiv = document.createElement('div'); loaderDiv.className = 'free-chat-msg assistant'; loaderDiv.textContent = '...'; container.appendChild(loaderDiv); container.scrollTop = container.scrollHeight; try { const resp = await fetch(`${SERVER_URL}/chat_free`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, message: text }) }); const data = await resp.json(); loaderDiv.remove(); const asstDiv = document.createElement('div'); asstDiv.className = 'free-chat-msg assistant'; asstDiv.textContent = data.reply || 'Ошибка'; container.appendChild(asstDiv); container.scrollTop = container.scrollHeight; } catch(e) { loaderDiv.textContent = 'Ошибка соединения'; } }
         function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); applyTranslations(); }
         function t(key) { return translations[currentLang][key] || key; }
-        function applyTranslations() {
-            document.querySelectorAll('[data-t]').forEach(el => {
-                const key = el.getAttribute('data-t');
-                if (el.placeholder !== undefined && el.tagName === 'TEXTAREA') { el.placeholder = t(key); }
-                else if (el.tagName === 'INPUT' && el.type === 'text') { el.placeholder = t(key); }
-                else { el.textContent = t(key); }
-            });
-            if (typeof hints !== 'undefined') { hints.documents = t('documents_hint'); hints.beach = t('beach_hint'); hints.birthday = t('birthday_hint'); hints.flowers = t('flowers_hint'); hints.mirror_male = t('mirror_male_hint'); hints.svoboda = t('svoboda_hint'); hints.svoboda_male = t('svoboda_male_hint'); hints.wallpaper = t('wallpaper_hint'); }
-            document.title = t('title');
-            if (typeof selectedMode !== 'undefined') document.getElementById('modeHint').textContent = hints[selectedMode] || t('hint');
-        }
+        function applyTranslations() { document.querySelectorAll('[data-t]').forEach(el => { const key = el.getAttribute('data-t'); if (el.placeholder !== undefined && el.tagName === 'TEXTAREA') { el.placeholder = t(key); } else if (el.tagName === 'INPUT' && el.type === 'text') { el.placeholder = t(key); } else { el.textContent = t(key); } }); if (typeof hints !== 'undefined') { hints.documents = t('documents_hint'); hints.beach = t('beach_hint'); hints.birthday = t('birthday_hint'); hints.flowers = t('flowers_hint'); hints.mirror_male = t('mirror_male_hint'); hints.svoboda = t('svoboda_hint'); hints.svoboda_male = t('svoboda_male_hint'); hints.wallpaper = t('wallpaper_hint'); } document.title = t('title'); if (typeof selectedMode !== 'undefined') document.getElementById('modeHint').textContent = hints[selectedMode] || t('hint'); }
     </script>
 </body>
 </html>
