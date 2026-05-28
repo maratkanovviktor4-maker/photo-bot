@@ -214,10 +214,10 @@
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
         function toggleFluxSubgroup(sub) {
             const div = document.getElementById('group-' + sub);
-            if (div.style.maxHeight === '300px') {
+            if (div.style.maxHeight === '300px' || div.style.maxHeight === 'none') {
                 div.style.maxHeight = '0';
             } else {
-                div.style.maxHeight = '300px';
+                div.style.maxHeight = sub === 'free' ? 'none' : '300px';
                 showCollagesForGroup(sub);
             }
         }
@@ -226,10 +226,9 @@
             const freeGroup = document.getElementById('group-free');
             if (inner.style.maxHeight === '300px') {
                 inner.style.maxHeight = '0';
-                freeGroup.style.maxHeight = '300px';
             } else {
                 inner.style.maxHeight = '300px';
-                freeGroup.style.maxHeight = '600px';
+                freeGroup.style.maxHeight = 'none';
                 showCollagesForGroup('ready');
             }
         }
