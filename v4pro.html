@@ -44,13 +44,10 @@
         .message-row { display: flex; gap: 12px; align-items: flex-start; max-width: 85%; }
         .message-row.user { align-self: flex-end; flex-direction: row-reverse; }
         .message-row.assistant { align-self: flex-start; }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
-        .avatar.assistant-avatar { background: #0f3460; color: #00CBF5; }
-        .avatar.user-avatar { background: #2a2a4a; color: #14E9FC; }
-        .message-content { padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; }
+        .message-content { padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
         .message-row.assistant .message-content { background: #16213e; border: 1px solid #1a2a4a; }
         .message-row.user .message-content { background: #0f3460; }
-        .message-content pre { background: #0a0a1a; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 12px; margin: 8px 0; border: 1px solid #1a2a4a; }
+        .message-content pre { background: #0a0a1a; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 12px; margin: 8px 0; border: 1px solid #1a2a4a; white-space: pre; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 12px; background: #0a0a1a; padding: 2px 6px; border-radius: 4px; }
         .message-actions { display: flex; gap: 6px; margin-top: 6px; opacity: 0; transition: 0.2s; }
         .message-row:hover .message-actions { opacity: 1; }
@@ -151,6 +148,11 @@
                 document.getElementById('balanceDisplay').textContent = `💰 ${data.pro.toFixed(1)} ⭐`;
             } catch(e) {}
         }
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        }
         function newChat() {
             const chat = { id: Date.now().toString(), title: 'Новый чат', messages: [] };
             chats.push(chat);
@@ -201,7 +203,7 @@
                 area.innerHTML = chat.messages.map((m, i) => `
                     <div class="message-row ${m.role}">
                         <div>
-                            <div class="message-content">${formatMessage(m.content)}</div>
+                            <div class="message-content">${escapeHtml(m.content)}</div>
                             <div class="message-actions">
                                 ${m.role === 'user' ? `<button onclick="editMessage(${i})">✏️</button>` : ''}
                                 <button onclick="copyMessage(${i})">📋</button>
@@ -322,7 +324,7 @@
                             const msgDivs = area2.querySelectorAll('.message-row.assistant .message-content');
                             if (msgDivs.length > 0) {
                                 const lastDiv = msgDivs[msgDivs.length - 1];
-                                lastDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
+                                lastDiv.textContent = chat.messages[msgIndex].content;
                                 const isAtBottom = area2.scrollHeight - area2.scrollTop - area2.clientHeight < 50;
                                 if (isAtBottom) area2.scrollTop = area2.scrollHeight;
                             }
@@ -403,7 +405,7 @@
                             const area2 = document.getElementById('chatArea');
                             const msgDivs = area2.querySelectorAll('.message-row.assistant .message-content');
                             if (msgDivs.length > index) {
-                                msgDivs[index].innerHTML = formatMessage(chat.messages[index].content);
+                                msgDivs[index].textContent = chat.messages[index].content;
                                 const isAtBottom = area2.scrollHeight - area2.scrollTop - area2.clientHeight < 50;
                                 if (isAtBottom) area2.scrollTop = area2.scrollHeight;
                             }
