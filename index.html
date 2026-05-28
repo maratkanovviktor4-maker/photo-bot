@@ -244,30 +244,16 @@
         function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); applyTranslations(); }
         function t(key) { return translations[currentLang][key] || key; }
         function applyTranslations() { document.querySelectorAll('[data-t]').forEach(el => { const key = el.getAttribute('data-t'); if (el.placeholder !== undefined && el.tagName === 'TEXTAREA') { el.placeholder = t(key); } else if (el.tagName === 'INPUT' && el.type === 'text') { el.placeholder = t(key); } else { el.textContent = t(key); } }); if (typeof hints !== 'undefined') { hints.documents = t('documents_hint'); hints.beach = t('beach_hint'); hints.birthday = t('birthday_hint'); hints.flowers = t('flowers_hint'); hints.mirror_male = t('mirror_male_hint'); hints.svoboda = t('svoboda_hint'); hints.svoboda_male = t('svoboda_male_hint'); hints.wallpaper = t('wallpaper_hint'); } document.title = t('title'); if (typeof selectedMode !== 'undefined') document.getElementById('modeHint').textContent = hints[selectedMode] || t('hint'); }
-        document.querySelectorAll('.mode-group-btn, .mode-sub-btn, .actions button, .nav-btn').forEach(btn => {
+        document.querySelectorAll('.actions button, .nav-btn, .mode-group-btn.active, .mode-sub-btn.selected').forEach(btn => {
             btn.addEventListener('mousemove', function(e) {
                 const rect = this.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const pct = x / rect.width;
-                const isLight = this.closest('.actions') || this.classList.contains('nav-btn');
                 const glowX = (pct - 0.5) * 8;
-                if (isLight) {
-                    this.style.boxShadow = `${glowX}px 0 12px rgba(32,31,40,0.6), 0 4px 16px rgba(0,203,245,0.3)`;
-                } else if (this.classList.contains('active') || this.classList.contains('selected')) {
-                    this.style.boxShadow = `${glowX}px 0 12px rgba(32,31,40,0.6), 0 4px 16px rgba(0,203,245,0.3)`;
-                } else {
-                    this.style.boxShadow = `${glowX}px 0 12px rgba(0,203,245,0.4), 0 2px 8px rgba(0,0,0,0.2)`;
-                }
+                this.style.boxShadow = `${glowX}px 0 12px rgba(32,31,40,0.6), 0 4px 16px rgba(0,203,245,0.3)`;
             });
             btn.addEventListener('mouseleave', function() {
-                const isLight = this.closest('.actions') || this.classList.contains('nav-btn');
-                if (isLight) {
-                    this.style.boxShadow = '0 4px 16px rgba(0,203,245,0.3)';
-                } else if (this.classList.contains('active') || this.classList.contains('selected')) {
-                    this.style.boxShadow = '0 4px 16px rgba(0,203,245,0.3)';
-                } else {
-                    this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
-                }
+                this.style.boxShadow = '0 4px 16px rgba(0,203,245,0.3)';
             });
         });
     </script>
