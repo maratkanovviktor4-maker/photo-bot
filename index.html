@@ -13,9 +13,8 @@
         .container, #cookie-banner { position: relative; z-index: 1; }
         .container { display: flex; max-width: 1800px; width: 100%; padding: 20px; gap: 24px; }
         .collages { width: 920px; flex-shrink: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: 16px; padding-top: 20px; }
-        .collages img { width: 440px; height: 280px; object-fit: cover; border-radius: 12px; border: 2px solid transparent; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; display: none; opacity: 0; filter: brightness(0.8); }
+        .collages img { width: 440px; height: 280px; object-fit: cover; border-radius: 12px; border: 2px solid transparent; transition: opacity 0.4s ease, filter 0.4s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; cursor: pointer; display: none; opacity: 0; filter: brightness(0.8); }
         .collages img:hover { border-color: rgba(0,203,245,0.6); filter: brightness(1.1); box-shadow: 0 0 30px rgba(0,203,245,0.3), 0 0 60px rgba(0,203,245,0.1); transform: translateY(-2px); }
-        .collages img:hover { border-color: #00CBF5; }
         .center-panel { width: 420px; flex-shrink: 0; }
         .header { display: flex; flex-direction: row; justify-content: center; gap: 20px; align-items: center; margin-bottom: 16px; }
         .header a { text-decoration: none; display: flex; flex-direction: column; align-items: center; }
@@ -90,7 +89,7 @@
 <body>
     <div class="container">
         <div class="collages" id="collages">
-            <img src="collages/banner.jpg" alt="PhotoBot" id="bannerImg" style="display:block;width:100%;height:auto;border-radius:12px;">
+            <img src="collages/banner.jpg" alt="PhotoBot" id="bannerImg" style="display:block;width:100%;height:auto;border-radius:12px;opacity:1;filter:brightness(1);">
             <img src="collages/collage_documents.jpg" alt="Документы" data-mode="documents">
             <img src="collages/collage_beach.jpg" alt="Пляж" data-mode="beach">
             <img src="collages/collage_birthday.jpg" alt="День рождения" data-mode="birthday">
@@ -190,17 +189,13 @@
             const groups = ['ready', 'free', 'wallpaper'];
             groups.forEach(g => {
                 const div = document.getElementById('group-' + g);
-                if (g === group && currentGroup !== group) {
-                    div.style.maxHeight = '300px';
-                } else {
-                    div.style.maxHeight = '0';
-                }
+                div.style.maxHeight = (g === group && currentGroup !== group) ? '300px' : '0';
             });
             if (currentGroup === group) {
                 currentGroup = null;
-                document.querySelectorAll('#collages img').forEach(img => { img.style.opacity = '0'; img.style.filter = 'brightness(0.8)'; });
+                document.querySelectorAll('#collages img:not(#bannerImg)').forEach(img => { img.style.opacity = '0'; img.style.filter = 'brightness(0.8)'; });
                 const banner = document.getElementById('bannerImg');
-                if (banner) { banner.style.display = 'block'; banner.style.opacity = '1'; banner.style.filter = 'brightness(1)'; }
+                if (banner) { banner.style.opacity = '1'; banner.style.filter = 'brightness(1)'; }
             } else {
                 currentGroup = group;
                 showCollagesForGroup(group);
@@ -209,9 +204,9 @@
 
         function showCollagesForGroup(group) {
             const collages = document.getElementById('collages');
-            collages.querySelectorAll('img').forEach(img => { img.style.opacity = '0'; img.style.filter = 'brightness(0.8)'; });
+            document.querySelectorAll('#collages img:not(#bannerImg)').forEach(img => { img.style.opacity = '0'; img.style.filter = 'brightness(0.8)'; });
             const banner = document.getElementById('bannerImg');
-            if (banner) banner.style.display = 'none';
+            if (banner) { banner.style.opacity = '0'; banner.style.filter = 'brightness(0.8)'; }
             const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'] };
             (modes[group] || []).forEach(m => {
                 const img = collages.querySelector(`[data-mode="${m}"]`);
