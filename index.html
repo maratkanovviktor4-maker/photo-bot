@@ -18,7 +18,11 @@
         .collages img.appearing { display: block; opacity: 0; filter: brightness(0.8); }
         .collages img.appearing.show { opacity: 1; filter: brightness(1); }
         .center-panel { width: 420px; flex-shrink: 0; }
-        .header { display: flex; flex-direction: row; justify-content: center; gap: 20px; align-items: center; margin-bottom: 16px; }
+        .header { display: flex; flex-direction: row; justify-content: center; gap: 20px; align-items: center; margin-bottom: 16px; position: relative; }
+        .lang-switch { position: absolute; left: 0; top: 0; display: flex; gap: 4px; }
+        .lang-btn { padding: 4px 8px; background: #222; border: 1px solid #2A2A2A; color: #aaa; border-radius: 4px; cursor: pointer; font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; transition: 0.2s; }
+        .lang-btn.active { background: #00CBF5; border-color: #00CBF5; color: #201F28; }
+        .lang-btn:hover { border-color: #00CBF5; }
         .header a { text-decoration: none; display: flex; flex-direction: column; align-items: center; }
         .logo-pb { font-size: 48px; font-weight: 700; letter-spacing: 4px; line-height: 1; }
         .logo-pb .p { color: #00CBF5; }
@@ -105,6 +109,10 @@
 
         <div class="center-panel">
             <div class="header">
+                <div class="lang-switch">
+                    <button class="lang-btn active" onclick="setLanguage('ru')">RU</button>
+                    <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+                </div>
                 <a href="index.html">
                     <div class="logo-pb"><span class="p">P</span><span class="b">B</span></div>
                     <div class="logo-sub"><span class="photo">Photo</span><span class="bot">Bot</span></div>
@@ -119,74 +127,81 @@
                 </div>
             </div>
 
-            <button class="mode-btn" onclick="openBot()" style="text-align:center;background:linear-gradient(90deg,#00CBF5,#14E9FC);color:#201F28;margin-bottom:8px;font-weight:600;">🔑 Войти через Telegram</button>
-            <div class="auth-block" id="authBlock"><div style="font-size:13px;color:#aaa;margin-bottom:8px;">Введите код авторизации из бота</div><input type="text" id="authCode" maxlength="4" placeholder="0000" inputmode="numeric" pattern="[0-9]*"><button class="send-btn" id="sendBtn" disabled>Отправить</button></div>
-            <div class="auth-info" id="authInfo">👤 Вошли как <span id="authName"></span></div>
-            <div class="sub-block" id="subscribeBlock">📛 Подпишитесь на нас в <a href="https://t.me/PhotoDocumentsBot_bot" target="_blank">Telegram</a><br><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://t.me/PhotoDocumentsBot_bot" width="200" height="200" alt="QR-код"></div>
-            <div class="sub-ok" id="subscribeOk">✅ Вы подписаны</div>
+            <button class="mode-btn" onclick="openBot()" style="text-align:center;background:linear-gradient(90deg,#00CBF5,#14E9FC);color:#201F28;margin-bottom:8px;font-weight:600;" data-t="login">🔑 Войти через Telegram</button>
+            <div class="auth-block" id="authBlock"><div style="font-size:13px;color:#aaa;margin-bottom:8px;" data-t="auth_code">Введите код авторизации из бота</div><input type="text" id="authCode" maxlength="4" placeholder="0000" inputmode="numeric" pattern="[0-9]*"><button class="send-btn" id="sendBtn" disabled data-t="send">Отправить</button></div>
+            <div class="auth-info" id="authInfo"><span data-t="auth_info">👤 Вошли как</span> <span id="authName"></span></div>
+            <div class="sub-block" id="subscribeBlock"><span data-t="subscribe_block">📛 Подпишитесь на нас в <a href="https://t.me/PhotoDocumentsBot_bot" target="_blank">Telegram</a></span><br><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://t.me/PhotoDocumentsBot_bot" width="200" height="200" alt="QR-код"></div>
+            <div class="sub-ok" id="subscribeOk" data-t="subscribe_ok">✅ Вы подписаны</div>
             <div id="modes">
                 
-                <button class="mode-group-btn" onclick="toggleModeGroup('flux')">🌟 FLUX 2 <span style="font-size:10px;color:#888;">Black Forest Labs</span></button>
+                <button class="mode-group-btn" onclick="toggleModeGroup('flux')" data-t="flux">🌟 FLUX 2 <span style="font-size:10px;color:#888;" data-t="flux_sub">Black Forest Labs</span></button>
                 <div class="mode-sub-group" id="group-flux" style="max-height:0;">
-                    <button class="mode-sub-btn" onclick="toggleFluxSubgroup('free')" style="text-align:left;">🖼️ Изображение в изображение ▾</button>
+                    <button class="mode-sub-btn" onclick="toggleFluxSubgroup('free')" style="text-align:left;" data-t="img2img">🖼️ Изображение в изображение ▾</button>
                     <div class="mode-sub-group" id="group-free" style="max-height:0;padding-left:12px;">
-                        <button class="mode-sub-btn" onclick="toggleReadySubgroup()" style="text-align:left;">📋 Готовые режимы ▾</button>
+                        <button class="mode-sub-btn" onclick="toggleReadySubgroup()" style="text-align:left;" data-t="ready_modes">📋 Готовые режимы ▾</button>
                         <div class="mode-sub-group" id="group-ready-inner" style="max-height:0;padding-left:12px;">
-                            <button class="mode-sub-btn" data-mode="documents">📄 Фото на документы</button>
-                            <button class="mode-sub-btn" data-mode="beach">🌅 Закат на пляже</button>
-                            <button class="mode-sub-btn" data-mode="birthday">🎂👑 День рождения</button>
-                            <button class="mode-sub-btn" data-mode="flowers">🌸 Цветы в авто</button>
-                            <button class="mode-sub-btn" data-mode="mirror_male">🕶️💪 Мужское в зеркале</button>
+                            <button class="mode-sub-btn" data-mode="documents" data-t="documents">📄 Фото на документы</button>
+                            <button class="mode-sub-btn" data-mode="beach" data-t="beach">🌅 Закат на пляже</button>
+                            <button class="mode-sub-btn" data-mode="birthday" data-t="birthday">🎂👑 День рождения</button>
+                            <button class="mode-sub-btn" data-mode="flowers" data-t="flowers">🌸 Цветы в авто</button>
+                            <button class="mode-sub-btn" data-mode="mirror_male" data-t="mirror_male">🕶️💪 Мужское в зеркале</button>
                         </div>
-                        <button class="mode-sub-btn" data-mode="svoboda">🎨 Свободный (ж)</button>
-                        <button class="mode-sub-btn" data-mode="svoboda_male">🎨 Свободный (м)</button>
+                        <button class="mode-sub-btn" data-mode="svoboda" data-t="svoboda_f">🎨 Свободный (ж)</button>
+                        <button class="mode-sub-btn" data-mode="svoboda_male" data-t="svoboda_m">🎨 Свободный (м)</button>
                     </div>
-                    <button class="mode-sub-btn" onclick="toggleFluxSubgroup('wallpaper')" style="text-align:left;">📝 Текст в изображение ▾</button>
+                    <button class="mode-sub-btn" onclick="toggleFluxSubgroup('wallpaper')" style="text-align:left;" data-t="text2img">📝 Текст в изображение ▾</button>
                     <div class="mode-sub-group" id="group-wallpaper" style="max-height:0;padding-left:12px;">
-                        <button class="mode-sub-btn" data-mode="wallpaper">🖼️ Обои</button>
-                        <div id="wallpaperSize" style="display:none;"><div class="size-btns"><button class="size-btn active" data-wp="phone">📱 9:16</button><button class="size-btn" data-wp="pc">🖥️ 16:9</button></div></div>
+                        <button class="mode-sub-btn" data-mode="wallpaper" data-t="wallpaper">🖼️ Обои</button>
+                        <div id="wallpaperSize" style="display:none;"><div class="size-btns"><button class="size-btn active" data-wp="phone" data-t="phone">📱 9:16</button><button class="size-btn" data-wp="pc" data-t="pc">🖥️ 16:9</button></div></div>
                     </div>
                 </div>
-                <button class="mode-group-btn" onclick="toggleModeGroup('text')">💬 Текстовые модели</button>
+                <button class="mode-group-btn" onclick="toggleModeGroup('text')" data-t="text_models">💬 Текстовые модели</button>
                 <div class="mode-sub-group" id="group-text" style="max-height:0;">
-                    <button class="mode-sub-btn" onclick="window.location.href='v4flash.html'">⚡ DeepSeek V4 Flash</button>
-                    <button class="mode-sub-btn" onclick="window.location.href='v4pro.html'">🧠 DeepSeek V4 Pro</button>
+                    <button class="mode-sub-btn" onclick="window.location.href='v4flash.html'" data-t="v4flash">⚡ DeepSeek V4 Flash</button>
+                    <button class="mode-sub-btn" onclick="window.location.href='v4pro.html'" data-t="v4pro">🧠 DeepSeek V4 Pro</button>
                 </div>
             </div>
-            <textarea id="caption" placeholder="Введите промт здесь..." rows="2" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,130)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px';this._init=true;}"></textarea>
-            <div class="hint" id="modeHint">Выберите режим и укажите подпись</div>
-            <button id="etalonBtn" class="mode-btn" style="display:none;text-align:center;color:#00CBF5;" onclick="useEtalon()">⭐ Использовать эталон</button>
+            <textarea id="caption" data-t="prompt_placeholder" placeholder="Введите промт здесь..." rows="2" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,130)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px';this._init=true;}"></textarea>
+            <div class="hint" id="modeHint" data-t="hint">Выберите режим и укажите подпись</div>
+            <button id="etalonBtn" class="mode-btn" style="display:none;text-align:center;color:#00CBF5;" onclick="useEtalon()" data-t="etalon">⭐ Использовать эталон</button>
             <input type="file" id="photoInput" accept="image/*">
             <img id="preview" alt="Превью">
-            <div class="actions"><button id="generate" onclick="startGeneration()">⚡ Сгенерировать</button></div>
+            <div class="actions"><button id="generate" onclick="startGeneration()" data-t="generate">⚡ Сгенерировать</button></div>
             <div id="status"></div>
-            <a href="prompts.html" class="nav-btn">📋 База промтов</a>
-            <a href="storage.html" class="nav-btn">📦 Хранилище генераций</a>
-            <div class="legal-footer"><a href="agreement.txt" target="_blank">Пользовательское соглашение</a><a href="privacy.txt" target="_blank">Политика конфиденциальности</a></div>
+            <a href="prompts.html" class="nav-btn" data-t="prompts">📋 База промтов</a>
+            <a href="storage.html" class="nav-btn" data-t="storage">📦 Хранилище генераций</a>
+            <div class="legal-footer"><a href="agreement.txt" target="_blank" data-t="agreement">Пользовательское соглашение</a><a href="privacy.txt" target="_blank" data-t="privacy">Политика конфиденциальности</a></div>
         </div>
 
         <div class="free-chat-panel" id="freeChatPanel">
-            <div class="free-chat-header">💬 PhotoBot<br><span style="font-size:10px;color:#888;font-weight:400;">общая история с Вашим Ассистентом</span></div>
+            <div class="free-chat-header"><span data-t="chat_title">💬 PhotoBot</span><br><span style="font-size:10px;color:#888;font-weight:400;" data-t="chat_subtitle">общая история с Вашим Ассистентом</span></div>
             <div class="free-chat-messages" id="freeChatMessages">
-                <div class="free-chat-placeholder">Задайте вопрос о сервисе</div>
+                <div class="free-chat-placeholder" data-t="chat_placeholder">Задайте вопрос о сервисе</div>
             </div>
             <div class="free-chat-input-area">
-                <textarea id="freeChatInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFreeMessage();}" style="resize:none;min-height:52px;max-height:104px;overflow-y:auto;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,104)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,104)+'px';this._init=true;}"></textarea>
+                <textarea id="freeChatInput" data-t="chat_input" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFreeMessage();}" style="resize:none;min-height:52px;max-height:104px;overflow-y:auto;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,104)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,104)+'px';this._init=true;}"></textarea>
                 <button onclick="sendFreeMessage()">➤</button>
             </div>
         </div>
     </div>
-    <div id="cookie-banner">Мы используем необходимые cookie-файлы для авторизации и работы сервиса.<button onclick="acceptCookies()">OK</button></div>
+    <div id="cookie-banner"><span data-t="cookie">Мы используем необходимые cookie-файлы для авторизации и работы сервиса.</span><button onclick="acceptCookies()" data-t="cookie_btn">OK</button></div>
+    <script src="lang.js"></script>
     <script>
         const SERVER_URL = "https://api.фото-бот.рф";
         let selectedMode = "documents", uploadedFile = null, wallpaperSize = "pc", currentUserId = null, currentUsername = null, isSubscribed = false, sessionToken = '';
         const hints = { documents: "📄 Фото на документы: укажите одежду (например: серая рубашка)", beach: "🌅 Закат на пляже: укажите одежду (например: белое платье)", birthday: "🎂👑 День рождения: укажите число и цвет платья (например: 23 красное)", flowers: "🌸 Цветы в авто: укажите одежду (например: черное платье)", mirror_male: "🕶️💪 Мужское в зеркале: опишите одежду, очки, телефон", svoboda: "🎨 Свободный (ж): введите промт", svoboda_male: "🎨 Свободный (м): введите промт", wallpaper: "🖼️ Обои: введите промт" };
         const wallpaperSizes = { phone: [1440, 2560], pc: [2560, 1440] };
         let currentGroup = null;
-
+        let currentLang = 'ru';
+        const savedLang = localStorage.getItem('photobot_lang') || 'ru';
+        currentLang = savedLang;
         const savedAuth = localStorage.getItem('photobot_auth');
         if (savedAuth) { const auth = JSON.parse(savedAuth); currentUserId = auth.user_id; currentUsername = auth.username; sessionToken = auth.session_token || ''; showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); showSubscribeBlock(); checkSubscription(); }
         if (!localStorage.getItem('cookies_accepted')) document.getElementById('cookie-banner').style.display = 'block';
+        document.addEventListener('DOMContentLoaded', function() {
+            applyTranslations();
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === currentLang));
+        });
         function acceptCookies() { localStorage.setItem('cookies_accepted', '1'); document.getElementById('cookie-banner').style.display = 'none'; }
         window.addEventListener('focus', function() { if (!currentUserId) document.getElementById('authBlock').style.display = 'block'; if (currentUserId) checkSubscription(); if (currentUserId) checkEtalonAvailability(); });
         function openBot() { document.getElementById('authBlock').style.display = 'block'; window.open('https://t.me/PhotoDocumentsBot_bot?start=site', '_blank'); }
@@ -338,6 +353,38 @@
             } catch(e) {
                 loaderDiv.textContent = 'Ошибка соединения';
             }
+        }
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('photobot_lang', lang);
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang));
+            applyTranslations();
+        }
+        function t(key) { return translations[currentLang][key] || key; }
+        function applyTranslations() {
+            document.querySelectorAll('[data-t]').forEach(el => {
+                const key = el.getAttribute('data-t');
+                if (el.placeholder !== undefined && el.tagName === 'TEXTAREA') {
+                    el.placeholder = t(key);
+                } else if (el.tagName === 'INPUT' && el.type === 'text') {
+                    el.placeholder = t(key);
+                } else {
+                    el.textContent = t(key);
+                }
+            });
+            // Обновить подсказки
+            if (typeof hints !== 'undefined') {
+                hints.documents = t('documents_hint');
+                hints.beach = t('beach_hint');
+                hints.birthday = t('birthday_hint');
+                hints.flowers = t('flowers_hint');
+                hints.mirror_male = t('mirror_male_hint');
+                hints.svoboda = t('svoboda_hint');
+                hints.svoboda_male = t('svoboda_male_hint');
+                hints.wallpaper = t('wallpaper_hint');
+            }
+            document.title = t('title');
+            if (typeof selectedMode !== 'undefined') document.getElementById('modeHint').textContent = hints[selectedMode] || t('hint');
         }
     </script>
 </body>
