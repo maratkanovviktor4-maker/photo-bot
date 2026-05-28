@@ -28,13 +28,15 @@
         .sub-block a { display: inline-block; padding: 8px 16px; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; text-decoration: none; border-radius: 8px; font-size: 12px; font-weight: 600; margin: 6px 0; letter-spacing: 0.5px; }
         .sub-block img { margin-top: 8px; border-radius: 8px; }
         .sub-ok { background: #222; border-radius: 12px; padding: 14px; margin: 10px 0; text-align: center; font-size: 13px; color: #00CBF5; display: none; border: 1px solid #2A2A2A; font-weight: 600; }
-        .mode-group-btn { display: block; width: 100%; padding: 12px 14px; margin: 4px 0; background: #222; border: 1px solid #2A2A2A; color: #fff; border-radius: 10px; cursor: pointer; font-size: 14px; text-align: center; transition: 0.2s; font-family: 'Montserrat', sans-serif; font-weight: 600; letter-spacing: 0.3px; }
+        .mode-main-btn { display: block; width: 100%; padding: 12px 14px; margin: 4px 0; background: #00CBF5; border: none; color: #201F28; border-radius: 10px; cursor: pointer; font-size: 14px; text-align: center; transition: 0.2s; font-family: 'Montserrat', sans-serif; font-weight: 700; letter-spacing: 0.5px; }
+        .mode-main-btn:hover { background: #14E9FC; }
+        .mode-group-btn { display: block; width: 100%; padding: 10px 14px; margin: 2px 0; background: #222; border: 1px solid #2A2A2A; color: #fff; border-radius: 10px; cursor: pointer; font-size: 13px; text-align: center; transition: 0.2s; font-family: 'Montserrat', sans-serif; font-weight: 600; letter-spacing: 0.3px; }
         .mode-group-btn:hover { background: #2A2A2A; border-color: #00CBF5; }
-        .mode-group-btn.active { background: #00CBF5; border-color: #00CBF5; color: #201F28; }
         .mode-sub-btn { display: block; width: 100%; padding: 10px 14px; margin: 2px 0; background: #1a1a1a; border: 1px solid #2A2A2A; color: #aaa; border-radius: 10px; cursor: pointer; font-size: 13px; text-align: left; transition: 0.2s; font-family: 'Montserrat', sans-serif; font-weight: 500; letter-spacing: 0.3px; }
         .mode-sub-btn:hover { background: #2A2A2A; border-color: #00CBF5; color: #fff; }
         .mode-sub-btn.selected { background: #00CBF5; border-color: #00CBF5; color: #201F28; font-weight: 600; }
         .mode-sub-group { overflow: hidden; transition: max-height 0.3s ease; }
+        .mode-group { overflow: hidden; transition: max-height 0.3s ease; }
         #preview { width: 100%; max-height: 180px; object-fit: contain; margin: 8px 0; border-radius: 10px; display: none; }
         #status { text-align: center; color: #aaa; margin: 6px 0; font-size: 12px; }
         .actions { display: flex; gap: 8px; margin-top: 8px; }
@@ -122,22 +124,25 @@
             <div class="sub-block" id="subscribeBlock">📛 Подпишитесь на нас в <a href="https://t.me/PhotoDocumentsBot_bot" target="_blank">Telegram</a><br><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://t.me/PhotoDocumentsBot_bot" width="200" height="200" alt="QR-код"></div>
             <div class="sub-ok" id="subscribeOk">✅ Вы подписаны</div>
             <div id="modes">
-                <button class="mode-group-btn" onclick="toggleModeGroup('ready')">📋 Готовые режимы</button>
-                <div class="mode-sub-group" id="group-ready" style="max-height:0;">
-                    <button class="mode-sub-btn" data-mode="documents">📄 Фото на документы</button>
-                    <button class="mode-sub-btn" data-mode="beach">🌅 Закат на пляже</button>
-                    <button class="mode-sub-btn" data-mode="birthday">🎂👑 День рождения</button>
-                    <button class="mode-sub-btn" data-mode="flowers">🌸 Цветы в авто</button>
-                    <button class="mode-sub-btn" data-mode="mirror_male">🕶️💪 Мужское в зеркале</button>
-                </div>
-                <button class="mode-group-btn" onclick="toggleModeGroup('free')">🖼️ Изображение в изображение</button>
-                <div class="mode-sub-group" id="group-free" style="max-height:0;">
-                    <button class="mode-sub-btn" data-mode="svoboda">🎨 Свободный (ж)</button>
-                    <button class="mode-sub-btn" data-mode="svoboda_male">🎨 Свободный (м)</button>
-                </div>
-                <button class="mode-group-btn" onclick="toggleModeGroup('wallpaper')">📝 Текст в изображение</button>
-                <div class="mode-sub-group" id="group-wallpaper" style="max-height:0;">
-                    <button class="mode-sub-btn" data-mode="wallpaper">🖼️ Обои</button>
+                <button class="mode-main-btn" onclick="toggleMainMode()">✨ FLUX 2</button>
+                <div class="mode-group" id="mainModes" style="max-height:0;">
+                    <button class="mode-group-btn" onclick="toggleModeGroup('ready')">📋 Готовые режимы</button>
+                    <div class="mode-sub-group" id="group-ready" style="max-height:0;">
+                        <button class="mode-sub-btn" data-mode="documents">📄 Фото на документы</button>
+                        <button class="mode-sub-btn" data-mode="beach">🌅 Закат на пляже</button>
+                        <button class="mode-sub-btn" data-mode="birthday">🎂👑 День рождения</button>
+                        <button class="mode-sub-btn" data-mode="flowers">🌸 Цветы в авто</button>
+                        <button class="mode-sub-btn" data-mode="mirror_male">🕶️💪 Мужское в зеркале</button>
+                    </div>
+                    <button class="mode-group-btn" onclick="toggleModeGroup('free')">🖼️ Изображение в изображение</button>
+                    <div class="mode-sub-group" id="group-free" style="max-height:0;">
+                        <button class="mode-sub-btn" data-mode="svoboda">🎨 Свободный (ж)</button>
+                        <button class="mode-sub-btn" data-mode="svoboda_male">🎨 Свободный (м)</button>
+                    </div>
+                    <button class="mode-group-btn" onclick="toggleModeGroup('wallpaper')">📝 Текст в изображение</button>
+                    <div class="mode-sub-group" id="group-wallpaper" style="max-height:0;">
+                        <button class="mode-sub-btn" data-mode="wallpaper">🖼️ Обои</button>
+                    </div>
                 </div>
             </div>
             <div id="wallpaperSize" style="display:none;"><div class="size-btns"><button class="size-btn active" data-wp="phone">📱 9:16</button><button class="size-btn" data-wp="pc">🖥️ 16:9</button></div></div>
@@ -171,6 +176,7 @@
         const hints = { documents: "📄 Фото на документы: укажите одежду (например: серая рубашка)", beach: "🌅 Закат на пляже: укажите одежду (например: белое платье)", birthday: "🎂👑 День рождения: укажите число и цвет платья (например: 23 красное)", flowers: "🌸 Цветы в авто: укажите одежду (например: черное платье)", mirror_male: "🕶️💪 Мужское в зеркале: опишите одежду, очки, телефон", svoboda: "🎨 Свободный (ж): введите промт", svoboda_male: "🎨 Свободный (м): введите промт", wallpaper: "🖼️ Обои: введите промт" };
         const wallpaperSizes = { phone: [1440, 2560], pc: [2560, 1440] };
         let currentGroup = null;
+        let mainExpanded = false;
 
         const savedAuth = localStorage.getItem('photobot_auth');
         if (savedAuth) { const auth = JSON.parse(savedAuth); currentUserId = auth.user_id; currentUsername = auth.username; sessionToken = auth.session_token || ''; showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); showSubscribeBlock(); checkSubscription(); }
@@ -185,15 +191,25 @@
         function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; loadFreeChatHistory(); }
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
         
+        function toggleMainMode() {
+            const div = document.getElementById('mainModes');
+            mainExpanded = !mainExpanded;
+            div.style.maxHeight = mainExpanded ? '600px' : '0';
+            if (!mainExpanded) {
+                currentGroup = null;
+                document.querySelectorAll('.mode-sub-group').forEach(d => d.style.maxHeight = '0');
+                document.querySelectorAll('#collages img').forEach(img => img.style.display = 'none');
+                const banner = document.getElementById('bannerImg');
+                if (banner) banner.style.display = 'block';
+            }
+        }
+
         function toggleModeGroup(group) {
+            if (!mainExpanded) { toggleMainMode(); return; }
             const groups = ['ready', 'free', 'wallpaper'];
             groups.forEach(g => {
                 const div = document.getElementById('group-' + g);
-                if (g === group && currentGroup !== group) {
-                    div.style.maxHeight = '300px';
-                } else {
-                    div.style.maxHeight = '0';
-                }
+                div.style.maxHeight = (g === group && currentGroup !== group) ? '300px' : '0';
             });
             if (currentGroup === group) {
                 currentGroup = null;
@@ -218,6 +234,7 @@
             });
         }
 
+        document.querySelectorAll("#collages img").forEach(img => { img.addEventListener("click", function() { selectMode(this.dataset.mode); }); });
         document.querySelectorAll(".mode-sub-btn").forEach(btn => {
             btn.addEventListener("click", function() {
                 document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected"));
@@ -225,7 +242,6 @@
                 selectMode(this.dataset.mode);
             });
         });
-        document.querySelectorAll("#collages img").forEach(img => { img.addEventListener("click", function() { selectMode(this.dataset.mode); }); });
         document.querySelectorAll(".size-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".size-btn").forEach(b => b.classList.remove("active")); this.classList.add("active"); wallpaperSize = this.dataset.wp; }); });
         function selectMode(mode) { selectedMode = mode; document.getElementById("modeHint").textContent = hints[mode]; document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected")); const btn = document.querySelector(`.mode-sub-btn[data-mode="${mode}"]`); if (btn) btn.classList.add("selected"); if (mode === "wallpaper") { document.getElementById("wallpaperSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; } else { document.getElementById("wallpaperSize").style.display = "none"; document.getElementById("photoInput").style.display = "block"; } }
         async function checkSubscription() { if (!currentUserId) return; try { const r = await fetch(`${SERVER_URL}/check_subscription`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserId }) }); const d = await r.json(); isSubscribed = d.subscribed; if (isSubscribed) { document.getElementById("subscribeBlock").style.display = "none"; document.getElementById("subscribeOk").style.display = "block"; } else { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; } } catch (err) {} }
@@ -262,7 +278,7 @@
             const text = input.value.trim();
             if (!text) return;
             if (!currentUserId) { alert('Авторизуйтесь'); return; }
-            input.value = '';
+            input.value = ''; input.style.height = 'auto'; input._init = false;
             const container = document.getElementById('freeChatMessages');
             if (container.querySelector('.free-chat-placeholder')) container.innerHTML = '';
             const userDiv = document.createElement('div');
