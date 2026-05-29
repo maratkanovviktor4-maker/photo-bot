@@ -369,9 +369,12 @@
             updateBalance();
         }
         function formatMessage(text) {
+            if (/^\s*<(!DOCTYPE|html)/i.test(text)) {
+                text = '```html\n' + text + '\n```';
+            }
             let parts = [];
             let lastIndex = 0;
-            const regex = /```(\w*)\n([\s\S]*?)```/g;
+            const regex = /```(\w*)\r?\n([\s\S]*?)```/g;
             let match;
             while ((match = regex.exec(text)) !== null) {
                 if (match.index > lastIndex) {
