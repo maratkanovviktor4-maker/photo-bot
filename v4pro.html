@@ -209,16 +209,15 @@
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
             if (!chat || chat.messages.length === 0) {
-                area.innerHTML = `<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek Pro" onerror="this.style.display='none'"><div class="title">DeepSeek V4 Pro</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>`;
+                const isPro = window.location.pathname.includes('pro');
+                const modelName = isPro ? 'DeepSeek V4 Pro' : 'DeepSeek V4 Flash';
+                area.innerHTML = `<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="${modelName}" onerror="this.style.display='none'"><div class="title">${modelName}</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>`;
             } else {
                 area.innerHTML = chat.messages.map((m, i) => {
-                    const formattedContent = m.content.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
-                        return `<pre><code>${escapeHtml(code)}</code><button class="copy-btn" onclick="copyCode(this)">Копировать</button></pre>`;
-                    }).replace(/`([^`]+)`/g, '<code>$1</code>');
                     return `
                     <div class="message-row ${m.role}">
                         <div>
-                            <div class="message-content">${formattedContent}</div>
+                            <div class="message-content">${formatMessage(m.content)}</div>
                             <div class="message-actions">
                                 ${m.role === 'user' ? `<button onclick="editMessage(${i})">Редактировать</button>` : ''}
                                 <button onclick="copyMessage(${i})">Копировать</button>
