@@ -372,12 +372,29 @@
             updateBalance();
         }
         function formatMessage(text) {
-            text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
-                return `<pre><code>${escapeHtml(code)}</code><button class="copy-btn" onclick="copyCode(this)">Копировать</button></pre>`;
-            });
-            text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
-            text = text.replace(/\n/g, '<br>');
-            return text;
+            let parts = [];
+            let lastIndex = 0;
+            const regex = /```(\w*)\n([\s\S]*?)```/g;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                if (match.index > lastIndex) {
+                    parts.push({type: 'text', content: text.substring(lastIndex, match.index)});
+                }
+                parts.push({type: 'code', lang: match[1], content: match[2]});
+                lastIndex = regex.lastIndex;
+            }
+            if (lastIndex < text.length) {
+                parts.push({type: 'text', content: text.substring(lastIndex)});
+            }
+            let result = '';
+            for (const part of parts) {
+                if (part.type === 'code') {
+                    result += `<pre><code>${escapeHtml(part.content)}</code><button class="copy-btn" onclick="copyCode(this)">Копировать</button></pre>`;
+                } else {
+                    result += escapeHtml(part.content).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\n/g, '<br>');
+                }
+            }
+            return result;
         }
         function stopTyping() {
             if (typingInterval) {
