@@ -368,12 +368,13 @@
             updateBalance();
         }
         function formatMessage(text) {
+            var B = String.fromCharCode(96);
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) {
-                text = '```html\n' + text + '\n```';
+                text = B+B+B+'html\n' + text + '\n'+B+B+B;
             }
             let parts = [];
             let lastIndex = 0;
-            const regex = /^```(\w*)\r?\n([\s\S]*?)\n^```/gm;
+            const regex = new RegExp(B+B+B+'(\\w*)\\r?\\n([\\s\\S]*?)'+B+B+B, 'g');
             let match;
             while ((match = regex.exec(text)) !== null) {
                 if (match.index > lastIndex) {
