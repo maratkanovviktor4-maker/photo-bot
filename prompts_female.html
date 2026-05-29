@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PhotoBot — Женская фотосессия с ИИ</title>
     <link rel="icon" type="image/png" href="favicon.png">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Inter', sans-serif;
             background: #201F28;
             color: #fff;
             min-height: 100vh;
@@ -22,9 +22,9 @@
             left: -20%;
             width: 140%;
             height: 140%;
-            background: radial-gradient(ellipse at 25% 30%, rgba(0,203,245,0.06) 0%, transparent 50%),
-                        radial-gradient(ellipse at 75% 50%, rgba(20,233,252,0.04) 0%, transparent 50%),
-                        radial-gradient(ellipse at 40% 80%, rgba(255,255,255,0.02) 0%, transparent 50%);
+            background: radial-gradient(ellipse at 25% 30%, rgba(0,203,245,0.15) 0%, transparent 50%),
+                        radial-gradient(ellipse at 75% 50%, rgba(20,233,252,0.12) 0%, transparent 50%),
+                        radial-gradient(ellipse at 40% 80%, rgba(255,255,255,0.05) 0%, transparent 50%);
             filter: blur(60px);
             pointer-events: none;
             z-index: 0;
@@ -73,10 +73,16 @@
         }
         .prompt-card {
             margin-bottom: 32px;
-            background: #222;
+            background: rgba(34,34,34,0.6);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             overflow: hidden;
-            border: 1px solid #2A2A2A;
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: 0.3s ease;
+        }
+        .prompt-card:hover {
+            border-color: rgba(0,203,245,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
         .prompt-card .image-placeholder {
             width: 100%;
@@ -105,20 +111,20 @@
         }
         .prompt-card textarea {
             width: 100%;
-            background: #1a1a1a;
-            border: 1px solid #333;
+            background: rgba(32,31,40,0.6);
+            border: 1px solid rgba(255,255,255,0.08);
             border-radius: 10px;
             color: #ddd;
             padding: 12px;
             font-size: 13px;
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Inter', sans-serif;
             resize: vertical;
             min-height: 100px;
             line-height: 1.5;
             outline: none;
-            transition: 0.2s;
+            transition: 0.3s ease;
         }
-        .prompt-card textarea:focus { border-color: #00CBF5; }
+        .prompt-card textarea:focus { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
         .prompt-card .card-actions {
             display: flex;
             gap: 8px;
@@ -132,8 +138,8 @@
             font-weight: 600;
             cursor: pointer;
             border: none;
-            font-family: 'Montserrat', sans-serif;
-            transition: 0.2s;
+            font-family: 'Inter', sans-serif;
+            transition: 0.3s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
@@ -141,20 +147,22 @@
             text-align: center;
         }
         .btn-copy {
-            background: #00CBF5;
+            background: linear-gradient(90deg, #00CBF5, #14E9FC);
             color: #201F28;
+            box-shadow: 0 4px 12px rgba(0,203,245,0.3);
         }
-        .btn-copy:hover { background: #14E9FC; }
+        .btn-copy:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,203,245,0.4); }
         .btn-telegram {
-            background: #2A2A2A;
+            background: rgba(34,34,34,0.6);
+            backdrop-filter: blur(10px);
             color: #fff;
-            border: 1px solid #444;
+            border: 1px solid rgba(255,255,255,0.08);
         }
-        .btn-telegram:hover { background: #333; border-color: #00CBF5; }
+        .btn-telegram:hover { background: rgba(0,203,245,0.1); border-color: #00CBF5; }
         .btn-app {
-            background: #2A2A2A;
+            background: rgba(34,34,34,0.6);
             color: #666;
-            border: 1px solid #333;
+            border: 1px solid rgba(255,255,255,0.06);
             cursor: not-allowed;
         }
         .toast {
@@ -162,7 +170,7 @@
             bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            background: #00CBF5;
+            background: linear-gradient(90deg, #00CBF5, #14E9FC);
             color: #201F28;
             padding: 12px 24px;
             border-radius: 8px;
@@ -172,20 +180,30 @@
             transition: 0.3s;
             z-index: 1000;
             pointer-events: none;
+            box-shadow: 0 4px 16px rgba(0,203,245,0.3);
         }
         .toast.show { opacity: 1; }
         .back-link {
             display: block;
             text-align: center;
             padding: 20px;
-            color: #666;
+            color: #888;
             text-decoration: none;
             font-size: 12px;
+            transition: 0.2s;
         }
         .back-link:hover { color: #00CBF5; }
+        .lang-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
+        .lang-btn.active { background: linear-gradient(135deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; box-shadow: 0 4px 12px rgba(0,203,245,0.3); }
+        .lang-btn:hover { border-color: #00CBF5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,203,245,0.15); }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
     </style>
 </head>
 <body>
+    <div style="position:fixed;top:20px;right:20px;display:flex;gap:4px;z-index:1000;">
+        <button class="lang-btn" onclick="setLanguage('ru')">RU</button>
+        <button class="lang-btn active" onclick="setLanguage('en')">EN</button>
+    </div>
     <div class="header">
         <div class="logo-pb"><span class="p">P</span><span class="b">B</span></div>
         <div class="logo-sub"><span class="photo">Photo</span><span class="bot">Bot</span></div>
@@ -195,10 +213,14 @@
 
     <div class="container" id="container"></div>
 
-    <a href="prompts.html" class="back-link">← К базе промтов</a>
-    <div class="toast" id="toast">Скопировано!</div>
+    <a href="prompts.html" class="back-link">К базе промтов</a>
+    <div class="toast" id="toast">Скопировано</div>
 
     <script>
+        let currentLang = localStorage.getItem('photobot_lang') || 'en';
+        function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); }
+        document.addEventListener('DOMContentLoaded', function() { document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === currentLang)); });
+
         const prompts = [
             { img: "prompts_img/female_1.jpg", text: "Портрет молодой женщины в стиле 90-х, сидящей у окна, освещенной мягким дневным светом. На ней простая футболка и джинсы, естественный макияж, подчеркивающий реалистичность кожи. Фотография выполнена в стиле пленочной фотографии, с легким зерном, передающим аутентичную европейскую эстетику. Акцент на естественную красоту и непринужденную атмосферу, как будто сделано на камеру 35mm film." },
             { img: "prompts_img/female_2.jpg", text: "Женщина в элегантном черном кожаном пальто с поясом, стоит рядом с доберманом на поводке. Пес сидит, а женщина смотрит прямо в объектив, держа поводок в руках. Задний план — стена в индустриальном стиле с металлическими элементами. Контрастное освещение подчеркивает ее уверенность и грацию." },
@@ -218,15 +240,15 @@
             card.className = 'prompt-card';
             card.innerHTML = `
                 <div class="image-placeholder">
-                    ${item.img ? `<img src="${item.img}" alt="Пример #${i + 1}" onerror="this.parentElement.innerHTML='🖼️ Пример #${i + 1}'">` : `🖼️ Пример #${i + 1}`}
+                    ${item.img ? `<img src="${item.img}" alt="Пример #${i + 1}" onerror="this.parentElement.innerHTML='Пример #${i + 1}'">` : `Пример #${i + 1}`}
                 </div>
                 <div class="card-body">
                     <div class="card-number">#${i + 1}</div>
                     <textarea placeholder="Введите промт...">${item.text}</textarea>
                     <div class="card-actions">
-                        <button class="btn btn-copy" onclick="copyPrompt(this)">📋 Скопировать</button>
-                        <a class="btn btn-telegram" href="https://t.me/PhotoDocumentsBot_bot" target="_blank">✈️ Скопировать в Telegram</a>
-                        <button class="btn btn-app" disabled>📱 Будет доступно позже</button>
+                        <button class="btn btn-copy" onclick="copyPrompt(this)">Скопировать</button>
+                        <a class="btn btn-telegram" href="https://t.me/PhotoDocumentsBot_bot" target="_blank">Скопировать в Telegram</a>
+                        <button class="btn btn-app" disabled>Будет доступно позже</button>
                     </div>
                 </div>
             `;
