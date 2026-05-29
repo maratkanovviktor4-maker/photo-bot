@@ -374,7 +374,7 @@
             }
             let parts = [];
             let lastIndex = 0;
-            const regex = /```(\w*)\r?\n([\s\S]*?)```/g;
+            const regex = /^```(\w*)\r?\n([\s\S]*?)\n^```/gm;
             let match;
             while ((match = regex.exec(text)) !== null) {
                 if (match.index > lastIndex) {
@@ -389,7 +389,7 @@
             let result = '';
             for (const part of parts) {
                 if (part.type === 'code') {
-                    result += `<pre><code>${escapeHtml(part.content)}</code><button class="copy-btn" onclick="copyCode(this)">Копировать</button></pre>`;
+                    result += '<pre><code>' + escapeHtml(part.content) + '</code><button class="copy-btn" onclick="copyCode(this)">Копировать</button></pre>';
                 } else {
                     result += escapeHtml(part.content).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\n/g, '<br>');
                 }
