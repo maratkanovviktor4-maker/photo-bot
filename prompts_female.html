@@ -38,6 +38,8 @@
             padding: 20px 20px 10px;
             background: #201F28;
         }
+        .header-inner { display: flex; flex-direction: row; justify-content: center; gap: 20px; align-items: center; margin-bottom: 16px; }
+        .header-inner a { text-decoration: none; display: flex; flex-direction: column; align-items: center; }
         .logo-pb {
             font-size: 28px;
             font-weight: 700;
@@ -205,8 +207,20 @@
         <button class="lang-btn active" onclick="setLanguage('en')">EN</button>
     </div>
     <div class="header">
-        <div class="logo-pb"><span class="p">P</span><span class="b">B</span></div>
-        <div class="logo-sub"><span class="photo">Photo</span><span class="bot">Bot</span></div>
+        <div class="header-inner">
+            <a href="index.html">
+                <div class="logo-pb"><span class="p">P</span><span class="b">B</span></div>
+                <div class="logo-sub"><span class="photo">Photo</span><span class="bot">Bot</span></div>
+            </a>
+            <div style="position:relative; display:flex; flex-direction:column; align-items:center; cursor:pointer;" onclick="toggleDeepSeekMenu()">
+                <img src="deepseek_logo.png" alt="DeepSeek" style="height:40px; margin-top:3px;">
+                <div id="deepseekMenu" style="display:none; position:absolute; top:110%; left:50%; transform:translateX(-50%); background:rgba(34,34,34,0.95); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:8px; z-index:100; min-width:160px; box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+                    <div style="color:#888; font-size:10px; padding:4px 12px 8px; text-transform:uppercase; letter-spacing:1px;">DeepSeek</div>
+                    <a href="v4flash.html" style="display:flex; align-items:center; gap:8px; padding:10px 12px; color:#8B5CF6; text-decoration:none; font-size:13px; border-radius:8px; font-weight:500; transition:0.15s;" onmouseover="this.style.background='rgba(139,92,246,0.1)'" onmouseout="this.style.background='transparent'">V4 Flash <span style="font-size:10px;color:#666;margin-left:auto;">Fast</span></a>
+                    <a href="v4pro.html" style="display:flex; align-items:center; gap:8px; padding:10px 12px; color:#F59E0B; text-decoration:none; font-size:13px; border-radius:8px; font-weight:500; transition:0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.1)'" onmouseout="this.style.background='transparent'">V4 Pro <span style="font-size:10px;color:#666;margin-left:auto;">Best</span></a>
+                </div>
+            </div>
+        </div>
         <h1>Женская фотосессия с ИИ<br>10 промтов для создания женских образов</h1>
         <p class="intro">Создание профессиональных женских портретов с помощью искусственного интеллекта стало доступно каждому — без фотографа, студии и дорогостоящего оборудования. Современные нейросети генерируют изображения, визуально неотличимые от работы профессионалов, за считанные минуты. Достаточно загрузить своё фото и указать желаемый образ через текстовую инструкцию — промпт.</p>
     </div>
@@ -220,6 +234,34 @@
         let currentLang = localStorage.getItem('photobot_lang') || 'en';
         function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); }
         document.addEventListener('DOMContentLoaded', function() { document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === currentLang)); });
+
+        function toggleDeepSeekMenu() {
+            const menu = document.getElementById('deepseekMenu');
+            if (menu.style.display === 'block') {
+                menu.style.opacity = '0';
+                menu.style.transform = 'translateX(-50%) translateY(-4px)';
+                setTimeout(() => { menu.style.display = 'none'; }, 150);
+            } else {
+                menu.style.display = 'block';
+                menu.style.opacity = '0';
+                menu.style.transform = 'translateX(-50%) translateY(-4px)';
+                requestAnimationFrame(() => {
+                    menu.style.transition = 'opacity 0.15s, transform 0.15s';
+                    menu.style.opacity = '1';
+                    menu.style.transform = 'translateX(-50%) translateY(0)';
+                });
+            }
+        }
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('[onclick="toggleDeepSeekMenu()"]')) {
+                const menu = document.getElementById('deepseekMenu');
+                if (menu.style.display === 'block') {
+                    menu.style.opacity = '0';
+                    menu.style.transform = 'translateX(-50%) translateY(-4px)';
+                    setTimeout(() => { menu.style.display = 'none'; }, 150);
+                }
+            }
+        });
 
         const prompts = [
             { img: "prompts_img/female_1.jpg", text: "Портрет молодой женщины в стиле 90-х, сидящей у окна, освещенной мягким дневным светом. На ней простая футболка и джинсы, естественный макияж, подчеркивающий реалистичность кожи. Фотография выполнена в стиле пленочной фотографии, с легким зерном, передающим аутентичную европейскую эстетику. Акцент на естественную красоту и непринужденную атмосферу, как будто сделано на камеру 35mm film." },
