@@ -54,9 +54,10 @@
             transform: translateY(-2px);
         }
         .logo-pb {
-            font-size: 28px;
+            font-size: 48px;
             font-weight: 700;
-            letter-spacing: 3px;
+            letter-spacing: 4px;
+            line-height: 1;
             filter: drop-shadow(0 2px 6px rgba(0,203,245,0.3));
             transition: 0.3s ease;
         }
@@ -64,10 +65,10 @@
         .logo-pb .p { color: #00CBF5; }
         .logo-pb .b { color: #14E9FC; }
         .logo-sub {
-            font-size: 10px;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: 700;
             letter-spacing: 2px;
-            margin-bottom: 8px;
+            margin-top: -2px;
         }
         .logo-sub .photo { color: #00CBF5; }
         .logo-sub .bot { color: #14E9FC; }
@@ -259,7 +260,11 @@
     <script src="lang.js"></script>
     <script>
         let currentLang = localStorage.getItem('photobot_lang') || 'en';
-        function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); applyTranslations(); }
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('photobot_lang', lang);
+            location.reload();
+        }
         function t(key) { return (translations[currentLang] && translations[currentLang][key]) || key; }
         function applyTranslations() { document.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.getAttribute('data-t')); }); document.title = t('female_title'); }
         document.addEventListener('DOMContentLoaded', function() { document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === currentLang)); applyTranslations(); });
@@ -268,16 +273,16 @@
             const menu = document.getElementById('deepseekMenu');
             if (menu.style.display === 'block') {
                 menu.style.opacity = '0';
-                menu.style.transform = 'translate(-50%, -50%) translateY(-4px)';
+                menu.style.transform = 'translateX(-50%) translateY(-4px)';
                 setTimeout(() => { menu.style.display = 'none'; }, 150);
             } else {
                 menu.style.display = 'block';
                 menu.style.opacity = '0';
-                menu.style.transform = 'translate(-50%, -50%) translateY(-4px)';
+                menu.style.transform = 'translateX(-50%) translateY(-4px)';
                 requestAnimationFrame(() => {
                     menu.style.transition = 'opacity 0.15s, transform 0.15s';
                     menu.style.opacity = '1';
-                    menu.style.transform = 'translate(-50%, -50%) translateY(0)';
+                    menu.style.transform = 'translateX(-50%) translateY(0)';
                 });
             }
         }
@@ -286,7 +291,7 @@
                 const menu = document.getElementById('deepseekMenu');
                 if (menu.style.display === 'block') {
                     menu.style.opacity = '0';
-                    menu.style.transform = 'translate(-50%, -50%) translateY(-4px)';
+                    menu.style.transform = 'translateX(-50%) translateY(-4px)';
                     setTimeout(() => { menu.style.display = 'none'; }, 150);
                 }
             }
