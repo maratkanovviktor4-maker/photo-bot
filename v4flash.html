@@ -179,8 +179,14 @@
             if (newName && chat) { chat.title = newName; renderChatList(); }
             document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
         }
-        function deleteChat(id) {
+        async function deleteChat(id) {
             if (!confirm('Удалить чат?')) return;
+            try {
+                const model = window.location.pathname.includes('pro') ? 'pro' : 'flash';
+                await fetch(`${SERVER_URL}/delete_chat?user_id=${currentUserId}&model=${model}&chat_id=${id}&session_token=${sessionToken}`, {
+                    method: 'DELETE'
+                });
+            } catch (e) {}
             chats = chats.filter(c => c.id !== id);
             if (currentChatId === id) currentChatId = chats.length > 0 ? chats[chats.length - 1].id : null;
             renderChatList();
