@@ -108,6 +108,8 @@
     </div>
 
     <script>
+        var autoScroll = true;
+
         const SERVER_URL = "https://api.фото-бот.рф";
         let currentMode = 'chat';
         let chats = [];
@@ -125,13 +127,16 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const chatArea = document.getElementById('chatArea');
+            var chatArea = document.getElementById('chatArea');
             chatArea.addEventListener('scroll', function() {
-                const btn = document.getElementById('scrollBottomBtn');
-                if (this.scrollHeight - this.scrollTop - this.clientHeight > 200) {
-                    btn.style.display = 'flex';
-                } else {
+                var btn = document.getElementById('scrollBottomBtn');
+                var atBottom = this.scrollHeight - this.scrollTop - this.clientHeight < 100;
+                if (atBottom) {
                     btn.style.display = 'none';
+                    autoScroll = true;
+                } else {
+                    btn.style.display = 'flex';
+                    autoScroll = false;
                 }
             });
         });
@@ -381,7 +386,7 @@
                             const chunkSize = Math.min(50, fullContent.length - i);
                             chat.messages[msgIndex].content = fullContent.substring(0, i + chunkSize);
                             streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
-                            document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
+                            if (autoScroll) { document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight; }
                             i += chunkSize;
                             setTimeout(streamNext, 5);
                         } else {
@@ -389,7 +394,7 @@
                             streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')">Копировать</button>';
                             autoNameChat(chat);
                             renderChatList();
-                            document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
+                            if (autoScroll) { document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight; }
                             isSending = false;
                             document.getElementById('sendBtn').textContent = 'Отправить';
                             document.getElementById('sendBtn').onclick = sendMessage;
@@ -493,7 +498,7 @@
                             const chunkSize = Math.min(50, remaining.length - i);
                             chat.messages[index].content = fullContent.substring(0, startLen + i + chunkSize);
                             if (streamDiv) streamDiv.innerHTML = formatMessage(chat.messages[index].content);
-                            document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
+                            if (autoScroll) { document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight; }
                             i += chunkSize;
                             setTimeout(streamNext, 5);
                         } else {
@@ -502,7 +507,7 @@
                             if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')">Копировать</button>';
                             autoNameChat(chat);
                             renderChatList();
-                            document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
+                            if (autoScroll) { document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight; }
                             isSending = false;
                             document.getElementById('sendBtn').textContent = 'Отправить';
                             document.getElementById('sendBtn').onclick = sendMessage;
