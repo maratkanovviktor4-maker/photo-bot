@@ -1,16 +1,16 @@
-
+html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-        <style> ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; } </style>
+    <style> ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; } </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PhotoBot — DeepSeek V4 Flash</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; background: #201F28; color: #e0e0e0; height: 100vh; display: flex; }
+        body { font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; background: #201F28; color: #e0e0e0; height: 100vh; display: flex; overflow: hidden; }
         .sidebar { width: 280px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); display: flex; flex-direction: column; padding: 16px; border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
         .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
         .logo-row img { height: 32px; }
@@ -33,34 +33,33 @@
         .sidebar-footer { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; margin-top: 8px; }
         .sidebar-footer a { color: #888; text-decoration: none; font-size: 12px; display: block; text-align: center; font-family: 'Inter', sans-serif; transition: 0.2s; }
         .sidebar-footer a:hover { color: #00CBF5; }
-        .main { flex: 1; display: flex; flex-direction: column; background: #201F28; }
-        .top-bar { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); background: #201F28; }
+        .main { flex: 1; display: flex; flex-direction: column; background: #201F28; max-width: calc(100vw - 280px); overflow: hidden; }
+        .top-bar { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); background: #201F28; flex-shrink: 0; }
         .mode-btn { padding: 6px 16px; border-radius: 16px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid transparent; background: rgba(34,34,34,0.8); color: #a0a0b0; font-family: 'Inter', sans-serif; transition: 0.3s ease; }
         .mode-btn.active { background: linear-gradient(90deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; font-weight: 600; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
         .mode-btn:hover:not(.active) { border-color: #00CBF5; color: #e0e0e0; }
-        #balanceDisplay { margin-left: auto; font-size: 12px; color: #00CBF5; font-family: 'Inter', sans-serif; }
+        #balanceDisplay { margin-left: auto; font-size: 12px; color: #00CBF5; font-family: 'Inter', sans-serif; white-space: nowrap; }
         .chat-area { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
         .chat-area .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #555; }
         .chat-area .empty-state .logo-lg { height: 60px; opacity: 0.6; }
         .chat-area .empty-state .title { font-size: 22px; font-weight: 600; color: #777; font-family: 'Inter', sans-serif; }
-        .message-row { display: flex; gap: 12px; align-items: flex-start; max-width: 85%; }
+        .message-row { display: flex; gap: 12px; align-items: flex-start; max-width: 100%; }
         .message-row.user { align-self: flex-end; flex-direction: row-reverse; }
         .message-row.assistant { align-self: flex-start; }
-        .message-content { padding: 10px 14px; border-radius: 12px; font-size: 16px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
+        .message-content { padding: 10px 14px; border-radius: 12px; font-size: 16px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; max-width: 100%; overflow-x: auto; }
         .message-row.assistant .message-content { background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.06); }
         .message-row.user .message-content { background: rgba(0,203,245,0.15); border: 1px solid rgba(0,203,245,0.2); }
         .message-content pre { background: #0a0a1a; padding: 14px; border-radius: 10px; overflow-x: auto; font-size: 14px; margin: 8px 0; border: 1px solid rgba(255,255,255,0.06); white-space: pre; position: relative; }
         .message-content pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; border-radius: 0; display: block; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
-        .message-content pre .copy-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.1); border: none; color: #aaa; cursor: pointer; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-family: 'Inter', sans-serif; transition: 0.2s; opacity: 0; }
+        .message-content pre .copy-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.1); border: none; color: #aaa; cursor: pointer; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-family: 'Inter', sans-serif; transition: 0.2s; }
         .message-content pre:hover .copy-btn { opacity: 1; }
         .message-content pre .copy-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
-        .message-actions { display: flex; gap: 6px; margin-top: 6px; opacity: 0; transition: 0.2s; }
-        .message-row:hover .message-actions { opacity: 1; }
+        .message-actions { display: flex; gap: 6px; margin-top: 6px; }
         .message-actions button { background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.06); color: #888; cursor: pointer; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-family: 'Inter', sans-serif; transition: 0.2s; }
         .message-actions button:hover { background: rgba(0,203,245,0.2); color: #e0e0e0; }
-        .input-area { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; gap: 10px; align-items: flex-end; background: #201F28; }
-        .input-area textarea { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(34,34,34,0.6); color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; outline: none; resize: none; max-height: 280px; overflow-y: auto; transition: border-color 0.2s, box-shadow 0.2s; }
+        .input-area { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; gap: 10px; align-items: flex-end; background: #201F28; flex-shrink: 0; max-width: 100%; }
+        .input-area textarea { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(34,34,34,0.6); color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; outline: none; resize: none; max-height: 280px; overflow-y: auto; transition: border-color 0.2s, box-shadow 0.2s; min-width: 0; }
         .input-area textarea:focus { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
         .input-area button { padding: 10px 18px; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; border: 2px solid transparent; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 14px; transition: 0.3s ease; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
         .input-area button:disabled { background: #2a2a2a; color: #666; cursor: not-allowed; box-shadow: none; transform: none; }
@@ -123,13 +122,26 @@
             const auth = JSON.parse(savedAuth);
             currentUserId = auth.user_id;
             sessionToken = auth.session_token || '';
-            loadChatsFromServer();
-            updateBalance();
+            if (!sessionToken || !currentUserId) {
+                alert('Сессия устарела. Авторизуйтесь заново на главной странице.');
+                window.location.href = 'index.html';
+            } else {
+                loadChatsFromServer();
+                updateBalance();
+            }
+        } else {
+            alert('Авторизуйтесь на главной странице');
+            window.location.href = 'index.html';
         }
 
         async function loadChatsFromServer() {
             try {
                 const resp = await fetch(`${SERVER_URL}/get_chat_history?user_id=${currentUserId}&model=flash&session_token=${sessionToken}`);
+                if (resp.status === 403) {
+                    alert('Сессия устарела. Авторизуйтесь заново.');
+                    window.location.href = 'index.html';
+                    return;
+                }
                 const data = await resp.json();
                 if (data.history) {
                     chats = [];
@@ -138,7 +150,9 @@
                     }
                     chats.sort((a, b) => a.id.localeCompare(b.id));
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error('loadChatsFromServer error:', e);
+            }
             if (chats.length === 0) {
                 const chat = { id: Date.now().toString(), title: 'Новый чат', messages: [] };
                 chats.push(chat);
@@ -150,9 +164,13 @@
         async function updateBalance() {
             try {
                 const resp = await fetch(`${SERVER_URL}/get_balance?user_id=${currentUserId}&session_token=${sessionToken}`);
-                const data = await resp.json();
-                document.getElementById('balanceDisplay').textContent = `${data.flash.toFixed(1)} `;
-            } catch(e) {}
+                if (resp.ok) {
+                    const data = await resp.json();
+                    document.getElementById('balanceDisplay').textContent = `${data.flash.toFixed(1)} Stars`;
+                }
+            } catch(e) {
+                console.error(e);
+            }
         }
         function escapeHtml(text) {
             return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -180,8 +198,7 @@
         async function deleteChat(id) {
             if (!confirm('Удалить чат?')) return;
             try {
-                const model = window.location.pathname.includes('pro') ? 'pro' : 'flash';
-                await fetch(`${SERVER_URL}/delete_chat?user_id=${currentUserId}&model=${model}&chat_id=${id}&session_token=${sessionToken}`, {
+                await fetch(`${SERVER_URL}/delete_chat?user_id=${currentUserId}&model=flash&chat_id=${id}&session_token=${sessionToken}`, {
                     method: 'DELETE'
                 });
             } catch (e) {}
@@ -208,22 +225,15 @@
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
             if (!chat || chat.messages.length === 0) {
-                const isPro = window.location.pathname.includes('pro');
-                const modelName = isPro ? 'DeepSeek V4 Pro' : 'DeepSeek V4 Flash';
-                area.innerHTML = `<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="${modelName}" onerror="this.style.display='none'"><div class="title">${modelName}</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>`;
+                area.innerHTML = `<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display='none'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>`;
             } else {
                 area.innerHTML = chat.messages.map((m, i) => {
-                    return `
-                    <div class="message-row ${m.role}">
-                        <div>
-                            <div class="message-content">${formatMessage(m.content)}</div>
-                            <div class="message-actions">
-                                ${m.role === 'user' ? `<button onclick="editMessage(${i})">Редактировать</button>` : ''}
-                                <button onclick="copyMessage(${i})">Копировать</button>
-                                ${m.role === 'assistant' && m.interrupted ? `<button onclick="continueMessage(${i})">Продолжить</button>` : ''}
-                            </div>
-                        </div>
-                    </div>`;
+                    let actionsHtml = '<div class="message-actions">';
+                    if (m.role === 'user') actionsHtml += `<button onclick="editMessage(${i})">Редактировать</button>`;
+                    actionsHtml += `<button onclick="copyMessage(${i})">Копировать</button>`;
+                    if (m.role === 'assistant' && m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})">Продолжить</button>`;
+                    actionsHtml += '</div>';
+                    return `<div class="message-row ${m.role}"><div><div class="message-content">${formatMessage(m.content)}</div>${actionsHtml}</div></div>`;
                 }).join('');
             }
             area.scrollTop = area.scrollHeight;
@@ -311,51 +321,65 @@
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
                     body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, file_data: pendingFileData || '', file_name: pendingFileName, file_mime: pendingFileMime })
                 });
-                const data = await resp.json();
                 const el = document.getElementById(placeholderId); if (el) el.remove();
-                if (resp.status === 402) {
-                    const required = data.required || 0;
-                    const balance = data.balance || 0;
-                    chat.messages.push({ role: 'assistant', content: `Недостаточно средств. Нужно ≈${required} , у вас ${balance} . Пополните баланс или начните новый чат.` });
+                if (resp.status === 403) {
+                    chat.messages.push({ role: 'assistant', content: 'Сессия устарела. Авторизуйтесь заново на главной странице.' });
                     renderMessages();
-                    updateBalance();
-                    isSending = false;
-                    document.getElementById('sendBtn').textContent = 'Отправить';
-                    document.getElementById('sendBtn').onclick = sendMessage;
+                    isSending = false; document.getElementById('sendBtn').textContent = 'Отправить'; document.getElementById('sendBtn').onclick = sendMessage;
                     return;
                 }
+                if (resp.status === 402) {
+                    const data = await resp.json();
+                    const required = data.required || 0;
+                    const balance = data.balance || 0;
+                    chat.messages.push({ role: 'assistant', content: `Недостаточно средств. Нужно ≈${required.toFixed(2)} Stars, у вас ${balance.toFixed(2)} Stars. Пополните баланс.` });
+                    renderMessages(); updateBalance();
+                    isSending = false; document.getElementById('sendBtn').textContent = 'Отправить'; document.getElementById('sendBtn').onclick = sendMessage;
+                    return;
+                }
+                if (!resp.ok) {
+                    chat.messages.push({ role: 'assistant', content: 'Ошибка сервера. Попробуйте позже.' });
+                    renderMessages();
+                    isSending = false; document.getElementById('sendBtn').textContent = 'Отправить'; document.getElementById('sendBtn').onclick = sendMessage;
+                    return;
+                }
+                const data = await resp.json();
                 if (data.reply) {
                     const fullContent = data.reasoning ? `Размышление:\n${data.reasoning}\n\nОтвет:\n${data.reply}` : data.reply;
                     chat.messages.push({ role: 'assistant', content: '', finished: false });
                     const msgIndex = chat.messages.length - 1;
-                    renderChatList(); renderMessages();
+                    renderChatList();
+                    const area2 = document.getElementById('chatArea');
+                    const newRow = document.createElement('div');
+                    newRow.className = 'message-row assistant';
+                    newRow.innerHTML = '<div><div class="message-content" id="stream-'+msgIndex+'"></div><div class="message-actions" id="actions-'+msgIndex+'"><button onclick="copyMessage('+msgIndex+')">Копировать</button></div></div>';
+                    area2.appendChild(newRow);
                     let i = 0;
-                    typingInterval = setInterval(() => {
+                    const streamDiv = document.getElementById('stream-'+msgIndex);
+                    const streamAction = document.getElementById('actions-'+msgIndex);
+                    function streamNext() {
                         if (i < fullContent.length) {
-                            chat.messages[msgIndex].content = fullContent.substring(0, i + 1);
-                            const area2 = document.getElementById('chatArea');
-                            const msgDivs = area2.querySelectorAll('.message-row.assistant .message-content');
-                            if (msgDivs.length > 0) {
-                                const lastDiv = msgDivs[msgDivs.length - 1];
-                                lastDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
-                                const isAtBottom = area2.scrollHeight - area2.scrollTop - area2.clientHeight < 50;
-                                if (isAtBottom) area2.scrollTop = area2.scrollHeight;
-                            }
-                            i++;
+                            const chunkSize = Math.min(100, fullContent.length - i);
+                            chat.messages[msgIndex].content = fullContent.substring(0, i + chunkSize);
+                            streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
+                            const isAtBottom = area2.scrollHeight - area2.scrollTop - area2.clientHeight < 100;
+                            if (isAtBottom) area2.scrollTop = area2.scrollHeight;
+                            i += chunkSize;
+                            requestAnimationFrame(streamNext);
                         } else {
-                            clearInterval(typingInterval);
-                            typingInterval = null;
                             chat.messages[msgIndex].finished = true;
+                            streamAction.innerHTML = '<button onclick="copyMessage('+msgIndex+')">Копировать</button>';
                             autoNameChat(chat);
-                            renderChatList(); renderMessages();
+                            renderChatList();
                             isSending = false;
                             document.getElementById('sendBtn').textContent = 'Отправить';
                             document.getElementById('sendBtn').onclick = sendMessage;
                         }
-                    }, 5);
+                    }
+                    streamNext();
                 } else {
                     chat.messages.push({ role: 'assistant', content: 'Ошибка. Попробуйте позже.' });
-                    renderChatList(); renderMessages();
+                    renderMessages();
                 }
             } catch (e) {
                 const el = document.getElementById(placeholderId); if (el) el.remove();
@@ -392,7 +416,7 @@
                 if (part.type === 'code') {
                     result += '<pre><code>' + escapeHtml(part.content) + '</code><button class="copy-btn" onclick="copyCode(this)">Копировать</button></pre>';
                 } else {
-                    result += escapeHtml(part.content).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\n/g, '<br>');
+                    result += escapeHtml(part.content).replace(/`([^`]+)`/g, '<code>' + '$1' + '</code>').replace(/\n/g, '<br>');
                 }
             }
             return result;
@@ -421,9 +445,13 @@
             isSending = true;
             document.getElementById('sendBtn').textContent = 'Стоп';
             document.getElementById('sendBtn').onclick = stopTyping;
-
             try {
                 const resp = await fetch(`${SERVER_URL}/get_full_response?user_id=${currentUserId}&model=flash&chat_id=${currentChatId}&session_token=${sessionToken}`);
+                if (resp.status === 403) {
+                    alert('Сессия устарела.');
+                    window.location.href = 'index.html';
+                    return;
+                }
                 const data = await resp.json();
                 if (data.full_text) {
                     const fullContent = data.full_text;
@@ -432,49 +460,44 @@
                         chat.messages[index].finished = true;
                         chat.messages[index].interrupted = false;
                         renderMessages();
-                        isSending = false;
-                        document.getElementById('sendBtn').textContent = 'Отправить';
-                        document.getElementById('sendBtn').onclick = sendMessage;
+                        isSending = false; document.getElementById('sendBtn').textContent = 'Отправить'; document.getElementById('sendBtn').onclick = sendMessage;
                         return;
                     }
                     chat.messages[index].finished = false;
                     chat.messages[index].interrupted = true;
-                    let i = 0;
                     const remaining = fullContent.substring(startLen);
-                    typingInterval = setInterval(() => {
+                    let i = 0;
+                    const streamDiv = document.querySelectorAll('.message-row.assistant .message-content')[index];
+                    const streamAction = document.querySelectorAll('.message-row.assistant .message-actions')[index] || document.querySelectorAll('.message-row.assistant')[index]?.querySelector('.message-actions');
+                    function streamNext() {
                         if (i < remaining.length) {
-                            chat.messages[index].content = fullContent.substring(0, startLen + i + 1);
+                            const chunkSize = Math.min(100, remaining.length - i);
+                            chat.messages[index].content = fullContent.substring(0, startLen + i + chunkSize);
+                            if (streamDiv) streamDiv.innerHTML = formatMessage(chat.messages[index].content);
                             const area2 = document.getElementById('chatArea');
-                            const msgDivs = area2.querySelectorAll('.message-row.assistant .message-content');
-                            if (msgDivs.length > index) {
-                                msgDivs[index].innerHTML = formatMessage(chat.messages[index].content);
-                                const isAtBottom = area2.scrollHeight - area2.scrollTop - area2.clientHeight < 50;
-                                if (isAtBottom) area2.scrollTop = area2.scrollHeight;
-                            }
-                            i++;
+                            const isAtBottom = area2.scrollHeight - area2.scrollTop - area2.clientHeight < 100;
+                            if (isAtBottom) area2.scrollTop = area2.scrollHeight;
+                            i += chunkSize;
+                            requestAnimationFrame(streamNext);
                         } else {
-                            clearInterval(typingInterval);
-                            typingInterval = null;
                             chat.messages[index].finished = true;
                             chat.messages[index].interrupted = false;
+                            if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage('+index+')">Копировать</button>';
                             autoNameChat(chat);
-                            renderMessages();
+                            renderChatList();
                             isSending = false;
                             document.getElementById('sendBtn').textContent = 'Отправить';
                             document.getElementById('sendBtn').onclick = sendMessage;
                         }
-                    }, 15);
+                    }
+                    streamNext();
                 } else {
                     renderMessages();
-                    isSending = false;
-                    document.getElementById('sendBtn').textContent = 'Отправить';
-                    document.getElementById('sendBtn').onclick = sendMessage;
+                    isSending = false; document.getElementById('sendBtn').textContent = 'Отправить'; document.getElementById('sendBtn').onclick = sendMessage;
                 }
             } catch (e) {
                 renderMessages();
-                isSending = false;
-                document.getElementById('sendBtn').textContent = 'Отправить';
-                document.getElementById('sendBtn').onclick = sendMessage;
+                isSending = false; document.getElementById('sendBtn').textContent = 'Отправить'; document.getElementById('sendBtn').onclick = sendMessage;
             }
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
