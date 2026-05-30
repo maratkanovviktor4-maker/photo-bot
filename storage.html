@@ -36,6 +36,7 @@
         .storage-item .item-actions button { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; font-family: 'Inter', sans-serif; transition: 0.3s ease; }
         .btn-delete { background: #E74C3C; color: #fff; }
         .btn-delete:hover { background: #FF6B6B; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(231,76,60,0.3); }
+        .unviewed-dot { width: 8px; height: 8px; background: #00CBF5; border-radius: 50%; flex-shrink: 0; margin-left: 8px; }
         .empty-state { text-align: center; color: #555; padding: 60px 20px; font-size: 14px; }
         .nav-links { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
         .nav-links a { padding: 10px 20px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.06); color: #fff; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; font-family: 'Inter', sans-serif; transition: 0.3s ease; text-align: center; }
@@ -97,6 +98,13 @@
             const auth = JSON.parse(savedAuth);
             currentUserId = auth.user_id;
             sessionToken = auth.session_token || '';
+            if (!sessionToken || !currentUserId) {
+                alert('Сессия устарела. Авторизуйтесь заново на главной странице.');
+                window.location.href = 'index.html';
+            }
+        } else {
+            alert('Авторизуйтесь на главной странице');
+            window.location.href = 'index.html';
         }
 
         function toggleDeepSeekMenu() {
@@ -134,18 +142,32 @@
             }
             try {
                 const resp = await fetch(`${SERVER_URL}/history?user_id=${currentUserId}&source=web&session_token=${sessionToken}`);
+                if (resp.status === 403) {
+                    alert('Сессия устарела. Авторизуйтесь заново.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (!resp.ok) {
+                    document.getElementById('container').innerHTML = `<div class="empty-state">${t('error_loading')}</div>`;
+                    return;
+                }
                 const data = await resp.json();
                 const container = document.getElementById('container');
                 if (!data.files || data.files.length === 0) {
                     container.innerHTML = `<div class="empty-state">${t('empty_storage')}</div>`;
                     return;
                 }
+                // После загрузки страницы помечаем все файлы как просмотренные
+                try {
+                    await fetch(`${SERVER_URL}/mark_viewed?user_id=${currentUserId}&source=web&session_token=${sessionToken}`, { method: 'POST' });
+                } catch(e) {}
                 container.innerHTML = '';
                 data.files.forEach((file) => {
                     const div = document.createElement('div');
                     div.className = 'storage-item';
                     const img = document.createElement('img');
                     img.src = `${SERVER_URL}/history_file?file=${file}&source=web&session_token=${sessionToken}`;
+                    img.onerror = function() { this.style.display = 'none'; };
                     img.onclick = function() {
                         const modal = document.createElement('div');
                         modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
@@ -154,6 +176,7 @@
                         full.style.maxWidth = '95%';
                         full.style.maxHeight = '95%';
                         full.style.objectFit = 'contain';
+                        full.onerror = function() { modal.innerHTML = '<div style="color:#555;">Ошибка загрузки</div>'; };
                         modal.appendChild(full);
                         modal.onclick = () => modal.remove();
                         document.body.appendChild(modal);
@@ -178,7 +201,7 @@
                     info.appendChild(promptEl);
                     const txtFile = file.replace('.jpg', '.txt');
                     fetch(`${SERVER_URL}/history_file?file=${txtFile}&source=web&session_token=${sessionToken}`)
-                        .then(r => r.text())
+                        .then(r => { if (!r.ok) throw new Error(); return r.text(); })
                         .then(txt => { promptEl.textContent = txt || t('no_prompt'); })
                         .catch(() => { promptEl.textContent = t('no_prompt'); });
                     const actions = document.createElement('div');
@@ -189,8 +212,8 @@
                     deleteBtn.onclick = async function() {
                         if (!confirm(t('confirm_delete'))) return;
                         try {
-                            await fetch(`${SERVER_URL}/delete_history_file?file=${file}&source=web&session_token=${sessionToken}`, { method: 'DELETE' });
-                            loadStorage();
+                            const delResp = await fetch(`${SERVER_URL}/delete_history_file?file=${file}&source=web&session_token=${sessionToken}`, { method: 'DELETE' });
+                            if (delResp.ok) loadStorage();
                         } catch (e) {}
                     };
                     actions.appendChild(deleteBtn);
