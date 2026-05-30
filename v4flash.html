@@ -116,6 +116,7 @@
 
     <script>
         var autoScroll = true;
+	window.location.hash = '#bottom-anchor';
 
         const SERVER_URL = "https://api.фото-бот.рф";
         let currentMode = 'chat';
@@ -214,7 +215,15 @@
             renderChatList();
             renderMessages();
         }
-        function openChat(id) { currentChatId = id; renderChatList(); renderMessages(); }
+        function openChat(id) {
+            currentChatId = id;
+            renderChatList();
+            renderMessages();
+            setTimeout(function() {
+                var area = document.getElementById('chatArea');
+                if (area) area.scrollTop = area.scrollHeight;
+            }, 150);
+        }
         function toggleChatMenu(e, id) {
             e.stopPropagation();
             document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
@@ -268,6 +277,10 @@
                     return `<div class="message-row ${m.role}"><div><div class="message-content">${formatMessage(m.content)}</div>${actionsHtml}</div></div>`;
                 }).join('');
             }
+            setTimeout(function() {
+                var area = document.getElementById('chatArea');
+                if (area) area.scrollTop = area.scrollHeight;
+            }, 100);
         }
         function copyCode(btn) {
             const code = btn.previousElementSibling.textContent;
@@ -541,7 +554,6 @@
             }
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
-        window.location.hash = '#bottom-anchor';
     </script>
 </body>
 </html>
