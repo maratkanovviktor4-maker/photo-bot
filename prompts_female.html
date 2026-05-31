@@ -56,6 +56,10 @@
         .lang-btn:hover { border-color: #00CBF5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,203,245,0.15); }
         .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
         body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
+        .scroll-btn { position: fixed; right: 24px; width: 44px; height: 44px; border-radius: 50%; background: rgba(0,203,245,0.85); color: #201F28; border: none; cursor: pointer; font-size: 22px; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,203,245,0.4); transition: 0.3s ease; z-index: 999; }
+        .scroll-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,203,245,0.6); }
+        #scrollTopBtn { bottom: 160px; }
+        #scrollBottomBtn { bottom: 100px; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
     </style>
 </head>
@@ -86,6 +90,8 @@
     <div class="container" id="container"></div>
     <a href="prompts.html" class="back-link" data-t="back_prompts">К базе промтов</a>
     <div class="toast" id="toast" data-t="copied">Скопировано</div>
+    <button class="scroll-btn" id="scrollTopBtn" onclick="document.getElementById('container').scrollIntoView({behavior:'smooth',block:'start'})">↑</button>
+    <button class="scroll-btn" id="scrollBottomBtn" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})">↓</button>
     <script src="lang.js"></script>
     <script>
         let currentLang = localStorage.getItem('photobot_lang') || 'en';
@@ -95,6 +101,7 @@
         function toggleTheme() { document.body.classList.toggle('light'); var isLight = document.body.classList.contains('light'); localStorage.setItem('photobot_theme', isLight ? 'light' : 'dark'); document.getElementById('themeToggle').textContent = isLight ? '🌙' : '☀️'; }
         (function() { var saved = localStorage.getItem('photobot_theme'); if (saved === 'light') { document.body.classList.add('light'); document.getElementById('themeToggle').textContent = '🌙'; } })();
         document.addEventListener('DOMContentLoaded', function() { document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === currentLang)); applyTranslations(); });
+        document.addEventListener('scroll', function() { var scrollY = window.scrollY; var maxScroll = document.body.scrollHeight - window.innerHeight; var topBtn = document.getElementById('scrollTopBtn'); var bottomBtn = document.getElementById('scrollBottomBtn'); if (scrollY > 300) { topBtn.style.display = 'flex'; } else { topBtn.style.display = 'none'; } if (maxScroll - scrollY > 300) { bottomBtn.style.display = 'flex'; } else { bottomBtn.style.display = 'none'; } });
         function toggleDeepSeekMenu() { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } else { menu.style.display = 'block'; menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; requestAnimationFrame(() => { menu.style.transition = 'opacity 0.15s, transform 0.15s'; menu.style.opacity = '1'; menu.style.transform = 'translateX(-50%) translateY(0)'; }); } }
         document.addEventListener('click', function(e) { if (!e.target.closest('[onclick="toggleDeepSeekMenu()"]')) { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } } });
         const prompts = [
