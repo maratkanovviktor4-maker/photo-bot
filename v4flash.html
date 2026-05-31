@@ -79,9 +79,9 @@
         body.light .message-actions button { background: #e0e0e0; border: 1px solid rgba(0,0,0,0.08); color: #555; }
         .message-actions button:hover { background: rgba(0,203,245,0.2); color: #e0e0e0; }
         body.light .message-actions button:hover { background: rgba(0,203,245,0.15); color: #111; }
-        .input-area { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; gap: 10px; align-items: flex-end; background: #201F28; flex-shrink: 0; max-width: 100%; overflow: hidden; }
+        .input-area { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; gap: 10px; align-items: flex-end; background: #201F28; flex-shrink: 0; max-width: 100%; overflow: hidden; position: relative; flex-wrap: wrap; }
         body.light .input-area { background: #ffffff; border-top: 1px solid rgba(0,0,0,0.08); }
-        .input-area textarea { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(34,34,34,0.6); color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; outline: none; resize: none; max-height: 280px; overflow-y: auto; transition: border-color 0.2s, box-shadow 0.2s; min-width: 0; }
+        .input-area textarea { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(34,34,34,0.6); color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; outline: none; resize: none; max-height: 280px; overflow-y: auto; transition: border-color 0.2s, box-shadow 0.2s; min-width: 0; width: 100%; }
         body.light .input-area textarea { background: #ffffff; border: 1px solid rgba(0,0,0,0.15); color: #111; }
         .input-area textarea:focus { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
         .input-area button { padding: 10px 18px; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; border: 2px solid transparent; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 14px; transition: 0.3s ease; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
@@ -90,14 +90,18 @@
         .attach-btn { padding: 10px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: #00CBF5; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 18px; flex-shrink: 0; transition: 0.3s ease; }
         body.light .attach-btn { background: #e8e8e8; border: 1px solid rgba(0,0,0,0.1); }
         .attach-btn:hover { color: #14E9FC; border-color: #00CBF5; background: rgba(0,203,245,0.1); }
-        .remove-attach-btn { padding: 10px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: #E74C3C; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 16px; display: none; flex-shrink: 0; transition: 0.3s ease; }
-        .remove-attach-btn:hover { color: #FF6B6B; border-color: #E74C3C; background: rgba(231,76,60,0.1); }
         .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
         body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
         .thinking-dots::after { content: ''; animation: dots 1.5s infinite; }
         @keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
         .thinking-dots { display: inline; }
         .thinking-dots::after { content: ''; animation: dots 1.5s infinite; }
+        .file-list { width: 100%; display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 6px 0 6px; }
+        .file-tag { display: inline-flex; align-items: center; background: rgba(0,203,245,0.15); border: 1px solid rgba(0,203,245,0.3); border-radius: 6px; padding: 3px 8px; font-size: 12px; color: #00CBF5; gap: 6px; }
+        body.light .file-tag { background: rgba(0,203,245,0.1); color: #005f73; }
+        .file-tag button { background: transparent; border: none; color: #e74c3c; cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
+        .file-tag button:hover { color: #ff6b6b; }
+        .input-row { display: flex; gap: 10px; align-items: flex-end; width: 100%; }
     </style>
 </head>
 <body>
@@ -129,11 +133,13 @@
             </div>
         </div>
         <div class="input-area">
-            <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
-            <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл">+</button>
-            <button class="remove-attach-btn" id="removeFileBtn" onclick="removeFile()" title="Удалить вложение">x</button>
-            <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,280)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,280)+'px';this._init=true;}"></textarea>
-            <button id="sendBtn" onclick="sendMessage()">Отправить</button>
+            <div class="file-list" id="fileList"></div>
+            <div class="input-row">
+                <input type="file" id="fileInput" style="display:none;" multiple onchange="handleFileSelect(event)">
+                <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файлы">+</button>
+                <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,280)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,280)+'px';this._init=true;}"></textarea>
+                <button id="sendBtn" onclick="sendMessage()">Отправить</button>
+            </div>
         </div>
     </div>
 
@@ -150,9 +156,7 @@
         let currentUserId = null;
         let isSending = false;
         let typingInterval = null;
-        let pendingFileData = null;
-        let pendingFileName = '';
-        let pendingFileMime = '';
+        let pendingFiles = [];
 
         function toggleTheme() {
             document.body.classList.toggle('light');
@@ -340,39 +344,54 @@
                 if (chat.title.length > 40) chat.title = chat.title.substring(0, 40) + '...';
             }
         }
-        function removeFile() {
-            pendingFileData = null;
-            pendingFileName = '';
-            pendingFileMime = '';
+
+        function updateFileList() {
+            const list = document.getElementById('fileList');
+            if (pendingFiles.length === 0) {
+                list.innerHTML = '';
+                return;
+            }
+            list.innerHTML = pendingFiles.map((f, i) => `
+                <span class="file-tag">
+                    ${escapeHtml(f.name)}
+                    <button onclick="removeFile(${i})">x</button>
+                </span>
+            `).join('');
+        }
+
+        function removeFile(index) {
+            pendingFiles.splice(index, 1);
             document.getElementById('fileInput').value = '';
-            document.getElementById('removeFileBtn').style.display = 'none';
-            const ind = document.getElementById('fileIndicator');
-            if (ind) ind.remove();
+            updateFileList();
         }
+
         async function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            removeFile();
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                const base64 = ev.target.result.split(',')[1];
-                pendingFileData = base64;
-                pendingFileName = file.name;
-                pendingFileMime = file.type;
-                const indicator = document.createElement('div');
-                indicator.id = 'fileIndicator';
-                indicator.style.cssText = 'padding:6px 12px;background:rgba(34,34,34,0.6);border-radius:8px;font-size:11px;color:#00CBF5;margin-bottom:4px;';
-                indicator.textContent = file.name;
-                document.querySelector('.input-area').insertBefore(indicator, document.getElementById('userInput'));
-                document.getElementById('removeFileBtn').style.display = 'inline-block';
-            };
-            reader.readAsDataURL(file);
+            const files = e.target.files;
+            for (const file of files) {
+                const reader = new FileReader();
+                const promise = new Promise((resolve) => {
+                    reader.onload = function(ev) {
+                        const base64 = ev.target.result.split(',')[1];
+                        pendingFiles.push({
+                            name: file.name,
+                            mime: file.type,
+                            data: base64
+                        });
+                        resolve();
+                    };
+                });
+                reader.readAsDataURL(file);
+                await promise;
+            }
+            document.getElementById('fileInput').value = '';
+            updateFileList();
         }
+
         async function sendMessage() {
             if (isSending) return;
             const input = document.getElementById('userInput');
             const text = input.value.trim();
-            if (!text && !pendingFileData) return;
+            if (!text && pendingFiles.length === 0) return;
             if (!currentUserId) { alert('Авторизуйтесь на главной странице'); return; }
             if (!currentChatId) { newChat(); }
             input.value = ''; input.style.height = 'auto'; input._init = false;
@@ -382,7 +401,12 @@
 
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
-            const displayText = text || (pendingFileName ? `[Файл: ${pendingFileName}]` : '');
+
+            let displayFiles = '';
+            if (pendingFiles.length > 0) {
+                displayFiles = pendingFiles.map(f => `[Файл: ${f.name}]`).join(' ');
+            }
+            const displayText = text || displayFiles;
             chat.messages.push({ role: 'user', content: displayText });
             renderChatList();
             renderMessages();
@@ -398,7 +422,7 @@
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, file_data: pendingFileData || '', file_name: pendingFileName, file_mime: pendingFileMime })
+                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, files: pendingFiles })
                 });
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (resp.status === 403) {
@@ -473,9 +497,8 @@
                 chat.messages.push({ role: 'assistant', content: 'Ошибка соединения.' });
                 renderMessages();
             }
-            pendingFileData = null; pendingFileName = ''; pendingFileMime = '';
-            const ind = document.getElementById('fileIndicator'); if (ind) ind.remove();
-            document.getElementById('removeFileBtn').style.display = 'none';
+            pendingFiles = [];
+            updateFileList();
             isSending = false; document.getElementById('sendBtn').disabled = false;
             updateBalance();
         }
@@ -598,7 +621,7 @@
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
         function setupFloatingCopyButtons() {
-	    document.querySelectorAll('.floating-copy-btn').forEach(function(btn) { btn.remove(); });
+            document.querySelectorAll('.floating-copy-btn').forEach(function(btn) { btn.remove(); });
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 if (pre.querySelector('.floating-copy-btn')) return;
                 var btn = document.createElement('button');
