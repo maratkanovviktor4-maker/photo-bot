@@ -98,6 +98,8 @@
         @keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
         .thinking-dots { display: inline; }
         .thinking-dots::after { content: ''; animation: dots 1.5s infinite; }
+        .floating-copy-btn { position: fixed; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); color: #ccc; cursor: pointer; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-family: 'Inter', sans-serif; z-index: 9999; display: none; }
+        .floating-copy-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
     </style>
 </head>
 <body>
@@ -602,7 +604,6 @@
                 var btn = document.createElement('button');
                 btn.className = 'floating-copy-btn';
                 btn.textContent = 'Копировать';
-                btn.style.cssText = 'position:fixed; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); color:#ccc; cursor:pointer; font-size:11px; padding:4px 10px; border-radius:4px; font-family:Inter,sans-serif; z-index:9999; display:none;';
                 btn.onclick = function() {
                     var code = pre.querySelector('code').textContent;
                     navigator.clipboard.writeText(code);
@@ -620,7 +621,7 @@
                 if (!btn) return;
                 var rect = pre.getBoundingClientRect();
                 var visible = rect.bottom > 0 && rect.top < window.innerHeight;
-                if (visible) {
+                if (visible && document.body.contains(pre)) {
                     btn.style.display = 'block';
                     btn.style.top = Math.max(rect.top, 60) + 'px';
                     btn.style.right = (window.innerWidth - rect.right + 8) + 'px';
