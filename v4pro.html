@@ -52,7 +52,7 @@
         .mode-btn.active { background: linear-gradient(90deg, #F59E0B, #FBBF24); border-color: transparent; color: #201F28; font-weight: 600; box-shadow: 0 4px 16px rgba(245,158,11,0.3); }
         .mode-btn:hover:not(.active) { border-color: #F59E0B; color: #e0e0e0; }
         body.light .mode-btn:hover:not(.active) { color: #111; }
-        #balanceDisplay { margin-left: auto; font-size: 12px; color: #F59E0B; font-family: 'Inter', sans-serif; white-space: nowrap; }
+        #balanceDisplay { font-size: 12px; color: #F59E0B; font-family: 'Inter', sans-serif; white-space: nowrap; margin-right: auto; }
         .chat-area { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 0; }
         .scroll-bottom-btn { position: fixed; bottom: 100px; right: 30px; width: 44px; height: 44px; border-radius: 50%; background: rgba(245,158,11,0.85); color: #201F28; border: none; cursor: pointer; font-size: 22px; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(245,158,11,0.4); transition: 0.3s ease; z-index: 999; }
         .scroll-bottom-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(245,158,11,0.6); }
@@ -74,8 +74,6 @@
         .message-content pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; border-radius: 0; display: block; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
         body.light .message-content code { background: rgba(0,0,0,0.06); color: #111; }
-        .message-content pre .copy-btn { position: sticky; top: 0; display: block; margin-left: auto; margin-right: 0; width: fit-content; background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); color: #ccc; cursor: pointer; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-family: 'Inter', sans-serif; z-index: 5; opacity: 1; }
-        .message-content pre .copy-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
         .message-actions { display: flex; gap: 6px; margin-top: 6px; }
         .message-actions button { background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.06); color: #888; cursor: pointer; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-family: 'Inter', sans-serif; transition: 0.2s; }
         body.light .message-actions button { background: #e0e0e0; border: 1px solid rgba(0,0,0,0.08); color: #555; }
@@ -96,6 +94,10 @@
         .remove-attach-btn:hover { color: #FF6B6B; border-color: #E74C3C; background: rgba(231,76,60,0.1); }
         .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
         body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
+        .thinking-dots::after { content: ''; animation: dots 1.5s infinite; }
+        @keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
+        .thinking-dots { display: inline; }
+        .thinking-dots::after { content: ''; animation: dots 1.5s infinite; }
     </style>
 </head>
 <body>
@@ -117,7 +119,7 @@
         <div class="top-bar">
             <button class="mode-btn active" data-mode="chat" onclick="setMode('chat')">Chat</button>
             <button class="mode-btn" data-mode="reasoner" onclick="setMode('reasoner')">Reasoner</button>
-            <span id="balanceDisplay" style="margin-left:auto;font-size:12px;color:#F59E0B;"> ...</span>
+            <span id="balanceDisplay"> ...</span>
         </div>
         <div class="chat-area" id="chatArea">
             <div class="empty-state">
@@ -318,12 +320,6 @@
                 if (area) area.scrollTop = area.scrollHeight;
             }, 100);
         }
-        function copyCode(btn) {
-            const code = btn.previousElementSibling.textContent;
-            navigator.clipboard.writeText(code);
-            btn.textContent = 'Скопировано';
-            setTimeout(() => btn.textContent = 'Копировать', 2000);
-        }
         function copyMessage(index) {
             const chat = chats.find(c => c.id === currentChatId);
             if (chat) navigator.clipboard.writeText(chat.messages[index].content);
@@ -394,7 +390,7 @@
             const area = document.getElementById('chatArea');
             const typingRow = document.createElement('div');
             typingRow.className = 'message-row assistant'; typingRow.id = placeholderId;
-            typingRow.innerHTML = '<div><div class="message-content">Думаю...</div></div>';
+            typingRow.innerHTML = '<div><div class="message-content"><span class="thinking-dots">Думаю</span></div></div>';
             area.appendChild(typingRow);
             area.scrollTop = area.scrollHeight;
 
@@ -434,17 +430,24 @@
                     newRow.className = 'message-row assistant';
                     newRow.innerHTML = '<div><div class="message-content" id="stream-' + msgIndex + '"></div><div class="message-actions" id="actions-' + msgIndex + '"><button onclick="copyMessage(' + msgIndex + ')">Копировать</button></div></div>';
                     area2.appendChild(newRow);
-                    let i = 0;
+                    let pos = 0;
                     const streamDiv = document.getElementById('stream-' + msgIndex);
                     const streamAction = document.getElementById('actions-' + msgIndex);
+                    const words = fullContent.split(/(\s+)/);
                     function streamNext() {
-                        if (i < fullContent.length) {
-                            chat.messages[msgIndex].content = fullContent.substring(0, i + 1);
+                        let chunk = '';
+                        let wordCount = 0;
+                        while (pos < words.length && wordCount < 50) {
+                            chunk += words[pos];
+                            wordCount++;
+                            pos++;
+                        }
+                        if (chunk) {
+                            chat.messages[msgIndex].content = words.slice(0, pos).join('');
                             streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
                             if (autoScroll) {
                                 document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                             }
-                            i++;
                             setTimeout(streamNext, 5);
                         } else {
                             chat.messages[msgIndex].finished = true;
@@ -549,17 +552,24 @@
                     chat.messages[index].finished = false;
                     chat.messages[index].interrupted = true;
                     const remaining = fullContent.substring(startLen);
-                    let i = 0;
+                    const words = remaining.split(/(\s+)/);
+                    let wordPos = 0;
                     const streamDiv = document.querySelectorAll('.message-row.assistant .message-content')[index];
                     const streamAction = document.querySelectorAll('.message-row.assistant .message-actions')[index] || document.querySelectorAll('.message-row.assistant')[index]?.querySelector('.message-actions');
                     function streamNext() {
-                        if (i < remaining.length) {
-                            chat.messages[index].content = fullContent.substring(0, startLen + i + 1);
+                        let chunk = '';
+                        let wordCount = 0;
+                        while (wordPos < words.length && wordCount < 50) {
+                            chunk += words[wordPos];
+                            wordCount++;
+                            wordPos++;
+                        }
+                        if (chunk) {
+                            chat.messages[index].content = fullContent.substring(0, startLen + wordPos);
                             if (streamDiv) streamDiv.innerHTML = formatMessage(chat.messages[index].content);
                             if (autoScroll) {
                                 document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                             }
-                            i++;
                             setTimeout(streamNext, 5);
                         } else {
                             chat.messages[index].finished = true;
