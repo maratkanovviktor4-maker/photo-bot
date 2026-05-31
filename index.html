@@ -9,6 +9,8 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: #201F28; color: #fff; min-height: 100vh; position: relative; }
+        body.light { background: #ffffff; color: #111; }
+        body.light::before { opacity: 0.3; }
         body::before { content: ''; position: fixed; top: -30%; left: -20%; width: 140%; height: 140%; background: radial-gradient(ellipse at 25% 30%, rgba(0,203,245,0.15) 0%, transparent 50%), radial-gradient(ellipse at 75% 50%, rgba(20,233,252,0.12) 0%, transparent 50%), radial-gradient(ellipse at 40% 80%, rgba(255,255,255,0.05) 0%, transparent 50%); filter: blur(60px); pointer-events: none; z-index: 0; }
         .container, #cookie-banner { position: relative; z-index: 1; }
         .container { display: flex; max-width: 1800px; width: 100%; padding: 20px; gap: 24px; background: transparent; }
@@ -60,6 +62,7 @@
         input[type="file"] { width: 100%; margin: 6px 0; color: #aaa; font-size: 12px; font-family: 'Inter', sans-serif; padding: 8px; background: rgba(34,34,34,0.6); border-radius: 14px; border: 1px solid rgba(255,255,255,0.06); }
         #caption { width: 100%; padding: 10px; margin: 6px 0; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(34,34,34,0.6); color: #fff; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; transition: 0.3s ease; resize: none; min-height: 52px; max-height: 130px; overflow-y: auto; }
         #caption:focus { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
+        body.light #caption { background: #f0f0f0; color: #111; border-color: rgba(0,0,0,0.15); }
         * { scrollbar-width: thin; scrollbar-color: #3a3a5a transparent; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -100,6 +103,8 @@
         .lang-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
         .lang-btn.active { background: linear-gradient(135deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; box-shadow: 0 4px 12px rgba(0,203,245,0.3); }
         .lang-btn:hover { border-color: #00CBF5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,203,245,0.15); }
+        .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
+        body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
         @media (max-width: 768px) { .container { flex-direction: column; align-items: center; padding: 12px; gap: 16px; } .collages { width: 100%; order: 1; display: flex; flex-direction: column; gap: 10px; } .collages img { width: 100%; max-width: 100%; } .center-panel { width: 100%; order: 2; } .free-chat-panel { width: 100%; height: 400px; position: static; } }
     </style>
 </head>
@@ -107,6 +112,7 @@
     <div style="position:fixed;top:20px;right:20px;display:flex;gap:4px;z-index:1000;">
         <button class="lang-btn" onclick="setLanguage('ru')">RU</button>
         <button class="lang-btn active" onclick="setLanguage('en')">EN</button>
+        <button class="theme-btn" onclick="toggleTheme()" id="themeToggle">☀️</button>
     </div>
     <div class="container">
         <div class="collages" id="collages">
@@ -190,7 +196,7 @@
             <a href="prompts.html" class="nav-btn" data-t="prompts">База промтов</a>
             <div style="position:relative;">
                 <a href="storage.html" class="nav-btn" id="storageBtn" data-t="storage">Хранилище генераций</a>
-                <div id="storageCount" style="display:none; position:absolute; top:0; left:0; width:auto; height:auto; background:transparent; color:#fff; border-radius:16px; text-align:center; padding-top:5px; font-size:13px; font-weight:700;">0</div>
+                <div id="storageCount" style="display:none; position:absolute; top:0; left:0; width:auto; height:auto; background:transparent; color:#E74C3C; border-radius:16px; text-align:center; padding-top:5px; font-size:13px; font-weight:700;">0</div>
             </div>
             <div class="legal-footer"><a href="agreement.txt" target="_blank" data-t="agreement">Пользовательское соглашение</a><a href="privacy.txt" target="_blank" data-t="privacy">Политика конфиденциальности</a></div>
         </div>
@@ -225,6 +231,8 @@
         if (savedAuth) { const auth = JSON.parse(savedAuth); currentUserId = auth.user_id; currentUsername = auth.username; sessionToken = auth.session_token || ''; showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); showSubscribeBlock(); checkSubscription(); updateUnviewedCount(); }
         if (!localStorage.getItem('cookies_accepted')) document.getElementById('cookie-banner').style.display = 'block';
         document.addEventListener('DOMContentLoaded', function() { applyTranslations(); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === currentLang)); });
+        function toggleTheme() { document.body.classList.toggle('light'); var isLight = document.body.classList.contains('light'); localStorage.setItem('photobot_theme', isLight ? 'light' : 'dark'); document.getElementById('themeToggle').textContent = isLight ? '🌙' : '☀️'; }
+        (function() { var saved = localStorage.getItem('photobot_theme'); if (saved === 'light') { document.body.classList.add('light'); document.getElementById('themeToggle').textContent = '🌙'; } })();
         function acceptCookies() { localStorage.setItem('cookies_accepted', '1'); document.getElementById('cookie-banner').style.display = 'none'; }
         window.addEventListener('focus', function() { if (!currentUserId) document.getElementById('authBlock').style.display = 'block'; if (currentUserId) checkSubscription(); if (currentUserId) checkEtalonAvailability(); if (currentUserId) updateUnviewedCount(); });
         async function updateUnviewedCount() { if (!currentUserId || !sessionToken) return; try { const resp = await fetch(`${SERVER_URL}/unviewed_count?user_id=${currentUserId}&session_token=${sessionToken}`); if (resp.ok) { const data = await resp.json(); const count = data.count || 0; const el = document.getElementById('storageCount'); if (el) { if (count > 0) { el.textContent = count; el.style.display = 'block'; } else { el.style.display = 'none'; } } } } catch(e) {} }
