@@ -301,6 +301,7 @@
             `).join('');
         }
         function renderMessages() {
+	    document.querySelectorAll('.floating-copy-btn').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
             if (!chat || chat.messages.length === 0) {
@@ -597,6 +598,7 @@
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
         function setupFloatingCopyButtons() {
+	    document.querySelectorAll('.floating-copy-btn').forEach(function(btn) { btn.remove(); });
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 if (pre.querySelector('.floating-copy-btn')) return;
                 var btn = document.createElement('button');
