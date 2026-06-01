@@ -231,6 +231,9 @@
         if (savedAuth) { const auth = JSON.parse(savedAuth); currentUserId = auth.user_id; currentUsername = auth.username; sessionToken = auth.session_token || ''; showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); showSubscribeBlock(); checkSubscription(); updateUnviewedCount(); }
         if (!localStorage.getItem('cookies_accepted')) document.getElementById('cookie-banner').style.display = 'block';
         document.addEventListener('DOMContentLoaded', function() { applyTranslations(); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === currentLang)); });
+        function openBot() {
+            window.open('https://t.me/PhotoDocumentsBot_bot?start=site', '_blank');
+        }
         function toggleTheme() { document.body.classList.toggle('light'); var isLight = document.body.classList.contains('light'); localStorage.setItem('photobot_theme', isLight ? 'light' : 'dark'); document.getElementById('themeToggle').textContent = isLight ? '🌙' : '☀️'; }
         (function() { var saved = localStorage.getItem('photobot_theme'); if (saved === 'light') { document.body.classList.add('light'); document.getElementById('themeToggle').textContent = '🌙'; } })();
         function acceptCookies() { localStorage.setItem('cookies_accepted', '1'); document.getElementById('cookie-banner').style.display = 'none'; }
