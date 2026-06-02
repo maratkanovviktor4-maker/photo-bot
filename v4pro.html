@@ -366,25 +366,20 @@
         }
 
         async function handleFileSelect(e) {
-            const files = e.target.files;
-            for (const file of files) {
-                const reader = new FileReader();
-                const promise = new Promise((resolve) => {
-                    reader.onload = function(ev) {
-                        const base64 = ev.target.result.split(',')[1];
-                        pendingFiles.push({
-                            name: file.name,
-                            mime: file.type,
-                            data: base64
-                        });
-                        resolve();
-                    };
-                });
-                reader.readAsDataURL(file);
-                await promise;
-            }
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const base64 = ev.target.result.split(',')[1];
+                pendingFiles = [{
+                    name: file.name,
+                    mime: file.type,
+                    data: base64
+                }];
+                updateFileList();
+            };
+            reader.readAsDataURL(file);
             document.getElementById('fileInput').value = '';
-            updateFileList();
         }
 
         async function sendMessage() {
