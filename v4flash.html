@@ -136,7 +136,7 @@
             <div class="file-list" id="fileList"></div>
             <div class="input-row">
                 <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
-                <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файлы">+</button>
+                <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл">+</button>
                 <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,280)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,280)+'px';this._init=true;}"></textarea>
                 <button id="sendBtn" onclick="sendMessage()">Отправить</button>
             </div>
@@ -156,7 +156,7 @@
         let currentUserId = null;
         let isSending = false;
         let typingInterval = null;
-        let pendingFiles = [];
+        let pendingFile = null;
 
         function toggleTheme() {
             document.body.classList.toggle('light');
@@ -347,22 +347,8 @@
 
         function updateFileList() {
             const list = document.getElementById('fileList');
-            if (pendingFiles.length === 0) {
-                list.innerHTML = '';
-                return;
-            }
-            list.innerHTML = pendingFiles.map((f, i) => `
-                <span class="file-tag">
-                    ${escapeHtml(f.name)}
-                    <button onclick="removeFile(${i})">x</button>
-                </span>
-            `).join('');
-        }
-
-        function removeFile(index) {
-            pendingFiles.splice(index, 1);
-            document.getElementById('fileInput').value = '';
-            updateFileList();
+            if (!pendingFile) { list.innerHTML = ''; return; }
+            list.innerHTML = `<span class="file-tag">${escapeHtml(pendingFile.name)}</span>`;
         }
 
         async function handleFileSelect(e) {
@@ -371,11 +357,7 @@
             const reader = new FileReader();
             reader.onload = function(ev) {
                 const base64 = ev.target.result.split(',')[1];
-                pendingFiles = [{
-                    name: file.name,
-                    mime: file.type,
-                    data: base64
-                }];
+                pendingFile = { name: file.name, mime: file.type, data: base64 };
                 updateFileList();
             };
             reader.readAsDataURL(file);
@@ -386,7 +368,7 @@
             if (isSending) return;
             const input = document.getElementById('userInput');
             const text = input.value.trim();
-            if (!text && pendingFiles.length === 0) return;
+            if (!text && !pendingFile) return;
             if (!currentUserId) { alert('Авторизуйтесь на главной странице'); return; }
             if (!currentChatId) { newChat(); }
             input.value = ''; input.style.height = 'auto'; input._init = false;
@@ -397,11 +379,7 @@
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
 
-            let displayFiles = '';
-            if (pendingFiles.length > 0) {
-                displayFiles = pendingFiles.map(f => `[Файл: ${f.name}]`).join(' ');
-            }
-            const displayText = text || displayFiles;
+            let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
             chat.messages.push({ role: 'user', content: displayText });
             renderChatList();
             renderMessages();
@@ -417,7 +395,7 @@
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, file_data: pendingFiles.length > 0 ? pendingFiles[0].data : '', file_name: pendingFiles.length > 0 ? pendingFiles[0].name : '', file_mime: pendingFiles.length > 0 ? pendingFiles[0].mime : '' })
+                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '' })
                 });
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (resp.status === 403) {
@@ -492,7 +470,7 @@
                 chat.messages.push({ role: 'assistant', content: 'Ошибка соединения.' });
                 renderMessages();
             }
-            pendingFiles = [];
+            pendingFile = null;
             updateFileList();
             isSending = false; document.getElementById('sendBtn').disabled = false;
             updateBalance();
@@ -545,13 +523,13 @@
         }
         async function continueMessage(index) {
             if (isSending) return;
-        if (!window._continueCount) window._continueCount = {};
-        if (!window._continueCount[index]) window._continueCount[index] = 0;
-        if (window._continueCount[index] >= 3) {
-            alert("Достигнут лимит продолжений для этого сообщения.");
-            return;
-        }
-        window._continueCount[index]++;
+            if (!window._continueCount) window._continueCount = {};
+            if (!window._continueCount[index]) window._continueCount[index] = 0;
+            if (window._continueCount[index] >= 3) {
+                alert("Достигнут лимит продолжений для этого сообщения.");
+                return;
+            }
+            window._continueCount[index]++;
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
             isSending = true;
