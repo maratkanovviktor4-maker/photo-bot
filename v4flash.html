@@ -225,12 +225,10 @@
                 if (data.history) {
                     chats = [];
                     for (const [chatId, chatData] of Object.entries(data.history)) {
-                        const msgs = chatData.messages || chatData;
+                        const msgs = chatData.messages || [];
                         const title = chatData.title || ('Чат ' + chatId);
                         chats.push({ id: chatId, title: title, messages: msgs });
                     }
-                    chats.sort((a, b) => a.id.localeCompare(b.id));
-                }
             } catch (e) {
                 console.error('loadChatsFromServer error:', e);
             }
