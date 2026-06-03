@@ -222,12 +222,12 @@
                     return;
                 }
                 const data = await resp.json();
+                const titles = data.titles || {};
                 if (data.history) {
                     chats = [];
-                    for (const [chatId, chatData] of Object.entries(data.history)) {
-                        const msgs = chatData.messages || chatData;
-                        const title = chatData.title || ('Чат ' + chatId);
-                        chats.push({ id: chatId, title: title, messages: msgs });
+                    for (const [chatId, messages] of Object.entries(data.history)) {
+                        const title = titles[chatId] || ('Чат ' + chatId);
+                        chats.push({ id: chatId, title: title, messages: messages });
                     }
             } catch (e) {
                 console.error('loadChatsFromServer error:', e);
