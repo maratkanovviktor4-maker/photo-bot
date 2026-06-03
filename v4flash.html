@@ -226,7 +226,7 @@
                 if (data.history) {
                     chats = [];
                     for (const [chatId, messages] of Object.entries(data.history)) {
-                        const title = titles[chatId] || ('Чат ' + chatId);
+                        const title = titles[chatId] || chatId;
                         chats.push({ id: chatId, title: title, messages: messages });
                     }
             } catch (e) {
@@ -353,7 +353,7 @@
         function setMode(mode) { currentMode = mode; document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode)); }
         function autoNameChat(chat) {
             const lastAssistant = [...chat.messages].reverse().find(m => m.role === 'assistant');
-            if (lastAssistant && chat.title.startsWith('Чат ')) {
+            if (lastAssistant && chat.title === chat.id) {
                 chat.title = lastAssistant.content.replace(/[#*`>\n]/g, ' ').split(' ').slice(0, 6).join(' ') || 'Новый чат';
                 if (chat.title.length > 40) chat.title = chat.title.substring(0, 40) + '...';
             }
