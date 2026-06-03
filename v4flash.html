@@ -133,11 +133,13 @@
                 <div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div>
             </div>
         </div>
-        <div class="input-area">
+        <div class="input-area" id="inputArea">
+            <div id="dropZone" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none;align-items:center;justify-content:center;background:rgba(0,203,245,0.1);border:2px dashed #00CBF5;border-radius:10px;font-size:14px;color:#00CBF5;">Отпустите файл для загрузки</div>
             <div class="file-list" id="fileList"></div>
             <div class="input-row">
                 <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
                 <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл">+</button>
+                <div id="dropZone" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none;align-items:center;justify-content:center;background:rgba(0,203,245,0.1);border:2px dashed #00CBF5;border-radius:10px;font-size:14px;color:#00CBF5;">Отпустите файл для загрузки</div>
                 <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,280)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,280)+'px';this._init=true;}"></textarea>
                 <button id="sendBtn" onclick="sendMessage()">Отправить</button>
             </div>
@@ -364,6 +366,74 @@
             reader.readAsDataURL(file);
             document.getElementById('fileInput').value = '';
         }
+        // === Drag & Drop ===
+        function setupDragDrop() {
+            const inputArea = document.getElementById('inputArea');
+            const dropZone = document.getElementById('dropZone');
+            const userInput = document.getElementById('userInput');
+            
+            if (!inputArea || !dropZone) return;
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                inputArea.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+            });
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                inputArea.addEventListener(eventName, function() {
+                    dropZone.style.display = 'flex';
+                });
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                inputArea.addEventListener(eventName, function() {
+                    dropZone.style.display = 'none';
+                });
+            });
+            
+            inputArea.addEventListener('drop', function(e) {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        const base64 = ev.target.result.split(',')[1];
+                        pendingFile = { name: file.name, mime: file.type, data: base64 };
+                        updateFileList();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // === Вставка из буфера (Ctrl+V) ===
+        function setupPaste() {
+            const userInput = document.getElementById('userInput');
+            if (!userInput) return;
+            
+            userInput.addEventListener('paste', function(e) {
+                const items = e.clipboardData.items;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        e.preventDefault();
+                        const blob = items[i].getAsFile();
+                        const reader = new FileReader();
+                        reader.onload = function(ev) {
+                            const base64 = ev.target.result.split(',')[1];
+                            pendingFile = { name: 'screenshot.png', mime: blob.type, data: base64 };
+                            updateFileList();
+                        };
+                        reader.readAsDataURL(blob);
+                        break;
+                    }
+                }
+            });
+        }
+
+        setupDragDrop();
+        setupPaste();
 
         async function sendMessage() {
             if (isSending) return;
