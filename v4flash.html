@@ -222,13 +222,13 @@
                     return;
                 }
                 const data = await resp.json();
-                const titles = data.titles || {};
                 if (data.history) {
                     chats = [];
                     for (const [chatId, messages] of Object.entries(data.history)) {
-                        const title = titles[chatId] || chatId;
+                        const title = data.titles && data.titles[chatId] ? data.titles[chatId] : ('Чат ' + chatId);
                         chats.push({ id: chatId, title: title, messages: messages });
                     }
+                    chats.sort((a, b) => a.id.localeCompare(b.id));
             } catch (e) {
                 console.error('loadChatsFromServer error:', e);
             }
@@ -255,7 +255,7 @@
             return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
         function newChat() {
-            const chat = { id: String(Date.now()), title: 'Новый чат', messages: [] };
+            const chat = { id: Date.now().toString(), title: 'Новый чат', messages: [] };
             chats.push(chat);
             currentChatId = chat.id;
             renderChatList();
@@ -353,7 +353,7 @@
         function setMode(mode) { currentMode = mode; document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode)); }
         function autoNameChat(chat) {
             const lastAssistant = [...chat.messages].reverse().find(m => m.role === 'assistant');
-            if (lastAssistant && chat.title === chat.id) {
+            if (lastAssistant && chat.title.startsWith('Чат ')) {
                 chat.title = lastAssistant.content.replace(/[#*`>\n]/g, ' ').split(' ').slice(0, 6).join(' ') || 'Новый чат';
                 if (chat.title.length > 40) chat.title = chat.title.substring(0, 40) + '...';
             }
