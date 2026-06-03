@@ -224,8 +224,10 @@
                 const data = await resp.json();
                 if (data.history) {
                     chats = [];
-                    for (const [chatId, messages] of Object.entries(data.history)) {
-                        chats.push({ id: chatId, title: 'Чат ' + chatId, messages: messages });
+                    for (const [chatId, chatData] of Object.entries(data.history)) {
+                        const msgs = chatData.messages || chatData;
+                        const title = chatData.title || ('Чат ' + chatId);
+                        chats.push({ id: chatId, title: title, messages: msgs });
                     }
                     chats.sort((a, b) => a.id.localeCompare(b.id));
                 }
@@ -276,11 +278,21 @@
             const dropdown = document.getElementById('menu_' + id);
             if (dropdown) dropdown.classList.toggle('show');
         }
-        function renameChat(id) {
+        async function renameChat(id) {
             const chat = chats.find(c => c.id === id);
             const newName = prompt('Новое название:', chat?.title || '');
-            if (newName && chat) { chat.title = newName; renderChatList(); }
-            document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
+            if (newName && chat) {
+                chat.title = newName;
+                renderChatList();
+                // Отправляем на сервер
+                try {
+                    await fetch(`${SERVER_URL}/rename_chat`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: id, title: newName })
+                    });
+                } catch (e) {}
+            }
         }
         async function deleteChat(id) {
             if (!confirm('Удалить чат?')) return;
