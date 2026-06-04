@@ -40,6 +40,10 @@
         .storage-item .item-actions button { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; font-family: 'Inter', sans-serif; transition: 0.3s ease; }
         .btn-delete { background: #E74C3C; color: #fff; }
         .btn-delete:hover { background: #FF6B6B; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(231,76,60,0.3); }
+        .btn-play { background: #9b59b6; color: #fff; }
+        .btn-play:hover { background: #af7ac5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(155,89,182,0.3); }
+        .audio-player { width: 100%; height: 32px; margin-top: 6px; border-radius: 8px; }
+        .audio-icon { width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #9b59b6, #8e44ad); border-radius: 10px; flex-shrink: 0; font-size: 40px; }
         .unviewed-dot { width: 8px; height: 8px; background: #00CBF5; border-radius: 50%; flex-shrink: 0; margin-left: 8px; }
         .empty-state { text-align: center; color: #555; padding: 60px 20px; font-size: 14px; }
         .nav-links { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
@@ -147,6 +151,55 @@
             }
         });
 
+        function renderAudioItem(jobId, mode, caption, category) {
+            const div = document.createElement('div');
+            div.className = 'storage-item';
+            const icon = document.createElement('div');
+            icon.className = 'audio-icon';
+            icon.textContent = '🎵';
+            div.appendChild(icon);
+            const info = document.createElement('div');
+            info.className = 'item-info';
+            const date = document.createElement('div');
+            date.className = 'item-date';
+            const match = jobId.match(/(\d{8})_(\d{6})/);
+            if (match) {
+                const d = match[1]; const t = match[2];
+                date.textContent = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)} ${t.slice(0,2)}:${t.slice(2,4)}:${t.slice(4,6)}`;
+            } else { date.textContent = jobId; }
+            info.appendChild(date);
+            const promptEl = document.createElement('div');
+            promptEl.style.cssText = 'color:#aaa;font-size:11px;margin-bottom:4px;word-break:break-all;';
+            promptEl.textContent = caption || t('no_prompt');
+            info.appendChild(promptEl);
+            const catEl = document.createElement('div');
+            catEl.style.cssText = 'color:#9b59b6;font-size:10px;margin-bottom:6px;';
+            catEl.textContent = category || mode || '';
+            info.appendChild(catEl);
+            const audio = document.createElement('audio');
+            audio.className = 'audio-player';
+            audio.controls = true;
+            audio.src = `${SERVER_URL}/get_audio_file?job_id=${jobId}&user_id=${currentUserId}&session_token=${sessionToken}`;
+            audio.onerror = function() { this.style.display = 'none'; };
+            info.appendChild(audio);
+            const actions = document.createElement('div');
+            actions.className = 'item-actions';
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn-delete';
+            deleteBtn.textContent = t('delete');
+            deleteBtn.onclick = async function() {
+                if (!confirm(t('confirm_delete'))) return;
+                try {
+                    await fetch(`${SERVER_URL}/delete_audio?job_id=${jobId}&user_id=${currentUserId}&session_token=${sessionToken}`, { method: 'DELETE' });
+                    loadStorage();
+                } catch(e) {}
+            };
+            actions.appendChild(deleteBtn);
+            info.appendChild(actions);
+            div.appendChild(info);
+            return div;
+        }
+
         async function loadStorage() {
             if (!currentUserId) {
                 document.getElementById('container').innerHTML = `<div class="empty-state">${t('auth_required')}</div>`;
@@ -159,79 +212,84 @@
                     window.location.href = 'index.html';
                     return;
                 }
-                if (!resp.ok) {
-                    document.getElementById('container').innerHTML = `<div class="empty-state">${t('error_loading')}</div>`;
-                    return;
-                }
-                const data = await resp.json();
                 const container = document.getElementById('container');
-                if (!data.files || data.files.length === 0) {
-                    container.innerHTML = `<div class="empty-state">${t('empty_storage')}</div>`;
-                    return;
+                container.innerHTML = '';
+                let hasItems = false;
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.files && data.files.length > 0) {
+                        hasItems = true;
+                        data.files.forEach((file) => {
+                            const div = document.createElement('div');
+                            div.className = 'storage-item';
+                            const img = document.createElement('img');
+                            img.src = `${SERVER_URL}/history_file?file=${file}&source=web&session_token=${sessionToken}`;
+                            img.onerror = function() { this.style.display = 'none'; };
+                            img.onclick = function() {
+                                const modal = document.createElement('div');
+                                modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+                                const full = new Image();
+                                full.src = img.src;
+                                full.style.maxWidth = '95%'; full.style.maxHeight = '95%'; full.style.objectFit = 'contain';
+                                modal.appendChild(full);
+                                modal.onclick = () => modal.remove();
+                                document.body.appendChild(modal);
+                            };
+                            div.appendChild(img);
+                            const info = document.createElement('div');
+                            info.className = 'item-info';
+                            const date = document.createElement('div');
+                            date.className = 'item-date';
+                            const match = file.match(/(\d{8})_(\d{6})/);
+                            if (match) {
+                                const d = match[1]; const t = match[2];
+                                date.textContent = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)} ${t.slice(0,2)}:${t.slice(2,4)}:${t.slice(4,6)}`;
+                            } else { date.textContent = file; }
+                            info.appendChild(date);
+                            const promptEl = document.createElement('div');
+                            promptEl.style.cssText = 'color:#aaa;font-size:11px;margin-bottom:8px;word-break:break-all;';
+                            promptEl.textContent = t('loading_prompt');
+                            info.appendChild(promptEl);
+                            const txtFile = file.replace('.jpg', '.txt');
+                            fetch(`${SERVER_URL}/history_file?file=${txtFile}&source=web&session_token=${sessionToken}`)
+                                .then(r => { if (!r.ok) throw new Error(); return r.text(); })
+                                .then(txt => { promptEl.textContent = txt || t('no_prompt'); })
+                                .catch(() => { promptEl.textContent = t('no_prompt'); });
+                            const actions = document.createElement('div');
+                            actions.className = 'item-actions';
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.className = 'btn-delete';
+                            deleteBtn.textContent = t('delete');
+                            deleteBtn.onclick = async function() {
+                                if (!confirm(t('confirm_delete'))) return;
+                                try {
+                                    await fetch(`${SERVER_URL}/delete_history_file?file=${file}&source=web&session_token=${sessionToken}`, { method: 'DELETE' });
+                                    loadStorage();
+                                } catch(e) {}
+                            };
+                            actions.appendChild(deleteBtn);
+                            info.appendChild(actions);
+                            div.appendChild(info);
+                            container.appendChild(div);
+                        });
+                    }
+                }
+                const audioResp = await fetch(`${SERVER_URL}/pending_audio?user_id=${currentUserId}&session_token=${sessionToken}`);
+                if (audioResp.ok) {
+                    const audioData = await audioResp.json();
+                    if (audioData.results && audioData.results.length > 0) {
+                        hasItems = true;
+                        audioData.results.forEach(item => {
+                            container.appendChild(renderAudioItem(item.job_id, item.mode, item.caption, item.category));
+                        });
+                    }
                 }
                 try {
                     await fetch(`${SERVER_URL}/mark_viewed?user_id=${currentUserId}&source=web&session_token=${sessionToken}`, { method: 'POST' });
                 } catch(e) {}
-                container.innerHTML = '';
-                data.files.forEach((file) => {
-                    const div = document.createElement('div');
-                    div.className = 'storage-item';
-                    const img = document.createElement('img');
-                    img.src = `${SERVER_URL}/history_file?file=${file}&source=web&session_token=${sessionToken}`;
-                    img.onerror = function() { this.style.display = 'none'; };
-                    img.onclick = function() {
-                        const modal = document.createElement('div');
-                        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
-                        const full = new Image();
-                        full.src = img.src;
-                        full.style.maxWidth = '95%';
-                        full.style.maxHeight = '95%';
-                        full.style.objectFit = 'contain';
-                        full.onerror = function() { modal.innerHTML = '<div style="color:#555;">Ошибка загрузки</div>'; };
-                        modal.appendChild(full);
-                        modal.onclick = () => modal.remove();
-                        document.body.appendChild(modal);
-                    };
-                    div.appendChild(img);
-                    const info = document.createElement('div');
-                    info.className = 'item-info';
-                    const date = document.createElement('div');
-                    date.className = 'item-date';
-                    const match = file.match(/(\d{8})_(\d{6})/);
-                    if (match) {
-                        const d = match[1];
-                        const t = match[2];
-                        date.textContent = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)} ${t.slice(0,2)}:${t.slice(2,4)}:${t.slice(4,6)}`;
-                    } else {
-                        date.textContent = file;
-                    }
-                    info.appendChild(date);
-                    const promptEl = document.createElement('div');
-                    promptEl.style.cssText = 'color:#aaa;font-size:11px;margin-bottom:8px;word-break:break-all;';
-                    promptEl.textContent = t('loading_prompt');
-                    info.appendChild(promptEl);
-                    const txtFile = file.replace('.jpg', '.txt');
-                    fetch(`${SERVER_URL}/history_file?file=${txtFile}&source=web&session_token=${sessionToken}`)
-                        .then(r => { if (!r.ok) throw new Error(); return r.text(); })
-                        .then(txt => { promptEl.textContent = txt || t('no_prompt'); })
-                        .catch(() => { promptEl.textContent = t('no_prompt'); });
-                    const actions = document.createElement('div');
-                    actions.className = 'item-actions';
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'btn-delete';
-                    deleteBtn.textContent = t('delete');
-                    deleteBtn.onclick = async function() {
-                        if (!confirm(t('confirm_delete'))) return;
-                        try {
-                            const delResp = await fetch(`${SERVER_URL}/delete_history_file?file=${file}&source=web&session_token=${sessionToken}`, { method: 'DELETE' });
-                            if (delResp.ok) loadStorage();
-                        } catch (e) {}
-                    };
-                    actions.appendChild(deleteBtn);
-                    info.appendChild(actions);
-                    div.appendChild(info);
-                    container.appendChild(div);
-                });
+                if (!hasItems) {
+                    container.innerHTML = `<div class="empty-state">${t('empty_storage')}</div>`;
+                }
             } catch (e) {
                 document.getElementById('container').innerHTML = `<div class="empty-state">${t('error_loading')}</div>`;
             }
