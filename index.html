@@ -314,15 +314,18 @@ if (group === 'text' || group === 'audio') { if (banner) banner.style.display = 
         function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); applyTranslations(); }
         function t(key) { return translations[currentLang] && translations[currentLang][key] ? translations[currentLang][key] : key; }
         function applyTranslations() { document.querySelectorAll('[data-t]').forEach(el => { const key = el.getAttribute('data-t'); if (el.placeholder !== undefined && el.tagName === 'TEXTAREA') { el.placeholder = t(key); } else if (el.tagName === 'INPUT' && el.type === 'text') { el.placeholder = t(key); } else { el.textContent = t(key); } }); document.title = t('title'); }
-        function loadAudioExamples() {
+        async function loadAudioExamples() {
             const container = document.getElementById('audioExamples');
             if (!container || container.children.length > 0) return;
-            const examples = [
-                { text: 'Indie Road Trip', desc: 'A quirky alternative pop ballad instrumental with the vibe of a long car journey with friends, the catchy synth bass is infectious, the tightly tuned acoustic drums add a classy flair, the dreamy colourful synths bring a fuzzy old vhs tape atmosphere.', src: 'audio_demo/demo_indie.wav' },
-                { text: 'Melodic House', desc: 'clean melodic house, warm analog synths, punchy kick drum, crisp hi-hats, smooth bassline, bright plucks, wide stereo image, no clipping, crystal-clear highs, 120bpm', src: 'audio_demo/demo_house.wav' },
-                { text: 'Smooth R&B', desc: 'clean r&b instrumental, smooth electric piano chords, deep 808 bass, crisp trap drums, soft synth pads, warm sub-bass, wide stereo, no distortion, 90bpm', src: 'audio_demo/demo_rnb.wav' },
-                { text: 'Last Dance', desc: 'A triumphant and stylish UK bass-flavoured tech-house tune that evokes feelings of the last tune played in a DJ set.', src: 'audio_demo/demo_lastdance.wav' }
-            ];
+            const files = ['demo_indie', 'demo_house', 'demo_rnb', 'demo_lastdance'];
+            const examples = [];
+            for (const f of files) {
+                try {
+                    const resp = await fetch('audio_demo/' + f + '.txt');
+                    const desc = resp.ok ? await resp.text() : '';
+                    examples.push({ text: f.replace('demo_', '').replace('_', ' '), desc: desc.trim(), src: f + '.wav' });
+                } catch(e) {}
+            }
             examples.forEach(ex => {
                 const card = document.createElement('div');
                 card.style.cssText = 'display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:16px 20px;width:100%;max-width:600px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);';
@@ -333,7 +336,7 @@ if (group === 'text' || group === 'audio') { if (banner) banner.style.display = 
                         <div style="font-size:11px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ex.desc}</div>
                     </div>
                 `;
-                const audio = new Audio(ex.src);
+                const audio = new Audio('audio_demo/' + ex.src);
                 audio.preload = 'none';
                 card.addEventListener('mouseenter', function() {
                     document.querySelectorAll('#audioExamples audio').forEach(a => { a.pause(); a.currentTime = 0; });
