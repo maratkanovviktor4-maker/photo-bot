@@ -28,7 +28,13 @@
         .header img[alt="DeepSeek"]:hover { filter: drop-shadow(0 4px 12px rgba(139,92,246,0.5)); transform: translateY(-1px); }
         .header h1 { font-size: 20px; color: #fff; font-weight: 600; margin-top: 8px; }
         body.light .header h1 { color: #111; }
-        .container { max-width: 700px; margin: 120px auto 0; padding: 0 16px 60px; }
+        .tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
+        .tab-btn { padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.08); background: rgba(34,34,34,0.6); color: #aaa; font-family: 'Inter', sans-serif; transition: 0.3s ease; }
+        body.light .tab-btn { background: #e8e8e8; border: 1px solid rgba(0,0,0,0.08); color: #555; }
+        .tab-btn.active { background: linear-gradient(90deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; box-shadow: 0 4px 12px rgba(0,203,245,0.3); }
+        .tab-btn:hover:not(.active) { border-color: #00CBF5; color: #fff; }
+        body.light .tab-btn:hover:not(.active) { color: #111; }
+        .container { max-width: 700px; margin: 0 auto; padding: 0 16px 60px; }
         .storage-item { margin-bottom: 16px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; padding: 12px; gap: 12px; transition: 0.3s ease; }
         body.light .storage-item { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); }
         .storage-item:hover { border-color: rgba(0,203,245,0.2); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
@@ -43,7 +49,9 @@
         .btn-play { background: #9b59b6; color: #fff; }
         .btn-play:hover { background: #af7ac5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(155,89,182,0.3); }
         .audio-player { width: 100%; height: 32px; margin-top: 6px; border-radius: 8px; }
-        .audio-icon { width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #9b59b6, #8e44ad); border-radius: 10px; flex-shrink: 0; font-size: 40px; }
+        .audio-icon { width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; border-radius: 10px; flex-shrink: 0; font-size: 40px; }
+        .audio-icon.stable { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .audio-icon.ace { background: linear-gradient(135deg, #F59E0B, #e67e22); }
         .unviewed-dot { width: 8px; height: 8px; background: #00CBF5; border-radius: 50%; flex-shrink: 0; margin-left: 8px; }
         .empty-state { text-align: center; color: #555; padding: 60px 20px; font-size: 14px; }
         .nav-links { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
@@ -85,6 +93,12 @@
         <h1 data-t="storage_title">Хранилище генераций</h1>
     </div>
 
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('photos')" data-t="tab_photos">📸 Фото</button>
+        <button class="tab-btn" onclick="switchTab('stable_audio')" data-t="tab_stable_audio">🎵 Stable Audio 3</button>
+        <button class="tab-btn" onclick="switchTab('ace_audio')" data-t="tab_ace_audio">🎶 Ace Step 1.5</button>
+    </div>
+
     <div class="container" id="container">
         <div class="empty-state" id="emptyState" data-t="loading">Загрузка...</div>
     </div>
@@ -94,17 +108,34 @@
         <a href="prompts.html" data-t="prompts">База промтов</a>
     </div>
 
-    <script src="lang.js"></script>
     <script>
         const SERVER_URL = CONFIG.SERVER_URL;
         let sessionToken = '';
         let currentUserId = null;
+        let currentTab = 'photos';
 
         let currentLang = localStorage.getItem('photobot_lang') || 'en';
         function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); applyTranslations(); }
         function t(key) { return (translations[currentLang] && translations[currentLang][key]) || key; }
         function applyTranslations() { document.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.getAttribute('data-t')); }); }
         document.addEventListener('DOMContentLoaded', function() { document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === currentLang)); applyTranslations(); });
+
+        const translations = {
+            ru: {
+                storage_title: "Хранилище генераций", tab_photos: "📸 Фото", tab_stable_audio: "🎵 Stable Audio 3", tab_ace_audio: "🎶 Ace Step 1.5",
+                loading: "Загрузка...", empty_photos: "Нет сгенерированных фото", empty_stable_audio: "Нет аудио Stable Audio 3", empty_ace_audio: "Нет аудио Ace Step 1.5",
+                delete: "Удалить", confirm_delete: "Удалить навсегда?", no_prompt: "Без описания", auth_required: "Требуется авторизация", error_loading: "Ошибка загрузки",
+                home: "На главную", prompts: "База промтов", choose_model: "Выберите модель", fast: "Fast", best: "Best",
+                ace_caption: "Промт", ace_lyrics: "Текст песни"
+            },
+            en: {
+                storage_title: "Generation Storage", tab_photos: "📸 Photos", tab_stable_audio: "🎵 Stable Audio 3", tab_ace_audio: "🎶 Ace Step 1.5",
+                loading: "Loading...", empty_photos: "No generated photos", empty_stable_audio: "No Stable Audio 3 audio", empty_ace_audio: "No Ace Step 1.5 audio",
+                delete: "Delete", confirm_delete: "Delete forever?", no_prompt: "No description", auth_required: "Authorization required", error_loading: "Loading error",
+                home: "Home", prompts: "Prompt Library", choose_model: "Select model", fast: "Fast", best: "Best",
+                ace_caption: "Prompt", ace_lyrics: "Lyrics"
+            }
+        };
 
         function toggleTheme() { document.body.classList.toggle('light'); var isLight = document.body.classList.contains('light'); localStorage.setItem('photobot_theme', isLight ? 'light' : 'dark'); document.getElementById('themeToggle').textContent = isLight ? '🌙' : '☀️'; }
         (function() { var saved = localStorage.getItem('photobot_theme'); if (saved === 'light') { document.body.classList.add('light'); document.getElementById('themeToggle').textContent = '🌙'; } })();
@@ -114,185 +145,143 @@
             const auth = JSON.parse(savedAuth);
             currentUserId = auth.user_id;
             sessionToken = auth.session_token || '';
-            if (!sessionToken || !currentUserId) {
-                alert('Сессия устарела. Авторизуйтесь заново на главной странице.');
-                window.location.href = 'index.html';
-            }
-        } else {
-            alert('Авторизуйтесь на главной странице');
-            window.location.href = 'index.html';
-        }
+            if (!sessionToken || !currentUserId) { alert('Сессия устарела. Авторизуйтесь заново на главной странице.'); window.location.href = 'index.html'; }
+        } else { alert('Авторизуйтесь на главной странице'); window.location.href = 'index.html'; }
 
         function toggleDeepSeekMenu() {
             const menu = document.getElementById('deepseekMenu');
-            if (menu.style.display === 'block') {
-                menu.style.opacity = '0';
-                menu.style.transform = 'translateX(-50%) translateY(-4px)';
-                setTimeout(() => { menu.style.display = 'none'; }, 150);
-            } else {
-                menu.style.display = 'block';
-                menu.style.opacity = '0';
-                menu.style.transform = 'translateX(-50%) translateY(-4px)';
-                requestAnimationFrame(() => {
-                    menu.style.transition = 'opacity 0.15s, transform 0.15s';
-                    menu.style.opacity = '1';
-                    menu.style.transform = 'translateX(-50%) translateY(0)';
-                });
-            }
+            if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); }
+            else { menu.style.display = 'block'; menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; requestAnimationFrame(() => { menu.style.transition = 'opacity 0.15s, transform 0.15s'; menu.style.opacity = '1'; menu.style.transform = 'translateX(-50%) translateY(0)'; }); }
         }
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('[onclick="toggleDeepSeekMenu()"]')) {
-                const menu = document.getElementById('deepseekMenu');
-                if (menu.style.display === 'block') {
-                    menu.style.opacity = '0';
-                    menu.style.transform = 'translateX(-50%) translateY(-4px)';
-                    setTimeout(() => { menu.style.display = 'none'; }, 150);
-                }
-            }
-        });
+        document.addEventListener('click', function(e) { if (!e.target.closest('[onclick="toggleDeepSeekMenu()"]')) { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } } });
 
-        function renderAudioItem(jobId, mode, caption, category) {
-            const div = document.createElement('div');
-            div.className = 'storage-item';
-            const icon = document.createElement('div');
-            icon.className = 'audio-icon';
-            icon.textContent = '🎵';
-            div.appendChild(icon);
-            const info = document.createElement('div');
-            info.className = 'item-info';
-            const date = document.createElement('div');
-            date.className = 'item-date';
-            const match = jobId.match(/(\d{8})_(\d{6})/);
-            if (match) {
-                const d = match[1]; const t = match[2];
-                date.textContent = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)} ${t.slice(0,2)}:${t.slice(2,4)}:${t.slice(4,6)}`;
-            } else { date.textContent = jobId; }
-            info.appendChild(date);
-            const promptEl = document.createElement('div');
-            promptEl.style.cssText = 'color:#aaa;font-size:11px;margin-bottom:4px;word-break:break-all;';
-            promptEl.textContent = caption || t('no_prompt');
-            info.appendChild(promptEl);
-            const catEl = document.createElement('div');
-            catEl.style.cssText = 'color:#9b59b6;font-size:10px;margin-bottom:6px;';
-            catEl.textContent = category || mode || '';
-            info.appendChild(catEl);
-            const audio = document.createElement('audio');
-            audio.className = 'audio-player';
-            audio.controls = true;
-            audio.src = `${SERVER_URL}/get_audio_file?job_id=${jobId}&user_id=${currentUserId}&session_token=${sessionToken}`;
-            audio.onerror = function() { this.style.display = 'none'; };
-            info.appendChild(audio);
-            const actions = document.createElement('div');
-            actions.className = 'item-actions';
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn-delete';
-            deleteBtn.textContent = t('delete');
-            deleteBtn.onclick = async function() {
-                if (!confirm(t('confirm_delete'))) return;
-                try {
-                    await fetch(`${SERVER_URL}/delete_audio?job_id=${jobId}&user_id=${currentUserId}&session_token=${sessionToken}`, { method: 'DELETE' });
-                    loadStorage();
-                } catch(e) {}
-            };
-            actions.appendChild(deleteBtn);
-            info.appendChild(actions);
-            div.appendChild(info);
-            return div;
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+            loadStorage();
         }
 
         async function loadStorage() {
-            if (!currentUserId) {
-                document.getElementById('container').innerHTML = `<div class="empty-state">${t('auth_required')}</div>`;
-                return;
+            if (!currentUserId) { document.getElementById('container').innerHTML = `<div class="empty-state">${t('auth_required')}</div>`; return; }
+            const container = document.getElementById('container');
+            container.innerHTML = `<div class="empty-state">${t('loading')}</div>`;
+
+            if (currentTab === 'photos') {
+                await loadPhotos(container);
+            } else if (currentTab === 'stable_audio') {
+                await loadStableAudio(container);
+            } else if (currentTab === 'ace_audio') {
+                await loadAceAudio(container);
             }
+        }
+
+        async function loadPhotos(container) {
             try {
                 const resp = await fetch(`${SERVER_URL}/history?user_id=${currentUserId}&source=web&session_token=${sessionToken}`);
-                if (resp.status === 403) {
-                    alert('Сессия устарела. Авторизуйтесь заново.');
-                    window.location.href = 'index.html';
-                    return;
-                }
-                const container = document.getElementById('container');
+                if (resp.status === 403) { alert('Сессия устарела.'); window.location.href = 'index.html'; return; }
                 container.innerHTML = '';
-                let hasItems = false;
                 if (resp.ok) {
                     const data = await resp.json();
                     if (data.files && data.files.length > 0) {
-                        hasItems = true;
                         data.files.forEach((file) => {
-                            const div = document.createElement('div');
-                            div.className = 'storage-item';
+                            const div = document.createElement('div'); div.className = 'storage-item';
                             const img = document.createElement('img');
                             img.src = `${SERVER_URL}/history_file?file=${file}&source=web&session_token=${sessionToken}`;
                             img.onerror = function() { this.style.display = 'none'; };
-                            img.onclick = function() {
-                                const modal = document.createElement('div');
-                                modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
-                                const full = new Image();
-                                full.src = img.src;
-                                full.style.maxWidth = '95%'; full.style.maxHeight = '95%'; full.style.objectFit = 'contain';
-                                modal.appendChild(full);
-                                modal.onclick = () => modal.remove();
-                                document.body.appendChild(modal);
-                            };
+                            img.onclick = function() { const modal = document.createElement('div'); modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer'; const full = new Image(); full.src = img.src; full.style.maxWidth = '95%'; full.style.maxHeight = '95%'; full.style.objectFit = 'contain'; modal.appendChild(full); modal.onclick = () => modal.remove(); document.body.appendChild(modal); };
                             div.appendChild(img);
-                            const info = document.createElement('div');
-                            info.className = 'item-info';
-                            const date = document.createElement('div');
-                            date.className = 'item-date';
+                            const info = document.createElement('div'); info.className = 'item-info';
+                            const date = document.createElement('div'); date.className = 'item-date';
                             const match = file.match(/(\d{8})_(\d{6})/);
-                            if (match) {
-                                const d = match[1]; const t = match[2];
-                                date.textContent = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)} ${t.slice(0,2)}:${t.slice(2,4)}:${t.slice(4,6)}`;
-                            } else { date.textContent = file; }
+                            if (match) { const d = match[1]; const t = match[2]; date.textContent = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)} ${t.slice(0,2)}:${t.slice(2,4)}:${t.slice(4,6)}`; } else { date.textContent = file; }
                             info.appendChild(date);
-                            const promptEl = document.createElement('div');
-                            promptEl.style.cssText = 'color:#aaa;font-size:11px;margin-bottom:8px;word-break:break-all;';
-                            promptEl.textContent = t('loading_prompt');
-                            info.appendChild(promptEl);
+                            const promptEl = document.createElement('div'); promptEl.style.cssText = 'color:#aaa;font-size:11px;margin-bottom:8px;word-break:break-all;'; promptEl.textContent = t('no_prompt'); info.appendChild(promptEl);
                             const txtFile = file.replace('.jpg', '.txt');
-                            fetch(`${SERVER_URL}/history_file?file=${txtFile}&source=web&session_token=${sessionToken}`)
-                                .then(r => { if (!r.ok) throw new Error(); return r.text(); })
-                                .then(txt => { promptEl.textContent = txt || t('no_prompt'); })
-                                .catch(() => { promptEl.textContent = t('no_prompt'); });
-                            const actions = document.createElement('div');
-                            actions.className = 'item-actions';
-                            const deleteBtn = document.createElement('button');
-                            deleteBtn.className = 'btn-delete';
-                            deleteBtn.textContent = t('delete');
-                            deleteBtn.onclick = async function() {
-                                if (!confirm(t('confirm_delete'))) return;
-                                try {
-                                    await fetch(`${SERVER_URL}/delete_history_file?file=${file}&source=web&session_token=${sessionToken}`, { method: 'DELETE' });
-                                    loadStorage();
-                                } catch(e) {}
-                            };
+                            fetch(`${SERVER_URL}/history_file?file=${txtFile}&source=web&session_token=${sessionToken}`).then(r => { if (!r.ok) throw new Error(); return r.text(); }).then(txt => { promptEl.textContent = txt || t('no_prompt'); }).catch(() => { promptEl.textContent = t('no_prompt'); });
+                            const actions = document.createElement('div'); actions.className = 'item-actions';
+                            const deleteBtn = document.createElement('button'); deleteBtn.className = 'btn-delete'; deleteBtn.textContent = t('delete');
+                            deleteBtn.onclick = async function() { if (!confirm(t('confirm_delete'))) return; try { await fetch(`${SERVER_URL}/delete_history_file?file=${file}&source=web&session_token=${sessionToken}`, { method: 'DELETE' }); loadPhotos(container); } catch(e) {} };
                             actions.appendChild(deleteBtn);
-                            info.appendChild(actions);
-                            div.appendChild(info);
-                            container.appendChild(div);
+                            info.appendChild(actions); div.appendChild(info); container.appendChild(div);
                         });
+                        try { await fetch(`${SERVER_URL}/mark_viewed?user_id=${currentUserId}&source=web&session_token=${sessionToken}`, { method: 'POST' }); } catch(e) {}
+                        return;
                     }
                 }
-                const audioResp = await fetch(`${SERVER_URL}/audio_history?user_id=${currentUserId}&session_token=${sessionToken}`);
-                if (audioResp.ok) {
-                    const audioData = await audioResp.json();
-                    if (audioData.results && audioData.results.length > 0) {
-                        hasItems = true;
-                        audioData.results.forEach(item => {
-                            container.appendChild(renderAudioItem(item.job_id, item.mode, item.caption, item.category));
+                container.innerHTML = `<div class="empty-state">${t('empty_photos')}</div>`;
+            } catch (e) { container.innerHTML = `<div class="empty-state">${t('error_loading')}</div>`; }
+        }
+
+        async function loadStableAudio(container) {
+            try {
+                const resp = await fetch(`${SERVER_URL}/audio_history?user_id=${currentUserId}&session_token=${sessionToken}`);
+                if (resp.status === 403) { alert('Сессия устарела.'); window.location.href = 'index.html'; return; }
+                container.innerHTML = '';
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.results && data.results.length > 0) {
+                        data.results.forEach(item => {
+                            const div = document.createElement('div'); div.className = 'storage-item';
+                            const icon = document.createElement('div'); icon.className = 'audio-icon stable'; icon.textContent = '🎵'; div.appendChild(icon);
+                            const info = document.createElement('div'); info.className = 'item-info';
+                            const date = document.createElement('div'); date.className = 'item-date';
+                            const match = item.job_id.match(/(\d{8})_(\d{6})/);
+                            if (match) { const d = match[1]; const t = match[2]; date.textContent = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)} ${t.slice(0,2)}:${t.slice(2,4)}:${t.slice(4,6)}`; } else { date.textContent = item.job_id; }
+                            info.appendChild(date);
+                            const promptEl = document.createElement('div'); promptEl.style.cssText = 'color:#aaa;font-size:11px;margin-bottom:4px;word-break:break-all;'; promptEl.textContent = item.caption || t('no_prompt'); info.appendChild(promptEl);
+                            const audio = document.createElement('audio'); audio.className = 'audio-player'; audio.controls = true;
+                            audio.src = `${SERVER_URL}/get_audio_file?job_id=${item.job_id}&user_id=${currentUserId}&session_token=${sessionToken}`;
+                            audio.onerror = function() { this.style.display = 'none'; };
+                            info.appendChild(audio);
+                            const actions = document.createElement('div'); actions.className = 'item-actions';
+                            const deleteBtn = document.createElement('button'); deleteBtn.className = 'btn-delete'; deleteBtn.textContent = t('delete');
+                            deleteBtn.onclick = async function() { if (!confirm(t('confirm_delete'))) return; try { await fetch(`${SERVER_URL}/delete_audio?job_id=${item.job_id}&user_id=${currentUserId}&session_token=${sessionToken}`, { method: 'DELETE' }); loadStableAudio(container); } catch(e) {} };
+                            actions.appendChild(deleteBtn);
+                            info.appendChild(actions); div.appendChild(info); container.appendChild(div);
                         });
+                        try { await fetch(`${SERVER_URL}/mark_viewed?user_id=${currentUserId}&source=web&session_token=${sessionToken}`, { method: 'POST' }); } catch(e) {}
+                        return;
                     }
                 }
-                try {
-                    await fetch(`${SERVER_URL}/mark_viewed?user_id=${currentUserId}&source=web&session_token=${sessionToken}`, { method: 'POST' });
-                } catch(e) {}
-                if (!hasItems) {
-                    container.innerHTML = `<div class="empty-state">${t('empty_storage')}</div>`;
+                container.innerHTML = `<div class="empty-state">${t('empty_stable_audio')}</div>`;
+            } catch (e) { container.innerHTML = `<div class="empty-state">${t('error_loading')}</div>`; }
+        }
+
+        async function loadAceAudio(container) {
+            try {
+                const resp = await fetch(`${SERVER_URL}/ace_audio_history?user_id=${currentUserId}&session_token=${sessionToken}`);
+                if (resp.status === 403) { alert('Сессия устарела.'); window.location.href = 'index.html'; return; }
+                container.innerHTML = '';
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.results && data.results.length > 0) {
+                        data.results.forEach(item => {
+                            const div = document.createElement('div'); div.className = 'storage-item';
+                            const icon = document.createElement('div'); icon.className = 'audio-icon ace'; icon.textContent = '🎶'; div.appendChild(icon);
+                            const info = document.createElement('div'); info.className = 'item-info';
+                            const date = document.createElement('div'); date.className = 'item-date';
+                            const match = item.job_id.match(/(\d{8})_(\d{6})/);
+                            if (match) { const d = match[1]; const t = match[2]; date.textContent = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)} ${t.slice(0,2)}:${t.slice(2,4)}:${t.slice(4,6)}`; } else { date.textContent = item.job_id; }
+                            info.appendChild(date);
+                            if (item.caption) { const captionEl = document.createElement('div'); captionEl.style.cssText = 'color:#F59E0B;font-size:11px;margin-bottom:4px;word-break:break-all;'; captionEl.textContent = t('ace_caption') + ': ' + item.caption; info.appendChild(captionEl); }
+                            if (item.lyrics) { const lyricsEl = document.createElement('div'); lyricsEl.style.cssText = 'color:#aaa;font-size:11px;margin-bottom:4px;word-break:break-all;'; lyricsEl.textContent = t('ace_lyrics') + ': ' + item.lyrics; info.appendChild(lyricsEl); }
+                            const audio = document.createElement('audio'); audio.className = 'audio-player'; audio.controls = true;
+                            audio.src = `${SERVER_URL}/get_ace_audio_file?job_id=${item.job_id}&user_id=${currentUserId}&session_token=${sessionToken}`;
+                            audio.onerror = function() { this.style.display = 'none'; };
+                            info.appendChild(audio);
+                            const actions = document.createElement('div'); actions.className = 'item-actions';
+                            const deleteBtn = document.createElement('button'); deleteBtn.className = 'btn-delete'; deleteBtn.textContent = t('delete');
+                            deleteBtn.onclick = async function() { if (!confirm(t('confirm_delete'))) return; try { await fetch(`${SERVER_URL}/delete_ace_audio?job_id=${item.job_id}&user_id=${currentUserId}&session_token=${sessionToken}`, { method: 'DELETE' }); loadAceAudio(container); } catch(e) {} };
+                            actions.appendChild(deleteBtn);
+                            info.appendChild(actions); div.appendChild(info); container.appendChild(div);
+                        });
+                        try { await fetch(`${SERVER_URL}/mark_viewed?user_id=${currentUserId}&source=web&session_token=${sessionToken}`, { method: 'POST' }); } catch(e) {}
+                        return;
+                    }
                 }
-            } catch (e) {
-                document.getElementById('container').innerHTML = `<div class="empty-state">${t('error_loading')}</div>`;
-            }
+                container.innerHTML = `<div class="empty-state">${t('empty_ace_audio')}</div>`;
+            } catch (e) { container.innerHTML = `<div class="empty-state">${t('error_loading')}</div>`; }
         }
 
         loadStorage();
