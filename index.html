@@ -233,6 +233,18 @@
                         <div style="font-size:10px;color:#888;margin-bottom:4px;">Длительность (сек)</div>
                         <input type="number" id="aceDuration" min="1" max="300" value="" placeholder="30" style="width:100%;padding:6px 10px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:10px;font-size:12px;font-family:'Inter',sans-serif;outline:none;">
                     </div>
+                    <div id="aceBpmBlock" style="display:none;padding:0 6px;">
+                        <div style="font-size:10px;color:#888;margin-bottom:4px;">BPM (темп)</div>
+                        <input type="number" id="aceBpm" min="1" max="300" value="" placeholder="95" style="width:100%;padding:6px 10px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:10px;font-size:12px;font-family:'Inter',sans-serif;outline:none;">
+                    </div>
+                    <div id="aceKeyscaleBlock" style="display:none;padding:0 6px;">
+                        <div style="font-size:10px;color:#888;margin-bottom:4px;">Тональность</div>
+                        <input type="text" id="aceKeyscale" placeholder="E minor" style="width:100%;padding:6px 10px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:10px;font-size:12px;font-family:'Inter',sans-serif;outline:none;">
+                    </div>
+                    <div id="aceLanguageBlock" style="display:none;padding:0 6px;">
+                        <div style="font-size:10px;color:#888;margin-bottom:4px;">Язык</div>
+                        <input type="text" id="aceLanguage" placeholder="en" style="width:100%;padding:6px 10px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:10px;font-size:12px;font-family:'Inter',sans-serif;outline:none;">
+                    </div>
                 </div>
                 <button class="mode-group-btn" onclick="toggleModeGroup('text')" data-t="text_models">Текстовые модели</button>
                 <div class="mode-sub-group" id="group-text" style="max-height:0;">
@@ -353,7 +365,7 @@
             if (mode === "wallpaper") { document.getElementById("wallpaperSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; }
             if (mode === "logo") { document.getElementById("logoSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; wallpaperSize = "sq256"; }
             if (mode && mode.startsWith("audio_")) { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("audioDurationBlock").style.display = "block"; const defaultDurations = { "audio_music_energetic": 150, "audio_music_poprock": 195, "audio_music_cinematic": 270, "audio_instrument_loops": 13, "audio_instrument_stems": 100, "audio_sfx_short": 2, "audio_sfx_medium": 4, "audio_sfx_ambience": 10, "audio_oneshot": 6 }; const def = defaultDurations[mode] || 180; document.getElementById("audioDuration").placeholder = def; document.getElementById("audioDuration").value = ""; }
-            if (mode === "ace_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("lyrics").style.display = "block"; document.getElementById("aceDurationBlock").style.display = "block"; document.getElementById("aceDuration").placeholder = "30"; document.getElementById("aceDuration").value = ""; }
+            if (mode === "ace_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("lyrics").style.display = "block"; document.getElementById("aceDurationBlock").style.display = "block"; document.getElementById("aceDuration").placeholder = "30"; document.getElementById("aceDuration").value = ""; document.getElementById("aceBpmBlock").style.display = "block"; document.getElementById("aceKeyscaleBlock").style.display = "block"; document.getElementById("aceLanguageBlock").style.display = "block"; }
         }
         async function checkSubscription() { if (!currentUserId) return; try { const r = await fetch(`${SERVER_URL}/check_subscription`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserId }) }); const d = await r.json(); isSubscribed = d.subscribed; if (isSubscribed) { document.getElementById("subscribeBlock").style.display = "none"; document.getElementById("subscribeOk").style.display = "block"; } else { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; } } catch (err) { document.getElementById('status').textContent = 'Ошибка проверки подписки'; setTimeout(() => document.getElementById('status').textContent = '', 5000); } }
         document.getElementById("photoInput").addEventListener("change", function(e) { const file = e.target.files[0]; if (file) { uploadedFile = file; const reader = new FileReader(); reader.onload = function(ev) { document.getElementById("preview").src = ev.target.result; document.getElementById("preview").style.display = "block"; }; reader.readAsDataURL(file); } });
@@ -403,6 +415,13 @@
                     const durInput = document.getElementById("aceDuration");
                     const dur = durInput && durInput.value ? parseInt(durInput.value) : 30;
                     if (!isNaN(dur)) formData.append("duration", dur);
+                    const bpmInput = document.getElementById("aceBpm");
+                    const bpm = bpmInput && bpmInput.value ? parseInt(bpmInput.value) : 95;
+                    if (!isNaN(bpm)) formData.append("bpm", bpm);
+                    const keyscaleInput = document.getElementById("aceKeyscale");
+                    formData.append("keyscale", (keyscaleInput && keyscaleInput.value) ? keyscaleInput.value : "E minor");
+                    const languageInput = document.getElementById("aceLanguage");
+                    formData.append("language", (languageInput && languageInput.value) ? languageInput.value : "en");
                     document.getElementById("status").textContent = "Генерация музыки Ace Step...";
                     const resp = await fetch(`${SERVER_URL}/enqueue_ace_audio`, { method: "POST", body: formData, headers: { "X-Session-Token": sessionToken } });
                     if (!resp.ok) { const errData = await resp.json().catch(() => ({})); document.getElementById("status").textContent = errData.error || 'Ошибка сервера'; genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
