@@ -327,7 +327,7 @@ if (group === 'text' || group === 'audio') { if (banner) banner.style.display = 
                 const card = document.createElement('div');
                 card.style.cssText = 'display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:16px 20px;width:100%;max-width:600px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);';
                 card.innerHTML = `
-                    <div class="playBtn" style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;cursor:pointer;">▶</div>
+                    <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">♫</div>
                     <div style="flex:1;min-width:0;">
                         <div style="font-size:14px;font-weight:600;margin-bottom:4px;">${ex.text}</div>
                         <div style="font-size:11px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ex.desc}</div>
@@ -335,23 +335,14 @@ if (group === 'text' || group === 'audio') { if (banner) banner.style.display = 
                 `;
                 const audio = new Audio(ex.src);
                 audio.preload = 'none';
-                const playBtn = card.querySelector('.playBtn');
-                playBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
+                card.addEventListener('mouseenter', function() {
                     document.querySelectorAll('#audioExamples audio').forEach(a => { a.pause(); a.currentTime = 0; });
-                    document.querySelectorAll('#audioExamples .playBtn').forEach(b => b.textContent = '▶');
-                    if (audio.paused) {
-                        audio.play();
-                        playBtn.textContent = '⏸';
-                    } else {
-                        audio.pause();
-                        playBtn.textContent = '▶';
-                    }
+                    audio.currentTime = 0;
+                    audio.play();
                 });
-                audio.addEventListener('ended', function() { playBtn.textContent = '▶'; });
-                audio.addEventListener('error', function() { playBtn.textContent = '⚠'; });
-                card.onmouseenter = function() { this.style.background = 'rgba(255,255,255,0.06)'; this.style.transform = 'translateY(-2px)'; this.style.borderColor = 'rgba(0,203,245,0.3)'; };
-                card.onmouseleave = function() { this.style.background = 'rgba(255,255,255,0.03)'; this.style.transform = 'translateY(0)'; this.style.borderColor = 'rgba(255,255,255,0.06)'; };
+                card.addEventListener('mouseleave', function() {
+                    audio.pause();
+                });
                 container.appendChild(card);
             });
         }
