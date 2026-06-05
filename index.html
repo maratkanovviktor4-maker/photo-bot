@@ -56,6 +56,14 @@
         .mode-sub-btn:hover { background: #2A2A2A; border-color: #00CBF5; color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,203,245,0.1); }
         .mode-sub-btn.selected { background: linear-gradient(90deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; font-weight: 600; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
         .mode-sub-group { overflow: hidden; transition: max-height 0.3s ease; }
+        .ace-settings-row { display: none; gap: 6px; padding: 4px 0; flex-wrap: wrap; }
+        .ace-settings-row .ace-field { flex: 1; min-width: 0; }
+        .ace-settings-row .ace-field label { display: block; font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .ace-settings-row .ace-field input,
+        .ace-settings-row .ace-field select { width: 100%; padding: 7px 8px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); color: #fff; border-radius: 8px; font-size: 12px; font-family: 'Inter', sans-serif; outline: none; }
+        .ace-settings-row .ace-field select { cursor: pointer; }
+        .ace-settings-row .ace-field input:focus,
+        .ace-settings-row .ace-field select:focus { border-color: #00CBF5; box-shadow: 0 0 0 2px rgba(0,203,245,0.15); }
         #preview { width: 100%; max-height: 180px; object-fit: contain; margin: 8px 0; border-radius: 16px; display: none; }
         #status { text-align: center; color: #aaa; margin: 6px 0; font-size: 12px; }
         .actions { display: flex; gap: 8px; margin-top: 8px; }
@@ -227,12 +235,13 @@
                 </div>
                 <button class="mode-group-btn" onclick="toggleModeGroup('ace')" data-t="ace_models">Ace Step 1.5 <span style="font-size:9px;color:#aaa;" data-t="ace_sub">Текст в музыку + вокал</span></button>
                 <div class="mode-sub-group" id="group-ace" style="max-height:0;">
-                    <div id="aceSettings" style="display:none;flex-direction:row;gap:6px;padding:6px 0;">
-                        <div style="flex:1;"><div style="font-size:10px;color:#888;margin-bottom:2px;">Длит. (сек)</div><input type="number" id="aceDuration" min="1" max="180" value="30" placeholder="30" style="width:100%;padding:6px 8px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:11px;font-family:'Inter',sans-serif;outline:none;"></div>
-                        <div style="flex:1;"><div style="font-size:10px;color:#888;margin-bottom:2px;">BPM</div><input type="number" id="aceBpm" min="1" max="300" value="95" placeholder="95" style="width:100%;padding:6px 8px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:11px;font-family:'Inter',sans-serif;outline:none;"></div>
-                        <div style="flex:1;"><div style="font-size:10px;color:#888;margin-bottom:2px;">Тон.</div><select id="aceKeyscale" style="width:100%;padding:6px 4px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:10px;font-family:'Inter',sans-serif;outline:none;"><option value="A minor">A minor</option><option value="B minor">B minor</option><option value="C minor">C minor</option><option value="D minor">D minor</option><option value="E minor" selected>E minor</option><option value="F minor">F minor</option><option value="G minor">G minor</option><option value="C# minor">C# minor</option><option value="D# minor">D# minor</option><option value="F# minor">F# minor</option><option value="G# minor">G# minor</option><option value="A# minor">A# minor</option><option value="C Major">C Major</option><option value="D Major">D Major</option><option value="E Major">E Major</option><option value="F Major">F Major</option><option value="G Major">G Major</option><option value="A Major">A Major</option><option value="B Major">B Major</option><option value="C# Major">C# Major</option><option value="Eb Major">Eb Major</option><option value="F# Major">F# Major</option><option value="Ab Major">Ab Major</option><option value="Bb Major">Bb Major</option></select></div>
-                        <div style="flex:1;"><div style="font-size:10px;color:#888;margin-bottom:2px;">Язык</div><select id="aceLanguage" style="width:100%;padding:6px 4px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:10px;font-family:'Inter',sans-serif;outline:none;"><option value="ru">RU</option><option value="en" selected>EN</option><option value="zh">ZH</option><option value="ja">JA</option><option value="es">ES</option><option value="de">DE</option><option value="fr">FR</option><option value="pt">PT</option><option value="it">IT</option><option value="ko">KO</option></select></div>
+                    <div class="ace-settings-row" id="aceSettings">
+                        <div class="ace-field"><label>Длит. (сек)</label><input type="number" id="aceDuration" min="1" max="180" value="30" placeholder="30"></div>
+                        <div class="ace-field"><label>BPM</label><input type="number" id="aceBpm" min="1" max="300" value="95" placeholder="95"></div>
+                        <div class="ace-field"><label>Тон.</label><select id="aceKeyscale"><option value="A minor">A minor</option><option value="B minor">B minor</option><option value="C minor">C minor</option><option value="D minor">D minor</option><option value="E minor" selected>E minor</option><option value="F minor">F minor</option><option value="G minor">G minor</option><option value="C# minor">C# minor</option><option value="D# minor">D# minor</option><option value="F# minor">F# minor</option><option value="G# minor">G# minor</option><option value="A# minor">A# minor</option><option value="C Major">C Major</option><option value="D Major">D Major</option><option value="E Major">E Major</option><option value="F Major">F Major</option><option value="G Major">G Major</option><option value="A Major">A Major</option><option value="B Major">B Major</option><option value="C# Major">C# Major</option><option value="Eb Major">Eb Major</option><option value="F# Major">F# Major</option><option value="Ab Major">Ab Major</option><option value="Bb Major">Bb Major</option></select></div>
+                        <div class="ace-field"><label>Язык</label><select id="aceLanguage"><option value="ru">RU</option><option value="en" selected>EN</option><option value="zh">ZH</option><option value="ja">JA</option><option value="es">ES</option><option value="de">DE</option><option value="fr">FR</option><option value="pt">PT</option><option value="it">IT</option><option value="ko">KO</option></select></div>
                     </div>
+                </div>
                 <button class="mode-group-btn" onclick="toggleModeGroup('text')" data-t="text_models">Текстовые модели</button>
                 <div class="mode-sub-group" id="group-text" style="max-height:0;">
                     <button class="mode-sub-btn" onclick="window.location.href='v4flash.html'" data-t="v4flash">DeepSeek V4 Flash</button>
@@ -311,6 +320,7 @@
                 const aceBlock = document.getElementById('aceInfoBlock'); if (aceBlock) aceBlock.style.display = 'none';
                 const banner = document.getElementById('bannerImg'); if (banner) { banner.style.display = 'block'; banner.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => banner.classList.add('show')); }); }
                 document.getElementById('wallpaperSize').style.display = 'none';
+                document.getElementById('aceSettings').style.display = 'none';
             } else {
                 currentGroup = group;
                 showCollagesForGroup(group);
@@ -348,7 +358,7 @@
             document.getElementById("photoInput").style.display = "block";
             document.getElementById("lyrics").style.display = "none";
             document.getElementById("audioDurationBlock").style.display = "none";
-            document.getElementById("aceDurationBlock").style.display = "none";
+            document.getElementById("aceSettings").style.display = "none";
             if (mode === "wallpaper") { document.getElementById("wallpaperSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; }
             if (mode === "logo") { document.getElementById("logoSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; wallpaperSize = "sq256"; }
             if (mode && mode.startsWith("audio_")) { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("audioDurationBlock").style.display = "block"; const defaultDurations = { "audio_music_energetic": 150, "audio_music_poprock": 195, "audio_music_cinematic": 270, "audio_instrument_loops": 13, "audio_instrument_stems": 100, "audio_sfx_short": 2, "audio_sfx_medium": 4, "audio_sfx_ambience": 10, "audio_oneshot": 6 }; const def = defaultDurations[mode] || 180; document.getElementById("audioDuration").placeholder = def; document.getElementById("audioDuration").value = ""; }
@@ -399,18 +409,13 @@
                     formData.append("user_id", currentUserId);
                     formData.append("source", "web");
                     if (sessionToken) formData.append("session_token", sessionToken);
-                    const durInput = document.getElementById("aceDuration");
-                    let dur = durInput && durInput.value ? parseInt(durInput.value) : 30;
-                    if (isNaN(dur) || dur < 1) dur = 30;
+                    let dur = parseInt(document.getElementById("aceDuration").value) || 30;
+                    if (dur < 1) dur = 30;
                     if (dur > 180) dur = 180;
                     formData.append("duration", dur);
-                    const bpmInput = document.getElementById("aceBpm");
-                    const bpm = bpmInput && bpmInput.value ? parseInt(bpmInput.value) : 95;
-                    if (!isNaN(bpm)) formData.append("bpm", bpm);
-                    const keyscaleInput = document.getElementById("aceKeyscale");
-                    formData.append("keyscale", (keyscaleInput && keyscaleInput.value) ? keyscaleInput.value : "E minor");
-                    const languageInput = document.getElementById("aceLanguage");
-                    formData.append("language", (languageInput && languageInput.value) ? languageInput.value : "en");
+                    formData.append("bpm", parseInt(document.getElementById("aceBpm").value) || 95);
+                    formData.append("keyscale", document.getElementById("aceKeyscale").value || "E minor");
+                    formData.append("language", document.getElementById("aceLanguage").value || "en");
                     document.getElementById("status").textContent = "Генерация музыки Ace Step...";
                     const resp = await fetch(`${SERVER_URL}/enqueue_ace_audio`, { method: "POST", body: formData, headers: { "X-Session-Token": sessionToken } });
                     if (!resp.ok) { const errData = await resp.json().catch(() => ({})); document.getElementById("status").textContent = errData.error || 'Ошибка сервера'; genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
