@@ -117,6 +117,12 @@
     </div>
     <div class="container">
         <div class="collages" id="collages">
+            <div id="audioInfoBlock" style="display:none; flex-direction:column; align-items:center; gap:20px; padding:40px 20px; width:100%;">
+                <div style="font-size:24px; font-weight:700; letter-spacing:1px; text-align:center;">Stable Audio 3</div>
+                <div style="font-size:14px; color:#aaa; text-align:center; max-width:500px;">Генерация музыки, инструменталов, звуковых эффектов и ван-шотов из текста</div>
+                <div id="audioExamples" style="display:flex; flex-wrap:wrap; gap:20px; justify-content:center; width:100%;">
+                </div>
+            </div>
             <img src="collages/banner.jpg" alt="PhotoBot" id="bannerImg" class="appearing show" style="width:100%;height:auto;border-radius:12px;">
             <div id="fluxInfoBlock">
                 <video id="fluxVideo" src="collages/flux_video.mp4" muted loop playsinline style="width:700px;max-width:100%;border-radius:12px;"></video>
@@ -279,7 +285,7 @@
         function toggleModeGroup(group) {
             const groups = ['flux', 'audio', 'text'];
             groups.forEach(g => { const div = document.getElementById('group-' + g); if (!div) return; if (g === group && currentGroup !== group) { div.style.maxHeight = g === 'flux' ? '600px' : '300px'; } else { div.style.maxHeight = '0'; } });
-            if (currentGroup === group) { currentGroup = null; document.querySelectorAll('#collages img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; }); const textInfo = document.getElementById('textModelsInfo'); if (textInfo) { textInfo.style.display = 'none'; textInfo.classList.remove('show'); } const fluxBlock = document.getElementById('fluxInfoBlock'); if (fluxBlock) { fluxBlock.style.display = 'none'; fluxBlock.classList.remove('show'); const fv = document.getElementById('fluxVideo'); if (fv) { fv.pause(); } } const banner = document.getElementById('bannerImg'); if (banner) { banner.style.display = 'block'; banner.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => banner.classList.add('show')); }); } document.getElementById('wallpaperSize').style.display = 'none'; }
+            if (currentGroup === group) { currentGroup = null; document.querySelectorAll('#collages img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; }); const textInfo = document.getElementById('textModelsInfo'); if (textInfo) { textInfo.style.display = 'none'; textInfo.classList.remove('show'); } const fluxBlock = document.getElementById('fluxInfoBlock'); if (fluxBlock) { fluxBlock.style.display = 'none'; fluxBlock.classList.remove('show'); const fv = document.getElementById('fluxVideo'); if (fv) { fv.pause(); } } const banner = document.getElementById('bannerImg'); if (banner) { banner.style.display = 'block'; banner.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => banner.classList.add('show')); }); } document.getElementById('wallpaperSize').style.display = 'none'; const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) audioBlock.style.display = 'none';}
             else { currentGroup = group; showCollagesForGroup(group); }
         }
         function showCollagesForGroup(group) {
@@ -289,7 +295,7 @@
             if (fluxBlock) { fluxBlock.style.display = 'none'; fluxBlock.classList.remove('show'); if (fluxVideo) { fluxVideo.pause(); } }
             if (banner) banner.style.display = 'block';
             if (group === 'flux') { if (banner) banner.style.display = 'none'; if (fluxBlock) { fluxBlock.style.display = 'flex'; requestAnimationFrame(() => { requestAnimationFrame(() => { fluxBlock.classList.add('show'); if (fluxVideo) fluxVideo.play(); }); }); } return; }
-            if (group === 'text' || group === 'audio') { if (banner) banner.style.display = 'none'; if (group === 'text' && textInfo) { textInfo.style.display = 'block'; requestAnimationFrame(() => { requestAnimationFrame(() => textInfo.classList.add('show')); }); } return; }
+            if (group === 'text' || group === 'audio') { if (banner) banner.style.display = 'none'; if (group === 'text' && textInfo) { textInfo.style.display = 'block'; requestAnimationFrame(() => { requestAnimationFrame(() => textInfo.classList.add('show')); }); } if (group === 'audio') { const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } } return; }
             if (banner) banner.style.display = 'none';
             const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'], flux: [], text: [], audio: [] };
             (modes[group] || []).forEach(m => { const img = collages.querySelector(`[data-mode="${m}"]`); if (img) { img.style.display = 'block'; img.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => img.classList.add('show')); }); } });
@@ -309,6 +315,24 @@
         function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); applyTranslations(); }
         function t(key) { return translations[currentLang] && translations[currentLang][key] ? translations[currentLang][key] : key; }
         function applyTranslations() { document.querySelectorAll('[data-t]').forEach(el => { const key = el.getAttribute('data-t'); if (el.placeholder !== undefined && el.tagName === 'TEXTAREA') { el.placeholder = t(key); } else if (el.tagName === 'INPUT' && el.type === 'text') { el.placeholder = t(key); } else { el.textContent = t(key); } }); document.title = t('title'); }
+        function loadAudioExamples() {
+            const container = document.getElementById('audioExamples');
+            if (!container || container.children.length > 0) return;
+            const examples = [
+                { emoji: '🎵', text: 'Энергичный трек', desc: 'Энергичная / Танцевальная' },
+                { emoji: '🎸', text: 'Инструментал', desc: 'Лупы / Стемы' },
+                { emoji: '🔊', text: 'Звуковой эффект', desc: 'SFX' },
+                { emoji: '💥', text: 'Ван-шот', desc: 'One-shot' }
+            ];
+            examples.forEach(ex => {
+                const card = document.createElement('div');
+                card.style.cssText = 'background:rgba(255,255,255,0.03); backdrop-filter:blur(20px); border-radius:16px; padding:20px; text-align:center; width:160px; cursor:pointer; transition:0.3s ease; border:1px solid rgba(255,255,255,0.06);';
+                card.innerHTML = `<div style="font-size:40px;margin-bottom:10px;">${ex.emoji}</div><div style="font-size:14px;font-weight:600;margin-bottom:6px;">${ex.text}</div><div style="font-size:11px;color:#888;">${ex.desc}</div>`;
+                card.onmouseenter = function() { this.style.background = 'rgba(255,255,255,0.06)'; this.style.transform = 'translateY(-4px)'; this.style.borderColor = 'rgba(0,203,245,0.3)'; };
+                card.onmouseleave = function() { this.style.background = 'rgba(255,255,255,0.03)'; this.style.transform = 'translateY(0)'; this.style.borderColor = 'rgba(255,255,255,0.06)'; };
+                container.appendChild(card);
+            });
+        }
         document.querySelectorAll('.actions button, .nav-btn, .mode-group-btn.active, .mode-sub-btn.selected').forEach(btn => {
             btn.addEventListener('mousemove', function(e) {
                 const rect = this.getBoundingClientRect();
