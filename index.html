@@ -484,27 +484,27 @@
                 const card = document.createElement('div');
                 card.style.cssText = 'display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:20px 24px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);width:100%;height:100px;position:relative;overflow:hidden;';
                 card.innerHTML = `
-                    <div class="eq-left" style="position:absolute;left:8px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:3px;width:30px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
+                    <div class="eq-left" style="position:absolute;left:14px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:4px;width:60px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
                     <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;z-index:1;">♫</div>
                     <div style="flex:1;min-width:0;z-index:1;">
                         <div style="font-size:14px;font-weight:600;margin-bottom:6px;">${ex.text}</div>
                         <div style="font-size:11px;color:#aaa;line-height:1.5;word-wrap:break-word;">${ex.desc}</div>
                     </div>
-                    <div class="eq-right" style="position:absolute;right:8px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;gap:3px;width:30px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
+                    <div class="eq-right" style="position:absolute;right:14px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;gap:4px;width:60px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
                 `;
                 const audio = new Audio('audio_demo/' + ex.src); audio.preload = 'none';
                 const leftBars = card.querySelector('.eq-left');
                 const rightBars = card.querySelector('.eq-right');
-                const bars = 8;
+                const bars = 10;
                 const widths = new Array(bars).fill(2);
                 const targets = new Array(bars).fill(2);
                 const velocities = new Array(bars).fill(0);
                 for (let i = 0; i < bars; i++) {
                     const l = document.createElement('div');
-                    l.style.cssText = 'height:3px;background:linear-gradient(to right,#F59E0B,rgba(245,158,11,0.2));border-radius:2px;width:2px;transition:width 0.4s cubic-bezier(0.25,0.1,0.25,1);';
+                    l.style.cssText = 'height:4px;background:linear-gradient(to right,#F59E0B,rgba(245,158,11,0.2));border-radius:3px;width:3px;transition:width 0.4s cubic-bezier(0.25,0.1,0.25,1);';
                     leftBars.appendChild(l);
                     const r = document.createElement('div');
-                    r.style.cssText = 'height:3px;background:linear-gradient(to left,#F59E0B,rgba(245,158,11,0.2));border-radius:2px;width:2px;transition:width 0.4s cubic-bezier(0.25,0.1,0.25,1);';
+                    r.style.cssText = 'height:4px;background:linear-gradient(to left,#F59E0B,rgba(245,158,11,0.2));border-radius:3px;width:3px;transition:width 0.4s cubic-bezier(0.25,0.1,0.25,1);';
                     rightBars.appendChild(r);
                 }
                 let interval = null;
@@ -512,7 +512,7 @@
                     const center = Math.floor(bars / 2);
                     for (let i = 0; i < bars; i++) {
                         const dist = Math.abs(i - center) / center;
-                        targets[i] = (1 - dist) * (Math.random() * 26 + 3) + dist * (Math.random() * 6 + 1);
+                        targets[i] = (1 - dist) * (Math.random() * 50 + 6) + dist * (Math.random() * 12 + 2);
                     }
                     function step() {
                         for (let i = 0; i < bars; i++) {
