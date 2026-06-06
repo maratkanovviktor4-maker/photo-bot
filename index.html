@@ -473,13 +473,13 @@
         function applyTranslations() { document.querySelectorAll('[data-t]').forEach(el => { const key = el.getAttribute('data-t'); if (el.placeholder !== undefined && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) { el.placeholder = t(key); } else { el.textContent = t(key); } }); document.title = t('title'); }
         async function loadAudioExamples() {
             const container = document.getElementById('audioExamples'); if (!container || container.children.length > 0) return;
-            container.style.cssText = 'display:flex;flex-direction:column;gap:16px;width:100%;';
+            container.style.cssText = 'display:flex;flex-direction:column;gap:16px;width:100%;align-items:center;';
             const files = ['demo_indie', 'demo_house', 'demo_rnb', 'demo_lastdance', 'demo5', 'demo6'];
             const examples = [];
             for (const f of files) { try { const resp = await fetch('audio_demo/' + f + '.txt'); const desc = resp.ok ? await resp.text() : ''; examples.push({ text: f.replace('demo_', '').replace('_', ' '), desc: desc.trim(), src: f + '.wav' }); } catch(e) {} }
             examples.forEach(ex => {
                 const card = document.createElement('div');
-                card.style.cssText = 'display:flex;align-items:flex-start;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:20px 24px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);width:100%;max-width:600px;';
+                card.style.cssText = 'display:flex;align-items:flex-start;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:20px 24px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);width:100%;max-width:600px;height:80px;';
                 card.innerHTML = `
                     <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">♫</div>
                     <div style="flex:1;min-width:0;">
