@@ -563,7 +563,7 @@
                     <div class="ace-wave-top" style="position:absolute;top:0;left:0;width:100%;height:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-start;justify-content:center;gap:5px;padding:24px 14px 0;"></div>
                     <div class="ace-wave-bottom" style="position:absolute;bottom:0;left:0;width:100%;height:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-end;justify-content:center;gap:5px;padding:0 14px 24px;"></div>
                     <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;z-index:1;">♫</div>
-                    <div style="font-size:8px;color:#aaa;line-height:1.6;text-align:center;width:100%;white-space:pre-wrap;z-index:1;position:relative;overflow-y:auto;max-height:100%;scrollbar-width:thin;scrollbar-color:rgba(245,158,11,0.5) transparent;" class="ace-text">${ex.desc}</div>
+                    <div class="ace-text" style="font-size:8px;color:#aaa;line-height:1.6;text-align:center;width:100%;white-space:pre-wrap;z-index:1;position:relative;overflow-y:auto;max-height:100%;scrollbar-width:thin;scrollbar-color:transparent transparent;transition:scrollbar-color 0.5s ease;">${ex.desc}</div>
                 `;
                 const audio = new Audio('audio_demo/' + ex.src); audio.preload = 'none';
                 const waveTop = card.querySelector('.ace-wave-top');
@@ -612,6 +612,7 @@
                     card.style.background = 'rgba(255,255,255,0.06)'; card.style.transform = 'translateY(-2px)'; card.style.borderColor = 'rgba(0,203,245,0.3)'; card.style.boxShadow = '0 8px 24px rgba(0,203,245,0.1)';
                     waveTop.style.opacity = '1';
                     waveBottom.style.opacity = '1';
+                    card.querySelector('.ace-text').style.scrollbarColor = 'rgba(245,158,11,0.5) transparent';
                     waveInterval = setInterval(animateWave, 250);
                     animateWave();
                 });
@@ -621,6 +622,7 @@
                     waveTop.style.opacity = '0';
                     waveBottom.style.opacity = '0';
                     if (waveInterval) clearInterval(waveInterval);
+                    card.querySelector('.ace-text').style.scrollbarColor = 'transparent transparent';
                     for (let i = 0; i < waveBars; i++) { waveHeightsTop[i] = 5; waveVelocitiesTop[i] = 0; waveTop.children[i].style.height = '5px'; waveHeightsBottom[i] = 5; waveVelocitiesBottom[i] = 0; waveBottom.children[i].style.height = '5px'; }
                 });
                 container.appendChild(card);
