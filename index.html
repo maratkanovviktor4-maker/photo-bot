@@ -473,69 +473,29 @@
         function applyTranslations() { document.querySelectorAll('[data-t]').forEach(el => { const key = el.getAttribute('data-t'); if (el.placeholder !== undefined && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) { el.placeholder = t(key); } else { el.textContent = t(key); } }); document.title = t('title'); }
         async function loadAudioExamples() {
             const container = document.getElementById('audioExamples'); if (!container || container.children.length > 0) return;
-            container.style.cssText = 'display:flex;flex-direction:row;gap:16px;width:100%;align-items:stretch;';
+            container.style.cssText = 'display:flex;flex-direction:column;gap:16px;width:100%;';
             const files = ['demo_indie', 'demo_house', 'demo_rnb', 'demo_lastdance', 'demo5', 'demo6'];
             const examples = [];
             for (const f of files) { try { const resp = await fetch('audio_demo/' + f + '.txt'); const desc = resp.ok ? await resp.text() : ''; examples.push({ text: f.replace('demo_', '').replace('_', ' '), desc: desc.trim(), src: f + '.wav' }); } catch(e) {} }
             examples.forEach(ex => {
                 const card = document.createElement('div');
-                card.style.cssText = 'display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:20px 24px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);flex:1;position:relative;overflow:hidden;';
+                card.style.cssText = 'display:flex;align-items:flex-start;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:20px 24px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);width:100%;max-width:600px;';
                 card.innerHTML = `
-                    <div class="eq-bars-top" style="position:absolute;top:8px;left:80px;right:16px;display:flex;align-items:flex-start;gap:3px;height:28px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
-                    <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;z-index:1;">♫</div>
-                    <div style="flex:1;min-width:0;z-index:1;">
+                    <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">♫</div>
+                    <div style="flex:1;min-width:0;">
                         <div style="font-size:14px;font-weight:600;margin-bottom:6px;">${ex.text}</div>
                         <div style="font-size:11px;color:#aaa;line-height:1.5;word-wrap:break-word;">${ex.desc}</div>
                     </div>
-                    <div class="eq-bars-bottom" style="position:absolute;bottom:8px;left:80px;right:16px;display:flex;align-items:flex-end;gap:3px;height:28px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
                 `;
                 const audio = new Audio('audio_demo/' + ex.src); audio.preload = 'none';
-                const barsTop = card.querySelector('.eq-bars-top');
-                const barsBottom = card.querySelector('.eq-bars-bottom');
-                const bars = 14;
-                const heights = new Array(bars).fill(3);
-                const targets = new Array(bars).fill(3);
-                const velocities = new Array(bars).fill(0);
-                for (let i = 0; i < bars; i++) {
-                    const barTop = document.createElement('div');
-                    barTop.style.cssText = `flex:1;background:linear-gradient(to bottom,#00CBF5,#14E9FC);border-radius:2px;height:${heights[i]}px;transition:height 0.35s cubic-bezier(0.25,0.1,0.25,1);`;
-                    barsTop.appendChild(barTop);
-                    const barBottom = document.createElement('div');
-                    barBottom.style.cssText = `flex:1;background:linear-gradient(to top,#00CBF5,#14E9FC);border-radius:2px;height:${heights[i]}px;transition:height 0.35s cubic-bezier(0.25,0.1,0.25,1);`;
-                    barsBottom.appendChild(barBottom);
-                }
-                let eqInterval = null;
-                function animateBars() {
-                    for (let i = 0; i < bars; i++) { targets[i] = Math.random() * 24 + 2; }
-                    function step() {
-                        for (let i = 0; i < bars; i++) {
-                            velocities[i] += (targets[i] - heights[i]) * 0.05;
-                            velocities[i] *= 0.8;
-                            heights[i] += velocities[i];
-                            const h = Math.max(2, heights[i]);
-                            barsTop.children[i].style.height = h + 'px';
-                            barsBottom.children[i].style.height = h + 'px';
-                        }
-                        if (eqInterval) requestAnimationFrame(step);
-                    }
-                    step();
-                }
                 card.addEventListener('mouseenter', function() {
                     document.querySelectorAll('#audioExamples audio').forEach(a => { a.pause(); a.currentTime = 0; });
                     audio.currentTime = 0; audio.play();
                     card.style.background = 'rgba(255,255,255,0.06)'; card.style.transform = 'translateY(-2px)'; card.style.borderColor = 'rgba(0,203,245,0.3)'; card.style.boxShadow = '0 8px 24px rgba(0,203,245,0.1)';
-                    barsTop.style.opacity = '0.15';
-                    barsBottom.style.opacity = '0.15';
-                    eqInterval = setInterval(animateBars, 200);
-                    animateBars();
                 });
                 card.addEventListener('mouseleave', function() {
                     audio.pause();
                     card.style.background = 'rgba(255,255,255,0.03)'; card.style.transform = 'translateY(0)'; card.style.borderColor = 'rgba(255,255,255,0.06)'; card.style.boxShadow = 'none';
-                    barsTop.style.opacity = '0';
-                    barsBottom.style.opacity = '0';
-                    if (eqInterval) clearInterval(eqInterval);
-                    for (let i = 0; i < bars; i++) { heights[i] = 3; velocities[i] = 0; barsTop.children[i].style.height = '3px'; barsBottom.children[i].style.height = '3px'; }
                 });
                 container.appendChild(card);
             });
