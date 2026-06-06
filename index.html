@@ -481,40 +481,50 @@
                 const card = document.createElement('div');
                 card.style.cssText = 'display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:20px 24px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);width:100%;height:100px;position:relative;overflow:hidden;';
                 card.innerHTML = `
-                    <div class="eq-left" style="position:absolute;left:8px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;gap:2px;width:10px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
+                    <div class="eq-top" style="position:absolute;top:0;left:0;width:100%;height:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-start;justify-content:center;gap:4px;padding:6px 12px 0;"></div>
                     <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;z-index:1;">♫</div>
                     <div style="flex:1;min-width:0;z-index:1;">
                         <div style="font-size:14px;font-weight:600;margin-bottom:6px;">${ex.text}</div>
                         <div style="font-size:11px;color:#aaa;line-height:1.5;word-wrap:break-word;">${ex.desc}</div>
                     </div>
-                    <div class="eq-right" style="position:absolute;right:8px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;gap:2px;width:10px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
+                    <div class="eq-bottom" style="position:absolute;bottom:0;left:0;width:100%;height:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-end;justify-content:center;gap:4px;padding:0 12px 6px;"></div>
                 `;
                 const audio = new Audio('audio_demo/' + ex.src); audio.preload = 'none';
-                const leftBars = card.querySelector('.eq-left');
-                const rightBars = card.querySelector('.eq-right');
-                const bars = 8;
-                const heights = new Array(bars).fill(2);
-                const targets = new Array(bars).fill(2);
-                const velocities = new Array(bars).fill(0);
+                const topBars = card.querySelector('.eq-top');
+                const bottomBars = card.querySelector('.eq-bottom');
+                const bars = 14;
+                const heightsTop = new Array(bars).fill(5);
+                const targetsTop = new Array(bars).fill(5);
+                const velocitiesTop = new Array(bars).fill(0);
+                const heightsBottom = new Array(bars).fill(5);
+                const targetsBottom = new Array(bars).fill(5);
+                const velocitiesBottom = new Array(bars).fill(0);
                 for (let i = 0; i < bars; i++) {
-                    const l = document.createElement('div');
-                    l.style.cssText = 'width:100%;background:linear-gradient(to right,#F59E0B,rgba(245,158,11,0.2));border-radius:2px;height:2px;transition:height 0.35s cubic-bezier(0.25,0.1,0.25,1);';
-                    leftBars.appendChild(l);
-                    const r = document.createElement('div');
-                    r.style.cssText = 'width:100%;background:linear-gradient(to left,#F59E0B,rgba(245,158,11,0.2));border-radius:2px;height:2px;transition:height 0.35s cubic-bezier(0.25,0.1,0.25,1);';
-                    rightBars.appendChild(r);
+                    const t = document.createElement('div');
+                    t.style.cssText = 'flex:1;background:linear-gradient(to bottom,#F59E0B,rgba(245,158,11,0.2));border-radius:3px;height:5px;transition:height 0.4s cubic-bezier(0.25,0.1,0.25,1);';
+                    topBars.appendChild(t);
+                    const b = document.createElement('div');
+                    b.style.cssText = 'flex:1;background:linear-gradient(to top,#F59E0B,rgba(245,158,11,0.2));border-radius:3px;height:5px;transition:height 0.4s cubic-bezier(0.25,0.1,0.25,1);';
+                    bottomBars.appendChild(b);
                 }
                 let interval = null;
                 function animate() {
-                    for (let i = 0; i < bars; i++) targets[i] = Math.random() * 80 + 4;
+                    const center = Math.floor(bars / 2);
+                    for (let i = 0; i < bars; i++) {
+                        const dist = Math.abs(i - center) / center;
+                        targetsTop[i] = (1 - dist) * (Math.random() * 50 + 8) + dist * (Math.random() * 12 + 3);
+                        targetsBottom[i] = targetsTop[i];
+                    }
                     function step() {
                         for (let i = 0; i < bars; i++) {
-                            velocities[i] += (targets[i] - heights[i]) * 0.05;
-                            velocities[i] *= 0.8;
-                            heights[i] += velocities[i];
-                            const h = Math.max(2, heights[i]);
-                            leftBars.children[i].style.height = h + '%';
-                            rightBars.children[i].style.height = h + '%';
+                            velocitiesTop[i] += (targetsTop[i] - heightsTop[i]) * 0.04;
+                            velocitiesTop[i] *= 0.78;
+                            heightsTop[i] += velocitiesTop[i];
+                            topBars.children[i].style.height = Math.max(3, heightsTop[i]) + 'px';
+                            velocitiesBottom[i] += (targetsBottom[i] - heightsBottom[i]) * 0.04;
+                            velocitiesBottom[i] *= 0.78;
+                            heightsBottom[i] += velocitiesBottom[i];
+                            bottomBars.children[i].style.height = Math.max(3, heightsBottom[i]) + 'px';
                         }
                         if (interval) requestAnimationFrame(step);
                     }
@@ -524,15 +534,15 @@
                     document.querySelectorAll('#audioExamples audio').forEach(a => { a.pause(); a.currentTime = 0; });
                     audio.currentTime = 0; audio.play();
                     card.style.background = 'rgba(255,255,255,0.06)'; card.style.transform = 'translateY(-2px)'; card.style.borderColor = 'rgba(0,203,245,0.3)'; card.style.boxShadow = '0 8px 24px rgba(0,203,245,0.1)';
-                    leftBars.style.opacity = '1'; rightBars.style.opacity = '1';
-                    interval = setInterval(animate, 200); animate();
+                    topBars.style.opacity = '1'; bottomBars.style.opacity = '1';
+                    interval = setInterval(animate, 250); animate();
                 });
                 card.addEventListener('mouseleave', function() {
                     audio.pause();
                     card.style.background = 'rgba(255,255,255,0.03)'; card.style.transform = 'translateY(0)'; card.style.borderColor = 'rgba(255,255,255,0.06)'; card.style.boxShadow = 'none';
-                    leftBars.style.opacity = '0'; rightBars.style.opacity = '0';
+                    topBars.style.opacity = '0'; bottomBars.style.opacity = '0';
                     if (interval) clearInterval(interval);
-                    for (let i = 0; i < bars; i++) { heights[i] = 2; velocities[i] = 0; leftBars.children[i].style.height = '2%'; rightBars.children[i].style.height = '2%'; }
+                    for (let i = 0; i < bars; i++) { heightsTop[i] = 5; velocitiesTop[i] = 0; topBars.children[i].style.height = '5px'; heightsBottom[i] = 5; velocitiesBottom[i] = 0; bottomBars.children[i].style.height = '5px'; }
                 });
                 container.appendChild(card);
             });
