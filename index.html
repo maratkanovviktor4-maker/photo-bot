@@ -120,6 +120,9 @@
         .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
         body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
         @media (max-width: 768px) { .container { flex-direction: column; align-items: center; padding: 12px; gap: 16px; } .collages { width: 100%; order: 1; display: flex; flex-direction: column; gap: 10px; } .collages img { width: 100%; max-width: 100%; } .center-panel { width: 100%; order: 2; } .free-chat-panel { width: 100%; height: 400px; position: static; } }
+        #aceExamples > div::-webkit-scrollbar { width: 4px; }
+        #aceExamples > div::-webkit-scrollbar-track { background: transparent; }
+        #aceExamples > div::-webkit-scrollbar-thumb { background: #F59E0B; border-radius: 2px; }
     </style>
 <script src="config.js"></script>
 </head>
@@ -555,7 +558,7 @@
             for (const f of files) { try { const resp = await fetch('audio_demo/' + f + '.txt'); const desc = resp.ok ? await resp.text() : ''; examples.push({ desc: desc.trim(), src: f + '.mp3' }); } catch(e) {} }
             examples.forEach(ex => {
                 const card = document.createElement('div');
-                card.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:24px 16px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);flex:1;position:relative;overflow:hidden;';
+                card.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:24px 16px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);flex:1;position:relative;overflow-y:auto;';
                 card.innerHTML = `
                     <div class="ace-wave-top" style="position:absolute;top:0;left:0;width:100%;height:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-start;justify-content:center;gap:5px;padding:24px 14px 0;"></div>
                     <div class="ace-wave-bottom" style="position:absolute;bottom:0;left:0;width:100%;height:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-end;justify-content:center;gap:5px;padding:0 14px 24px;"></div>
