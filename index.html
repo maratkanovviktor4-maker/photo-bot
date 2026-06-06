@@ -479,23 +479,60 @@
             for (const f of files) { try { const resp = await fetch('audio_demo/' + f + '.txt'); const desc = resp.ok ? await resp.text() : ''; examples.push({ text: f.replace('demo_', '').replace('_', ' '), desc: desc.trim(), src: f + '.wav' }); } catch(e) {} }
             examples.forEach(ex => {
                 const card = document.createElement('div');
-                card.style.cssText = 'display:flex;align-items:flex-start;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:20px 24px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);width:100%;height:100px;';
+                card.style.cssText = 'display:flex;align-items:flex-start;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:20px 24px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);width:100%;height:100px;position:relative;overflow:hidden;';
                 card.innerHTML = `
-                    <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">♫</div>
-                    <div style="flex:1;min-width:0;">
+                    <div class="eq-top" style="position:absolute;top:8px;left:80px;right:16px;display:flex;align-items:flex-start;gap:3px;height:24px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
+                    <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;z-index:1;">♫</div>
+                    <div style="flex:1;min-width:0;z-index:1;">
                         <div style="font-size:14px;font-weight:600;margin-bottom:6px;">${ex.text}</div>
                         <div style="font-size:11px;color:#aaa;line-height:1.5;word-wrap:break-word;">${ex.desc}</div>
                     </div>
+                    <div class="eq-bottom" style="position:absolute;bottom:8px;left:80px;right:16px;display:flex;align-items:flex-end;gap:3px;height:24px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
                 `;
                 const audio = new Audio('audio_demo/' + ex.src); audio.preload = 'none';
+                const topBars = card.querySelector('.eq-top');
+                const bottomBars = card.querySelector('.eq-bottom');
+                const bars = 12;
+                const heights = new Array(bars).fill(3);
+                const targets = new Array(bars).fill(3);
+                const velocities = new Array(bars).fill(0);
+                for (let i = 0; i < bars; i++) {
+                    const t = document.createElement('div');
+                    t.style.cssText = 'flex:1;background:linear-gradient(to bottom,#F59E0B,rgba(245,158,11,0.2));border-radius:2px;height:3px;transition:height 0.35s cubic-bezier(0.25,0.1,0.25,1);';
+                    topBars.appendChild(t);
+                    const b = document.createElement('div');
+                    b.style.cssText = 'flex:1;background:linear-gradient(to top,#F59E0B,rgba(245,158,11,0.2));border-radius:2px;height:3px;transition:height 0.35s cubic-bezier(0.25,0.1,0.25,1);';
+                    bottomBars.appendChild(b);
+                }
+                let interval = null;
+                function animate() {
+                    for (let i = 0; i < bars; i++) targets[i] = Math.random() * 20 + 2;
+                    function step() {
+                        for (let i = 0; i < bars; i++) {
+                            velocities[i] += (targets[i] - heights[i]) * 0.05;
+                            velocities[i] *= 0.8;
+                            heights[i] += velocities[i];
+                            const h = Math.max(2, heights[i]);
+                            topBars.children[i].style.height = h + 'px';
+                            bottomBars.children[i].style.height = h + 'px';
+                        }
+                        if (interval) requestAnimationFrame(step);
+                    }
+                    step();
+                }
                 card.addEventListener('mouseenter', function() {
                     document.querySelectorAll('#audioExamples audio').forEach(a => { a.pause(); a.currentTime = 0; });
                     audio.currentTime = 0; audio.play();
                     card.style.background = 'rgba(255,255,255,0.06)'; card.style.transform = 'translateY(-2px)'; card.style.borderColor = 'rgba(0,203,245,0.3)'; card.style.boxShadow = '0 8px 24px rgba(0,203,245,0.1)';
+                    topBars.style.opacity = '1'; bottomBars.style.opacity = '1';
+                    interval = setInterval(animate, 200); animate();
                 });
                 card.addEventListener('mouseleave', function() {
                     audio.pause();
                     card.style.background = 'rgba(255,255,255,0.03)'; card.style.transform = 'translateY(0)'; card.style.borderColor = 'rgba(255,255,255,0.06)'; card.style.boxShadow = 'none';
+                    topBars.style.opacity = '0'; bottomBars.style.opacity = '0';
+                    if (interval) clearInterval(interval);
+                    for (let i = 0; i < bars; i++) { heights[i] = 3; velocities[i] = 0; topBars.children[i].style.height = '3px'; bottomBars.children[i].style.height = '3px'; }
                 });
                 container.appendChild(card);
             });
