@@ -484,18 +484,18 @@
                 const card = document.createElement('div');
                 card.style.cssText = 'display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:20px 24px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);width:100%;height:100px;position:relative;overflow:hidden;';
                 card.innerHTML = `
-                    <div class="eq-left" style="position:absolute;left:0;top:0;bottom:0;width:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px;padding:6px 0;"></div>
+                    <div class="eq-left" style="position:absolute;left:8px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;gap:3px;width:30px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
                     <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;z-index:1;">♫</div>
                     <div style="flex:1;min-width:0;z-index:1;">
                         <div style="font-size:14px;font-weight:600;margin-bottom:6px;">${ex.text}</div>
                         <div style="font-size:11px;color:#aaa;line-height:1.5;word-wrap:break-word;">${ex.desc}</div>
                     </div>
-                    <div class="eq-right" style="position:absolute;right:0;top:0;bottom:0;width:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:6px 0;"></div>
+                    <div class="eq-right" style="position:absolute;right:8px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:3px;width:30px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
                 `;
                 const audio = new Audio('audio_demo/' + ex.src); audio.preload = 'none';
                 const leftBars = card.querySelector('.eq-left');
                 const rightBars = card.querySelector('.eq-right');
-                const bars = 10;
+                const bars = 8;
                 const widths = new Array(bars).fill(2);
                 const targets = new Array(bars).fill(2);
                 const velocities = new Array(bars).fill(0);
@@ -512,12 +512,12 @@
                     const center = Math.floor(bars / 2);
                     for (let i = 0; i < bars; i++) {
                         const dist = Math.abs(i - center) / center;
-                        targets[i] = (1 - dist) * (Math.random() * 30 + 4) + dist * (Math.random() * 8 + 2);
+                        targets[i] = (1 - dist) * (Math.random() * 26 + 3) + dist * (Math.random() * 6 + 1);
                     }
                     function step() {
                         for (let i = 0; i < bars; i++) {
-                            velocities[i] += (targets[i] - widths[i]) * 0.04;
-                            velocities[i] *= 0.78;
+                            velocities[i] += (targets[i] - widths[i]) * 0.05;
+                            velocities[i] *= 0.8;
                             widths[i] += velocities[i];
                             const w = Math.max(2, widths[i]);
                             leftBars.children[i].style.width = w + 'px';
