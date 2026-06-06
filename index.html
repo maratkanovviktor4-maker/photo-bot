@@ -473,41 +473,48 @@
         function applyTranslations() { document.querySelectorAll('[data-t]').forEach(el => { const key = el.getAttribute('data-t'); if (el.placeholder !== undefined && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) { el.placeholder = t(key); } else { el.textContent = t(key); } }); document.title = t('title'); }
         async function loadAudioExamples() {
             const container = document.getElementById('audioExamples'); if (!container || container.children.length > 0) return;
-            container.style.cssText = 'display:flex;flex-direction:column;gap:16px;width:100%;';
-            const files = ['demo_indie', 'demo_house', 'demo_rnb', 'demo_lastdance'];
+            container.style.cssText = 'display:flex;flex-direction:row;gap:16px;width:100%;align-items:stretch;';
+            const files = ['demo_indie', 'demo_house', 'demo_rnb', 'demo_lastdance', 'demo5', 'demo6'];
             const examples = [];
             for (const f of files) { try { const resp = await fetch('audio_demo/' + f + '.txt'); const desc = resp.ok ? await resp.text() : ''; examples.push({ text: f.replace('demo_', '').replace('_', ' '), desc: desc.trim(), src: f + '.wav' }); } catch(e) {} }
             examples.forEach(ex => {
                 const card = document.createElement('div');
-                card.style.cssText = 'display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:20px 24px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);width:100%;position:relative;overflow:hidden;';
+                card.style.cssText = 'display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:20px 24px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);flex:1;position:relative;overflow:hidden;';
                 card.innerHTML = `
+                    <div class="eq-bars-top" style="position:absolute;top:8px;left:80px;right:16px;display:flex;align-items:flex-start;gap:3px;height:28px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
                     <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;z-index:1;">♫</div>
                     <div style="flex:1;min-width:0;z-index:1;">
                         <div style="font-size:14px;font-weight:600;margin-bottom:6px;">${ex.text}</div>
                         <div style="font-size:11px;color:#aaa;line-height:1.5;word-wrap:break-word;">${ex.desc}</div>
                     </div>
-                    <div class="eq-bars" style="position:absolute;bottom:10px;left:80px;right:16px;display:flex;align-items:flex-end;gap:4px;height:36px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
+                    <div class="eq-bars-bottom" style="position:absolute;bottom:8px;left:80px;right:16px;display:flex;align-items:flex-end;gap:3px;height:28px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
                 `;
                 const audio = new Audio('audio_demo/' + ex.src); audio.preload = 'none';
-                const eqBars = card.querySelector('.eq-bars');
-                const bars = 16;
-                const heights = new Array(bars).fill(4);
-                const targets = new Array(bars).fill(4);
+                const barsTop = card.querySelector('.eq-bars-top');
+                const barsBottom = card.querySelector('.eq-bars-bottom');
+                const bars = 14;
+                const heights = new Array(bars).fill(3);
+                const targets = new Array(bars).fill(3);
                 const velocities = new Array(bars).fill(0);
                 for (let i = 0; i < bars; i++) {
-                    const bar = document.createElement('div');
-                    bar.style.cssText = `flex:1;background:linear-gradient(to top,#00CBF5,#14E9FC);border-radius:2px;height:${heights[i]}px;transition:height 0.35s cubic-bezier(0.25,0.1,0.25,1);`;
-                    eqBars.appendChild(bar);
+                    const barTop = document.createElement('div');
+                    barTop.style.cssText = `flex:1;background:linear-gradient(to bottom,#00CBF5,#14E9FC);border-radius:2px;height:${heights[i]}px;transition:height 0.35s cubic-bezier(0.25,0.1,0.25,1);`;
+                    barsTop.appendChild(barTop);
+                    const barBottom = document.createElement('div');
+                    barBottom.style.cssText = `flex:1;background:linear-gradient(to top,#00CBF5,#14E9FC);border-radius:2px;height:${heights[i]}px;transition:height 0.35s cubic-bezier(0.25,0.1,0.25,1);`;
+                    barsBottom.appendChild(barBottom);
                 }
                 let eqInterval = null;
                 function animateBars() {
-                    for (let i = 0; i < bars; i++) { targets[i] = Math.random() * 30 + 2; }
+                    for (let i = 0; i < bars; i++) { targets[i] = Math.random() * 24 + 2; }
                     function step() {
                         for (let i = 0; i < bars; i++) {
-                            velocities[i] += (targets[i] - heights[i]) * 0.04;
-                            velocities[i] *= 0.78;
+                            velocities[i] += (targets[i] - heights[i]) * 0.05;
+                            velocities[i] *= 0.8;
                             heights[i] += velocities[i];
-                            eqBars.children[i].style.height = Math.max(2, heights[i]) + 'px';
+                            const h = Math.max(2, heights[i]);
+                            barsTop.children[i].style.height = h + 'px';
+                            barsBottom.children[i].style.height = h + 'px';
                         }
                         if (eqInterval) requestAnimationFrame(step);
                     }
@@ -517,16 +524,18 @@
                     document.querySelectorAll('#audioExamples audio').forEach(a => { a.pause(); a.currentTime = 0; });
                     audio.currentTime = 0; audio.play();
                     card.style.background = 'rgba(255,255,255,0.06)'; card.style.transform = 'translateY(-2px)'; card.style.borderColor = 'rgba(0,203,245,0.3)'; card.style.boxShadow = '0 8px 24px rgba(0,203,245,0.1)';
-                    eqBars.style.opacity = '0.18';
+                    barsTop.style.opacity = '0.15';
+                    barsBottom.style.opacity = '0.15';
                     eqInterval = setInterval(animateBars, 200);
                     animateBars();
                 });
                 card.addEventListener('mouseleave', function() {
                     audio.pause();
                     card.style.background = 'rgba(255,255,255,0.03)'; card.style.transform = 'translateY(0)'; card.style.borderColor = 'rgba(255,255,255,0.06)'; card.style.boxShadow = 'none';
-                    eqBars.style.opacity = '0';
+                    barsTop.style.opacity = '0';
+                    barsBottom.style.opacity = '0';
                     if (eqInterval) clearInterval(eqInterval);
-                    for (let i = 0; i < bars; i++) { heights[i] = 4; velocities[i] = 0; eqBars.children[i].style.height = '4px'; }
+                    for (let i = 0; i < bars; i++) { heights[i] = 3; velocities[i] = 0; barsTop.children[i].style.height = '3px'; barsBottom.children[i].style.height = '3px'; }
                 });
                 container.appendChild(card);
             });
@@ -541,34 +550,47 @@
                 const card = document.createElement('div');
                 card.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:24px 16px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);flex:1;position:relative;overflow:hidden;';
                 card.innerHTML = `
-                    <div class="ace-wave" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-end;justify-content:center;gap:5px;padding:24px 14px;"></div>
+                    <div class="ace-wave-top" style="position:absolute;top:0;left:0;width:100%;height:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-start;justify-content:center;gap:5px;padding:24px 14px 0;"></div>
+                    <div class="ace-wave-bottom" style="position:absolute;bottom:0;left:0;width:100%;height:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-end;justify-content:center;gap:5px;padding:0 14px 24px;"></div>
                     <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;z-index:1;">♫</div>
                     <div style="font-size:11px;color:#aaa;line-height:1.6;text-align:center;width:100%;white-space:pre-wrap;z-index:1;position:relative;">${ex.desc}</div>
                 `;
                 const audio = new Audio('audio_demo/' + ex.src); audio.preload = 'none';
-                const waveDiv = card.querySelector('.ace-wave');
-                const waveBars = 14;
-                const waveHeights = new Array(waveBars).fill(6);
-                const waveTargets = new Array(waveBars).fill(6);
-                const waveVelocities = new Array(waveBars).fill(0);
+                const waveTop = card.querySelector('.ace-wave-top');
+                const waveBottom = card.querySelector('.ace-wave-bottom');
+                const waveBars = 10;
+                const waveHeightsTop = new Array(waveBars).fill(5);
+                const waveTargetsTop = new Array(waveBars).fill(5);
+                const waveVelocitiesTop = new Array(waveBars).fill(0);
+                const waveHeightsBottom = new Array(waveBars).fill(5);
+                const waveTargetsBottom = new Array(waveBars).fill(5);
+                const waveVelocitiesBottom = new Array(waveBars).fill(0);
                 for (let i = 0; i < waveBars; i++) {
-                    const bar = document.createElement('div');
-                    bar.style.cssText = `flex:1;background:linear-gradient(to top,rgba(245,158,11,0.5),rgba(245,158,11,0.1));border-radius:3px;height:${waveHeights[i]}px;transition:height 0.4s cubic-bezier(0.25,0.1,0.25,1);`;
-                    waveDiv.appendChild(bar);
+                    const barTop = document.createElement('div');
+                    barTop.style.cssText = `flex:1;background:linear-gradient(to bottom,rgba(245,158,11,0.5),rgba(245,158,11,0.1));border-radius:3px;height:${waveHeightsTop[i]}px;transition:height 0.4s cubic-bezier(0.25,0.1,0.25,1);`;
+                    waveTop.appendChild(barTop);
+                    const barBottom = document.createElement('div');
+                    barBottom.style.cssText = `flex:1;background:linear-gradient(to top,rgba(245,158,11,0.5),rgba(245,158,11,0.1));border-radius:3px;height:${waveHeightsBottom[i]}px;transition:height 0.4s cubic-bezier(0.25,0.1,0.25,1);`;
+                    waveBottom.appendChild(barBottom);
                 }
                 let waveInterval = null;
                 function animateWave() {
                     const center = Math.floor(waveBars / 2);
                     for (let i = 0; i < waveBars; i++) {
                         const dist = Math.abs(i - center) / center;
-                        waveTargets[i] = (1 - dist) * (Math.random() * 70 + 10) + dist * (Math.random() * 18 + 4);
+                        waveTargetsTop[i] = (1 - dist) * (Math.random() * 60 + 8) + dist * (Math.random() * 15 + 3);
+                        waveTargetsBottom[i] = waveTargetsTop[i];
                     }
                     function step() {
                         for (let i = 0; i < waveBars; i++) {
-                            waveVelocities[i] += (waveTargets[i] - waveHeights[i]) * 0.04;
-                            waveVelocities[i] *= 0.78;
-                            waveHeights[i] += waveVelocities[i];
-                            waveDiv.children[i].style.height = Math.max(3, waveHeights[i]) + 'px';
+                            waveVelocitiesTop[i] += (waveTargetsTop[i] - waveHeightsTop[i]) * 0.04;
+                            waveVelocitiesTop[i] *= 0.78;
+                            waveHeightsTop[i] += waveVelocitiesTop[i];
+                            waveTop.children[i].style.height = Math.max(3, waveHeightsTop[i]) + 'px';
+                            waveVelocitiesBottom[i] += (waveTargetsBottom[i] - waveHeightsBottom[i]) * 0.04;
+                            waveVelocitiesBottom[i] *= 0.78;
+                            waveHeightsBottom[i] += waveVelocitiesBottom[i];
+                            waveBottom.children[i].style.height = Math.max(3, waveHeightsBottom[i]) + 'px';
                         }
                         if (waveInterval) requestAnimationFrame(step);
                     }
@@ -578,16 +600,18 @@
                     document.querySelectorAll('#aceExamples audio').forEach(a => { a.pause(); a.currentTime = 0; });
                     audio.currentTime = 0; audio.play();
                     card.style.background = 'rgba(255,255,255,0.06)'; card.style.transform = 'translateY(-2px)'; card.style.borderColor = 'rgba(0,203,245,0.3)'; card.style.boxShadow = '0 8px 24px rgba(0,203,245,0.1)';
-                    waveDiv.style.opacity = '1';
+                    waveTop.style.opacity = '1';
+                    waveBottom.style.opacity = '1';
                     waveInterval = setInterval(animateWave, 250);
                     animateWave();
                 });
                 card.addEventListener('mouseleave', function() {
                     audio.pause();
                     card.style.background = 'rgba(255,255,255,0.03)'; card.style.transform = 'translateY(0)'; card.style.borderColor = 'rgba(255,255,255,0.06)'; card.style.boxShadow = 'none';
-                    waveDiv.style.opacity = '0';
+                    waveTop.style.opacity = '0';
+                    waveBottom.style.opacity = '0';
                     if (waveInterval) clearInterval(waveInterval);
-                    for (let i = 0; i < waveBars; i++) { waveHeights[i] = 6; waveVelocities[i] = 0; waveDiv.children[i].style.height = '6px'; }
+                    for (let i = 0; i < waveBars; i++) { waveHeightsTop[i] = 5; waveVelocitiesTop[i] = 0; waveTop.children[i].style.height = '5px'; waveHeightsBottom[i] = 5; waveVelocitiesBottom[i] = 0; waveBottom.children[i].style.height = '5px'; }
                 });
                 container.appendChild(card);
             });
