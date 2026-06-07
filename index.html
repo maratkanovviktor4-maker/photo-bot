@@ -31,6 +31,16 @@
         #audioInfoBlock { display: none; flex-direction: column; align-items: center; gap: 20px; padding: 20px 20px; width: 100%; }
         #audioExamples { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; width: 100%; }
         #aceInfoBlock { display: none; flex-direction: column; align-items: center; gap: 20px; padding: 20px 20px; width: 100%; height: 100%; }
+        #gemmaInfoBlock { display: none; flex-direction: column; align-items: center; gap: 20px; padding: 20px 20px; width: 100%; height: 100%; }
+        #gemmaChat { display: none; flex-direction: column; width: 100%; height: calc(100vh - 340px); }
+        #gemmaMessages { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+        #gemmaMessages .msg { padding: 10px 14px; border-radius: 12px; font-size: 12px; line-height: 1.5; max-width: 90%; word-break: break-word; }
+        #gemmaMessages .msg.user { background: rgba(0,203,245,0.15); align-self: flex-end; border: 1px solid rgba(0,203,245,0.2); }
+        #gemmaMessages .msg.assistant { background: rgba(34,34,34,0.6); align-self: flex-start; border: 1px solid rgba(255,255,255,0.06); }
+        #gemmaInputArea { display: flex; gap: 8px; padding: 10px 0; }
+        #gemmaInputArea textarea { flex: 1; padding: 10px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(34,34,34,0.6); color: #fff; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; resize: none; min-height: 52px; max-height: 104px; }
+        #gemmaInputArea textarea:focus { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
+        #gemmaInputArea button { padding: 10px 16px; background: linear-gradient(135deg, #00CBF5, #14E9FC); color: #1a1a2e; border: none; border-radius: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 14px; }
         .center-panel { width: 420px; min-width: 420px; flex-shrink: 0; }
         .header { display: flex; flex-direction: row; justify-content: center; gap: 20px; align-items: center; margin-bottom: 16px; }
         .header a { text-decoration: none; transition: 0.3s ease; }
@@ -59,11 +69,9 @@
         .ace-settings-row { display: none; gap: 6px; padding: 4px 0; flex-wrap: wrap; }
         .ace-settings-row .ace-field { flex: 1; min-width: 0; }
         .ace-settings-row .ace-field label { display: block; font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .ace-settings-row .ace-field input,
-        .ace-settings-row .ace-field select { width: 100%; padding: 7px 8px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); color: #fff; border-radius: 8px; font-size: 12px; font-family: 'Inter', sans-serif; outline: none; }
+        .ace-settings-row .ace-field input, .ace-settings-row .ace-field select { width: 100%; padding: 7px 8px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); color: #fff; border-radius: 8px; font-size: 12px; font-family: 'Inter', sans-serif; outline: none; }
         .ace-settings-row .ace-field select { cursor: pointer; }
-        .ace-settings-row .ace-field input:focus,
-        .ace-settings-row .ace-field select:focus { border-color: #00CBF5; box-shadow: 0 0 0 2px rgba(0,203,245,0.15); }
+        .ace-settings-row .ace-field input:focus, .ace-settings-row .ace-field select:focus { border-color: #00CBF5; box-shadow: 0 0 0 2px rgba(0,203,245,0.15); }
         #preview { width: 100%; max-height: 180px; object-fit: contain; margin: 8px 0; border-radius: 16px; display: none; }
         #status { text-align: center; color: #aaa; margin: 6px 0; font-size: 12px; }
         .actions { display: flex; gap: 8px; margin-top: 8px; }
@@ -78,10 +86,7 @@
         body.light #caption { background: #f0f0f0; color: #111; border-color: rgba(0,0,0,0.15); }
         body.light #lyrics { background: #f0f0f0; color: #111; border-color: rgba(0,0,0,0.15); }
         * { scrollbar-width: thin; scrollbar-color: #3a3a5a transparent; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #3a3a5a; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #4a4a6a; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #3a3a5a; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: #4a4a6a; }
         .hint { font-size: 10px; color: #888; margin: 3px 0 6px 0; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .size-btns { display: flex; gap: 6px; margin-top: 8px; }
         .size-btn { flex: 1; padding: 4px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); color: #fff; border-radius: 16px; cursor: pointer; font-size: 11px; text-align: center; font-family: 'Inter', sans-serif; font-weight: 500; transition: 0.3s ease; }
@@ -120,9 +125,7 @@
         .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
         body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
         @media (max-width: 768px) { .container { flex-direction: column; align-items: center; padding: 12px; gap: 16px; } .collages { width: 100%; order: 1; display: flex; flex-direction: column; gap: 10px; } .collages img { width: 100%; max-width: 100%; } .center-panel { width: 100%; order: 2; } .free-chat-panel { width: 100%; height: 400px; position: static; } }
-        #aceExamples > div::-webkit-scrollbar { width: 4px; }
-        #aceExamples > div::-webkit-scrollbar-track { background: transparent; }
-        #aceExamples > div::-webkit-scrollbar-thumb { background: #F59E0B; border-radius: 2px; }
+        #aceExamples > div::-webkit-scrollbar { width: 4px; } #aceExamples > div::-webkit-scrollbar-track { background: transparent; } #aceExamples > div::-webkit-scrollbar-thumb { background: #F59E0B; border-radius: 2px; }
     </style>
 <script src="config.js"></script>
 </head>
@@ -145,6 +148,20 @@
                 <div style="font-size:14px; color:#aaa; text-align:center; max-width:500px;">Генерация музыки с текстом песни. Свободный промт и опциональный текст песни (lyrics).</div>
                 <div id="aceExamples" style="display:flex; flex-wrap:wrap; gap:20px; justify-content:center; width:100%;"></div>
                 <div style="font-size:12px; color:#888; text-align:center; max-width:600px; line-height:1.6; margin-top:20px;">Ace Step 1.5 — мощная модель для генерации музыки с вокалом. Поддерживает текст песни, язык, тональность, BPM. Основана на архитектуре Ace Step 1.5 XL Turbo.</div>
+            </div>
+            <div id="gemmaInfoBlock" style="display:none; position:relative; flex-direction:column; align-items:center; gap:20px; padding:20px 20px; width:100%;">
+                <div style="font-size:24px; font-weight:700; letter-spacing:1px; text-align:center;">Gemma 4</div>
+                <div style="font-size:14px; color:#aaa; text-align:center; max-width:500px;">Анализ изображений, аудио и видео. Загрузите файл и получите текстовое описание.</div>
+                <div id="gemmaChat" style="display:flex; flex-direction:column; width:100%; height:calc(100vh - 340px);">
+                    <div id="gemmaMessages" style="flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:10px;"><div class="msg assistant">Загрузите файл для анализа</div></div>
+                    <div id="gemmaInputArea" style="display:flex; gap:8px; padding:10px 0;">
+                        <textarea id="gemmaPrompt" placeholder="Опишите что нужно сделать с файлом..."></textarea>
+                        <input type="file" id="gemmaFile" accept="image/*,audio/*,video/*" style="display:none;" onchange="handleGemmaFile(this)">
+                        <button onclick="document.getElementById('gemmaFile').click()" style="padding:10px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:10px;cursor:pointer;font-size:18px;">+</button>
+                        <button onclick="sendGemma()" style="padding:10px 16px;background:linear-gradient(135deg,#00CBF5,#14E9FC);color:#1a1a2e;border:none;border-radius:14px;font-weight:600;cursor:pointer;">➤</button>
+                    </div>
+                </div>
+                <div style="font-size:12px; color:#888; text-align:center; max-width:600px; line-height:1.6; margin-top:20px;">Gemma 4 — мультимодальная модель от Google. Понимает изображения, видео и аудио. Может описывать сцены, транскрибировать речь, анализировать видеоряд.</div>
             </div>
             <img src="collages/banner.jpg" alt="PhotoBot" id="bannerImg" class="appearing show" style="width:100%;height:auto;border-radius:12px;">
             <div id="fluxInfoBlock">
@@ -169,22 +186,19 @@
 
         <div class="center-panel">
             <div class="header">
-                <a href="index.html">
-                    <div class="logo-pb"><span class="p">P</span><span class="b">B</span></div>
-                    <div class="logo-sub"><span class="photo">Photo</span><span class="bot">Bot</span></div>
-                </a>
+                <a href="index.html"><div class="logo-pb"><span class="p">P</span><span class="b">B</span></div><div class="logo-sub"><span class="photo">Photo</span><span class="bot">Bot</span></div></a>
                 <div style="position:relative; display:flex; flex-direction:column; align-items:center; cursor:pointer;" onclick="toggleDeepSeekMenu()">
                     <img src="deepseek_logo.png" alt="DeepSeek" style="height:40px; margin-top:3px;">
                     <div id="deepseekMenu" style="display:none; position:absolute; top:calc(50% - 20px); left:calc(50% + 20px); transform:translate(-50%, -50%); background:rgba(26,26,46,0.9); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:6px; z-index:100; min-width:160px; box-shadow:0 12px 40px rgba(0,0,0,0.6);">
-                        <div style="color:#666; font-size:9px; padding:6px 12px 4px; text-transform:uppercase; letter-spacing:2px; opacity:0.8;" data-t="choose_model">Выберите модель</div>
-                        <a href="v4flash.html" style="display:flex; align-items:center; gap:8px; padding:8px 10px; color:#8B5CF6; text-decoration:none; font-size:12px; border-radius:10px; font-weight:500; transition:0.2s ease;" onmouseover="this.style.background='rgba(139,92,246,0.15)'" onmouseout="this.style.background='transparent'">V4 Flash <span style="font-size:9px;color:#555;margin-left:auto;">Fast</span></a>
-                        <a href="v4pro.html" style="display:flex; align-items:center; gap:8px; padding:8px 10px; color:#F59E0B; text-decoration:none; font-size:12px; border-radius:10px; font-weight:500; transition:0.2s ease;" onmouseover="this.style.background='rgba(245,158,11,0.15)'" onmouseout="this.style.background='transparent'">V4 Pro <span style="font-size:9px;color:#555;margin-left:auto;">Best</span></a>
+                        <div style="color:#666; font-size:9px; padding:6px 12px 4px; text-transform:uppercase; letter-spacing:2px; opacity:0.8;">Выберите модель</div>
+                        <a href="v4flash.html" style="display:flex; align-items:center; gap:8px; padding:8px 10px; color:#8B5CF6; text-decoration:none; font-size:12px; border-radius:10px; font-weight:500;">V4 Flash <span style="font-size:9px;color:#555;margin-left:auto;">Fast</span></a>
+                        <a href="v4pro.html" style="display:flex; align-items:center; gap:8px; padding:8px 10px; color:#F59E0B; text-decoration:none; font-size:12px; border-radius:10px; font-weight:500;">V4 Pro <span style="font-size:9px;color:#555;margin-left:auto;">Best</span></a>
                     </div>
                 </div>
             </div>
 
-            <button class="mode-btn" onclick="openBot()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:8px 0;background:linear-gradient(135deg,#00CBF5,#14E9FC);color:#201F28;margin-bottom:8px;font-weight:600;border-radius:16px;box-shadow:0 4px 16px rgba(0,203,245,0.3);transition:0.3s ease;" data-t="login">Войти через Telegram</button>
-            <div class="auth-block" id="authBlock"><div style="font-size:13px;color:#aaa;margin-bottom:8px;" data-t="auth_code">Введите код авторизации из бота</div><input type="text" id="authCode" maxlength="4" placeholder="0000" inputmode="numeric" pattern="[0-9]*"><button class="send-btn" id="sendBtn" disabled data-t="send">Отправить</button></div>
+            <button class="mode-btn" onclick="openBot()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:8px 0;background:linear-gradient(135deg,#00CBF5,#14E9FC);color:#201F28;margin-bottom:8px;font-weight:600;border-radius:16px;box-shadow:0 4px 16px rgba(0,203,245,0.3);" data-t="login">Войти через Telegram</button>
+            <div class="auth-block" id="authBlock"><div style="font-size:13px;color:#aaa;margin-bottom:8px;" data-t="auth_code">Введите код авторизации из бота</div><input type="text" id="authCode" maxlength="4" placeholder="0000"><button class="send-btn" id="sendBtn" disabled data-t="send">Отправить</button></div>
             <div class="auth-info" id="authInfo"><span data-t="auth_info">Вошли как</span> <span id="authName"></span></div>
             <div class="sub-block" id="subscribeBlock"><span data-t="subscribe_block">Подпишитесь на нас в <a href="https://t.me/PhotoDocumentsBot_bot" target="_blank">Telegram</a></span><br><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://t.me/PhotoDocumentsBot_bot" width="200" height="200" alt="QR-код"></div>
             <div class="sub-ok" id="subscribeOk" data-t="subscribe_ok">Вы подписаны</div>
@@ -246,14 +260,16 @@
                         <div class="ace-field"><label>Язык</label><select id="aceLanguage"><option value="ar">AR</option><option value="az">AZ</option><option value="bg">BG</option><option value="bn">BN</option><option value="ca">CA</option><option value="cs">CS</option><option value="da">DA</option><option value="de">DE</option><option value="el">EL</option><option value="en" selected>EN</option><option value="es">ES</option><option value="fa">FA</option><option value="fi">FI</option><option value="fr">FR</option><option value="he">HE</option><option value="hi">HI</option><option value="hr">HR</option><option value="ht">HT</option><option value="hu">HU</option><option value="id">ID</option><option value="is">IS</option><option value="it">IT</option><option value="ja">JA</option><option value="ko">KO</option><option value="la">LA</option><option value="lt">LT</option><option value="ms">MS</option><option value="ne">NE</option><option value="nl">NL</option><option value="no">NO</option><option value="pa">PA</option><option value="pl">PL</option><option value="pt">PT</option><option value="ro">RO</option><option value="ru">RU</option><option value="sa">SA</option><option value="sk">SK</option><option value="sr">SR</option><option value="sv">SV</option><option value="sw">SW</option><option value="ta">TA</option><option value="te">TE</option><option value="th">TH</option><option value="tl">TL</option><option value="tr">TR</option><option value="uk">UK</option><option value="ur">UR</option><option value="vi">VI</option><option value="yue">YUE</option><option value="zh">ZH</option><option value="unknown">UNKNOWN</option></select></div>
                     </div>
                 </div>
+                <button class="mode-group-btn" onclick="toggleModeGroup('gemma')" data-t="gemma_models">Gemma 4 <span style="font-size:9px;color:#aaa;" data-t="gemma_sub">Анализ медиа</span></button>
+                <div class="mode-sub-group" id="group-gemma" style="max-height:0;"></div>
                 <button class="mode-group-btn" onclick="toggleModeGroup('text')" data-t="text_models">Текстовые модели</button>
                 <div class="mode-sub-group" id="group-text" style="max-height:0;">
                     <button class="mode-sub-btn" onclick="window.location.href='v4flash.html'" data-t="v4flash">DeepSeek V4 Flash</button>
                     <button class="mode-sub-btn" onclick="window.location.href='v4pro.html'" data-t="v4pro">DeepSeek V4 Pro</button>
                 </div>
             </div>
-            <textarea id="caption" data-t="prompt_placeholder" placeholder="Введите промт здесь..." rows="2" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,130)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px';this._init=true;}"></textarea>
-            <textarea id="lyrics" data-t="lyrics_placeholder" placeholder="Текст песни (опционально)..." rows="2" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,130)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px';this._init=true;}"></textarea>
+            <textarea id="caption" data-t="prompt_placeholder" placeholder="Введите промт здесь..." rows="2" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,130)+'px';"></textarea>
+            <textarea id="lyrics" data-t="lyrics_placeholder" placeholder="Текст песни (опционально)..." rows="2"></textarea>
             <div class="hint" id="modeHint" data-t="hint">Выберите режим и укажите подпись</div>
             <button id="etalonBtn" class="mode-btn" style="display:none;text-align:center;color:#00CBF5;" onclick="useEtalon()" data-t="etalon">Использовать эталон</button>
             <input type="file" id="photoInput" accept="image/*">
@@ -270,11 +286,9 @@
 
         <div class="free-chat-panel" id="freeChatPanel">
             <div class="free-chat-header"><span data-t="chat_title">PhotoBot</span><br><span style="font-size:10px;color:#888;font-weight:400;" data-t="chat_subtitle">общая история с Вашим Ассистентом</span></div>
-            <div class="free-chat-messages" id="freeChatMessages">
-                <div class="free-chat-placeholder" data-t="chat_placeholder">Задайте вопрос о сервисе</div>
-            </div>
+            <div class="free-chat-messages" id="freeChatMessages"><div class="free-chat-placeholder" data-t="chat_placeholder">Задайте вопрос о сервисе</div></div>
             <div class="free-chat-input-area">
-                <textarea id="freeChatInput" data-t="chat_input" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFreeMessage();}" style="resize:none;min-height:52px;max-height:104px;overflow-y:auto;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,104)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,104)+'px';this._init=true;}"></textarea>
+                <textarea id="freeChatInput" data-t="chat_input" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFreeMessage();}"></textarea>
                 <button onclick="sendFreeMessage()">➤</button>
             </div>
         </div>
@@ -282,12 +296,13 @@
     <div id="cookie-banner"><span data-t="cookie">Мы используем необходимые cookie-файлы для авторизации и работы сервиса.</span><button onclick="acceptCookies()" data-t="cookie_btn">OK</button></div>
     <script>
         const translations = {
-            ru: { title: "PhotoBot — Фото на документы", login: "Войти через Telegram", auth_code: "Введите код авторизации из бота", send: "Отправить", auth_info: "Вошли как", subscribe_block: "Подпишитесь на нас в Telegram", subscribe_ok: "Вы подписаны", flux: "FLUX 2", flux_sub: "Black Forest Labs", flux_info: "FLUX.2 — второе поколение нейросетей для генерации и редактирования изображений от Black Forest Labs. 32 млрд параметров, фотореализм, точная работа с текстом, продвинутое удержание персонажей.", img2img: "Изображение в изображение", ready_modes: "Готовые режимы", documents: "Фото на документы", beach: "Закат на пляже", birthday: "День рождения", flowers: "Цветы в авто", mirror_male: "Мужское в зеркале", svoboda_f: "Свободный (ж)", svoboda_m: "Свободный (м)", text2img: "Текст в изображение", wallpaper: "Обои", audio_models: "Stable Audio 3", audio_sub: "Текст в музыку", music: "Музыка", music_energetic: "Энергичная / Танцевальная", music_poprock: "Поп / Рок", music_cinematic: "Кино / Эмбиент", instrument: "Инструментал", instrument_loops: "Лупы", instrument_stems: "Стемы", sfx: "Звуковые эффекты", sfx_short: "Короткие", sfx_medium: "Средние", sfx_ambience: "Атмосфера", oneshot: "Ван-шоты", ace_models: "Ace Step 1.5", ace_sub: "Текст в музыку + вокал", ace_free: "Свободный промт", text_models: "Текстовые модели", v4flash: "DeepSeek V4 Flash", v4pro: "DeepSeek V4 Pro", phone: "9:16", pc: "16:9", prompt_placeholder: "Введите промт здесь...", lyrics_placeholder: "Текст песни (опционально)...", hint: "Выберите режим и укажите подпись", etalon: "Использовать эталон", generate: "Сгенерировать", prompts: "База промтов", storage: "Хранилище генераций", agreement: "Пользовательское соглашение", privacy: "Политика конфиденциальности", chat_title: "PhotoBot", chat_subtitle: "общая история с Вашим Ассистентом", chat_placeholder: "Задайте вопрос о сервисе", chat_input: "Введите сообщение...", cookie: "Мы используем необходимые cookie-файлы для авторизации и работы сервиса.", cookie_btn: "OK", wallpaper_hint: "Обои: введите промт", documents_hint: "Фото на документы: укажите одежду (например: серая рубашка)", beach_hint: "Закат на пляже: укажите одежду (например: белое платье)", birthday_hint: "День рождения: укажите число и цвет платья (например: 23 красное)", flowers_hint: "Цветы в авто: укажите одежду (например: черное платье)", mirror_male_hint: "Мужское в зеркале: опишите одежду, очки, телефон", svoboda_hint: "Свободный (ж): введите промт", svoboda_male_hint: "Свободный (м): введите промт", audio_hint: "Опишите желаемую музыку, инструмент или звук", ace_hint: "Опишите желаемую музыку для Ace Step 1.5", flash_title: "DeepSeek V4 Flash", flash_desc: "Быстрая модель для кода, текстов, повседневных задач. Архитектура Mixture of Experts (236B параметров, 16B активных). Контекстное окно: 1M токенов, вывод до 384K токенов. Поддерживает режим Reasoner. Открытая лицензия MIT.", pro_title: "DeepSeek V4 Pro", pro_desc: "Флагманская модель для сложных проектов, анализа, больших задач. Архитектура Mixture of Experts (685B параметров, 37B активных). Контекстное окно: 1M токенов, вывод до 384K токенов. Встроенный режим Reasoner. Открытая лицензия MIT." },
-            en: { title: "PhotoBot — Photo for documents", choose_model: "Select model", login: "Log in with Telegram", auth_code: "Enter the authorization code from the bot", send: "Send", auth_info: "Logged in as", subscribe_block: "Subscribe to our Telegram", subscribe_ok: "You are subscribed", flux: "FLUX 2", flux_sub: "Black Forest Labs", flux_info: "FLUX.2 — second generation neural networks for image generation and editing by Black Forest Labs.", img2img: "Image to Image", ready_modes: "Ready Modes", documents: "ID Photo", beach: "Beach Sunset", birthday: "Birthday", flowers: "Flowers in Car", mirror_male: "Male Mirror Selfie", svoboda_f: "Free (F)", svoboda_m: "Free (M)", text2img: "Text to Image", wallpaper: "Wallpaper", audio_models: "Stable Audio 3", audio_sub: "Text to Music", music: "Music", music_energetic: "Energetic / Dance", music_poprock: "Pop / Rock", music_cinematic: "Cinematic / Ambient", instrument: "Instrument", instrument_loops: "Loops", instrument_stems: "Stems", sfx: "Sound Effects", sfx_short: "Short", sfx_medium: "Medium", sfx_ambience: "Ambience", oneshot: "One-shot", ace_models: "Ace Step 1.5", ace_sub: "Text to Music + Vocals", ace_free: "Free Prompt", text_models: "Text Models", v4flash: "DeepSeek V4 Flash", v4pro: "DeepSeek V4 Pro", phone: "9:16", pc: "16:9", prompt_placeholder: "Enter your prompt here...", lyrics_placeholder: "Lyrics (optional)...", hint: "Select mode and enter prompt", etalon: "Use Reference", generate: "Generate", prompts: "Prompt Library", storage: "Generation Storage", agreement: "User Agreement", privacy: "Privacy Policy", chat_title: "PhotoBot", chat_subtitle: "shared history with your Assistant", chat_placeholder: "Ask a question about the service", chat_input: "Type a message...", cookie: "We use essential cookies for authorization and service operation.", cookie_btn: "OK", wallpaper_hint: "Wallpaper: enter prompt", documents_hint: "ID Photo: specify clothing (e.g., gray shirt)", beach_hint: "Beach Sunset: specify clothing (e.g., white dress)", birthday_hint: "Birthday: enter age and dress color (e.g., 23 red)", flowers_hint: "Flowers in Car: specify clothing (e.g., black dress)", mirror_male_hint: "Mirror Selfie: describe clothes, glasses, phone", svoboda_hint: "Free (F): enter prompt", svoboda_male_hint: "Free (M): enter prompt", audio_hint: "Describe the music, instrument or sound you want", ace_hint: "Describe the music for Ace Step 1.5", flash_title: "DeepSeek V4 Flash", flash_desc: "Fast model for code, texts, everyday tasks. Mixture of Experts architecture (236B parameters, 16B active). Context window: 1M tokens, output up to 384K tokens. Supports Reasoner mode. Open MIT license.", pro_title: "DeepSeek V4 Pro", pro_desc: "Flagship model for complex projects, analysis, large tasks. Mixture of Experts architecture (685B parameters, 37B active). Context window: 1M tokens, output up to 384K tokens. Built-in Reasoner mode. Open MIT license." }
+            ru: { title: "PhotoBot — Фото на документы", login: "Войти через Telegram", auth_code: "Введите код авторизации из бота", send: "Отправить", auth_info: "Вошли как", subscribe_block: "Подпишитесь на нас в Telegram", subscribe_ok: "Вы подписаны", flux: "FLUX 2", flux_sub: "Black Forest Labs", img2img: "Изображение в изображение", ready_modes: "Готовые режимы", documents: "Фото на документы", beach: "Закат на пляже", birthday: "День рождения", flowers: "Цветы в авто", mirror_male: "Мужское в зеркале", svoboda_f: "Свободный (ж)", svoboda_m: "Свободный (м)", text2img: "Текст в изображение", wallpaper: "Обои", audio_models: "Stable Audio 3", audio_sub: "Текст в музыку", music: "Музыка", music_energetic: "Энергичная / Танцевальная", music_poprock: "Поп / Рок", music_cinematic: "Кино / Эмбиент", instrument: "Инструментал", instrument_loops: "Лупы", instrument_stems: "Стемы", sfx: "Звуковые эффекты", sfx_short: "Короткие", sfx_medium: "Средние", sfx_ambience: "Атмосфера", oneshot: "Ван-шоты", ace_models: "Ace Step 1.5", ace_sub: "Текст в музыку + вокал", gemma_models: "Gemma 4", gemma_sub: "Анализ медиа", text_models: "Текстовые модели", v4flash: "DeepSeek V4 Flash", v4pro: "DeepSeek V4 Pro", phone: "9:16", pc: "16:9", prompt_placeholder: "Введите промт здесь...", lyrics_placeholder: "Текст песни (опционально)...", hint: "Выберите режим и укажите подпись", etalon: "Использовать эталон", generate: "Сгенерировать", prompts: "База промтов", storage: "Хранилище генераций", agreement: "Пользовательское соглашение", privacy: "Политика конфиденциальности", chat_title: "PhotoBot", chat_subtitle: "общая история с Вашим Ассистентом", chat_placeholder: "Задайте вопрос о сервисе", chat_input: "Введите сообщение...", cookie: "Мы используем необходимые cookie-файлы для авторизации и работы сервиса.", cookie_btn: "OK" },
+            en: { title: "PhotoBot — Photo for documents", login: "Log in with Telegram", auth_code: "Enter the authorization code from the bot", send: "Send", auth_info: "Logged in as", subscribe_block: "Subscribe to our Telegram", subscribe_ok: "You are subscribed", flux: "FLUX 2", flux_sub: "Black Forest Labs", img2img: "Image to Image", ready_modes: "Ready Modes", documents: "ID Photo", beach: "Beach Sunset", birthday: "Birthday", flowers: "Flowers in Car", mirror_male: "Male Mirror Selfie", svoboda_f: "Free (F)", svoboda_m: "Free (M)", text2img: "Text to Image", wallpaper: "Wallpaper", audio_models: "Stable Audio 3", audio_sub: "Text to Music", music: "Music", music_energetic: "Energetic / Dance", music_poprock: "Pop / Rock", music_cinematic: "Cinematic / Ambient", instrument: "Instrument", instrument_loops: "Loops", instrument_stems: "Stems", sfx: "Sound Effects", sfx_short: "Short", sfx_medium: "Medium", sfx_ambience: "Ambience", oneshot: "One-shot", ace_models: "Ace Step 1.5", ace_sub: "Text to Music + Vocals", gemma_models: "Gemma 4", gemma_sub: "Media Analysis", text_models: "Text Models", v4flash: "DeepSeek V4 Flash", v4pro: "DeepSeek V4 Pro", phone: "9:16", pc: "16:9", prompt_placeholder: "Enter your prompt here...", lyrics_placeholder: "Lyrics (optional)...", hint: "Select mode and enter prompt", etalon: "Use Reference", generate: "Generate", prompts: "Prompt Library", storage: "Generation Storage", agreement: "User Agreement", privacy: "Privacy Policy", chat_title: "PhotoBot", chat_subtitle: "shared history with your Assistant", chat_placeholder: "Ask a question about the service", chat_input: "Type a message...", cookie: "We use essential cookies for authorization and service operation.", cookie_btn: "OK" }
         };
         const SERVER_URL = CONFIG.SERVER_URL;
         let selectedMode = "documents", uploadedFile = null, wallpaperSize = "pc", currentUserId = null, currentUsername = null, isSubscribed = false, sessionToken = '';
-        const hints = { documents: "Фото на документы: укажите одежду (например: серая рубашка)", beach: "Закат на пляже: укажите одежду (например: белое платье)", birthday: "День рождения: укажите число и цвет платья (например: 23 красное)", flowers: "Цветы в авто: укажите одежду (например: черное платье)", mirror_male: "Мужское в зеркале: опишите одежду, очки, телефон", svoboda: "Свободный (ж): введите промт", svoboda_male: "Свободный (м): введите промт", wallpaper: "Обои: введите промт", audio_music_energetic: "Музыка: энергичная / танцевальная — опишите жанр, инструменты, настроение", audio_music_poprock: "Музыка: поп / рок — опишите жанр, инструменты, настроение", audio_music_cinematic: "Музыка: кино / эмбиент — опишите жанр, инструменты, настроение", audio_instrument_loops: "Инструментал: лупы — опишите инструмент и стиль", audio_instrument_stems: "Инструментал: стемы — опишите инструмент и стиль", audio_sfx_short: "Звуковой эффект: короткий — опишите звук", audio_sfx_medium: "Звуковой эффект: средний — опишите звук", audio_sfx_ambience: "Звуковой эффект: атмосфера — опишите окружение", audio_oneshot: "Ван-шот: опишите инструмент или звук", ace_free: "Ace Step 1.5: опишите музыку (caption). Можно добавить текст песни (lyrics)." };
+        let gemmaFile = null;
+        const hints = { documents: "Фото на документы: укажите одежду", beach: "Закат на пляже: укажите одежду", birthday: "День рождения: укажите число и цвет платья", flowers: "Цветы в авто: укажите одежду", mirror_male: "Мужское в зеркале: опишите одежду", svoboda: "Свободный (ж): введите промт", svoboda_male: "Свободный (м): введите промт", wallpaper: "Обои: введите промт", audio_music_energetic: "Опишите музыку", audio_music_poprock: "Опишите музыку", audio_music_cinematic: "Опишите музыку", audio_instrument_loops: "Опишите инструмент", audio_instrument_stems: "Опишите инструмент", audio_sfx_short: "Опишите звук", audio_sfx_medium: "Опишите звук", audio_sfx_ambience: "Опишите окружение", audio_oneshot: "Опишите инструмент или звук", ace_free: "Опишите музыку. Можно добавить текст песни.", gemma_free: "Опишите что нужно сделать с файлом." };
         const wallpaperSizes = { phone: [1440, 2560], pc: [2560, 1440], sq256: [256, 256], sq512: [512, 512], sq1024: [1024, 1024] };
         let currentGroup = null;
         let currentLang = 'en';
@@ -307,24 +322,24 @@
         function toggleDeepSeekMenu() { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } else { menu.style.display = 'block'; menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; requestAnimationFrame(() => { menu.style.transition = 'opacity 0.15s, transform 0.15s'; menu.style.opacity = '1'; menu.style.transform = 'translateX(-50%) translateY(0)'; }); } }
         document.addEventListener('click', function(e) { if (!e.target.closest('[onclick="toggleDeepSeekMenu()"]')) { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } } });
         document.getElementById('authCode').addEventListener('input', function() { const b = document.getElementById('sendBtn'); if (this.value.length === 4) { b.classList.add('active'); b.disabled = false; b.style.cursor = 'pointer'; } else { b.classList.remove('active'); b.disabled = true; b.style.cursor = 'not-allowed'; } });
-        document.getElementById('sendBtn').addEventListener('click', async function() { const c = document.getElementById('authCode').value; if (c.length !== 4) return; try { const r = await fetch(`${SERVER_URL}/verify_code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: c }) }); const d = await r.json(); if (d.success) { currentUserId = d.user_id; currentUsername = d.username; isSubscribed = d.subscribed; sessionToken = d.session_token || ''; localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken })); showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); document.getElementById('authBlock').style.display = 'none'; if (isSubscribed) { document.getElementById('subscribeBlock').style.display = 'none'; document.getElementById('subscribeOk').style.display = 'block'; } else { document.getElementById('subscribeBlock').style.display = 'block'; } updateUnviewedCount(); } else { if (d.error === 'Not subscribed') { alert('Вы не подписаны на бота. Подпишитесь и попробуйте снова.'); } else { alert('Неверный код авторизации'); } } } catch (err) { document.getElementById('status').textContent = 'Ошибка соединения с сервером'; setTimeout(() => document.getElementById('status').textContent = '', 5000); } });
+        document.getElementById('sendBtn').addEventListener('click', async function() { const c = document.getElementById('authCode').value; if (c.length !== 4) return; try { const r = await fetch(`${SERVER_URL}/verify_code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: c }) }); const d = await r.json(); if (d.success) { currentUserId = d.user_id; currentUsername = d.username; isSubscribed = d.subscribed; sessionToken = d.session_token || ''; localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken })); showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); document.getElementById('authBlock').style.display = 'none'; if (isSubscribed) { document.getElementById('subscribeBlock').style.display = 'none'; document.getElementById('subscribeOk').style.display = 'block'; } else { document.getElementById('subscribeBlock').style.display = 'block'; } updateUnviewedCount(); } else { alert('Неверный код'); } } catch (err) { document.getElementById('status').textContent = 'Ошибка соединения'; } });
         function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; loadFreeChatHistory(); }
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
         function toggleFluxSubgroup(sub) { const div = document.getElementById('group-' + sub); if (!div) return; if (div.style.maxHeight === '300px') { div.style.maxHeight = '0'; } else { div.style.maxHeight = '300px'; showCollagesForGroup(sub); } }
         function toggleReadySubgroup() { const inner = document.getElementById('group-ready-inner'); const freeGroup = document.getElementById('group-free'); if (inner.style.maxHeight === '300px') { inner.style.maxHeight = '0'; freeGroup.style.maxHeight = '300px'; } else { inner.style.maxHeight = '300px'; freeGroup.style.maxHeight = '600px'; showCollagesForGroup('ready'); } }
         function toggleModeGroup(group) {
-            const groups = ['flux', 'audio', 'ace', 'text'];
+            const groups = ['flux', 'audio', 'ace', 'gemma', 'text'];
             groups.forEach(g => { const div = document.getElementById('group-' + g); if (!div) return; if (g === group && currentGroup !== group) { div.style.maxHeight = g === 'flux' ? '600px' : '300px'; } else { div.style.maxHeight = '0'; } });
             if (currentGroup === group) {
                 currentGroup = null;
                 document.querySelectorAll('#collages img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; });
-                const textInfo = document.getElementById('textModelsInfo'); if (textInfo) { textInfo.style.display = 'none'; textInfo.classList.remove('show'); }
-                const fluxBlock = document.getElementById('fluxInfoBlock'); if (fluxBlock) { fluxBlock.style.display = 'none'; fluxBlock.classList.remove('show'); const fv = document.getElementById('fluxVideo'); if (fv) { fv.pause(); } }
-                const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) audioBlock.style.display = 'none';
-                const aceBlock = document.getElementById('aceInfoBlock'); if (aceBlock) aceBlock.style.display = 'none';
+                const blocks = ['textModelsInfo','fluxInfoBlock','audioInfoBlock','aceInfoBlock','gemmaInfoBlock'];
+                blocks.forEach(id => { const el = document.getElementById(id); if (el) { el.style.display = 'none'; if (el.classList) el.classList.remove('show'); } });
+                const fv = document.getElementById('fluxVideo'); if (fv) fv.pause();
                 const banner = document.getElementById('bannerImg'); if (banner) { banner.style.display = 'block'; banner.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => banner.classList.add('show')); }); }
                 document.getElementById('wallpaperSize').style.display = 'none';
                 document.getElementById('aceSettings').style.display = 'none';
+                document.getElementById('gemmaChat').style.display = 'none';
             } else {
                 currentGroup = group;
                 showCollagesForGroup(group);
@@ -334,72 +349,106 @@
             const collages = document.getElementById('collages'), textInfo = document.getElementById('textModelsInfo'), fluxBlock = document.getElementById('fluxInfoBlock'), fluxVideo = document.getElementById('fluxVideo'), banner = document.getElementById('bannerImg');
             collages.querySelectorAll('img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; });
             if (textInfo) { textInfo.style.display = 'none'; textInfo.classList.remove('show'); }
-            if (fluxBlock) { fluxBlock.style.display = 'none'; fluxBlock.classList.remove('show'); if (fluxVideo) { fluxVideo.pause(); } }
+            if (fluxBlock) { fluxBlock.style.display = 'none'; fluxBlock.classList.remove('show'); if (fluxVideo) fluxVideo.pause(); }
             const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) audioBlock.style.display = 'none';
             const aceBlock = document.getElementById('aceInfoBlock'); if (aceBlock) aceBlock.style.display = 'none';
+            const gemmaBlock = document.getElementById('gemmaInfoBlock'); if (gemmaBlock) gemmaBlock.style.display = 'none';
+            document.getElementById('gemmaChat').style.display = 'none';
+            document.getElementById('aceSettings').style.display = 'none';
             if (banner) banner.style.display = 'none';
             if (group === 'flux') { if (fluxBlock) { fluxBlock.style.display = 'flex'; requestAnimationFrame(() => { requestAnimationFrame(() => { fluxBlock.classList.add('show'); if (fluxVideo) fluxVideo.play(); }); }); } return; }
             if (group === 'text') { if (textInfo) { textInfo.style.display = 'block'; requestAnimationFrame(() => { requestAnimationFrame(() => textInfo.classList.add('show')); }); } return; }
             if (group === 'audio') { if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } return; }
             if (group === 'ace') { if (aceBlock) { aceBlock.style.display = 'flex'; loadAceExamples(); } selectMode('ace_free'); return; }
-            const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'], flux: [], text: [], audio: [], ace: [] };
-            (modes[group] || []).forEach(m => {
-                const img = collages.querySelector('[data-mode="' + m + '"]');
-                if (img) { img.style.display = 'block'; img.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => img.classList.add('show')); }); }
-            });
+            if (group === 'gemma') { if (gemmaBlock) { gemmaBlock.style.display = 'flex'; } document.getElementById('gemmaChat').style.display = 'flex'; selectMode('gemma_free'); return; }
+            const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'], flux: [], text: [], audio: [], ace: [], gemma: [] };
+            (modes[group] || []).forEach(m => { const img = collages.querySelector('[data-mode="' + m + '"]'); if (img) { img.style.display = 'block'; img.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => img.classList.add('show')); }); } });
         }
-        document.querySelectorAll(".mode-sub-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected")); this.classList.add("selected"); selectMode(this.dataset.mode); document.querySelectorAll('#collages img[data-mode]').forEach(img => img.style.borderColor = 'transparent'); const img = document.querySelector(`#collages img[data-mode="${this.dataset.mode}"]`); if (img) img.style.borderColor = '#00CBF5'; }); });
+        document.querySelectorAll(".mode-sub-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected")); this.classList.add("selected"); selectMode(this.dataset.mode); }); });
         document.querySelectorAll("#collages img").forEach(img => { img.addEventListener("click", function() { selectMode(this.dataset.mode); document.querySelectorAll('#collages img[data-mode]').forEach(i => i.style.borderColor = 'transparent'); this.style.borderColor = '#00CBF5'; }); });
         document.querySelectorAll(".size-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".size-btn").forEach(b => b.classList.remove("active")); this.classList.add("active"); wallpaperSize = this.dataset.wp; }); });
         function selectMode(mode) {
             selectedMode = mode;
             document.getElementById("modeHint").textContent = hints[mode] || hints.documents;
             document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected"));
-            const btn = document.querySelector(`.mode-sub-btn[data-mode="${mode}"]`);
-            if (btn) btn.classList.add("selected");
             document.getElementById("wallpaperSize").style.display = "none";
             document.getElementById("logoSize").style.display = "none";
             document.getElementById("photoInput").style.display = "block";
             document.getElementById("lyrics").style.display = "none";
             document.getElementById("audioDurationBlock").style.display = "none";
             document.getElementById("aceSettings").style.display = "none";
+            document.getElementById("gemmaChat").style.display = "none";
             if (mode === "wallpaper") { document.getElementById("wallpaperSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; }
             if (mode === "logo") { document.getElementById("logoSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; wallpaperSize = "sq256"; }
-            if (mode && mode.startsWith("audio_")) { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("audioDurationBlock").style.display = "block"; const defaultDurations = { "audio_music_energetic": 150, "audio_music_poprock": 195, "audio_music_cinematic": 270, "audio_instrument_loops": 13, "audio_instrument_stems": 100, "audio_sfx_short": 2, "audio_sfx_medium": 4, "audio_sfx_ambience": 10, "audio_oneshot": 6 }; const def = defaultDurations[mode] || 180; document.getElementById("audioDuration").placeholder = def; document.getElementById("audioDuration").value = ""; }
+            if (mode && mode.startsWith("audio_")) { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("audioDurationBlock").style.display = "block"; }
             if (mode === "ace_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("lyrics").style.display = "block"; document.getElementById("aceSettings").style.display = "flex"; }
+            if (mode === "gemma_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("gemmaChat").style.display = "flex"; }
         }
-        async function checkSubscription() { if (!currentUserId) return; try { const r = await fetch(`${SERVER_URL}/check_subscription`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserId }) }); const d = await r.json(); isSubscribed = d.subscribed; if (isSubscribed) { document.getElementById("subscribeBlock").style.display = "none"; document.getElementById("subscribeOk").style.display = "block"; } else { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; } } catch (err) { document.getElementById('status').textContent = 'Ошибка проверки подписки'; setTimeout(() => document.getElementById('status').textContent = '', 5000); } }
+        async function checkSubscription() { if (!currentUserId) return; try { const r = await fetch(`${SERVER_URL}/check_subscription`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserId }) }); const d = await r.json(); isSubscribed = d.subscribed; if (isSubscribed) { document.getElementById("subscribeBlock").style.display = "none"; document.getElementById("subscribeOk").style.display = "block"; } else { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; } } catch (err) { document.getElementById('status').textContent = 'Ошибка'; } }
         document.getElementById("photoInput").addEventListener("change", function(e) { const file = e.target.files[0]; if (file) { uploadedFile = file; const reader = new FileReader(); reader.onload = function(ev) { document.getElementById("preview").src = ev.target.result; document.getElementById("preview").style.display = "block"; }; reader.readAsDataURL(file); } });
         document.getElementById("aceDuration").addEventListener("input", function() { if (parseInt(this.value) > 180) this.value = 180; if (parseInt(this.value) < 1) this.value = 1; });
+        function handleGemmaFile(input) { if (input.files[0]) { gemmaFile = input.files[0]; document.getElementById('gemmaMessages').innerHTML += '<div class="msg user">Файл: ' + gemmaFile.name + '</div>'; } }
+        async function sendGemma() {
+            if (!currentUserId) { document.getElementById('authBlock').style.display = 'block'; return; }
+            if (!gemmaFile) { alert('Выберите файл'); return; }
+            const prompt = document.getElementById('gemmaPrompt').value || 'Describe this in detail.';
+            const formData = new FormData();
+            formData.append('file', gemmaFile);
+            formData.append('prompt', prompt);
+            formData.append('user_id', currentUserId);
+            if (sessionToken) formData.append('session_token', sessionToken);
+            try {
+                const accessResp = await fetch(`${SERVER_URL}/check_gemma_access?user_id=${currentUserId}&session_token=${sessionToken}`);
+                if (!accessResp.ok || !(await accessResp.json()).allowed) { document.getElementById('status').textContent = 'Требуется подписка Gemma 4'; return; }
+                document.getElementById('status').textContent = 'Отправка...';
+                const resp = await fetch(`${SERVER_URL}/enqueue_gemma`, { method: "POST", body: formData, headers: { "X-Session-Token": sessionToken } });
+                if (!resp.ok) { const err = await resp.json().catch(()=>({})); document.getElementById('status').textContent = err.error || 'Ошибка'; return; }
+                const data = await resp.json();
+                if (data.job_id) {
+                    document.getElementById('status').textContent = 'Обработка...';
+                    document.getElementById('gemmaMessages').innerHTML += '<div class="msg user">' + prompt + '</div>';
+                    const loaderMsg = document.createElement('div'); loaderMsg.className = 'msg assistant'; loaderMsg.textContent = '...'; document.getElementById('gemmaMessages').appendChild(loaderMsg);
+                    for (let i = 0; i < 180; i++) {
+                        await new Promise(r => setTimeout(r, 2000));
+                        const pendResp = await fetch(`${SERVER_URL}/pending_gemma?user_id=${currentUserId}&session_token=${sessionToken}`);
+                        if (pendResp.ok) {
+                            const pendData = await pendResp.json();
+                            if (pendData.results && pendData.results.length > 0) {
+                                loaderMsg.textContent = pendData.results[0].result;
+                                document.getElementById('status').textContent = 'Готово!';
+                                document.getElementById('gemmaMessages').scrollTop = document.getElementById('gemmaMessages').scrollHeight;
+                                return;
+                            }
+                        }
+                    }
+                    loaderMsg.textContent = 'Время ожидания истекло.';
+                }
+            } catch (e) { document.getElementById('status').textContent = 'Ошибка соединения'; }
+        }
         async function startGeneration() {
             if (!currentUserId) { document.getElementById('authBlock').style.display = 'block'; return; }
             if (selectedMode === "ace_free") {
                 try {
                     const accessResp = await fetch(`${SERVER_URL}/check_ace_access?user_id=${currentUserId}&session_token=${sessionToken}`);
-                    if (!accessResp.ok) { document.getElementById("status").textContent = 'Ошибка проверки доступа'; return; }
-                    const accessData = await accessResp.json();
-                    if (!accessData.allowed) { document.getElementById("status").textContent = "Требуется подписка Ace Step 1.5"; return; }
-                    await runGeneration();
-                } catch (err) { document.getElementById("status").textContent = 'Ошибка соединения.'; }
-                return;
+                    if (!accessResp.ok) return;
+                    if (!(await accessResp.json()).allowed) { document.getElementById("status").textContent = "Требуется подписка Ace Step 1.5"; return; }
+                } catch (err) {}
             }
             if (selectedMode && selectedMode.startsWith("audio_")) {
                 try {
                     const accessResp = await fetch(`${SERVER_URL}/check_audio_access?user_id=${currentUserId}&session_token=${sessionToken}`);
-                    if (!accessResp.ok) { document.getElementById("status").textContent = 'Ошибка проверки доступа'; return; }
-                    const accessData = await accessResp.json();
-                    if (!accessData.allowed) { document.getElementById("status").textContent = "Требуется подписка Stable Audio 3"; return; }
-                    await runGeneration();
-                } catch (err) { document.getElementById("status").textContent = 'Ошибка соединения.'; }
-                return;
+                    if (!accessResp.ok) return;
+                    if (!(await accessResp.json()).allowed) { document.getElementById("status").textContent = "Требуется подписка Stable Audio 3"; return; }
+                } catch (err) {}
             }
-            try {
-                const accessResp = await fetch(`${SERVER_URL}/check_generation_access?user_id=${currentUserId}`);
-                if (!accessResp.ok) { document.getElementById("status").textContent = 'Ошибка проверки доступа'; return; }
-                const accessData = await accessResp.json();
-                if (!accessData.allowed) { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; document.getElementById("status").textContent = "Бесплатные генерации закончились. Нужна подписка."; return; }
-                await runGeneration();
-            } catch (err) { document.getElementById("status").textContent = 'Ошибка соединения. Проверьте интернет.'; }
+            if (selectedMode !== "ace_free" && selectedMode !== "gemma_free" && !(selectedMode && selectedMode.startsWith("audio_"))) {
+                try {
+                    const accessResp = await fetch(`${SERVER_URL}/check_generation_access?user_id=${currentUserId}`);
+                    if (!accessResp.ok) return;
+                    if (!(await accessResp.json()).allowed) { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("status").textContent = "Бесплатные генерации закончились."; return; }
+                } catch (err) {}
+            }
+            await runGeneration();
         }
         async function runGeneration() {
             const genBtn = document.getElementById("generate");
@@ -415,15 +464,14 @@
                     formData.append("source", "web");
                     if (sessionToken) formData.append("session_token", sessionToken);
                     let dur = parseInt(document.getElementById("aceDuration").value) || 30;
-                    if (dur < 1) dur = 30;
-                    if (dur > 180) dur = 180;
+                    if (dur < 1) dur = 30; if (dur > 180) dur = 180;
                     formData.append("duration", dur);
                     formData.append("bpm", parseInt(document.getElementById("aceBpm").value) || 95);
                     formData.append("keyscale", document.getElementById("aceKeyscale").value || "E minor");
                     formData.append("language", document.getElementById("aceLanguage").value || "en");
                     document.getElementById("status").textContent = "Генерация музыки Ace Step...";
                     const resp = await fetch(`${SERVER_URL}/enqueue_ace_audio`, { method: "POST", body: formData, headers: { "X-Session-Token": sessionToken } });
-                    if (!resp.ok) { const errData = await resp.json().catch(() => ({})); document.getElementById("status").textContent = errData.error || 'Ошибка сервера'; genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
+                    if (!resp.ok) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
                     const data = await resp.json();
                     if (data.job_id) {
                         document.getElementById("status").textContent = "Добавлено в очередь...";
@@ -432,23 +480,21 @@
                             const pendResp = await fetch(`${SERVER_URL}/pending_ace_audio?user_id=${currentUserId}&session_token=${sessionToken}`);
                             if (pendResp.ok) { const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { document.getElementById("status").textContent = "Готово! Аудио в Хранилище."; updateUnviewedCount(); genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; } }
                         }
-                        document.getElementById("status").textContent = "Время ожидания истекло.";
                     }
                 } else if (selectedMode && selectedMode.startsWith("audio_")) {
                     const formData = new FormData();
                     formData.append("mode", selectedMode); formData.append("caption", caption || "lo-fi hip hop beat"); formData.append("user_id", currentUserId); formData.append("source", "web");
                     if (sessionToken) formData.append("session_token", sessionToken);
-                    const durInput = document.getElementById("audioDuration"); if (durInput && durInput.value) { const dur = parseInt(durInput.value); if (!isNaN(dur)) formData.append("duration", dur); }
+                    const durInput = document.getElementById("audioDuration"); if (durInput && durInput.value) formData.append("duration", parseInt(durInput.value));
                     document.getElementById("status").textContent = "Генерация музыки...";
                     const resp = await fetch(`${SERVER_URL}/enqueue_audio`, { method: "POST", body: formData, headers: { "X-Session-Token": sessionToken } });
-                    if (!resp.ok) { document.getElementById("status").textContent = 'Ошибка сервера'; genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
+                    if (!resp.ok) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
                     const data = await resp.json();
                     if (data.job_id) {
                         document.getElementById("status").textContent = "Добавлено в очередь...";
                         for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); const pendResp = await fetch(`${SERVER_URL}/pending_audio?user_id=${currentUserId}&session_token=${sessionToken}`); if (pendResp.ok) { const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { document.getElementById("status").textContent = "Готово! Аудио в Хранилище."; updateUnviewedCount(); genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; } } }
-                        document.getElementById("status").textContent = "Время ожидания истекло.";
                     }
-                } else {
+                } else if (selectedMode !== "gemma_free") {
                     if (selectedMode !== "wallpaper" && selectedMode !== "logo" && !uploadedFile) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
                     const formData = new FormData();
                     if (uploadedFile) formData.append("image", uploadedFile);
@@ -456,21 +502,21 @@
                     if (sessionToken) formData.append("session_token", sessionToken);
                     document.getElementById("status").textContent = "Добавлено в очередь...";
                     const enqResp = await fetch(`${SERVER_URL}/enqueue`, { method: "POST", body: formData, headers: { "X-Session-Token": sessionToken } });
-                    if (!enqResp.ok) { document.getElementById("status").textContent = 'Ошибка сервера. Попробуйте позже.'; genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
+                    if (!enqResp.ok) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
                     const enqData = await enqResp.json();
-                    if (!enqData.job_id) { document.getElementById("status").textContent = "Ошибка очереди."; genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
+                    if (!enqData.job_id) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
                     document.getElementById("status").textContent = "Ожидание генерации...";
                     let found = false;
-                    for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); try { const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); if (pendResp.status === 403) { document.getElementById("status").textContent = 'Сессия устарела. Авторизуйтесь заново.'; genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; } if (!pendResp.ok) continue; const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { document.getElementById("status").textContent = "Готово! Фото в Хранилище генераций."; updateUnviewedCount(); found = true; break; } } catch(err) { } }
+                    for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); try { const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); if (pendResp.ok) { const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { document.getElementById("status").textContent = "Готово! Фото в Хранилище."; updateUnviewedCount(); found = true; break; } } } catch(err) {} }
                     if (!found) { document.getElementById("status").textContent = "Время ожидания истекло."; }
                 }
             } catch (err) { document.getElementById("status").textContent = 'Ошибка: ' + err.message; }
             genBtn.disabled = false; genBtn.textContent = "Сгенерировать";
         }
         async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); if (resp.ok) { const data = await resp.json(); if (data.has_etalon) document.getElementById('etalonBtn').style.display = 'block'; } } catch (err) {} }
-        async function useEtalon() { try { const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`); if (!resp.ok) { alert('Эталон не найден'); return; } const blob = await resp.blob(); uploadedFile = new File([blob], 'etalon.jpg', { type: 'image/jpeg' }); const reader = new FileReader(); reader.onload = function(ev) { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display = 'block'; }; reader.readAsDataURL(blob); document.getElementById('status').textContent = 'Эталон загружен'; } catch (err) { alert('Ошибка загрузки эталона'); } }
+        async function useEtalon() { try { const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`); if (!resp.ok) return; const blob = await resp.blob(); uploadedFile = new File([blob], 'etalon.jpg', { type: 'image/jpeg' }); const reader = new FileReader(); reader.onload = function(ev) { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display = 'block'; }; reader.readAsDataURL(blob); } catch (err) {} }
         async function loadFreeChatHistory() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/get_free_chat_history?user_id=${currentUserId}`); if (resp.ok) { const data = await resp.json(); const container = document.getElementById('freeChatMessages'); if (data.history && data.history.length > 0) { container.innerHTML = ''; data.history.forEach(m => { if (m.role === 'system') return; const div = document.createElement('div'); div.className = 'free-chat-msg ' + m.role; div.textContent = m.content; container.appendChild(div); }); container.scrollTop = container.scrollHeight; } } } catch(e) {} }
-        async function sendFreeMessage() { const input = document.getElementById('freeChatInput'); const text = input.value.trim(); if (!text) return; if (!currentUserId) { alert('Авторизуйтесь'); return; } input.value = ''; const container = document.getElementById('freeChatMessages'); if (container.querySelector('.free-chat-placeholder')) container.innerHTML = ''; const userDiv = document.createElement('div'); userDiv.className = 'free-chat-msg user'; userDiv.textContent = text; container.appendChild(userDiv); const loaderDiv = document.createElement('div'); loaderDiv.className = 'free-chat-msg assistant'; loaderDiv.textContent = '...'; container.appendChild(loaderDiv); container.scrollTop = container.scrollHeight; try { const resp = await fetch(`${SERVER_URL}/chat_free`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, message: text }) }); if (!resp.ok) { loaderDiv.textContent = 'Ошибка сервера'; return; } const data = await resp.json(); loaderDiv.remove(); const asstDiv = document.createElement('div'); asstDiv.className = 'free-chat-msg assistant'; asstDiv.textContent = data.reply || 'Ошибка'; container.appendChild(asstDiv); container.scrollTop = container.scrollHeight; } catch(e) { loaderDiv.textContent = 'Ошибка соединения'; } }
+        async function sendFreeMessage() { const input = document.getElementById('freeChatInput'); const text = input.value.trim(); if (!text) return; if (!currentUserId) { alert('Авторизуйтесь'); return; } input.value = ''; const container = document.getElementById('freeChatMessages'); if (container.querySelector('.free-chat-placeholder')) container.innerHTML = ''; const userDiv = document.createElement('div'); userDiv.className = 'free-chat-msg user'; userDiv.textContent = text; container.appendChild(userDiv); const loaderDiv = document.createElement('div'); loaderDiv.className = 'free-chat-msg assistant'; loaderDiv.textContent = '...'; container.appendChild(loaderDiv); try { const resp = await fetch(`${SERVER_URL}/chat_free`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, message: text }) }); if (!resp.ok) return; const data = await resp.json(); loaderDiv.remove(); const asstDiv = document.createElement('div'); asstDiv.className = 'free-chat-msg assistant'; asstDiv.textContent = data.reply || 'Ошибка'; container.appendChild(asstDiv); } catch(e) {} }
         function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); applyTranslations(); }
         function t(key) { return translations[currentLang] && translations[currentLang][key] ? translations[currentLang][key] : key; }
         function applyTranslations() { document.querySelectorAll('[data-t]').forEach(el => { const key = el.getAttribute('data-t'); if (el.placeholder !== undefined && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) { el.placeholder = t(key); } else { el.textContent = t(key); } }); document.title = t('title'); }
@@ -479,68 +525,22 @@
             container.style.cssText = 'display:flex;flex-direction:column;gap:16px;width:100%;align-items:center;';
             const files = ['demo_indie', 'demo_house', 'demo_rnb', 'demo_lastdance', 'demo_instrumental', 'demo_samba'];
             const examples = [];
-            for (const f of files) { try { const resp = await fetch('audio_demo/' + f + '.txt'); const desc = resp.ok ? await resp.text() : ''; examples.push({ text: f.replace('demo_', '').replace('_', ' '), desc: desc.trim(), src: f + '.wav' }); } catch(e) {} }
+            for (const f of files) { try { const resp = await fetch('audio_demo/' + f + '.txt'); const desc = resp.ok ? await resp.text() : ''; examples.push({ text: f.replace('demo_','').replace('_',' '), desc: desc.trim(), src: f + '.wav' }); } catch(e) {} }
             examples.forEach(ex => {
                 const card = document.createElement('div');
                 card.style.cssText = 'display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:20px 24px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);width:100%;height:100px;position:relative;overflow:hidden;';
-                card.innerHTML = `
-                    <div class="eq-left" style="position:absolute;left:14px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:4px;width:60px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
-                    <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;z-index:1;">♫</div>
-                    <div style="flex:1;min-width:0;z-index:1;">
-                        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">${ex.text}</div>
-                        <div style="font-size:11px;color:#aaa;line-height:1.5;word-wrap:break-word;">${ex.desc}</div>
-                    </div>
-                    <div class="eq-right" style="position:absolute;right:14px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;gap:4px;width:60px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>
-                `;
+                card.innerHTML = `<div class="eq-left" style="position:absolute;left:14px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:4px;width:60px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div><div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;z-index:1;">♫</div><div style="flex:1;min-width:0;z-index:1;"><div style="font-size:14px;font-weight:600;margin-bottom:6px;">${ex.text}</div><div style="font-size:11px;color:#aaa;line-height:1.5;word-wrap:break-word;">${ex.desc}</div></div><div class="eq-right" style="position:absolute;right:14px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;gap:4px;width:60px;z-index:0;opacity:0;transition:opacity 0.5s ease;"></div>`;
                 const audio = new Audio('audio_demo/' + ex.src); audio.preload = 'none';
-                const leftBars = card.querySelector('.eq-left');
-                const rightBars = card.querySelector('.eq-right');
-                const bars = 10;
-                const widths = new Array(bars).fill(2);
-                const targets = new Array(bars).fill(2);
-                const velocities = new Array(bars).fill(0);
+                const leftBars = card.querySelector('.eq-left'); const rightBars = card.querySelector('.eq-right');
+                const bars = 10; const widths = new Array(bars).fill(2); const targets = new Array(bars).fill(2); const velocities = new Array(bars).fill(0);
                 for (let i = 0; i < bars; i++) {
-                    const l = document.createElement('div');
-                    l.style.cssText = 'height:4px;background:linear-gradient(to right,#F59E0B,rgba(245,158,11,0.2));border-radius:3px;width:3px;transition:width 0.4s cubic-bezier(0.25,0.1,0.25,1);';
-                    leftBars.appendChild(l);
-                    const r = document.createElement('div');
-                    r.style.cssText = 'height:4px;background:linear-gradient(to left,#F59E0B,rgba(245,158,11,0.2));border-radius:3px;width:3px;transition:width 0.4s cubic-bezier(0.25,0.1,0.25,1);';
-                    rightBars.appendChild(r);
+                    const l = document.createElement('div'); l.style.cssText = 'height:4px;background:linear-gradient(to right,#F59E0B,rgba(245,158,11,0.2));border-radius:3px;width:3px;transition:width 0.4s cubic-bezier(0.25,0.1,0.25,1);'; leftBars.appendChild(l);
+                    const r = document.createElement('div'); r.style.cssText = 'height:4px;background:linear-gradient(to left,#F59E0B,rgba(245,158,11,0.2));border-radius:3px;width:3px;transition:width 0.4s cubic-bezier(0.25,0.1,0.25,1);'; rightBars.appendChild(r);
                 }
                 let interval = null;
-                function animate() {
-                    const center = Math.floor(bars / 2);
-                    for (let i = 0; i < bars; i++) {
-                        const dist = Math.abs(i - center) / center;
-                        targets[i] = (1 - dist) * (Math.random() * 50 + 6) + dist * (Math.random() * 12 + 2);
-                    }
-                    function step() {
-                        for (let i = 0; i < bars; i++) {
-                            velocities[i] += (targets[i] - widths[i]) * 0.05;
-                            velocities[i] *= 0.8;
-                            widths[i] += velocities[i];
-                            const w = Math.max(2, widths[i]);
-                            leftBars.children[i].style.width = w + 'px';
-                            rightBars.children[i].style.width = w + 'px';
-                        }
-                        if (interval) requestAnimationFrame(step);
-                    }
-                    step();
-                }
-                card.addEventListener('mouseenter', function() {
-                    document.querySelectorAll('#audioExamples audio').forEach(a => { a.pause(); a.currentTime = 0; });
-                    audio.currentTime = 0; audio.play();
-                    card.style.background = 'rgba(255,255,255,0.06)'; card.style.transform = 'translateY(-2px)'; card.style.borderColor = 'rgba(0,203,245,0.3)'; card.style.boxShadow = '0 8px 24px rgba(0,203,245,0.1)';
-                    leftBars.style.opacity = '1'; rightBars.style.opacity = '1';
-                    interval = setInterval(animate, 250); animate();
-                });
-                card.addEventListener('mouseleave', function() {
-                    audio.pause();
-                    card.style.background = 'rgba(255,255,255,0.03)'; card.style.transform = 'translateY(0)'; card.style.borderColor = 'rgba(255,255,255,0.06)'; card.style.boxShadow = 'none';
-                    leftBars.style.opacity = '0'; rightBars.style.opacity = '0';
-                    if (interval) clearInterval(interval);
-                    for (let i = 0; i < bars; i++) { widths[i] = 2; velocities[i] = 0; leftBars.children[i].style.width = '2px'; rightBars.children[i].style.width = '2px'; }
-                });
+                function animate() { const center = Math.floor(bars/2); for (let i=0;i<bars;i++){const dist=Math.abs(i-center)/center;targets[i]=(1-dist)*(Math.random()*50+6)+dist*(Math.random()*12+2);} function step(){for(let i=0;i<bars;i++){velocities[i]+=(targets[i]-widths[i])*0.05;velocities[i]*=0.8;widths[i]+=velocities[i];const w=Math.max(2,widths[i]);leftBars.children[i].style.width=w+'px';rightBars.children[i].style.width=w+'px';}if(interval)requestAnimationFrame(step);}step();}
+                card.addEventListener('mouseenter',function(){document.querySelectorAll('#audioExamples audio').forEach(a=>{a.pause();a.currentTime=0;});audio.currentTime=0;audio.play();card.style.background='rgba(255,255,255,0.06)';card.style.transform='translateY(-2px)';card.style.borderColor='rgba(0,203,245,0.3)';leftBars.style.opacity='1';rightBars.style.opacity='1';interval=setInterval(animate,250);animate();});
+                card.addEventListener('mouseleave',function(){audio.pause();card.style.background='rgba(255,255,255,0.03)';card.style.transform='translateY(0)';card.style.borderColor='rgba(255,255,255,0.06)';leftBars.style.opacity='0';rightBars.style.opacity='0';if(interval)clearInterval(interval);for(let i=0;i<bars;i++){widths[i]=2;velocities[i]=0;leftBars.children[i].style.width='2px';rightBars.children[i].style.width='2px';}});
                 container.appendChild(card);
             });
         }
@@ -553,72 +553,15 @@
             examples.forEach(ex => {
                 const card = document.createElement('div');
                 card.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border-radius:16px;padding:24px 16px;cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);flex:1;position:relative;overflow:hidden;';
-                card.innerHTML = `
-                    <div class="ace-wave-top" style="position:absolute;top:0;left:0;width:100%;height:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-start;justify-content:center;gap:5px;padding:14px 14px 0;"></div>
-                    <div class="ace-wave-bottom" style="position:absolute;bottom:0;left:0;width:100%;height:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-end;justify-content:center;gap:5px;padding:0 14px 14px;"></div>
-                    <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;z-index:1;">♫</div>
-                    <div class="ace-text" style="font-size:8px;color:#aaa;line-height:1.6;text-align:center;width:100%;white-space:pre-wrap;z-index:1;position:relative;overflow-y:auto;max-height:100%;scrollbar-width:thin;scrollbar-color:transparent transparent;transition:scrollbar-color 0.5s ease;">${ex.desc}</div>
-                `;
+                card.innerHTML = `<div class="ace-wave-top" style="position:absolute;top:0;left:0;width:100%;height:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-start;justify-content:center;gap:5px;padding:14px 14px 0;"></div><div class="ace-wave-bottom" style="position:absolute;bottom:0;left:0;width:100%;height:50%;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:0;display:flex;align-items:flex-end;justify-content:center;gap:5px;padding:0 14px 14px;"></div><div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;z-index:1;">♫</div><div class="ace-text" style="font-size:8px;color:#aaa;line-height:1.6;text-align:center;width:100%;white-space:pre-wrap;z-index:1;position:relative;overflow-y:auto;max-height:100%;scrollbar-width:thin;scrollbar-color:transparent transparent;transition:scrollbar-color 0.5s ease;">${ex.desc}</div>`;
                 const audio = new Audio('audio_demo/' + ex.src); audio.preload = 'none';
-                const waveTop = card.querySelector('.ace-wave-top');
-                const waveBottom = card.querySelector('.ace-wave-bottom');
-                const waveBars = 10;
-                const waveHeightsTop = new Array(waveBars).fill(5);
-                const waveTargetsTop = new Array(waveBars).fill(5);
-                const waveVelocitiesTop = new Array(waveBars).fill(0);
-                const waveHeightsBottom = new Array(waveBars).fill(5);
-                const waveTargetsBottom = new Array(waveBars).fill(5);
-                const waveVelocitiesBottom = new Array(waveBars).fill(0);
-                for (let i = 0; i < waveBars; i++) {
-                    const barTop = document.createElement('div');
-                    barTop.style.cssText = `flex:1;background:linear-gradient(to bottom,rgba(245,158,11,0.5),rgba(245,158,11,0.1));border-radius:3px;height:${waveHeightsTop[i]}px;transition:height 0.4s cubic-bezier(0.25,0.1,0.25,1);`;
-                    waveTop.appendChild(barTop);
-                    const barBottom = document.createElement('div');
-                    barBottom.style.cssText = `flex:1;background:linear-gradient(to top,rgba(245,158,11,0.5),rgba(245,158,11,0.1));border-radius:3px;height:${waveHeightsBottom[i]}px;transition:height 0.4s cubic-bezier(0.25,0.1,0.25,1);`;
-                    waveBottom.appendChild(barBottom);
-                }
+                const waveTop = card.querySelector('.ace-wave-top'); const waveBottom = card.querySelector('.ace-wave-bottom');
+                const waveBars = 10; const waveHeightsTop = new Array(waveBars).fill(5); const waveTargetsTop = new Array(waveBars).fill(5); const waveVelocitiesTop = new Array(waveBars).fill(0); const waveHeightsBottom = new Array(waveBars).fill(5); const waveTargetsBottom = new Array(waveBars).fill(5); const waveVelocitiesBottom = new Array(waveBars).fill(0);
+                for (let i = 0; i < waveBars; i++) { const barTop = document.createElement('div'); barTop.style.cssText = 'flex:1;background:linear-gradient(to bottom,rgba(245,158,11,0.5),rgba(245,158,11,0.1));border-radius:3px;height:'+waveHeightsTop[i]+'px;transition:height 0.4s cubic-bezier(0.25,0.1,0.25,1);'; waveTop.appendChild(barTop); const barBottom = document.createElement('div'); barBottom.style.cssText = 'flex:1;background:linear-gradient(to top,rgba(245,158,11,0.5),rgba(245,158,11,0.1));border-radius:3px;height:'+waveHeightsBottom[i]+'px;transition:height 0.4s cubic-bezier(0.25,0.1,0.25,1);'; waveBottom.appendChild(barBottom); }
                 let waveInterval = null;
-                function animateWave() {
-                    const center = Math.floor(waveBars / 2);
-                    for (let i = 0; i < waveBars; i++) {
-                        const dist = Math.abs(i - center) / center;
-                        waveTargetsTop[i] = (1 - dist) * (Math.random() * 60 + 8) + dist * (Math.random() * 15 + 3);
-                        waveTargetsBottom[i] = waveTargetsTop[i];
-                    }
-                    function step() {
-                        for (let i = 0; i < waveBars; i++) {
-                            waveVelocitiesTop[i] += (waveTargetsTop[i] - waveHeightsTop[i]) * 0.04;
-                            waveVelocitiesTop[i] *= 0.78;
-                            waveHeightsTop[i] += waveVelocitiesTop[i];
-                            waveTop.children[i].style.height = Math.max(3, waveHeightsTop[i]) + 'px';
-                            waveVelocitiesBottom[i] += (waveTargetsBottom[i] - waveHeightsBottom[i]) * 0.04;
-                            waveVelocitiesBottom[i] *= 0.78;
-                            waveHeightsBottom[i] += waveVelocitiesBottom[i];
-                            waveBottom.children[i].style.height = Math.max(3, waveHeightsBottom[i]) + 'px';
-                        }
-                        if (waveInterval) requestAnimationFrame(step);
-                    }
-                    step();
-                }
-                card.addEventListener('mouseenter', function() {
-                    document.querySelectorAll('#aceExamples audio').forEach(a => { a.pause(); a.currentTime = 0; });
-                    audio.currentTime = 0; audio.play();
-                    card.style.background = 'rgba(255,255,255,0.06)'; card.style.transform = 'translateY(-2px)'; card.style.borderColor = 'rgba(0,203,245,0.3)'; card.style.boxShadow = '0 8px 24px rgba(0,203,245,0.1)';
-                    waveTop.style.opacity = '1';
-                    waveBottom.style.opacity = '1';
-                    card.querySelector('.ace-text').style.scrollbarColor = 'rgba(245,158,11,0.5) transparent';
-                    waveInterval = setInterval(animateWave, 250);
-                    animateWave();
-                });
-                card.addEventListener('mouseleave', function() {
-                    audio.pause();
-                    card.style.background = 'rgba(255,255,255,0.03)'; card.style.transform = 'translateY(0)'; card.style.borderColor = 'rgba(255,255,255,0.06)'; card.style.boxShadow = 'none';
-                    waveTop.style.opacity = '0';
-                    waveBottom.style.opacity = '0';
-                    if (waveInterval) clearInterval(waveInterval);
-                    card.querySelector('.ace-text').style.scrollbarColor = 'transparent transparent';
-                    for (let i = 0; i < waveBars; i++) { waveHeightsTop[i] = 5; waveVelocitiesTop[i] = 0; waveTop.children[i].style.height = '5px'; waveHeightsBottom[i] = 5; waveVelocitiesBottom[i] = 0; waveBottom.children[i].style.height = '5px'; }
-                });
+                function animateWave() { const center = Math.floor(waveBars/2); for(let i=0;i<waveBars;i++){const dist=Math.abs(i-center)/center;waveTargetsTop[i]=(1-dist)*(Math.random()*60+8)+dist*(Math.random()*15+3);waveTargetsBottom[i]=waveTargetsTop[i];} function step(){for(let i=0;i<waveBars;i++){waveVelocitiesTop[i]+=(waveTargetsTop[i]-waveHeightsTop[i])*0.04;waveVelocitiesTop[i]*=0.78;waveHeightsTop[i]+=waveVelocitiesTop[i];waveTop.children[i].style.height=Math.max(3,waveHeightsTop[i])+'px';waveVelocitiesBottom[i]+=(waveTargetsBottom[i]-waveHeightsBottom[i])*0.04;waveVelocitiesBottom[i]*=0.78;waveHeightsBottom[i]+=waveVelocitiesBottom[i];waveBottom.children[i].style.height=Math.max(3,waveHeightsBottom[i])+'px';}if(waveInterval)requestAnimationFrame(step);}step();}
+                card.addEventListener('mouseenter',function(){document.querySelectorAll('#aceExamples audio').forEach(a=>{a.pause();a.currentTime=0;});audio.currentTime=0;audio.play();card.style.background='rgba(255,255,255,0.06)';card.style.transform='translateY(-2px)';card.style.borderColor='rgba(0,203,245,0.3)';waveTop.style.opacity='1';waveBottom.style.opacity='1';card.querySelector('.ace-text').style.scrollbarColor='rgba(245,158,11,0.5) transparent';waveInterval=setInterval(animateWave,250);animateWave();});
+                card.addEventListener('mouseleave',function(){audio.pause();card.style.background='rgba(255,255,255,0.03)';card.style.transform='translateY(0)';card.style.borderColor='rgba(255,255,255,0.06)';waveTop.style.opacity='0';waveBottom.style.opacity='0';if(waveInterval)clearInterval(waveInterval);card.querySelector('.ace-text').style.scrollbarColor='transparent transparent';for(let i=0;i<waveBars;i++){waveHeightsTop[i]=5;waveVelocitiesTop[i]=0;waveTop.children[i].style.height='5px';waveHeightsBottom[i]=5;waveVelocitiesBottom[i]=0;waveBottom.children[i].style.height='5px';}});
                 container.appendChild(card);
             });
         }
