@@ -430,7 +430,12 @@
                             const pendData = await pendResp.json();
                             if (pendData.results && pendData.results.length > 0) {
                                 const resultText = pendData.results[0].result || pendData.results[0].text;
-                                loaderMsg.innerHTML = resultText + ' <button onclick="var t=this.parentElement;t.removeChild(this);navigator.clipboard.writeText(t.textContent.trim());var b=document.createElement(\'span\');b.textContent=\'Скопировано\';b.style.fontSize=\'10px\';b.style.color=\'#00CBF5\';t.appendChild(b);setTimeout(function(){b.remove();t.innerHTML=resultText;},1000);" style="font-size:10px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#888;cursor:pointer;border-radius:4px;padding:2px 6px;margin-top:4px;">Копировать</button>';
+                                loaderMsg.textContent = resultText;
+                                var copyBtn = document.createElement('button');
+                                copyBtn.textContent = 'Копировать';
+                                copyBtn.style.cssText = 'font-size:10px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#888;cursor:pointer;border-radius:4px;padding:2px 6px;margin-top:4px;';
+                                copyBtn.onclick = function() { navigator.clipboard.writeText(resultText); this.textContent = 'Скопировано'; var b = this; setTimeout(function() { b.textContent = 'Копировать'; }, 1000); };
+                                loaderMsg.parentElement.appendChild(copyBtn);
                                 document.getElementById('status').textContent = 'Готово!';
                                 document.getElementById('gemmaMessages').scrollTop = document.getElementById('gemmaMessages').scrollHeight;
                                 return;
