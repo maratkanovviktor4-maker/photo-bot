@@ -394,6 +394,10 @@
             const prompt = document.getElementById('gemmaPrompt').value || 'Describe this in detail.';
             const formData = new FormData();
             formData.append('file', gemmaFile);
+            let mode = 'image';
+            if (gemmaFile.type.startsWith('audio/')) mode = 'audio';
+            else if (gemmaFile.type.startsWith('video/')) mode = 'video';
+            formData.append('mode', mode);
             formData.append('prompt', prompt);
             formData.append('user_id', currentUserId);
             if (sessionToken) formData.append('session_token', sessionToken);
