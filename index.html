@@ -312,7 +312,7 @@
         currentLang = savedLang;
         applyTranslations();
         const savedAuth = localStorage.getItem('photobot_auth');
-        if (savedAuth) { const auth = JSON.parse(savedAuth); currentUserId = auth.user_id; currentUsername = auth.username; sessionToken = auth.session_token || ''; showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); showSubscribeBlock(); checkSubscription(); updateUnviewedCount(); }
+            if (savedAuth) { const auth = JSON.parse(savedAuth); currentUserId = auth.user_id; currentUsername = auth.username; sessionToken = auth.session_token || ''; showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); showSubscribeBlock(); checkSubscription(); updateUnviewedCount(); loadGemmaHistory(); }
         if (!localStorage.getItem('cookies_accepted')) document.getElementById('cookie-banner').style.display = 'block';
         document.addEventListener('DOMContentLoaded', function() { applyTranslations(); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === currentLang)); });
         function openBot() { window.open('https://t.me/PhotoDocumentsBot_bot?start=site', '_blank'); document.getElementById('authBlock').style.display = 'block'; }
@@ -362,7 +362,7 @@
             if (group === 'text') { if (textInfo) { textInfo.style.display = 'block'; requestAnimationFrame(() => { requestAnimationFrame(() => textInfo.classList.add('show')); }); } return; }
             if (group === 'audio') { if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } return; }
             if (group === 'ace') { if (aceBlock) { aceBlock.style.display = 'flex'; loadAceExamples(); } selectMode('ace_free'); return; }
-            if (group === 'gemma') { if (gemmaBlock) { gemmaBlock.style.display = 'flex'; } document.getElementById('gemmaChat').style.display = 'flex'; selectMode('gemma_free'); loadGemmaHistory(); return; }
+            if (group === 'gemma') { if (gemmaBlock) { gemmaBlock.style.display = 'flex'; } document.getElementById('gemmaChat').style.display = 'flex'; selectMode('gemma_free'); return; }
             const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'], flux: [], text: [], audio: [], ace: [], gemma: [] };
             (modes[group] || []).forEach(m => { const img = collages.querySelector('[data-mode="' + m + '"]'); if (img) { img.style.display = 'block'; img.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => img.classList.add('show')); }); } });
         }
