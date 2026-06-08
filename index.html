@@ -360,7 +360,7 @@
             if (group === 'text') { if (textInfo) { textInfo.style.display = 'block'; requestAnimationFrame(() => { requestAnimationFrame(() => textInfo.classList.add('show')); }); } return; }
             if (group === 'audio') { if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } return; }
             if (group === 'ace') { if (aceBlock) { aceBlock.style.display = 'flex'; loadAceExamples(); } selectMode('ace_free'); return; }
-            if (group === 'gemma') { if (gemmaBlock) { gemmaBlock.style.display = 'flex'; } document.getElementById('gemmaChat').style.display = 'flex'; selectMode('gemma_free'); return; }
+            if (group === 'gemma') { if (gemmaBlock) { gemmaBlock.style.display = 'flex'; } document.getElementById('gemmaChat').style.display = 'flex'; selectMode('gemma_free'); loadGemmaHistory(); return; }
             const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'], flux: [], text: [], audio: [], ace: [], gemma: [] };
             (modes[group] || []).forEach(m => { const img = collages.querySelector('[data-mode="' + m + '"]'); if (img) { img.style.display = 'block'; img.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => img.classList.add('show')); }); } });
         }
@@ -519,6 +519,28 @@
         }
         async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); if (resp.ok) { const data = await resp.json(); if (data.has_etalon) document.getElementById('etalonBtn').style.display = 'block'; } } catch (err) {} }
         async function useEtalon() { try { const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`); if (!resp.ok) return; const blob = await resp.blob(); uploadedFile = new File([blob], 'etalon.jpg', { type: 'image/jpeg' }); const reader = new FileReader(); reader.onload = function(ev) { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display = 'block'; }; reader.readAsDataURL(blob); } catch (err) {} }
+        async function loadGemmaHistory() {
+            if (!currentUserId) return;
+            try {
+                const resp = await fetch(`${SERVER_URL}/get_gemma_chat_history?user_id=${currentUserId}`);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const container = document.getElementById('gemmaMessages');
+                    container.innerHTML = '';
+                    if (data.history && data.history.length > 0) {
+                        data.history.forEach(m => {
+                            const div = document.createElement('div');
+                            div.className = 'msg ' + m.role;
+                            div.textContent = m.content;
+                            container.appendChild(div);
+                        });
+                    } else {
+                        container.innerHTML = '<div class="msg assistant">Загрузите файл для анализа</div>';
+                    }
+                    container.scrollTop = container.scrollHeight;
+                }
+            } catch(e) {}
+        }
         async function loadFreeChatHistory() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/get_free_chat_history?user_id=${currentUserId}`); if (resp.ok) { const data = await resp.json(); const container = document.getElementById('freeChatMessages'); if (data.history && data.history.length > 0) { container.innerHTML = ''; data.history.forEach(m => { if (m.role === 'system') return; const div = document.createElement('div'); div.className = 'free-chat-msg ' + m.role; div.textContent = m.content; container.appendChild(div); }); container.scrollTop = container.scrollHeight; } } } catch(e) {} }
         async function sendFreeMessage() { const input = document.getElementById('freeChatInput'); const text = input.value.trim(); if (!text) return; if (!currentUserId) { alert('Авторизуйтесь'); return; } input.value = ''; const container = document.getElementById('freeChatMessages'); if (container.querySelector('.free-chat-placeholder')) container.innerHTML = ''; const userDiv = document.createElement('div'); userDiv.className = 'free-chat-msg user'; userDiv.textContent = text; container.appendChild(userDiv); const loaderDiv = document.createElement('div'); loaderDiv.className = 'free-chat-msg assistant'; loaderDiv.textContent = '...'; container.appendChild(loaderDiv); try { const resp = await fetch(`${SERVER_URL}/chat_free`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, message: text }) }); if (!resp.ok) return; const data = await resp.json(); loaderDiv.remove(); const asstDiv = document.createElement('div'); asstDiv.className = 'free-chat-msg assistant'; asstDiv.textContent = data.reply || 'Ошибка'; container.appendChild(asstDiv); } catch(e) {} }
         function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); applyTranslations(); }
