@@ -394,6 +394,7 @@
             if (!currentUserId) { document.getElementById('authBlock').style.display = 'block'; return; }
             if (!gemmaFile) { alert('Выберите файл'); return; }
             const prompt = document.getElementById('gemmaPrompt').value || 'Describe this in detail.';
+            const fileName = gemmaFile.name;
             document.getElementById('gemmaPrompt').value = '';
             document.getElementById('gemmaPrompt').style.height = 'auto';
             const formData = new FormData();
@@ -417,7 +418,7 @@
                 const data = await resp.json();
                 if (data.job_id) {
                     document.getElementById('status').textContent = 'Обработка...';
-                    document.getElementById('gemmaMessages').innerHTML += '<div class="msg user">' + prompt + '</div>';
+                    document.getElementById('gemmaMessages').innerHTML += '<div class="msg user">📎 ' + fileName + '\n' + prompt + '</div>';
                     const loaderMsg = document.createElement('div'); loaderMsg.className = 'msg assistant'; loaderMsg.textContent = '...'; document.getElementById('gemmaMessages').appendChild(loaderMsg);
                     for (let i = 0; i < 180; i++) {
                         await new Promise(r => setTimeout(r, 2000));
