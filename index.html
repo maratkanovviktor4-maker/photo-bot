@@ -547,10 +547,17 @@
                     container.innerHTML = '';
                     if (data.history && data.history.length > 0) {
                         data.history.forEach(m => {
-                            const div = document.createElement('div');
-                            div.className = 'msg ' + m.role;
-                            div.textContent = m.content;
-                            container.appendChild(div);
+                            const row = document.createElement('div');
+                            row.className = 'msg ' + m.role;
+                            row.textContent = m.content;
+                            container.appendChild(row);
+                            if (m.role === 'assistant') {
+                                var copyBtn = document.createElement('button');
+                                copyBtn.textContent = 'Копировать';
+                                copyBtn.style.cssText = 'font-size:10px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#888;cursor:pointer;border-radius:4px;padding:2px 8px;margin-top:6px;display:inline-block;';
+                                copyBtn.onclick = function() { navigator.clipboard.writeText(m.content); this.textContent = 'Скопировано'; var b = this; setTimeout(function() { b.textContent = 'Копировать'; }, 1000); };
+                                row.parentElement.appendChild(copyBtn);
+                            }
                         });
                     } else {
                         container.innerHTML = '<div class="msg assistant">Загрузите файл для анализа</div>';
