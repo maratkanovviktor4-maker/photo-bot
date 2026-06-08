@@ -396,17 +396,17 @@
             const prompt = document.getElementById('gemmaPrompt').value || 'Describe this in detail.';
             document.getElementById('gemmaPrompt').value = '';
             document.getElementById('gemmaPrompt').style.height = 'auto';
-            gemmaFile = null;
-            document.getElementById('gemmaFileName').style.display = 'none';
-            document.getElementById('gemmaFileRemove').style.display = 'none';
             const formData = new FormData();
             formData.append('file', gemmaFile);
+            formData.append('prompt', prompt);
+            formData.append('user_id', currentUserId);
             let mode = 'image';
             if (gemmaFile.type.startsWith('audio/')) mode = 'audio';
             else if (gemmaFile.type.startsWith('video/')) mode = 'video';
             formData.append('mode', mode);
-            formData.append('prompt', prompt);
-            formData.append('user_id', currentUserId);
+            gemmaFile = null;
+            document.getElementById('gemmaFileName').style.display = 'none';
+            document.getElementById('gemmaFileRemove').style.display = 'none';
             if (sessionToken) formData.append('session_token', sessionToken);
             try {
                 const accessResp = await fetch(`${SERVER_URL}/check_gemma_access?user_id=${currentUserId}&session_token=${sessionToken}`);
