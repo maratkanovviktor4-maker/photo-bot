@@ -418,7 +418,10 @@
                 const data = await resp.json();
                 if (data.job_id) {
                     document.getElementById('status').textContent = 'Обработка...';
-                    document.getElementById('gemmaMessages').innerHTML += '<div class="msg user">📎 ' + fileName + '\n' + prompt + '</div>';
+                    const userMsg = document.createElement('div');
+                    userMsg.className = 'msg user';
+                    userMsg.textContent = '📎 ' + fileName + '\n' + prompt;
+                    document.getElementById('gemmaMessages').appendChild(userMsg);
                     const loaderMsg = document.createElement('div'); loaderMsg.className = 'msg assistant'; loaderMsg.textContent = '...'; document.getElementById('gemmaMessages').appendChild(loaderMsg);
                     for (let i = 0; i < 180; i++) {
                         await new Promise(r => setTimeout(r, 2000));
