@@ -750,21 +750,26 @@
     });
 
     var speeds = [-0.15,0.12,-0.1,0.14];
-    var positions = [0,0,0,0];
-    var positionsReady = false;
+    var positions = [0,4710,0,4710];
     var rowHeight = 240;
     var gap = 20;
 
     function layout(){
         var w = container.offsetWidth;
-        if(!positionsReady && w > 0){
-            var tw = [0,0,0,0];
-            rows.forEach(function(row,i){
-                row.forEach(function(im){ tw[i] += parseInt(im.style.width) + 10; });
+        var totalHeight = rows.length * (rowHeight + gap) - gap;
+        var offsetY = Math.max(0, (container.offsetHeight - totalHeight) / 2);
+        rows.forEach(function(row,ri){
+            var y = offsetY + ri * (rowHeight + gap);
+            var x = positions[ri];
+            row.forEach(function(im,ii){
+                var iw = parseInt(im.style.width) || 200;
+                var ih = parseInt(im.style.height) || 225;
+                im.style.left = x+'px';
+                im.style.top = (y + (rowHeight-ih)/2)+'px';
+                x += iw + 10;
             });
-            positions = [0, -(tw[1] - w), 0, -(tw[3] - w)];
-            positionsReady = true;
-        }
+        });
+    }
 
     function animate(){
         if(!paused){
