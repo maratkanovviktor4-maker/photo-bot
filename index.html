@@ -739,26 +739,11 @@
     });
 
     var rows = [[],[],[],[]];
-    var ri = 0;
-    var count = 0;
+    var perRow = Math.ceil(images.length / 4);
     images.forEach(function(im,idx){
-        rows[ri].push(im);
-        count++;
-        if(count === 2){
-            ri = (ri + 1) % 4;
-            count = 0;
-        }
-    });
-    rows.forEach(function(row){
-        var len = row.length;
-        for(var i=0;i<len;i++){
-            var clone = row[i].cloneNode(true);
-            clone.onload = row[i].onload;
-            clone.onerror = row[i].onerror;
-            clone.addEventListener('click',row[i].click);
-            container.appendChild(clone);
-            row.push(clone);
-        }
+        var rowIdx = Math.floor(idx / perRow);
+        if(rowIdx >= 4) rowIdx = 3;
+        rows[rowIdx].push(im);
     });
 
     var speeds = [-0.15,0.12,-0.1,0.14];
