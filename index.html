@@ -698,10 +698,11 @@
     for(var i=1;i<=30;i++){
         var img = new Image();
         img.src = 'flux_gallery/flux_'+String(i).padStart(2,'0')+'.jpg';
-        var isBig = i % 2 === 1;
-        var w = isBig ? 400 : 200;
-        var h = 225;
-        img.style.cssText = 'border-radius:12px;object-fit:cover;transition:filter 0.3s ease,transform 0.3s ease;position:absolute;width:'+w+'px;height:'+h+'px;cursor:pointer;';
+        img.style.cssText = 'border-radius:12px;object-fit:contain;transition:filter 0.3s ease,transform 0.3s ease;position:absolute;height:225px;cursor:pointer;';
+        img.onload = function(){
+            var ratio = this.naturalWidth / this.naturalHeight;
+            this.style.width = (225 * ratio) + 'px';
+        };
         img.onerror = function(){ this.style.display = 'none'; };
         img.addEventListener('click',function(){
             if(this.style.transform === 'scale(2.5)'){
@@ -746,6 +747,17 @@
         if(count === 2){
             ri = (ri + 1) % 4;
             count = 0;
+        }
+    });
+    rows.forEach(function(row){
+        var len = row.length;
+        for(var i=0;i<len;i++){
+            var clone = row[i].cloneNode(true);
+            clone.onload = row[i].onload;
+            clone.onerror = row[i].onerror;
+            clone.addEventListener('click',row[i].click);
+            container.appendChild(clone);
+            row.push(clone);
         }
     });
 
