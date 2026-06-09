@@ -738,8 +738,15 @@
     });
 
     var rows = [[],[],[],[]];
+    var ri = 0;
+    var count = 0;
     images.forEach(function(im,idx){
-        rows[idx % 4].push(im);
+        rows[ri].push(im);
+        count++;
+        if(count === 2){
+            ri = (ri + 1) % 4;
+            count = 0;
+        }
     });
 
     var speeds = [-0.15,0.12,-0.1,0.14];
