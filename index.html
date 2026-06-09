@@ -761,22 +761,13 @@
         rows.forEach(function(row,ri){
             var y = offsetY + ri * (rowHeight + gap);
             var x = positions[ri];
-            for(var ii=0; ii<row.length; ii++){
-                var im = row[ii];
+            row.forEach(function(im,ii){
                 var iw = parseInt(im.style.width) || 200;
                 var ih = parseInt(im.style.height) || 225;
                 im.style.left = x+'px';
                 im.style.top = (y + (rowHeight-ih)/2)+'px';
                 x += iw + 10;
-                if(x > w + 400){
-                    row.push(row.shift());
-                    x -= iw + 10;
-                    im = row[ii];
-                    im.style.left = x+'px';
-                    im.style.top = (y + (rowHeight-ih)/2)+'px';
-                    x += iw + 10;
-                }
-            }
+            });
         });
     }
 
