@@ -698,7 +698,10 @@
     for(var i=1;i<=30;i++){
         var img = new Image();
         img.src = 'flux_gallery/flux_'+String(i).padStart(2,'0')+'.jpg';
-        img.style.cssText = 'border-radius:12px;object-fit:cover;transition:filter 0.3s ease;position:absolute;';
+        var isBig = i % 2 === 1;
+        var w = isBig ? 400 : 225;
+        var h = isBig ? 225 : 400;
+        img.style.cssText = 'border-radius:12px;object-fit:cover;transition:filter 0.3s ease;position:absolute;width:'+w+'px;height:'+h+'px;cursor:pointer;';
         img.onerror = function(){ this.style.display = 'none'; };
         images.push(img);
         container.appendChild(img);
@@ -713,12 +716,12 @@
     var unblurAll = function(){
         images.forEach(function(im){ im.style.filter = 'blur(0)'; im.style.zIndex = '1'; });
     };
-    container.addEventListener('mouseenter',function(e){
+    container.addEventListener('mouseover',function(e){
         if(e.target.tagName==='IMG'){
             paused = true; blurAll(e.target);
         }
     });
-    container.addEventListener('mouseleave',function(e){
+    container.addEventListener('mouseout',function(e){
         if(e.target.tagName==='IMG'){
             paused = false; unblurAll();
         }
@@ -726,14 +729,13 @@
 
     var rows = [[],[],[],[]];
     images.forEach(function(im,idx){
-        var row = idx % 4;
-        rows[row].push(im);
+        rows[idx % 4].push(im);
     });
 
-    var speeds = [-0.3,0.25,-0.2,0.35];
+    var speeds = [-0.4,0.35,-0.3,0.45];
     var positions = [0,0,0,0];
-    var rowHeight = 140;
-    var gap = 10;
+    var rowHeight = 240;
+    var gap = 12;
 
     function layout(){
         var w = container.offsetWidth;
@@ -741,24 +743,22 @@
             var y = ri * (rowHeight + gap);
             var x = positions[ri];
             row.forEach(function(im,ii){
-                var isBig = ii % 2 === 0;
-                var iw = isBig ? 200 : 100;
-                var ih = isBig ? 112 : 56;
-                im.style.width = iw+'px';
-                im.style.height = ih+'px';
+                var iw = parseInt(im.style.width);
+                var ih = parseInt(im.style.height);
                 im.style.left = x+'px';
                 im.style.top = (y + (rowHeight-ih)/2)+'px';
-                x += iw + 8;
+                x += iw + 10;
             });
         });
     }
 
     function animate(){
         if(!paused){
-            var w = container.offsetWidth;
             positions = positions.map(function(p,i){ return p + speeds[i]; });
             var totalWidth = 0;
-            rows[0].forEach(function(im,ii){ totalWidth += ii%2===0 ? 208 : 108; });
+            if(rows[0].length>0){
+                rows[0].forEach(function(im){ totalWidth += parseInt(im.style.width) + 10; });
+            }
             positions = positions.map(function(p){ return p > 0 ? -totalWidth : p < -totalWidth ? 0 : p; });
         }
         layout();
