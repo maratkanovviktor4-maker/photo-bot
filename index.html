@@ -699,10 +699,20 @@
         var img = new Image();
         img.src = 'flux_gallery/flux_'+String(i).padStart(2,'0')+'.jpg';
         var isBig = i % 2 === 1;
-        var w = isBig ? 400 : 225;
-        var h = isBig ? 225 : 400;
-        img.style.cssText = 'border-radius:12px;object-fit:cover;transition:filter 0.3s ease;position:absolute;width:'+w+'px;height:'+h+'px;cursor:pointer;';
+        var w = isBig ? 400 : 200;
+        var h = 225;
+        img.style.cssText = 'border-radius:12px;object-fit:cover;transition:filter 0.3s ease,transform 0.3s ease;position:absolute;width:'+w+'px;height:'+h+'px;cursor:pointer;';
         img.onerror = function(){ this.style.display = 'none'; };
+        img.addEventListener('click',function(){
+            if(this.style.transform === 'scale(2.5)'){
+                this.style.transform = 'scale(1)';
+                this.style.zIndex = '2';
+            } else {
+                images.forEach(function(im){ im.style.transform = 'scale(1)'; im.style.zIndex = '1'; });
+                this.style.transform = 'scale(2.5)';
+                this.style.zIndex = '10';
+            }
+        });
         images.push(img);
         container.appendChild(img);
     }
@@ -732,10 +742,10 @@
         rows[idx % 4].push(im);
     });
 
-    var speeds = [-0.4,0.35,-0.3,0.45];
+    var speeds = [-0.15,0.12,-0.1,0.14];
     var positions = [0,0,0,0];
     var rowHeight = 240;
-    var gap = 12;
+    var gap = 16;
 
     function layout(){
         var w = container.offsetWidth;
