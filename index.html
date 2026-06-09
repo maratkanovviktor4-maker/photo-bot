@@ -704,15 +704,18 @@
             this.style.width = (225 * ratio) + 'px';
         };
         img.onerror = function(){ this.style.display = 'none'; };
-        img.addEventListener('click',function(){
-            if(this.style.transform === 'scale(2.5)'){
-                this.style.transform = 'scale(1)';
-                this.style.zIndex = '2';
-            } else {
-                images.forEach(function(im){ im.style.transform = 'scale(1)'; im.style.zIndex = '1'; });
-                this.style.transform = 'scale(2.5)';
-                this.style.zIndex = '10';
-            }
+        img.addEventListener('click',function(e){
+            e.stopPropagation();
+            var exists = document.getElementById('fullscreenOverlay');
+            if(exists) exists.remove();
+            var overlay = document.createElement('div');
+            overlay.id = 'fullscreenOverlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer;';
+            var fullImg = this.cloneNode(true);
+            fullImg.style.cssText = 'max-width:90vw;max-height:90vh;object-fit:contain;border-radius:16px;position:static;transform:none;filter:none;';
+            overlay.appendChild(fullImg);
+            overlay.addEventListener('click',function(){ overlay.remove(); });
+            document.body.appendChild(overlay);
         });
         images.push(img);
         container.appendChild(img);
@@ -758,13 +761,22 @@
         rows.forEach(function(row,ri){
             var y = offsetY + ri * (rowHeight + gap);
             var x = positions[ri];
-            row.forEach(function(im,ii){
-                var iw = parseInt(im.style.width);
-                var ih = parseInt(im.style.height);
+            for(var ii=0; ii<row.length; ii++){
+                var im = row[ii];
+                var iw = parseInt(im.style.width) || 200;
+                var ih = parseInt(im.style.height) || 225;
                 im.style.left = x+'px';
                 im.style.top = (y + (rowHeight-ih)/2)+'px';
                 x += iw + 10;
-            });
+                if(x > w + 400){
+                    row.push(row.shift());
+                    x -= iw + 10;
+                    im = row[ii];
+                    im.style.left = x+'px';
+                    im.style.top = (y + (rowHeight-ih)/2)+'px';
+                    x += iw + 10;
+                }
+            }
         });
     }
 
