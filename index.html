@@ -622,7 +622,7 @@
 
     <!-- FLUX 2 -->
     <div style="width:100%;min-height:100vh;background:linear-gradient(135deg,rgba(0,203,245,0.08) 0%,rgba(20,233,252,0.04) 100%);display:flex;align-items:center;padding:80px 60px;gap:60px;position:relative;overflow:hidden;">
-        <div style="flex:1;z-index:1;max-width:700px;display:flex;flex-direction:column;justify-content:center;">
+        <div style="flex:1;z-index:1;max-width:700px;">
             <h3 style="font-family:'Inter',sans-serif;font-size:42px;font-weight:700;letter-spacing:-1px;margin-bottom:30px;color:#fff;">FLUX 2</h3>
             <p style="color:#bbb;font-size:12px;line-height:2;font-family:'Inter',sans-serif;margin-bottom:16px;">Flux 2 — второе поколение нейросети для генерации и редактирования изображений от Black Forest Labs. Архитектура на 32 миллиарда параметров обеспечивает фотореализм, сравнимый с профессиональной студийной съёмкой. Модель обучена на колоссальном объёме визуальных данных и способна воспроизводить тончайшие детали: текстуру кожи, тканей, отражения, тени, глубину резкости. Точное следование текстовому описанию на русском и английском языках. Вы можете задать одежду, позу, освещение, фон, ракурс, эмоции, возраст, макияж, аксессуары — модель интерпретирует каждый параметр. Встроенный механизм удержания персонажа позволяет генерировать серию изображений с одним и тем же лицом и телосложением.</p>
             <p style="color:#bbb;font-size:12px;line-height:2;font-family:'Inter',sans-serif;margin-bottom:16px;">Доступны готовые пресеты, оптимизированные под конкретные сценарии. «Фото на документы» — деловой стиль, нейтральный фон, правильное освещение, соответствует требованиям большинства ведомств. «Закат на пляже» — тёплое вечернее освещение, песок, океан, естественная поза. «День рождения» — праздничная атмосфера, можно задать число на торте и цвет платья. «Цветы в авто» — съёмка в салоне автомобиля с букетом, мягкий свет из окна. «Мужское в зеркале» — селфи в отражении, можно описать одежду, очки, цвет телефона. Свободные режимы «Свободный женский» и «Свободный мужской» принимают произвольный промт — опишите сцену, образ, настроение, локацию. Модель поймёт и воссоздаст.</p>
@@ -753,8 +753,10 @@
 
     function layout(){
         var w = container.offsetWidth;
+        var totalHeight = rows.length * (rowHeight + gap) - gap;
+        var offsetY = Math.max(0, (container.offsetHeight - totalHeight) / 2);
         rows.forEach(function(row,ri){
-            var y = ri * (rowHeight + gap);
+            var y = offsetY + ri * (rowHeight + gap);
             var x = positions[ri];
             row.forEach(function(im,ii){
                 var iw = parseInt(im.style.width);
