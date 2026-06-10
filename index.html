@@ -284,8 +284,8 @@
             <textarea id="lyrics" data-t="lyrics_placeholder" placeholder="Текст песни (опционально)..." rows="2" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,260)+'px';" style="display:none;"></textarea>
             <div class="hint" id="modeHint" data-t="hint">Выберите режим и укажите подпись</div>
             <button id="etalonBtn" class="mode-btn" style="display:none;text-align:center;color:#00CBF5;" onclick="useEtalon()" data-t="etalon">Использовать эталон</button>
-            <input type="file" id="photoInput" accept="image/*">
-            <img id="preview" alt="Превью">
+            <input type="file" id="photoInput" accept="image/*" style="display:none;">
+            <img id="preview" alt="Превью" style="display:none;">
             <div class="actions"><button id="generate" onclick="startGeneration()" data-t="generate">Сгенерировать</button></div>
             <div id="status"></div>
             <a href="prompts.html" class="nav-btn" data-t="prompts">База промтов</a>
@@ -354,11 +354,16 @@
                 document.getElementById('gemmaChat').style.display = 'none';
                 document.getElementById('caption').style.display = 'none';
                 document.getElementById('lyrics').style.display = 'none';
+                document.getElementById('photoInput').style.display = 'none';
+                document.getElementById('preview').style.display = 'none';
             } else {
                 currentGroup = group;
                 showCollagesForGroup(group);
                 if (group === 'flux' || group === 'audio' || group === 'ace') {
                     document.getElementById('caption').style.display = 'block';
+                }
+                if (group === 'flux') {
+                    document.getElementById('photoInput').style.display = 'block';
                 }
             }
         }
