@@ -376,11 +376,7 @@
             if (group === 'flux') { if (fluxBlock) { fluxBlock.style.display = 'flex'; requestAnimationFrame(() => { requestAnimationFrame(() => { fluxBlock.classList.add('show'); if (fluxVideo) fluxVideo.play(); }); }); } return; }
             if (['music_sub','instrument_sub','sfx_sub'].includes(group)) { const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } return; }
             if (group === 'text') { if (textInfo) { textInfo.style.display = 'block'; requestAnimationFrame(() => { requestAnimationFrame(() => textInfo.classList.add('show')); }); } document.getElementById('caption').style.display = 'none'; document.getElementById('modeHint').style.display = 'none'; return; }
-            if (group === 'audio') { const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } return; }
-                document.getElementById('audioSettings').style.display = 'flex';
-                const audioCat = document.getElementById('audioCategory');
-                audioCat.dispatchEvent(new Event('change'));
-            if (group === 'audio') { if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } return; }
+            if (group === 'audio') { const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } document.getElementById('audioSettings').style.display = 'flex'; const audioCat = document.getElementById('audioCategory'); audioCat.dispatchEvent(new Event('change')); return; }
             if (group === 'ace') { if (aceBlock) { aceBlock.style.display = 'flex'; loadAceExamples(); } selectMode('ace_free'); return; }
             if (group === 'gemma') { if (gemmaBlock) { gemmaBlock.style.display = 'flex'; } document.getElementById('gemmaChat').style.display = 'flex'; document.getElementById('caption').style.display = 'none'; document.getElementById('modeHint').style.display = 'none'; selectMode('gemma_free'); setTimeout(function(){ var mc = document.getElementById('gemmaMessages'); if(mc) mc.scrollTop = mc.scrollHeight; }, 100); return; }
             const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'], flux: [], text: [], audio: [], ace: [], gemma: [] };
