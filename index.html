@@ -81,7 +81,12 @@
         .ace-settings-row .ace-field label { display: block; font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
         .ace-settings-row .ace-field input, .ace-settings-row .ace-field select { width: 100%; padding: 7px 8px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); color: #fff; border-radius: 8px; font-size: 12px; font-family: 'Inter', sans-serif; outline: none; }
         .ace-settings-row .ace-field select { cursor: pointer; }
-        .ace-settings-row .ace-field input:focus, .ace-settings-row .ace-field select:focus { border-color: #00CBF5; box-shadow: 0 0 0 2px rgba(0,203,245,0.15); }
+        .audio-settings-row { display: none; gap: 6px; padding: 4px 0; flex-wrap: wrap; }
+        .audio-settings-row .audio-field { flex: 1; min-width: 0; }
+        .audio-settings-row .audio-field label { display: block; font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .audio-settings-row .audio-field input, .audio-settings-row .audio-field select { width: 100%; padding: 7px 8px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); color: #fff; border-radius: 8px; font-size: 12px; font-family: 'Inter', sans-serif; outline: none; }
+        .audio-settings-row .audio-field select { cursor: pointer; }
+        .audio-settings-row .audio-field input:focus, .audio-settings-row .audio-field select:focus { border-color: #00CBF5; box-shadow: 0 0 0 2px rgba(0,203,245,0.15); }
         #preview { width: 100%; max-height: 180px; object-fit: contain; margin: 8px 0; border-radius: 16px; display: none; }
         #status { text-align: center; color: #aaa; margin: 6px 0; font-size: 12px; }
         .actions { display: flex; gap: 8px; margin-top: 8px; }
@@ -240,27 +245,10 @@
                 </div>
                 <button class="mode-group-btn" onclick="toggleModeGroup('audio')" data-t="audio_models">Stable Audio 3 <span data-t="audio_sub">Текст в музыку</span></button>
                 <div class="mode-sub-group" id="group-audio" style="max-height:0;">
-                    <button class="mode-sub-btn accordion-btn" onclick="toggleFluxSubgroup('music_sub')"><span data-t="music">Музыка</span> <span class="accordion-arrow">▾</span></button>
-                    <div class="mode-sub-group" id="group-music_sub" style="max-height:0;padding-left:12px;">
-                        <button class="mode-sub-btn" data-mode="audio_music_energetic" data-t="music_energetic">Энергичная / Танцевальная</button>
-                        <button class="mode-sub-btn" data-mode="audio_music_poprock" data-t="music_poprock">Поп / Рок</button>
-                        <button class="mode-sub-btn" data-mode="audio_music_cinematic" data-t="music_cinematic">Кино / Эмбиент</button>
-                    </div>
-                    <button class="mode-sub-btn accordion-btn" onclick="toggleFluxSubgroup('instrument_sub')"><span data-t="instrument">Инструментал</span> <span class="accordion-arrow">▾</span></button>
-                    <div class="mode-sub-group" id="group-instrument_sub" style="max-height:0;padding-left:12px;">
-                        <button class="mode-sub-btn" data-mode="audio_instrument_loops" data-t="instrument_loops">Лупы</button>
-                        <button class="mode-sub-btn" data-mode="audio_instrument_stems" data-t="instrument_stems">Стемы</button>
-                    </div>
-                    <button class="mode-sub-btn accordion-btn" onclick="toggleFluxSubgroup('sfx_sub')"><span data-t="sfx">Звуковые эффекты</span> <span class="accordion-arrow">▾</span></button>
-                    <div class="mode-sub-group" id="group-sfx_sub" style="max-height:0;padding-left:12px;">
-                        <button class="mode-sub-btn" data-mode="audio_sfx_short" data-t="sfx_short">Короткие</button>
-                        <button class="mode-sub-btn" data-mode="audio_sfx_medium" data-t="sfx_medium">Средние</button>
-                        <button class="mode-sub-btn" data-mode="audio_sfx_ambience" data-t="sfx_ambience">Атмосфера</button>
-                    </div>
-                    <button class="mode-sub-btn" data-mode="audio_oneshot" data-t="oneshot">Ван-шоты</button>
-                    <div id="audioDurationBlock" style="display:none;padding:0 6px;">
-                        <div style="font-size:10px;color:#888;margin-bottom:4px;">Длительность (сек)</div>
-                        <input type="number" id="audioDuration" min="1" max="300" value="" placeholder="150" style="width:100%;padding:6px 10px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:10px;font-size:12px;font-family:'Inter',sans-serif;outline:none;">
+                    <div class="audio-settings-row" id="audioSettings">
+                        <div class="audio-field"><label>Длит. (сек)</label><input type="number" id="audioDuration" min="1" max="300" value="150" placeholder="150"></div>
+                        <div class="audio-field"><label>Категория</label><select id="audioCategory"><option value="music">Музыка</option><option value="instrument">Инструментал</option><option value="sfx">Звуковые эффекты</option><option value="oneshot">Ван-шоты</option></select></div>
+                        <div class="audio-field"><label>Подкатегория</label><select id="audioSubcategory"></select></div>
                     </div>
                 </div>
                 <button class="mode-group-btn" onclick="toggleModeGroup('ace')" data-t="ace_models">Ace Step 1.5 <span data-t="ace_sub">Текст в музыку + вокал</span></button>
@@ -351,6 +339,7 @@
                 const banner = document.getElementById('bannerImg'); if (banner) { banner.style.display = 'block'; banner.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => banner.classList.add('show')); }); }
                 document.getElementById('wallpaperSize').style.display = 'none';
                 document.getElementById('aceSettings').style.display = 'none';
+                document.getElementById('audioSettings').style.display = 'none';
                 document.getElementById('gemmaChat').style.display = 'none';
                 document.getElementById('caption').style.display = 'none';
                 document.getElementById('lyrics').style.display = 'none';
@@ -388,6 +377,9 @@
             if (['music_sub','instrument_sub','sfx_sub'].includes(group)) { const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } return; }
             if (group === 'text') { if (textInfo) { textInfo.style.display = 'block'; requestAnimationFrame(() => { requestAnimationFrame(() => textInfo.classList.add('show')); }); } document.getElementById('caption').style.display = 'none'; document.getElementById('modeHint').style.display = 'none'; return; }
             if (group === 'audio') { const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } return; }
+                document.getElementById('audioSettings').style.display = 'flex';
+                const audioCat = document.getElementById('audioCategory');
+                audioCat.dispatchEvent(new Event('change'));
             if (group === 'audio') { if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } return; }
             if (group === 'ace') { if (aceBlock) { aceBlock.style.display = 'flex'; loadAceExamples(); } selectMode('ace_free'); return; }
             if (group === 'gemma') { if (gemmaBlock) { gemmaBlock.style.display = 'flex'; } document.getElementById('gemmaChat').style.display = 'flex'; document.getElementById('caption').style.display = 'none'; document.getElementById('modeHint').style.display = 'none'; selectMode('gemma_free'); setTimeout(function(){ var mc = document.getElementById('gemmaMessages'); if(mc) mc.scrollTop = mc.scrollHeight; }, 100); return; }
@@ -397,6 +389,26 @@
         document.querySelectorAll(".mode-sub-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected")); this.classList.add("selected"); selectMode(this.dataset.mode); }); });
         document.querySelectorAll("#collages img").forEach(img => { img.addEventListener("click", function() { selectMode(this.dataset.mode); document.querySelectorAll('#collages img[data-mode]').forEach(i => i.style.borderColor = 'transparent'); this.style.borderColor = '#00CBF5'; }); });
         document.querySelectorAll(".size-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".size-btn").forEach(b => b.classList.remove("active")); this.classList.add("active"); wallpaperSize = this.dataset.wp; }); });
+        const audioSubcategories = {
+            music: [['audio_music_energetic','Энергичная / Танцевальная'],['audio_music_poprock','Поп / Рок'],['audio_music_cinematic','Кино / Эмбиент']],
+            instrument: [['audio_instrument_loops','Лупы'],['audio_instrument_stems','Стемы']],
+            sfx: [['audio_sfx_short','Короткие'],['audio_sfx_medium','Средние'],['audio_sfx_ambience','Атмосфера']],
+            oneshot: [['audio_oneshot','Ван-шоты']]
+        };
+        document.getElementById('audioCategory').addEventListener('change', function() {
+            const sub = document.getElementById('audioSubcategory');
+            sub.innerHTML = '';
+            audioSubcategories[this.value].forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item[0];
+                opt.textContent = item[1];
+                sub.appendChild(opt);
+            });
+            selectMode(sub.value);
+        });
+        document.getElementById('audioSubcategory').addEventListener('change', function() {
+            selectMode(this.value);
+        });
         function selectMode(mode) {
             selectedMode = mode;
             document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected"));
@@ -409,7 +421,7 @@
             document.getElementById("gemmaChat").style.display = "none";
             if (mode === "wallpaper") { document.getElementById("wallpaperSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; }
             if (mode === "logo") { document.getElementById("logoSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; wallpaperSize = "sq256"; }
-            if (mode && mode.startsWith("audio_")) { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("audioDurationBlock").style.display = "block"; }
+            if (mode && mode.startsWith("audio_")) { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("audioSettings").style.display = "flex"; }
             if (mode === "ace_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("lyrics").style.display = "block"; document.getElementById("aceSettings").style.display = "flex"; }
             if (mode === "gemma_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("gemmaChat").style.display = "flex"; }
         }
@@ -500,7 +512,7 @@
             }
             if (selectedMode && selectedMode.startsWith("audio_")) {
                 const audioCaption = document.getElementById('caption').value.trim();
-                const audioDurationVal = document.getElementById('audioDuration').value.trim();
+                const audioDurationVal = document.getElementById('audioDuration').value;
                 const missingAudio = [];
                 if (!audioCaption) missingAudio.push('Промт');
                 if (!audioDurationVal) missingAudio.push('Длительность');
@@ -555,7 +567,7 @@
                     const formData = new FormData();
                     formData.append("mode", selectedMode); formData.append("caption", caption || "lo-fi hip hop beat"); formData.append("user_id", currentUserId); formData.append("source", "web");
                     if (sessionToken) formData.append("session_token", sessionToken);
-                    const durInput = document.getElementById("audioDuration"); if (durInput && durInput.value) formData.append("duration", parseInt(durInput.value));
+                    const durInput = document.getElementById("audioDuration"); if (durInput && durInput.value) formData.append("duration", parseInt(durInput.value) || 150);
                     document.getElementById("status").textContent = "Генерация музыки...";
                     const resp = await fetch(`${SERVER_URL}/enqueue_audio`, { method: "POST", body: formData, headers: { "X-Session-Token": sessionToken } });
                     if (!resp.ok) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
