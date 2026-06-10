@@ -476,7 +476,16 @@
         }
         async function startGeneration() {
             if (!currentUserId) { document.getElementById('authBlock').style.display = 'block'; return; }
+            if (currentGroup === 'gemma' || currentGroup === 'text') { return; }
+            const caption = document.getElementById('caption').value.trim();
+            if ((currentGroup === 'flux' || currentGroup === 'audio') && !caption) { document.getElementById('status').textContent = 'Введите промт'; return; }
+            if (currentGroup === 'flux' && selectedMode !== 'wallpaper' && selectedMode !== 'logo' && !uploadedFile) { document.getElementById('status').textContent = 'Выберите файл'; return; }
+            if (currentGroup === 'audio' && !selectedMode.startsWith('audio_')) { document.getElementById('status').textContent = 'Выберите режим'; return; }
             if (selectedMode === "ace_free") {
+                const aceCaption = document.getElementById('caption').value.trim();
+                const aceLyrics = document.getElementById('lyrics').value.trim();
+                if (!aceCaption) { document.getElementById('status').textContent = 'Введите описание музыки (Caption)'; return; }
+                if (!aceLyrics) { document.getElementById('status').textContent = 'Введите текст песни (Lyrics)'; return; }
                 try {
                     const accessResp = await fetch(`${SERVER_URL}/check_ace_access?user_id=${currentUserId}&session_token=${sessionToken}`);
                     if (!accessResp.ok) return;
