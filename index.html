@@ -484,8 +484,14 @@
             if (selectedMode === "ace_free") {
                 const aceCaption = document.getElementById('caption').value.trim();
                 const aceLyrics = document.getElementById('lyrics').value.trim();
-                if (!aceCaption) { document.getElementById('status').textContent = 'Введите описание музыки (Caption)'; return; }
-                if (!aceLyrics) { document.getElementById('status').textContent = 'Введите текст песни (Lyrics)'; return; }
+                const aceDurationVal = document.getElementById('aceDuration').value.trim();
+                const aceBpmVal = document.getElementById('aceBpm').value.trim();
+                const missingAce = [];
+                if (!aceCaption) missingAce.push('Caption');
+                if (!aceLyrics) missingAce.push('Lyrics');
+                if (!aceDurationVal) missingAce.push('Длительность');
+                if (!aceBpmVal) missingAce.push('BPM');
+                if (missingAce.length > 0) { document.getElementById('status').textContent = 'Заполните: ' + missingAce.join(', '); return; }
                 try {
                     const accessResp = await fetch(`${SERVER_URL}/check_ace_access?user_id=${currentUserId}&session_token=${sessionToken}`);
                     if (!accessResp.ok) return;
