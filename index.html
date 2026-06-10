@@ -58,10 +58,18 @@
         .sub-block a { display: inline-block; padding: 8px 16px; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; text-decoration: none; border-radius: 8px; font-size: 12px; font-weight: 600; margin: 6px 0; letter-spacing: 0.5px; }
         .sub-block img { margin-top: 8px; border-radius: 8px; }
         .sub-ok { background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border-radius: 16px; padding: 14px; margin: 10px 0; text-align: center; font-size: 13px; color: #00CBF5; display: none; border: 1px solid rgba(255,255,255,0.06); font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-        .mode-group-btn { display: block; width: 100%; padding: 6px 14px; margin: 4px 0; background: #222; border: 1px solid transparent; color: #fff; border-radius: 16px; cursor: pointer; font-size: 13px; text-align: center; transition: 0.3s ease; font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 0.3px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); white-space: nowrap; }
+        .mode-group-btn { display: block; width: 100%; padding: 8px 14px; margin: 4px 0; background: #222; border: 1px solid transparent; color: #fff; border-radius: 16px; cursor: pointer; font-size: 13px; text-align: center; transition: 0.3s ease; font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 0.3px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); white-space: nowrap; }
+        .mode-group-btn span { display: block; font-size: 9px; font-weight: 400; opacity: 0.7; margin-top: 2px; }
+        body.light .mode-group-btn span { opacity: 0.6; }
         .mode-group-btn:hover { background: #2A2A2A; border-color: #00CBF5; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,203,245,0.15), 0 2px 8px rgba(0,0,0,0.3); }
         .mode-group-btn.active { background: #00CBF5; border-color: #00CBF5; color: #201F28; }
+        body.light .mode-group-btn { background: #e8e8e8; color: #111; border-color: rgba(0,0,0,0.06); }
+        body.light .mode-group-btn:hover { background: #ddd; }
+        body.light .mode-group-btn.active { background: #00CBF5; color: #201F28; }
         .mode-sub-btn { display: block; width: 100%; padding: 3px 14px; margin: 2px 0; background: #1a1a1a; border: 1px solid transparent; color: #aaa; border-radius: 16px; cursor: pointer; font-size: 11px; text-align: center; transition: 0.3s ease; font-family: 'Inter', sans-serif; font-weight: 500; letter-spacing: 0.3px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+        .accordion-arrow { display: inline-block; transition: transform 0.3s ease; font-size: 10px; margin-left: 2px; color: #888; }
+        .accordion-btn.open .accordion-arrow { transform: rotate(180deg); }
+        body.light .accordion-arrow { color: #666; }
         .mode-sub-btn[onclick*="toggleFluxSubgroup"] { padding: 5px 14px; font-size: 12px; }
         .mode-sub-btn:hover { background: #2A2A2A; border-color: #00CBF5; color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,203,245,0.1); }
         .mode-sub-btn.selected { background: linear-gradient(90deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; font-weight: 600; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
@@ -205,11 +213,11 @@
             <div class="sub-block" id="subscribeBlock"><span data-t="subscribe_block">Подпишитесь на нас в <a href="https://t.me/PhotoDocumentsBot_bot" target="_blank">Telegram</a></span><br><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://t.me/PhotoDocumentsBot_bot" width="200" height="200" alt="QR-код"></div>
             <div class="sub-ok" id="subscribeOk" data-t="subscribe_ok">Вы подписаны</div>
             <div id="modes">
-                <button class="mode-group-btn" onclick="toggleModeGroup('flux')" data-t="flux">FLUX 2 <span style="font-size:9px;color:#aaa;" data-t="flux_sub">Black Forest Labs</span></button>
+                <button class="mode-group-btn" onclick="toggleModeGroup('flux')" data-t="flux">FLUX 2 <span data-t="flux_sub">Black Forest Labs</span></button>
                 <div class="mode-sub-group" id="group-flux" style="max-height:0;">
-                    <button class="mode-sub-btn" onclick="toggleFluxSubgroup('free')" data-t="img2img">Изображение в изображение ▾</button>
+                    <button class="mode-sub-btn accordion-btn" onclick="toggleFluxSubgroup('free')"><span data-t="img2img">Изображение в изображение</span> <span class="accordion-arrow">▾</span></button>
                     <div class="mode-sub-group" id="group-free" style="max-height:0;padding-left:12px;">
-                        <button class="mode-sub-btn" onclick="toggleReadySubgroup()" data-t="ready_modes">Готовые режимы ▾</button>
+                        <button class="mode-sub-btn accordion-btn" onclick="toggleReadySubgroup()"><span data-t="ready_modes">Готовые режимы</span> <span class="accordion-arrow">▾</span></button>
                         <div class="mode-sub-group" id="group-ready-inner" style="max-height:0;padding-left:12px;">
                             <button class="mode-sub-btn" data-mode="documents" data-t="documents">Фото на документы</button>
                             <button class="mode-sub-btn" data-mode="beach" data-t="beach">Закат на пляже</button>
@@ -220,7 +228,7 @@
                         <button class="mode-sub-btn" data-mode="svoboda" data-t="svoboda_f">Свободный (ж)</button>
                         <button class="mode-sub-btn" data-mode="svoboda_male" data-t="svoboda_m">Свободный (м)</button>
                     </div>
-                    <button class="mode-sub-btn" onclick="toggleFluxSubgroup('wallpaper')" data-t="text2img">Текст в изображение ▾</button>
+                    <button class="mode-sub-btn accordion-btn" onclick="toggleFluxSubgroup('wallpaper')"><span data-t="text2img">Текст в изображение</span> <span class="accordion-arrow">▾</span></button>
                     <div class="mode-sub-group" id="group-wallpaper" style="max-height:0;padding-left:12px;">
                         <button class="mode-sub-btn" data-mode="wallpaper" data-t="wallpaper">Арты, Обои</button>
                         <div id="wallpaperSize" style="display:none;"><div class="size-btns"><button class="size-btn active" data-wp="phone">9:16 2K</button><button class="size-btn" data-wp="pc">16:9 2K</button></div></div>
@@ -228,20 +236,20 @@
                         <div id="logoSize" style="display:none;"><div class="size-btns"><button class="size-btn active" data-wp="sq256">256×256</button><button class="size-btn" data-wp="sq512">512×512</button><button class="size-btn" data-wp="sq1024">1024×1024</button></div></div>
                     </div>
                 </div>
-                <button class="mode-group-btn" onclick="toggleModeGroup('audio')" data-t="audio_models">Stable Audio 3 <span style="font-size:9px;color:#aaa;" data-t="audio_sub">Текст в музыку</span></button>
+                <button class="mode-group-btn" onclick="toggleModeGroup('audio')" data-t="audio_models">Stable Audio 3 <span data-t="audio_sub">Текст в музыку</span></button>
                 <div class="mode-sub-group" id="group-audio" style="max-height:0;">
-                    <button class="mode-sub-btn" onclick="toggleFluxSubgroup('music_sub')" data-t="music">Музыка ▾</button>
+                    <button class="mode-sub-btn accordion-btn" onclick="toggleFluxSubgroup('music_sub')"><span data-t="music">Музыка</span> <span class="accordion-arrow">▾</span></button>
                     <div class="mode-sub-group" id="group-music_sub" style="max-height:0;padding-left:12px;">
                         <button class="mode-sub-btn" data-mode="audio_music_energetic" data-t="music_energetic">Энергичная / Танцевальная</button>
                         <button class="mode-sub-btn" data-mode="audio_music_poprock" data-t="music_poprock">Поп / Рок</button>
                         <button class="mode-sub-btn" data-mode="audio_music_cinematic" data-t="music_cinematic">Кино / Эмбиент</button>
                     </div>
-                    <button class="mode-sub-btn" onclick="toggleFluxSubgroup('instrument_sub')" data-t="instrument">Инструментал ▾</button>
+                    <button class="mode-sub-btn accordion-btn" onclick="toggleFluxSubgroup('instrument_sub')"><span data-t="instrument">Инструментал</span> <span class="accordion-arrow">▾</span></button>
                     <div class="mode-sub-group" id="group-instrument_sub" style="max-height:0;padding-left:12px;">
                         <button class="mode-sub-btn" data-mode="audio_instrument_loops" data-t="instrument_loops">Лупы</button>
                         <button class="mode-sub-btn" data-mode="audio_instrument_stems" data-t="instrument_stems">Стемы</button>
                     </div>
-                    <button class="mode-sub-btn" onclick="toggleFluxSubgroup('sfx_sub')" data-t="sfx">Звуковые эффекты ▾</button>
+                    <button class="mode-sub-btn accordion-btn" onclick="toggleFluxSubgroup('sfx_sub')"><span data-t="sfx">Звуковые эффекты</span> <span class="accordion-arrow">▾</span></button>
                     <div class="mode-sub-group" id="group-sfx_sub" style="max-height:0;padding-left:12px;">
                         <button class="mode-sub-btn" data-mode="audio_sfx_short" data-t="sfx_short">Короткие</button>
                         <button class="mode-sub-btn" data-mode="audio_sfx_medium" data-t="sfx_medium">Средние</button>
@@ -253,7 +261,7 @@
                         <input type="number" id="audioDuration" min="1" max="300" value="" placeholder="150" style="width:100%;padding:6px 10px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:10px;font-size:12px;font-family:'Inter',sans-serif;outline:none;">
                     </div>
                 </div>
-                <button class="mode-group-btn" onclick="toggleModeGroup('ace')" data-t="ace_models">Ace Step 1.5 <span style="font-size:9px;color:#aaa;" data-t="ace_sub">Текст в музыку + вокал</span></button>
+                <button class="mode-group-btn" onclick="toggleModeGroup('ace')" data-t="ace_models">Ace Step 1.5 <span data-t="ace_sub">Текст в музыку + вокал</span></button>
                 <div class="mode-sub-group" id="group-ace" style="max-height:0;">
                     <div class="ace-settings-row" id="aceSettings">
                         <div class="ace-field"><label>Длит. (сек)</label><input type="number" id="aceDuration" min="1" max="180" value="30" placeholder="30"></div>
@@ -262,7 +270,7 @@
                         <div class="ace-field"><label>Язык</label><select id="aceLanguage"><option value="ar">AR</option><option value="az">AZ</option><option value="bg">BG</option><option value="bn">BN</option><option value="ca">CA</option><option value="cs">CS</option><option value="da">DA</option><option value="de">DE</option><option value="el">EL</option><option value="en" selected>EN</option><option value="es">ES</option><option value="fa">FA</option><option value="fi">FI</option><option value="fr">FR</option><option value="he">HE</option><option value="hi">HI</option><option value="hr">HR</option><option value="ht">HT</option><option value="hu">HU</option><option value="id">ID</option><option value="is">IS</option><option value="it">IT</option><option value="ja">JA</option><option value="ko">KO</option><option value="la">LA</option><option value="lt">LT</option><option value="ms">MS</option><option value="ne">NE</option><option value="nl">NL</option><option value="no">NO</option><option value="pa">PA</option><option value="pl">PL</option><option value="pt">PT</option><option value="ro">RO</option><option value="ru">RU</option><option value="sa">SA</option><option value="sk">SK</option><option value="sr">SR</option><option value="sv">SV</option><option value="sw">SW</option><option value="ta">TA</option><option value="te">TE</option><option value="th">TH</option><option value="tl">TL</option><option value="tr">TR</option><option value="uk">UK</option><option value="ur">UR</option><option value="vi">VI</option><option value="yue">YUE</option><option value="zh">ZH</option><option value="unknown">UNKNOWN</option></select></div>
                     </div>
                 </div>
-                <button class="mode-group-btn" onclick="toggleModeGroup('gemma')" data-t="gemma_models">Gemma 4 <span style="font-size:9px;color:#aaa;" data-t="gemma_sub">Анализ медиа</span></button>
+                <button class="mode-group-btn" onclick="toggleModeGroup('gemma')" data-t="gemma_models">Gemma 4 <span data-t="gemma_sub">Анализ медиа</span></button>
                 <div class="mode-sub-group" id="group-gemma" style="max-height:0;"></div>
                 <button class="mode-group-btn" onclick="toggleModeGroup('text')" data-t="text_models">DeepSeek v4</button>
                 <div class="mode-sub-group" id="group-text" style="max-height:0;">
@@ -327,8 +335,8 @@
         document.getElementById('sendBtn').addEventListener('click', async function() { const c = document.getElementById('authCode').value; if (c.length !== 4) return; try { const r = await fetch(`${SERVER_URL}/verify_code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: c }) }); const d = await r.json(); if (d.success) { currentUserId = d.user_id; currentUsername = d.username; isSubscribed = d.subscribed; sessionToken = d.session_token || ''; localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken })); showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); document.getElementById('authBlock').style.display = 'none'; if (isSubscribed) { document.getElementById('subscribeBlock').style.display = 'none'; document.getElementById('subscribeOk').style.display = 'block'; } else { document.getElementById('subscribeBlock').style.display = 'block'; } updateUnviewedCount(); } else { alert('Неверный код'); } } catch (err) { document.getElementById('status').textContent = 'Ошибка соединения'; } });
         function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; loadFreeChatHistory(); }
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
-        function toggleFluxSubgroup(sub) { const div = document.getElementById('group-' + sub); if (!div) return; if (div.style.maxHeight === '300px') { div.style.maxHeight = '0'; } else { div.style.maxHeight = '300px'; showCollagesForGroup(sub); } }
-        function toggleReadySubgroup() { const inner = document.getElementById('group-ready-inner'); const freeGroup = document.getElementById('group-free'); if (inner.style.maxHeight === '300px') { inner.style.maxHeight = '0'; freeGroup.style.maxHeight = '300px'; } else { inner.style.maxHeight = '300px'; freeGroup.style.maxHeight = '600px'; showCollagesForGroup('ready'); } }
+        function toggleFluxSubgroup(sub) { const div = document.getElementById('group-' + sub); if (!div) return; const btn = document.querySelector(`[onclick="toggleFluxSubgroup('${sub}')"]`); if (div.style.maxHeight === '300px') { div.style.maxHeight = '0'; if (btn) btn.classList.remove('open'); } else { div.style.maxHeight = '300px'; if (btn) btn.classList.add('open'); showCollagesForGroup(sub); } }
+        function toggleReadySubgroup() { const inner = document.getElementById('group-ready-inner'); const freeGroup = document.getElementById('group-free'); const btn = document.querySelector('[onclick="toggleReadySubgroup()"]'); if (inner.style.maxHeight === '300px') { inner.style.maxHeight = '0'; freeGroup.style.maxHeight = '300px'; if (btn) btn.classList.remove('open'); } else { inner.style.maxHeight = '300px'; freeGroup.style.maxHeight = '600px'; if (btn) btn.classList.add('open'); showCollagesForGroup('ready'); } }
         function toggleModeGroup(group) {
             const groups = ['flux', 'audio', 'ace', 'gemma', 'text'];
             groups.forEach(g => { const div = document.getElementById('group-' + g); if (!div) return; if (g === group && currentGroup !== group) { div.style.maxHeight = g === 'flux' ? '600px' : '300px'; } else { div.style.maxHeight = '0'; } });
