@@ -499,6 +499,12 @@
                 } catch (err) {}
             }
             if (selectedMode && selectedMode.startsWith("audio_")) {
+                const audioCaption = document.getElementById('caption').value.trim();
+                const audioDurationVal = document.getElementById('audioDuration').value.trim();
+                const missingAudio = [];
+                if (!audioCaption) missingAudio.push('Промт');
+                if (!audioDurationVal) missingAudio.push('Длительность');
+                if (missingAudio.length > 0) { document.getElementById('status').textContent = 'Заполните: ' + missingAudio.join(', '); return; }
                 try {
                     const accessResp = await fetch(`${SERVER_URL}/check_audio_access?user_id=${currentUserId}&session_token=${sessionToken}`);
                     if (!accessResp.ok) return;
