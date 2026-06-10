@@ -282,7 +282,7 @@
             </div>
             <textarea id="caption" data-t="prompt_placeholder" placeholder="Введите промт здесь..." rows="2" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,130)+'px';" style="display:none;"></textarea>
             <textarea id="lyrics" data-t="lyrics_placeholder" placeholder="Текст песни (опционально)..." rows="2" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,260)+'px';" style="display:none;"></textarea>
-            <div class="hint" id="modeHint" data-t="hint">Выберите режим и укажите подпись</div>
+            <div class="hint" id="modeHint" data-t="hint" style="display:none;">Выберите режим и укажите подпись</div>
             <button id="etalonBtn" class="mode-btn" style="display:none;text-align:center;color:#00CBF5;" onclick="useEtalon()" data-t="etalon">Использовать эталон</button>
             <input type="file" id="photoInput" accept="image/*" style="display:none;">
             <img id="preview" alt="Превью" style="display:none;">
@@ -356,7 +356,6 @@
                 document.getElementById('lyrics').style.display = 'none';
                 document.getElementById('photoInput').style.display = 'none';
                 document.getElementById('preview').style.display = 'none';
-                document.getElementById('modeHint').style.display = 'block';
             } else {
                 currentGroup = group;
                 showCollagesForGroup(group);
@@ -392,7 +391,6 @@
         document.querySelectorAll(".size-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".size-btn").forEach(b => b.classList.remove("active")); this.classList.add("active"); wallpaperSize = this.dataset.wp; }); });
         function selectMode(mode) {
             selectedMode = mode;
-            document.getElementById("modeHint").textContent = hints[mode] || hints.documents;
             document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected"));
             document.getElementById("wallpaperSize").style.display = "none";
             document.getElementById("logoSize").style.display = "none";
