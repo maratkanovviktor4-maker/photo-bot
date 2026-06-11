@@ -97,6 +97,7 @@
         <button class="tab-btn active" onclick="switchTab('photos')" data-t="tab_photos">📸 Фото</button>
         <button class="tab-btn" onclick="switchTab('stable_audio')" data-t="tab_stable_audio">🎵 Stable Audio 3</button>
         <button class="tab-btn" onclick="switchTab('ace_audio')" data-t="tab_ace_audio">🎶 Ace Step 1.5</button>
+        <button class="tab-btn" onclick="switchTab('hunyuan')" data-t="tab_hunyuan">🧊 Hunyuan 2.1</button>
     </div>
 
     <div class="container" id="container">
@@ -122,14 +123,14 @@
 
         const translations = {
             ru: {
-                storage_title: "Хранилище генераций", tab_photos: "📸 Фото", tab_stable_audio: "🎵 Stable Audio 3", tab_ace_audio: "🎶 Ace Step 1.5",
+                storage_title: "Хранилище генераций", tab_photos: "📸 Фото", tab_stable_audio: "🎵 Stable Audio 3", tab_ace_audio: "🎶 Ace Step 1.5", tab_hunyuan: "🧊 Hunyuan 2.1",
                 loading: "Загрузка...", empty_photos: "Нет сгенерированных фото", empty_stable_audio: "Нет аудио Stable Audio 3", empty_ace_audio: "Нет аудио Ace Step 1.5",
                 delete: "Удалить", confirm_delete: "Удалить навсегда?", no_prompt: "Без описания", auth_required: "Требуется авторизация", error_loading: "Ошибка загрузки",
                 home: "На главную", prompts: "База промтов", choose_model: "Выберите модель", fast: "Fast", best: "Best",
                 ace_caption: "Промт", ace_lyrics: "Текст песни"
             },
             en: {
-                storage_title: "Generation Storage", tab_photos: "📸 Photos", tab_stable_audio: "🎵 Stable Audio 3", tab_ace_audio: "🎶 Ace Step 1.5",
+                storage_title: "Generation Storage", tab_photos: "📸 Photos", tab_stable_audio: "🎵 Stable Audio 3", tab_ace_audio: "🎶 Ace Step 1.5", tab_hunyuan: "🧊 Hunyuan 2.1",
                 loading: "Loading...", empty_photos: "No generated photos", empty_stable_audio: "No Stable Audio 3 audio", empty_ace_audio: "No Ace Step 1.5 audio",
                 delete: "Delete", confirm_delete: "Delete forever?", no_prompt: "No description", auth_required: "Authorization required", error_loading: "Loading error",
                 home: "Home", prompts: "Prompt Library", choose_model: "Select model", fast: "Fast", best: "Best",
@@ -161,7 +162,39 @@
             document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
             loadStorage();
         }
-
+        async function loadHunyuan(container) {
+            try {
+                const resp = await fetch(`${SERVER_URL}/hunyuan_history?user_id=${currentUserId}&session_token=${sessionToken}`);
+                if (resp.status === 403) { alert('Сессия устарела.'); window.location.href = 'index.html'; return; }
+                container.innerHTML = '';
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.results && data.results.length > 0) {
+                        data.results.forEach(item => {
+                            const div = document.createElement('div'); div.className = 'storage-item';
+                            const icon = document.createElement('div'); icon.className = 'audio-icon'; icon.style.background = 'linear-gradient(135deg, #00CBF5, #14E9FC)'; icon.textContent = '🧊'; div.appendChild(icon);
+                            const info = document.createElement('div'); info.className = 'item-info';
+                            const date = document.createElement('div'); date.className = 'item-date';
+                            const match = item.job_id.match(/(\d{8})_(\d{6})/);
+                            if (match) { const d = match[1]; const t = match[2]; date.textContent = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)} ${t.slice(0,2)}:${t.slice(2,4)}:${t.slice(4,6)}`; } else { date.textContent = item.job_id; }
+                            info.appendChild(date);
+                            if (item.model_name) { const nameEl = document.createElement('div'); nameEl.style.cssText = 'color:#00CBF5;font-size:13px;font-weight:600;margin-bottom:4px;'; nameEl.textContent = item.model_name; info.appendChild(nameEl); }
+                            const actions = document.createElement('div'); actions.className = 'item-actions';
+                            const downloadBtn = document.createElement('button'); downloadBtn.className = 'btn-play'; downloadBtn.textContent = 'Скачать GLB';
+                            downloadBtn.onclick = function() { window.open(`${SERVER_URL}/get_hunyuan_file?job_id=${item.job_id}&user_id=${currentUserId}&session_token=${sessionToken}`, '_blank'); };
+                            actions.appendChild(downloadBtn);
+                            const deleteBtn = document.createElement('button'); deleteBtn.className = 'btn-delete'; deleteBtn.textContent = t('delete');
+                            deleteBtn.onclick = async function() { if (!confirm(t('confirm_delete'))) return; try { await fetch(`${SERVER_URL}/delete_hunyuan?job_id=${item.job_id}&user_id=${currentUserId}&session_token=${sessionToken}`, { method: 'DELETE' }); loadHunyuan(container); } catch(e) {} };
+                            actions.appendChild(deleteBtn);
+                            info.appendChild(actions); div.appendChild(info); container.appendChild(div);
+                        });
+                        try { await fetch(`${SERVER_URL}/mark_viewed?user_id=${currentUserId}&source=web&session_token=${sessionToken}`, { method: 'POST' }); } catch(e) {}
+                        return;
+                    }
+                }
+                container.innerHTML = `<div class="empty-state">Нет 3D-моделей</div>`;
+            } catch (e) { container.innerHTML = `<div class="empty-state">${t('error_loading')}</div>`; }
+        }
         async function loadStorage() {
             if (!currentUserId) { document.getElementById('container').innerHTML = `<div class="empty-state">${t('auth_required')}</div>`; return; }
             const container = document.getElementById('container');
@@ -173,6 +206,8 @@
                 await loadStableAudio(container);
             } else if (currentTab === 'ace_audio') {
                 await loadAceAudio(container);
+            } else if (currentTab === 'hunyuan') {
+                await loadHunyuan(container);
             }
         }
 
