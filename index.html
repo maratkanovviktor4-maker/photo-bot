@@ -534,6 +534,7 @@
             }
             if (selectedMode === "hunyuan_free") {
                 if (!uploadedFile) { document.getElementById('status').textContent = 'Выберите файл'; return; }
+                if (!document.getElementById('modelName').value.trim()) { document.getElementById('status').textContent = 'Введите название модели'; return; }
                 try {
                     const accessResp = await fetch(`${SERVER_URL}/check_hunyuan_access?user_id=${currentUserId}&session_token=${sessionToken}`);
                     if (!accessResp.ok) return;
