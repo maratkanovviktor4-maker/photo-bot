@@ -6,6 +6,7 @@
     <title>PhotoBot — Фото на документы</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: #201F28; color: #fff; min-height: 100vh; position: relative; }
@@ -184,6 +185,8 @@
                 <div style="font-size:24px; font-weight:700; letter-spacing:1px; text-align:center;">Hunyuan 2.1</div>
                 <div style="font-size:14px; color:#aaa; text-align:center; max-width:500px;">Генерация 3D-моделей из изображения. Загрузите фото и получите GLB-файл.</div>
                 <div id="hunyuanExamples" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; width:100%;"></div>
+                <model-viewer id="hunyuanViewer" src="" style="display:none; width:100%; height:400px; background:rgba(255,255,255,0.03); border-radius:12px;" camera-controls auto-rotate shadow-intensity="0.5" exposure="1"></model-viewer>
+                <button id="hunyuanCloseViewer" onclick="document.getElementById('hunyuanViewer').style.display='none';this.style.display='none';document.getElementById('hunyuanExamples').style.display='flex';" style="display:none; padding:6px 16px; background:rgba(34,34,34,0.6); border:1px solid rgba(255,255,255,0.1); color:#aaa; border-radius:8px; cursor:pointer; font-family:'Inter',sans-serif; font-size:12px;">✕ Закрыть просмотр</button>
                 <div style="font-size:12px; color:#888; text-align:center; max-width:600px; line-height:1.6; margin-top:20px;">Hunyuan 2.1 — модель генерации 3D из изображений. Загрузите фото объекта — получите трёхмерную модель в формате GLB. Требуется активная подписка.</div>
             </div>
             <div id="gemmaInfoBlock" style="display:none; position:relative; flex-direction:column; align-items:center; gap:20px; padding:20px 20px; width:100%;">
@@ -713,6 +716,12 @@
                 card.innerHTML = `<img src="3d_demo/${f}.jpg" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" onerror="this.style.display='none'"><div style="padding:8px;font-size:11px;color:#aaa;text-align:center;">${f.replace('hunyuan_demo','Модель ')}</div>`;
                 card.onmouseenter = function() { this.style.borderColor = 'rgba(0,203,245,0.3)'; this.style.transform = 'translateY(-2px)'; };
                 card.onmouseleave = function() { this.style.borderColor = 'rgba(255,255,255,0.06)'; this.style.transform = 'translateY(0)'; };
+                card.onclick = function() {
+                    document.getElementById('hunyuanExamples').style.display = 'none';
+                    document.getElementById('hunyuanViewer').src = '3d_demo/' + f + '.glb';
+                    document.getElementById('hunyuanViewer').style.display = 'block';
+                    document.getElementById('hunyuanCloseViewer').style.display = 'block';
+                };
                 container.appendChild(card);
             });
         }
