@@ -6,7 +6,6 @@
     <title>PhotoBot — Фото на документы</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: #201F28; color: #fff; min-height: 100vh; position: relative; }
@@ -157,7 +156,6 @@
         body.light #aceExamples > div { background: rgba(0,0,0,0.03) !important; border-color: rgba(0,0,0,0.08) !important; }
         body.light #aceExamples > div > div:nth-of-type(3) { background: rgba(0,0,0,0.05) !important; }
         body.light #fluxInfoBlock .flux-desc, body.light #textModelsInfo, body.light #audioInfoBlock div, body.light #aceInfoBlock div, body.light #gemmaInfoBlock div, body.light #hunyuanInfoBlock div { color: #333 !important; }
-        #hunyuanGrid img { min-height: 100px; object-fit: cover; }
         #aceExamples > div::-webkit-scrollbar { width: 4px; } #aceExamples > div::-webkit-scrollbar-track { background: transparent; } #aceExamples > div::-webkit-scrollbar-thumb { background: #F59E0B; border-radius: 2px; }
     </style>
 <script src="config.js"></script>
@@ -182,13 +180,11 @@
                 <div id="aceExamples" style="display:flex; flex-wrap:wrap; gap:20px; justify-content:center; width:100%;"></div>
                 <div style="font-size:12px; color:#888; text-align:center; max-width:600px; line-height:1.6; margin-top:20px;">Ace Step 1.5 — мощная модель для генерации музыки с вокалом. Поддерживает текст песни, язык, тональность, BPM. Основана на архитектуре Ace Step 1.5 XL Turbo.</div>
             </div>
-            <div id="hunyuanInfoBlock" style="display:none; position:relative; flex-direction:column; align-items:center; gap:16px; padding:20px 20px; width:100%;">
+            <div id="hunyuanInfoBlock" style="display:none; position:relative; flex-direction:column; align-items:center; gap:20px; padding:20px 20px; width:100%;">
                 <div style="font-size:24px; font-weight:700; letter-spacing:1px; text-align:center;">Hunyuan 2.1</div>
                 <div style="font-size:14px; color:#aaa; text-align:center; max-width:500px;">Генерация 3D-моделей из изображения. Загрузите фото и получите GLB-файл.</div>
-                <model-viewer id="hunyuanViewer" src="" style="display:none; width:100%; height:400px; background:rgba(255,255,255,0.03); border-radius:12px;" camera-controls auto-rotate shadow-intensity="0.5" exposure="1"></model-viewer>
-                <button id="hunyuanCloseViewer" onclick="closeHunyuanViewer()" style="display:none; padding:6px 16px; background:rgba(34,34,34,0.6); border:1px solid rgba(255,255,255,0.1); color:#aaa; border-radius:8px; cursor:pointer; font-family:'Inter',sans-serif; font-size:12px;">✕ Закрыть просмотр</button>
-                <div id="hunyuanGrid" style="display:flex; flex-wrap:wrap; gap:10px; width:100%;"></div>
-                <div style="font-size:12px; color:#888; text-align:center; max-width:600px; line-height:1.6; margin-top:8px;">Hunyuan 2.1 — модель генерации 3D из изображений. Загрузите фото объекта — получите трёхмерную модель в формате GLB. Требуется активная подписка.</div>
+                <div id="hunyuanExamples" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; width:100%;"></div>
+                <div style="font-size:12px; color:#888; text-align:center; max-width:600px; line-height:1.6; margin-top:20px;">Hunyuan 2.1 — модель генерации 3D из изображений. Загрузите фото объекта — получите трёхмерную модель в формате GLB. Требуется активная подписка.</div>
             </div>
             <div id="gemmaInfoBlock" style="display:none; position:relative; flex-direction:column; align-items:center; gap:20px; padding:20px 20px; width:100%;">
                 <div style="font-size:24px; font-weight:700; letter-spacing:1px; text-align:center;">Gemma 4</div>
@@ -419,7 +415,7 @@
             if (banner) banner.style.display = 'none';
             if (group === 'flux') { if (fluxBlock) { fluxBlock.style.display = 'flex'; requestAnimationFrame(() => { requestAnimationFrame(() => { fluxBlock.classList.add('show'); if (fluxVideo) fluxVideo.play(); }); }); } return; }
             if (['music_sub','instrument_sub','sfx_sub'].includes(group)) { const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } return; }
-            if (group === 'hunyuan') { if (hunyuanBlock) { hunyuanBlock.style.display = 'flex'; console.log('Loading hunyuan grid...'); loadHunyuanGrid(); } selectMode('hunyuan_free'); return; }
+            if (group === 'hunyuan') { if (hunyuanBlock) { hunyuanBlock.style.display = 'flex'; loadHunyuanExamples(); } selectMode('hunyuan_free'); return; }
             if (group === 'text') { if (textInfo) { textInfo.style.display = 'block'; requestAnimationFrame(() => { requestAnimationFrame(() => textInfo.classList.add('show')); }); } document.getElementById('caption').style.display = 'none'; document.getElementById('modeHint').style.display = 'none'; document.getElementById('modelName').style.display = 'none'; document.getElementById('modelName').value = ''; return; }
             if (group === 'audio') { const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } document.getElementById('audioSettings').style.display = 'flex'; const audioCat = document.getElementById('audioCategory'); audioCat.dispatchEvent(new Event('change')); return; }
             if (group === 'ace') { if (aceBlock) { aceBlock.style.display = 'flex'; loadAceExamples(); } document.getElementById('aceSettings').style.display = 'flex'; document.getElementById('caption').style.display = 'block'; document.getElementById('lyrics').style.display = 'block'; selectMode('ace_free'); return; }
@@ -706,6 +702,20 @@
         function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); applyTranslations(); }
         function t(key) { return translations[currentLang] && translations[currentLang][key] ? translations[currentLang][key] : key; }
         function applyTranslations() { document.querySelectorAll('[data-t]').forEach(el => { const key = el.getAttribute('data-t'); if (el.placeholder !== undefined && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) { el.placeholder = t(key); } else { el.textContent = t(key); } }); document.title = t('title'); }
+        async function loadHunyuanExamples() {
+            const container = document.getElementById('hunyuanExamples');
+            if (!container || container.children.length > 0) return;
+            const files = ['hunyuan_demo1', 'hunyuan_demo2', 'hunyuan_demo3', 'hunyuan_demo4'];
+            files.forEach(f => {
+                const card = document.createElement('div');
+                card.style.cssText = 'width:calc(50% - 5px);cursor:pointer;transition:0.3s ease;border:1px solid rgba(255,255,255,0.06);border-radius:12px;overflow:hidden;background:rgba(255,255,255,0.02);';
+                card.innerHTML = `<img src="3d_demo/${f}.jpg" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" onerror="this.style.display='none'"><div style="padding:8px;font-size:11px;color:#aaa;text-align:center;">${f.replace('hunyuan_demo','Модель ')}</div>`;
+                card.onmouseenter = function() { this.style.borderColor = 'rgba(0,203,245,0.3)'; this.style.transform = 'translateY(-2px)'; };
+                card.onmouseleave = function() { this.style.borderColor = 'rgba(255,255,255,0.06)'; this.style.transform = 'translateY(0)'; };
+                container.appendChild(card);
+            });
+        }
+
         async function loadAudioExamples() {
             const container = document.getElementById('audioExamples'); if (!container || container.children.length > 0) return;
             container.style.cssText = 'display:flex;flex-direction:column;gap:16px;width:100%;align-items:center;';
@@ -729,35 +739,6 @@
                 card.addEventListener('mouseleave',function(){audio.pause();card.style.background='rgba(255,255,255,0.03)';card.style.transform='translateY(0)';card.style.borderColor='rgba(255,255,255,0.06)';leftBars.style.opacity='0';rightBars.style.opacity='0';if(interval)clearInterval(interval);for(let i=0;i<bars;i++){widths[i]=2;velocities[i]=0;leftBars.children[i].style.width='2px';rightBars.children[i].style.width='2px';}});
                 container.appendChild(card);
             });
-        }
-        async function loadHunyuanGrid() {
-            const grid = document.getElementById('hunyuanGrid');
-            if (!grid || grid.children.length > 0) return;
-            const files = ['hunyuan_demo1', 'hunyuan_demo2', 'hunyuan_demo3', 'hunyuan_demo4', 'hunyuan_demo5', 'hunyuan_demo6', 'hunyuan_demo7', 'hunyuan_demo8', 'hunyuan_demo9', 'hunyuan_demo10', 'hunyuan_demo11', 'hunyuan_demo12'];
-            files.forEach(f => {
-                const img = document.createElement('img');
-                img.src = '3d_demo/' + f + '.jpg';
-                img.style.cssText = 'width:calc(25% - 7.5px);aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;transition:0.2s ease;border:2px solid transparent;';
-                img.onerror = function() { this.style.display = 'none'; };
-                img.onmouseover = function() { this.style.borderColor = 'rgba(0,203,245,0.4)'; this.style.transform = 'scale(1.03)'; };
-                img.onmouseout = function() { this.style.borderColor = 'transparent'; this.style.transform = 'scale(1)'; };
-                img.onclick = function() { openHunyuanViewer(f + '.glb'); };
-                grid.appendChild(img);
-            });
-        }
-        function openHunyuanViewer(src) {
-            const viewer = document.getElementById('hunyuanViewer');
-            const btn = document.getElementById('hunyuanCloseViewer');
-            viewer.src = '3d_demo/' + src;
-            viewer.style.display = 'block';
-            btn.style.display = 'block';
-        }
-        function closeHunyuanViewer() {
-            const viewer = document.getElementById('hunyuanViewer');
-            const btn = document.getElementById('hunyuanCloseViewer');
-            viewer.src = '';
-            viewer.style.display = 'none';
-            btn.style.display = 'none';
         }
         async function loadAceExamples() {
             const container = document.getElementById('aceExamples'); if (!container || container.children.length > 0) return;
