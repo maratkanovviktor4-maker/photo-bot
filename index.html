@@ -101,6 +101,7 @@
         #lyrics:focus { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
         body.light #caption { background: #f0f0f0; color: #111; border-color: rgba(0,0,0,0.15); }
         body.light #lyrics { background: #f0f0f0; color: #111; border-color: rgba(0,0,0,0.15); }
+        body.light #modelName { background: #f0f0f0; color: #111; border-color: rgba(0,0,0,0.15); }
         * { scrollbar-width: thin; scrollbar-color: #3a3a5a transparent; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #3a3a5a; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: #4a4a6a; }
         .hint { font-size: 10px; color: #888; margin: 3px 0 6px 0; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -278,6 +279,7 @@
             </div>
             <textarea id="caption" data-t="prompt_placeholder" placeholder="Введите промт здесь..." rows="2" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,130)+'px';" style="display:none;"></textarea>
             <textarea id="lyrics" data-t="lyrics_placeholder" placeholder="Текст песни (опционально)..." rows="2" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,260)+'px';" style="display:none;"></textarea>
+            <input type="text" id="modelName" placeholder="Название 3D-модели" style="display:none;width:100%;padding:10px;margin:6px 0;border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(34,34,34,0.6);color:#fff;font-size:13px;font-family:'Inter',sans-serif;outline:none;">
             <div class="hint" id="modeHint" data-t="hint" style="display:none;">Выберите режим и укажите подпись</div>
             <button id="etalonBtn" class="mode-btn" style="display:none;text-align:center;color:#00CBF5;" onclick="useEtalon()" data-t="etalon">Использовать эталон</button>
             <input type="file" id="photoInput" accept="image/*" style="display:none;">
@@ -353,6 +355,7 @@
                 document.getElementById('lyrics').style.display = 'none';
                 document.getElementById('photoInput').style.display = 'none';
                 document.getElementById('preview').style.display = 'none';
+                document.getElementById('modelName').style.display = 'none';
             } else {
                 currentGroup = group;
                 showCollagesForGroup(group);
@@ -370,6 +373,11 @@
                 }
                 if (group === 'flux' || group === 'hunyuan') {
                     document.getElementById('photoInput').style.display = 'block';
+                    if (group === 'hunyuan') {
+                        document.getElementById('modelName').style.display = 'block';
+                    } else {
+                        document.getElementById('modelName').style.display = 'none';
+                    }
                 } else {
                     document.getElementById('photoInput').style.display = 'none';
                     document.getElementById('preview').style.display = 'none';
@@ -501,7 +509,7 @@
         }
         async function startGeneration() {
             if (!currentUserId) { document.getElementById('authBlock').style.display = 'block'; return; }
-            if (currentGroup === 'gemma' || currentGroup === 'hunyuan' || currentGroup === 'text') { return; }
+            if (currentGroup === 'gemma' || currentGroup === 'text') { return; }
             const caption = document.getElementById('caption').value.trim();
             if ((currentGroup === 'flux' || currentGroup === 'audio') && !caption) { document.getElementById('status').textContent = 'Введите промт'; return; }
             if (currentGroup === 'flux' && selectedMode !== 'wallpaper' && selectedMode !== 'logo' && !uploadedFile) { document.getElementById('status').textContent = 'Выберите файл'; return; }
@@ -524,8 +532,14 @@
                     if (!(await accessResp.json()).allowed) { document.getElementById("status").textContent = "Требуется подписка Ace Step 1.5"; return; }
                 } catch (err) {}
             }
-            if (selectedMode && selectedMode.startsWith("audio_")) {
-                const audioCaption = document.getElementById('caption').value.trim();
+            if (selectedMode === "hunyuan_free") {
+                if (!uploadedFile) { document.getElementById('status').textContent = 'Выберите файл'; return; }
+                try {
+                    const accessResp = await fetch(`${SERVER_URL}/check_hunyuan_access?user_id=${currentUserId}&session_token=${sessionToken}`);
+                    if (!accessResp.ok) return;
+                    if (!(await accessResp.json()).allowed) { document.getElementById("status").textContent = "Требуется подписка Hunyuan 2.1"; return; }
+                } catch (err) {}
+            }
                 const audioDurationVal = document.getElementById('audioDuration').value;
                 const missingAudio = [];
                 if (!audioCaption) missingAudio.push('Промт');
@@ -589,6 +603,28 @@
                     if (data.job_id) {
                         document.getElementById("status").textContent = "Добавлено в очередь...";
                         for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); const pendResp = await fetch(`${SERVER_URL}/pending_audio?user_id=${currentUserId}&session_token=${sessionToken}`); if (pendResp.ok) { const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { document.getElementById("status").textContent = "Готово! Аудио в Хранилище."; updateUnviewedCount(); genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; } } }
+                    }
+                } else if (selectedMode === "hunyuan_free") {
+                    if (!uploadedFile) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
+                    const formData = new FormData();
+                    formData.append("image", uploadedFile);
+                    formData.append("user_id", currentUserId);
+                    formData.append("source", "web");
+                    const modelName = document.getElementById("modelName").value.trim() || "";
+                    if (modelName) formData.append("model_name", modelName);
+                    if (sessionToken) formData.append("session_token", sessionToken);
+                    document.getElementById("status").textContent = "Генерация 3D-модели...";
+                    const resp = await fetch(`${SERVER_URL}/enqueue_hunyuan`, { method: "POST", body: formData, headers: { "X-Session-Token": sessionToken } });
+                    if (!resp.ok) { const err = await resp.json().catch(()=>({})); document.getElementById("status").textContent = err.error || "Ошибка"; genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
+                    const data = await resp.json();
+                    if (data.job_id) {
+                        document.getElementById("status").textContent = "Добавлено в очередь...";
+                        for (let i = 0; i < 300; i++) {
+                            await new Promise(r => setTimeout(r, 2000));
+                            const pendResp = await fetch(`${SERVER_URL}/pending_hunyuan?user_id=${currentUserId}&session_token=${sessionToken}`);
+                            if (pendResp.ok) { const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { document.getElementById("status").textContent = "Готово! 3D-модель в Хранилище."; updateUnviewedCount(); genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; } }
+                        }
+                        document.getElementById("status").textContent = "Время ожидания истекло.";
                     }
                 } else if (selectedMode !== "gemma_free") {
                     if (selectedMode !== "wallpaper" && selectedMode !== "logo" && !uploadedFile) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
