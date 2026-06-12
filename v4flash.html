@@ -114,7 +114,7 @@
 <script src="config.js"></script>
 </head>
 <body>
-    <div style="position:fixed;top:20px;right:20px;display:flex;gap:4px;z-index:1000;">
+    <div style="position:fixed;top:50%;transform:translateY(-50%);right:20px;display:flex;gap:4px;z-index:1000;">
         <button class="theme-btn" onclick="toggleTheme()" id="themeToggle">☀️</button>
     </div>
     <div class="sidebar">
@@ -131,6 +131,7 @@
     <div class="main">
         <div class="top-bar">
             <span id="balanceDisplay"> ...</span>
+            <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
         </div>
         <div class="chat-wrapper">
             <div class="chat-area" id="chatArea">
@@ -147,8 +148,7 @@
                     <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
                     <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,280)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,280)+'px';this._init=true;}"></textarea>
                     <div class="input-toolbar">
-                        <button class="mode-btn active" data-mode="chat" onclick="setMode('chat')" style="font-size:11px;padding:4px 10px;">Chat</button>
-                        <button class="mode-btn" data-mode="reasoner" onclick="setMode('reasoner')" style="font-size:11px;padding:4px 10px;">Reasoner</button>
+                        <button class="mode-btn" id="reasonerToggle" onclick="toggleReasoner()" style="font-size:11px;padding:4px 10px;">Reasoner</button>
                         <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл">+</button>
                         <span class="file-name-inline" id="fileNameInline"></span>
                         <button id="sendBtn" onclick="sendMessage()">Отправить</button>
@@ -194,6 +194,12 @@
             if (saved === 'light') {
                 document.body.classList.add('light');
                 document.getElementById('themeToggle').textContent = '🌙';
+            }
+            var savedMode = localStorage.getItem('photobot_mode');
+            if (savedMode === 'reasoner') {
+                currentMode = 'reasoner';
+                var btn = document.getElementById('reasonerToggle');
+                if (btn) btn.classList.add('active');
             }
         })();
 
@@ -381,7 +387,17 @@
                 document.getElementById('userInput').focus();
             }
         }
-        function setMode(mode) { currentMode = mode; document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode)); }
+        function setMode(mode) { currentMode = mode; }
+        function toggleReasoner() {
+            if (currentMode === 'reasoner') {
+                currentMode = 'chat';
+                document.getElementById('reasonerToggle').classList.remove('active');
+            } else {
+                currentMode = 'reasoner';
+                document.getElementById('reasonerToggle').classList.add('active');
+            }
+            localStorage.setItem('photobot_mode', currentMode);
+        }
         function autoNameChat(chat) {
             const lastAssistant = [...chat.messages].reverse().find(m => m.role === 'assistant');
             if (lastAssistant && chat.title.startsWith('Чат ')) {
