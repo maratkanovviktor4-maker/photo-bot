@@ -924,6 +924,18 @@
         if(rowIdx >= 4) rowIdx = 3;
         rows[rowIdx].push(im);
     });
+    rows.forEach(function(row, ri){
+        var len = row.length;
+        for(var i=0;i<len;i++){
+            var clone = row[i].cloneNode(true);
+            if(ri === 1 || ri === 3){
+                row.unshift(clone);
+            } else {
+                row.push(clone);
+            }
+            container.appendChild(clone);
+        }
+    });
 
     var speeds = [-0.06,0.05,-0.06,0.07];
     var positions = [0,-1800,0,-1800];
