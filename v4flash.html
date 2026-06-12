@@ -10,8 +10,10 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+        body.light ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
+        body.light ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
         body { font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; background: #201F28; color: #e0e0e0; height: 100vh; display: flex; overflow: hidden; width: 100vw; }
         body.light { background: #ffffff; color: #111111; }
         .sidebar { width: 280px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); display: flex; flex-direction: column; padding: 16px; border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
@@ -43,17 +45,17 @@
         body.light .sidebar-footer { border-top: 1px solid rgba(0,0,0,0.08); }
         .sidebar-footer a { color: #888; text-decoration: none; font-size: 12px; display: block; text-align: center; font-family: 'Inter', sans-serif; transition: 0.2s; }
         .sidebar-footer a:hover { color: #00CBF5; }
-        .main { flex: 1; display: flex; flex-direction: column; background: #201F28; max-width: calc(100vw - 280px); overflow: hidden; width: calc(100vw - 280px); align-items: center; }
+        .main { flex: 1; display: flex; flex-direction: column; background: #201F28; max-width: calc(100vw - 280px); overflow: hidden; width: calc(100vw - 280px); }
         body.light .main { background: #ffffff; }
-        .chat-wrapper { width: 100%; max-width: 775px; display: flex; flex-direction: column; flex: 1; min-height: 0; }
-        .top-bar { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); background: #201F28; flex-shrink: 0; }
+        .top-bar { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); background: #201F28; flex-shrink: 0; }
         body.light .top-bar { background: #ffffff; border-bottom: 1px solid rgba(0,0,0,0.08); }
         .mode-btn { padding: 6px 16px; border-radius: 16px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid transparent; background: rgba(34,34,34,0.8); color: #a0a0b0; font-family: 'Inter', sans-serif; transition: 0.3s ease; }
         body.light .mode-btn { background: rgba(0,0,0,0.05); color: #555; }
         .mode-btn.active { background: linear-gradient(90deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; font-weight: 600; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
         .mode-btn:hover:not(.active) { border-color: #00CBF5; color: #e0e0e0; }
         body.light .mode-btn:hover:not(.active) { color: #111; }
-        #balanceDisplay { font-size: 12px; color: #00CBF5; font-family: 'Inter', sans-serif; white-space: nowrap; margin-right: auto; }
+        #balanceDisplay { font-size: 12px; color: #00CBF5; font-family: 'Inter', sans-serif; white-space: nowrap; margin-left: auto; }
+        .chat-wrapper { width: 100%; max-width: 775px; display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0 auto; }
         .chat-area { flex: 1; overflow-y: auto; padding: 20px 0; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 0; }
         .scroll-bottom-btn { position: fixed; bottom: 100px; right: 30px; width: 44px; height: 44px; border-radius: 50%; background: rgba(0,203,245,0.85); color: #201F28; border: none; cursor: pointer; font-size: 22px; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,203,245,0.4); transition: 0.3s ease; z-index: 999; }
         .scroll-bottom-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,203,245,0.6); }
@@ -75,12 +77,14 @@
         .message-content pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; border-radius: 0; display: block; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
         body.light .message-content code { background: rgba(0,0,0,0.06); color: #111; }
-        .message-actions { display: flex; gap: 6px; margin-top: 6px; justify-content: space-between; width: 100%; }
-        .message-actions button { background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-family: 'Inter', sans-serif; transition: 0.2s; }
-        body.light .message-actions button { color: #999; }
-        .message-actions button:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
-        body.light .message-actions button:hover { background: rgba(0,203,245,0.1); color: #00CBF5; }
-        .input-area { padding: 14px 0; border-top: 1px solid rgba(255,255,255,0.06); display: flex; gap: 10px; align-items: flex-end; background: #201F28; flex-shrink: 0; overflow: hidden; position: relative; flex-wrap: wrap; width: 100%; }
+        .message-actions { display: flex; gap: 6px; margin-top: 6px; }
+        .message-row.user .message-actions { justify-content: flex-end; }
+        .message-row.assistant .message-actions { justify-content: flex-start; }
+        .message-actions button { background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.06); color: #888; cursor: pointer; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-family: 'Inter', sans-serif; transition: 0.2s; }
+        body.light .message-actions button { background: #e0e0e0; border: 1px solid rgba(0,0,0,0.08); color: #555; }
+        .message-actions button:hover { background: rgba(0,203,245,0.2); color: #e0e0e0; }
+        body.light .message-actions button:hover { background: rgba(0,203,245,0.15); color: #111; }
+        .input-area { padding: 14px 0; border-top: 1px solid rgba(255,255,255,0.06); display: flex; gap: 10px; align-items: flex-end; background: #201F28; flex-shrink: 0; overflow: hidden; position: relative; flex-wrap: wrap; }
         body.light .input-area { background: #ffffff; border-top: 1px solid rgba(0,0,0,0.08); }
         .input-area textarea { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(34,34,34,0.6); color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; outline: none; resize: none; max-height: 280px; overflow-y: auto; transition: border-color 0.2s, box-shadow 0.2s; min-width: 0; width: 100%; }
         body.light .input-area textarea { background: #ffffff; border: 1px solid rgba(0,0,0,0.15); color: #111; }
@@ -89,7 +93,7 @@
         .input-area button:disabled { background: #2a2a2a; color: #666; cursor: not-allowed; box-shadow: none; transform: none; }
         .input-area button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,203,245,0.4); }
         .attach-btn { padding: 10px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: #00CBF5; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 18px; flex-shrink: 0; transition: 0.3s ease; }
-        body.light .attach-btn { background: #f0f0f0; border: 1px solid rgba(0,0,0,0.1); }
+        body.light .attach-btn { background: #e8e8e8; border: 1px solid rgba(0,0,0,0.1); }
         .attach-btn:hover { color: #14E9FC; border-color: #00CBF5; background: rgba(0,203,245,0.1); }
         .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
         body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
@@ -163,11 +167,9 @@
         let typingInterval = null;
         let pendingFile = null;
 
-        // Глобальный скролл чата — колёсико мыши работает даже когда курсор не над чатом
         window.addEventListener('wheel', function(e) {
             const area = document.getElementById('chatArea');
             if (!area || isSending) return;
-            // Не перехватываем, если мышь над сайдбаром или выпадающим меню
             const target = e.target;
             if (target && (target.closest('.chat-list') || target.closest('.chat-menu-dropdown') || target.closest('.sidebar'))) return;
             area.scrollTop += e.deltaY;
@@ -345,10 +347,9 @@
                         actionsHtml += `<button onclick="editMessage(${i})">Редактировать</button>`;
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}">Копировать</button>`;
                     } else {
-                        actionsHtml += '<span></span>';
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}">Копировать</button>`;
+                        if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})">Продолжить</button>`;
                     }
-                    if (m.role === 'assistant' && m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})">Продолжить</button>`;
                     actionsHtml += '</div>';
                     return `<div class="message-row ${m.role}"><div><div class="message-content">${formatMessage(m.content)}</div>${actionsHtml}</div></div>`;
                 }).join('');
@@ -529,7 +530,7 @@
                     const area2 = document.getElementById('chatArea');
                     const newRow = document.createElement('div');
                     newRow.className = 'message-row assistant';
-                    newRow.innerHTML = '<div><div class="message-content" id="stream-' + msgIndex + '"></div><div class="message-actions" id="actions-' + msgIndex + '"><span></span><button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '">Копировать</button></div></div>';
+                    newRow.innerHTML = '<div><div class="message-content" id="stream-' + msgIndex + '"></div><div class="message-actions" id="actions-' + msgIndex + '"><button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '">Копировать</button></div></div>';
                     area2.appendChild(newRow);
                     let pos = 0;
                     const streamDiv = document.getElementById('stream-' + msgIndex);
@@ -552,7 +553,7 @@
                             setTimeout(streamNext, 5);
                         } else {
                             chat.messages[msgIndex].finished = true;
-                            streamAction.innerHTML = '<span></span><button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '">Копировать</button>';
+                            streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '">Копировать</button>';
                             autoNameChat(chat);
                             renderChatList();
                             if (autoScroll) {
@@ -681,7 +682,7 @@
                         } else {
                             chat.messages[index].finished = true;
                             chat.messages[index].interrupted = false;
-                            if (streamAction) streamAction.innerHTML = '<span></span><button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '">Копировать</button>';
+                            if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '">Копировать</button>';
                             autoNameChat(chat);
                             renderChatList();
                             if (autoScroll) {
