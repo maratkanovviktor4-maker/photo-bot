@@ -924,16 +924,11 @@
         if(rowIdx >= 4) rowIdx = 3;
         rows[rowIdx].push(im);
     });
-    rows.forEach(function(row, ri){
+    rows.forEach(function(row){
         var len = row.length;
         for(var i=0;i<len;i++){
-            var clone = row[i].cloneNode(true);
-            if(ri === 1 || ri === 3){
-                row.unshift(clone);
-            } else {
-                row.push(clone);
-            }
-            container.appendChild(clone);
+            row.push(row[i].cloneNode(true));
+            container.appendChild(row[row.length-1]);
         }
     });
 
@@ -962,7 +957,7 @@
     function animate(){
         if(!paused){
             positions = positions.map(function(p,i){ return p + speeds[i]; });
-                                    positions = positions.map(function(p,i){
+            positions = positions.map(function(p,i){
                 var totalWidth = 0;
                 rows[i].forEach(function(im){ totalWidth += parseInt(im.style.width) + 10; });
                 if(p > totalWidth) return -totalWidth;
