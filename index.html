@@ -957,9 +957,10 @@
     function animate(){
         if(!paused){
             positions = positions.map(function(p,i){ return p + speeds[i]; });
-            positions = positions.map(function(p,i){
+                        positions = positions.map(function(p,i){
                 var totalWidth = 0;
-                rows[i].forEach(function(im){ totalWidth += parseInt(im.style.width) + 10; });
+                var half = rows[i].length / 2;
+                for(var j = 0; j < half; j++){ totalWidth += parseInt(rows[i][j].style.width) + 10; }
                 if(p > totalWidth) return -totalWidth;
                 if(p < -totalWidth) return 0;
                 return p;
