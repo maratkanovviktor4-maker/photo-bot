@@ -95,7 +95,7 @@
         .attach-btn { padding: 8px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: #00CBF5; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 18px; transition: 0.3s ease; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         body.light .attach-btn { background: #e8e8e8; border: 1px solid rgba(0,0,0,0.1); }
         .attach-btn:hover { color: #14E9FC; border-color: #00CBF5; background: rgba(0,203,245,0.1); }
-        .input-toolbar { position: absolute; bottom: 8px; left: 50px; right: 8px; display: flex; align-items: center; gap: 8px; z-index: 10001; height: 36px; }
+        .input-toolbar { position: absolute; bottom: 8px; right: 8px; display: flex; align-items: center; gap: 10px; z-index: 10001; height: 36px; }
         .file-name-inline { font-size: 12px; color: #00CBF5; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
         .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
@@ -393,10 +393,10 @@
         function updateFileList() {
             const inline = document.getElementById('fileNameInline');
             if (!pendingFile) { 
-                if (inline) inline.textContent = ''; 
+                if (inline) inline.innerHTML = ''; 
                 return; 
             }
-            if (inline) inline.textContent = '📎 ' + pendingFile.name;
+            if (inline) inline.innerHTML = '📎 ' + escapeHtml(pendingFile.name) + ' <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
         }
 
         async function handleFileSelect(e) {
