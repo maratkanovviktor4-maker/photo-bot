@@ -670,7 +670,11 @@
                 const lastMsg = chat.messages[chat.messages.length - 1];
                 if (lastMsg.role === 'assistant' && !lastMsg.finished) {
                     lastMsg.interrupted = true;
-                    lastMsg._shownContent = lastMsg.content;
+                    var streamEls = document.querySelectorAll('.message-row.assistant .message-content');
+                    var lastStreamEl = streamEls[streamEls.length - 1];
+                    if (lastStreamEl) {
+                        lastMsg._shownText = lastStreamEl.textContent;
+                    }
                 }
             }
             renderMessages();
@@ -692,7 +696,7 @@
             msg.interrupted = false;
             msg.finished = false;
             const fullContent = msg.content;
-            const shownContent = msg._shownContent || '';
+            const shownContent = msg._shownText || '';
             const remaining = fullContent.substring(shownContent.length);
             msg.content = shownContent;
             renderMessages();
