@@ -586,7 +586,9 @@
                     const streamDiv = document.getElementById('stream-' + msgIndex);
                     const streamAction = document.getElementById('actions-' + msgIndex);
                     const words = fullContent.split(/(\s+)/);
+                    chat.messages[msgIndex]._streamWords = words;
                     var streamActive = true;
+                    window._streamPos = 0;
                     function streamNext() {
                         if (!streamActive) return;
                         let chunk = '';
@@ -596,6 +598,7 @@
                             wordCount++;
                             pos++;
                         }
+                        window._streamPos = pos;
                         if (chunk) {
                             chat.messages[msgIndex].content = words.slice(0, pos).join('');
                             streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
@@ -670,11 +673,8 @@
                 const lastMsg = chat.messages[chat.messages.length - 1];
                 if (lastMsg.role === 'assistant' && !lastMsg.finished) {
                     lastMsg.interrupted = true;
-                    var streamEls = document.querySelectorAll('.message-row.assistant .message-content');
-                    var lastStreamEl = streamEls[streamEls.length - 1];
-                    if (lastStreamEl) {
-                        lastMsg._shownText = lastStreamEl.textContent;
-                    }
+                    lastMsg._streamPos = window._streamPos || 0;
+                    lastMsg._streamWords = lastMsg._streamWords || null;
                 }
             }
             renderMessages();
@@ -693,13 +693,9 @@
             if (!msg.interrupted) { console.log('not interrupted'); return; }
             isSending = true;
             sendBtnStop();
-            msg.interrupted = false;
-            msg.finished = false;
-            const fullContent = msg.content;
-            const shownContent = msg._shownText || '';
-            const remaining = fullContent.substring(shownContent.length);
-            console.log('fullContent len:', fullContent.length, 'shown len:', shownContent.length, 'remaining len:', remaining.length);
-            if (remaining.length === 0) {
+            const words = msg._streamWords;
+            let pos = msg._streamPos || 0;
+            if (!words || pos >= words.length) {
                 msg.interrupted = false;
                 msg.finished = true;
                 renderMessages();
@@ -709,8 +705,10 @@
             }
             msg.interrupted = false;
             msg.finished = false;
-            msg.content = fullContent;
-            msg._shownText = undefined;
+            const shownContent = words.slice(0, pos).join('');
+            msg.content = shownContent;
+            msg._streamPos = undefined;
+            msg._streamWords = undefined;
             renderMessages();
             await new Promise(r => setTimeout(r, 50));
             const allAssistant = document.querySelectorAll('.message-row.assistant .message-content');
@@ -722,10 +720,6 @@
             }
             const streamDiv = allAssistant[assistantIdx];
             const streamAction = allActions[assistantIdx];
-            console.log('assistantIdx:', assistantIdx, 'streamDiv:', streamDiv);
-            const words = remaining.split(/(\s+)/);
-            let pos = 0;
-            chat.messages[index].content = shownContent;
             if (streamDiv) streamDiv.innerHTML = formatMessage(shownContent);
             function streamNext() {
                 let chunk = '';
@@ -736,7 +730,7 @@
                     pos++;
                 }
                 if (chunk) {
-                    chat.messages[index].content = shownContent + words.slice(0, pos).join('');
+                    chat.messages[index].content = words.slice(0, pos).join('');
                     if (streamDiv) streamDiv.innerHTML = formatMessage(chat.messages[index].content);
                     if (autoScroll) {
                         document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
@@ -746,6 +740,7 @@
                     chat.messages[index].finished = true;
                     chat.messages[index].interrupted = false;
                     typingInterval = null;
+                    chat.messages[index]._streamWords = undefined;
                     if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
                     autoNameChat(chat);
                     renderChatList();
