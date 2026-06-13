@@ -699,7 +699,18 @@
             const shownContent = msg._shownText || '';
             const remaining = fullContent.substring(shownContent.length);
             console.log('fullContent len:', fullContent.length, 'shown len:', shownContent.length, 'remaining len:', remaining.length);
-            msg.content = shownContent;
+            if (remaining.length === 0) {
+                msg.interrupted = false;
+                msg.finished = true;
+                renderMessages();
+                isSending = false;
+                sendBtnArrow();
+                return;
+            }
+            msg.interrupted = false;
+            msg.finished = false;
+            msg.content = fullContent;
+            msg._shownText = undefined;
             renderMessages();
             await new Promise(r => setTimeout(r, 50));
             const allAssistant = document.querySelectorAll('.message-row.assistant .message-content');
@@ -714,6 +725,8 @@
             console.log('assistantIdx:', assistantIdx, 'streamDiv:', streamDiv);
             const words = remaining.split(/(\s+)/);
             let pos = 0;
+            chat.messages[index].content = shownContent;
+            if (streamDiv) streamDiv.innerHTML = formatMessage(shownContent);
             function streamNext() {
                 let chunk = '';
                 let wordCount = 0;
