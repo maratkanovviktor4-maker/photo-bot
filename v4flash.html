@@ -145,6 +145,8 @@
         .nav-container:hover .nav-text { opacity: 1; }
         .nav-strip:hover .nav-bar { background: #555; }
         .nav-strip:hover .nav-text { color: #555; }
+        .nav-strip.active .nav-bar { background: #00CBF5; }
+        .nav-strip.active .nav-text { color: #00CBF5; opacity: 1; }
         .nav-container::-webkit-scrollbar { width: 4px; }
         .nav-container::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
         .nav-container:hover::-webkit-scrollbar-thumb { background: rgba(170,170,170,0.4); }
@@ -905,6 +907,9 @@
             if (target) {
                 target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
+            document.querySelectorAll('.nav-strip').forEach(function(s) { s.classList.remove('active'); });
+            var activeStrip = document.querySelector('.nav-strip[data-msg-index="' + index + '"]');
+            if (activeStrip) { activeStrip.classList.add('active'); }
         }
 
         var chatAreaObserver = new MutationObserver(function() {
