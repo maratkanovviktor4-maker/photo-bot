@@ -679,80 +679,51 @@
         }
         async function continueMessage(index) {
             if (isSending) return;
-            if (!window._continueCount) window._continueCount = {};
-            if (!window._continueCount[index]) window._continueCount[index] = 0;
-            if (window._continueCount[index] >= 3) {
-                alert("Достигнут лимит продолжений для этого сообщения.");
-                return;
-            }
-            window._continueCount[index]++;
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
+            const msg = chat.messages[index];
+            if (!msg || msg.role !== 'assistant' || !msg.interrupted) return;
             isSending = true;
             sendBtnStop();
-            try {
-                const resp = await fetch(`${SERVER_URL}/get_full_response?user_id=${currentUserId}&model=flash&chat_id=${currentChatId}&session_token=${sessionToken}`);
-                if (resp.status === 403) {
-                    alert('Сессия устарела.');
-                    window.location.href = 'index.html';
-                    return;
+            const streamDiv = document.querySelectorAll('.message-row.assistant .message-content')[index];
+            const streamAction = document.querySelectorAll('.message-row.assistant .message-actions')[index];
+            msg.interrupted = false;
+            msg.finished = false;
+            const remaining = msg.content;
+            const words = remaining.split(/(\s+)/);
+            let pos = 0;
+            chat.messages[index].content = '';
+            if (streamDiv) streamDiv.innerHTML = '';
+            function streamNext() {
+                let chunk = '';
+                let wordCount = 0;
+                while (pos < words.length && wordCount < 2) {
+                    chunk += words[pos];
+                    wordCount++;
+                    pos++;
                 }
-                const data = await resp.json();
-                if (data.full_text) {
-                    const fullContent = data.full_text;
-                    const startLen = chat.messages[index].content.length;
-                    if (fullContent.length <= startLen) {
-                        chat.messages[index].finished = true;
-                        chat.messages[index].interrupted = false;
-                        renderMessages();
-                        isSending = false; sendBtnArrow();
-                        return;
+                if (chunk) {
+                    chat.messages[index].content = words.slice(0, pos).join('');
+                    if (streamDiv) streamDiv.innerHTML = formatMessage(chat.messages[index].content);
+                    if (autoScroll) {
+                        document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                     }
-                    chat.messages[index].finished = false;
-                    chat.messages[index].interrupted = true;
-                    const remaining = fullContent.substring(startLen);
-                    const words = remaining.split(/(\s+)/);
-                    let wordPos = 0;
-                    const streamDiv = document.querySelectorAll('.message-row.assistant .message-content')[index];
-                    const streamAction = document.querySelectorAll('.message-row.assistant .message-actions')[index] || document.querySelectorAll('.message-row.assistant')[index]?.querySelector('.message-actions');
-                    function streamNext() {
-                        let chunk = '';
-                        let wordCount = 0;
-                        while (wordPos < words.length && wordCount < 2) {
-                            chunk += words[wordPos];
-                            wordCount++;
-                            wordPos++;
-                        }
-                        if (chunk) {
-                            chat.messages[index].content = fullContent.substring(0, startLen + wordPos);
-                            if (streamDiv) streamDiv.innerHTML = formatMessage(chat.messages[index].content);
-                            if (autoScroll) {
-                                document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
-                            }
-                            typingInterval = setTimeout(streamNext, 20);
-                        } else {
-                            chat.messages[index].finished = true;
-                            chat.messages[index].interrupted = false;
-                            typingInterval = null;
-                            if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
-                            autoNameChat(chat);
-                            renderChatList();
-                            if (autoScroll) {
-                                document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
-                            }
-                            isSending = false;
-                            sendBtnArrow();
-                        }
-                    }
-                    streamNext();
+                    typingInterval = setTimeout(streamNext, 20);
                 } else {
-                    renderMessages();
-                    isSending = false; sendBtnArrow();
+                    chat.messages[index].finished = true;
+                    chat.messages[index].interrupted = false;
+                    typingInterval = null;
+                    if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
+                    autoNameChat(chat);
+                    renderChatList();
+                    if (autoScroll) {
+                        document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
+                    }
+                    isSending = false;
+                    sendBtnArrow();
                 }
-            } catch (e) {
-                renderMessages();
-                isSending = false; sendBtnArrow();
             }
+            streamNext();
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
         function setupFloatingCopyButtons() {
