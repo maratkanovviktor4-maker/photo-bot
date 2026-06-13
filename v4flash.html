@@ -34,14 +34,13 @@
         .chat-search::placeholder { color: #666; }
         body.light .chat-search::placeholder { color: #999; }
         .chat-search:focus { border-color: #00CBF5; }
-        .sidebar-toggle { position: absolute; top: 12px; right: 8px; width: 28px; height: 28px; background: rgba(34,34,34,0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #888; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: background 0.15s; }
+        .sidebar-toggle { position: fixed; top: 12px; left: 232px; width: 28px; height: 28px; background: rgba(34,34,34,0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #888; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: left 0.3s ease, background 0.15s; }
         body.light .sidebar-toggle { background: rgba(240,240,240,0.9); border: 1px solid rgba(0,0,0,0.1); color: #555; }
         .sidebar-toggle:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
         body.light .sidebar-toggle:hover { background: rgba(0,0,0,0.06); }
         .sidebar.collapsed { width: 0; padding: 0; border: none; overflow: hidden; }
-        .sidebar.collapsed { width: 0; min-width: 0; padding: 0; border: none; overflow: visible; }
-        .sidebar.collapsed .sidebar-toggle { position: fixed; left: 8px; top: 12px; right: auto; }
-        .sidebar.collapsed > *:not(.sidebar-toggle) { display: none; }
+        .sidebar.collapsed { width: 0; min-width: 0; padding: 0; border: none; overflow: hidden; }
+        .sidebar.collapsed .sidebar-toggle { left: 8px; }
         .chat-item { display: flex; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #a0a0b0; margin-bottom: 2px; transition: 0.15s; position: relative; font-family: 'Inter', sans-serif; }
         body.light .chat-item { color: #555; }
         .chat-item:hover { background: rgba(0,203,245,0.1); color: #e0e0e0; }
@@ -139,6 +138,9 @@
     <script src="config.js"></script>
 </head>
 <body>
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Свернуть панель">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
     <div class="sidebar">
         <div class="logo-row">
             <img src="deepseek_logo.png" alt="DeepSeek Flash" onerror="this.style.display='none'">
@@ -147,9 +149,6 @@
         <button class="new-chat" onclick="newChat()">Новый чат</button>
         <input class="chat-search" id="chatSearch" placeholder="Поиск чата..." oninput="filterChats()">
         <div class="chat-list" id="chatList"></div>
-        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Свернуть панель">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
         <div class="sidebar-footer">
             <a href="index.html">На главную</a>
         </div>
