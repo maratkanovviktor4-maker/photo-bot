@@ -684,6 +684,8 @@
             if (!msg || msg.role !== 'assistant' || !msg.interrupted) return;
             isSending = true;
             sendBtnStop();
+            renderMessages();
+            await new Promise(r => setTimeout(r, 50));
             const streamDiv = document.querySelectorAll('.message-row.assistant .message-content')[index];
             const streamAction = document.querySelectorAll('.message-row.assistant .message-actions')[index];
             msg.interrupted = false;
