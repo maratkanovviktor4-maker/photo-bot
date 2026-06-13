@@ -688,17 +688,24 @@
             if (!msg.interrupted) { console.log('not interrupted'); return; }
             isSending = true;
             sendBtnStop();
-            renderMessages();
-            await new Promise(r => setTimeout(r, 50));
-            const streamDiv = document.querySelectorAll('.message-row.assistant .message-content')[index];
-            const streamAction = document.querySelectorAll('.message-row.assistant .message-actions')[index];
-            console.log('streamDiv:', streamDiv, 'streamAction:', streamAction);
             msg.interrupted = false;
             msg.finished = false;
             const remaining = msg.content;
+            chat.messages[index].content = '';
+            renderMessages();
+            await new Promise(r => setTimeout(r, 50));
+            const allAssistant = document.querySelectorAll('.message-row.assistant .message-content');
+            const allActions = document.querySelectorAll('.message-row.assistant .message-actions');
+            let assistantIdx = 0;
+            for (let i = 0; i <= index; i++) {
+                if (chat.messages[i].role === 'assistant' && i === index) break;
+                if (chat.messages[i].role === 'assistant') assistantIdx++;
+            }
+            const streamDiv = allAssistant[assistantIdx];
+            const streamAction = allActions[assistantIdx];
+            console.log('assistantIdx:', assistantIdx, 'streamDiv:', streamDiv);
             const words = remaining.split(/(\s+)/);
             let pos = 0;
-            chat.messages[index].content = '';
             if (streamDiv) streamDiv.innerHTML = '';
             function streamNext() {
                 let chunk = '';
