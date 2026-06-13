@@ -221,13 +221,25 @@
         let pendingFile = null;
         let activeStreamId = null;
 
+        var smoothTarget = 0;
+        var smoothRaf = null;
+        function smoothStep() {
+            var area = document.getElementById('chatArea');
+            if (!area) { smoothRaf = null; return; }
+            var diff = smoothTarget - area.scrollTop;
+            if (Math.abs(diff) < 0.5) { area.scrollTop = smoothTarget; smoothRaf = null; return; }
+            area.scrollTop += diff * 0.3;
+            smoothRaf = requestAnimationFrame(smoothStep);
+        }
         window.addEventListener('wheel', function(e) {
             const area = document.getElementById('chatArea');
             if (!area || isSending) return;
             const target = e.target;
             if (target && (target.closest('.chat-list') || target.closest('.chat-menu-dropdown') || target.closest('.sidebar'))) return;
             if (target && target.closest('#userInput')) return;
-            area.scrollBy({ top: e.deltaY * 3, behavior: 'smooth' });
+            smoothTarget += e.deltaY * 2;
+            smoothTarget = Math.max(0, Math.min(smoothTarget, area.scrollHeight - area.clientHeight));
+            if (!smoothRaf) smoothRaf = requestAnimationFrame(smoothStep);
             e.preventDefault();
         }, { passive: false });
 
