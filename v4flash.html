@@ -916,7 +916,15 @@
             document.querySelectorAll('.nav-strip').forEach(function(s) { s.classList.remove('active'); });
             if (closestIndex !== null) {
                 var activeStrip = document.querySelector('.nav-strip[data-msg-index="' + closestIndex + '"]');
-                if (activeStrip) { activeStrip.classList.add('active'); }
+                if (activeStrip) {
+                    activeStrip.classList.add('active');
+                    var container = document.getElementById('navContainer');
+                    if (container) {
+                        var stripTop = activeStrip.offsetTop;
+                        var containerH = container.clientHeight;
+                        container.scrollTo({ top: stripTop - containerH / 2 + activeStrip.offsetHeight / 2, behavior: 'smooth' });
+                    }
+                }
             }
         }
         var chatAreaEl = document.getElementById('chatArea');
