@@ -529,6 +529,13 @@
             input.value = ''; input.style.height = 'auto'; input._init = false;
             isSending = true;
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
+            var lastMsg = chat.messages[chat.messages.length - 1];
+            if (lastMsg && lastMsg.role === 'assistant' && lastMsg.interrupted) {
+                lastMsg.interrupted = false;
+                lastMsg.finished = true;
+                lastMsg._streamWords = undefined;
+                lastMsg._streamPos = undefined;
+            }
             sendBtnStop();
 
             const chat = chats.find(c => c.id === currentChatId);
