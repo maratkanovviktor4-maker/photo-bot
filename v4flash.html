@@ -135,11 +135,9 @@
         body.light .input-row-wrapper:focus-within { border-color: rgba(0,0,0,0.15); }
         .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; padding: 8px 12px 0 12px; }
         .input-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
-        .nav-strip { position: absolute; right: 4px; top: 0; bottom: 0; width: 4px; z-index: 15; cursor: pointer; }
-        .nav-strip:hover { width: 6px; right: 3px; }
-        .nav-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #00CBF5; cursor: pointer; transition: transform 0.15s; margin: 3px 5px; flex-shrink: 0; }
-        .nav-dot:hover { transform: scale(1.4); }
-        .nav-popup { position: fixed; background: rgba(20,20,30,0.95); backdrop-filter: blur(20px); border: 1px solid rgba(0,203,245,0.3); border-radius: 12px; padding: 12px; width: 320px; max-height: 300px; overflow-y: auto; font-size: 12px; color: #ccc; font-family: 'Inter', sans-serif; z-index: 100; display: none; }
+        .nav-strip { position: absolute; right: 8px; top: 0; bottom: 0; width: 6px; z-index: 15; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; }
+        .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: #00CBF5; flex-shrink: 0; }
+        .nav-popup { position: fixed; background: rgba(20,20,30,0.95); backdrop-filter: blur(20px); border: 1px solid rgba(0,203,245,0.3); border-radius: 12px; padding: 12px; width: 320px; max-height: 300px; overflow-y: auto; font-size: 12px; color: #ccc; font-family: 'Inter', sans-serif; z-index: 100; display: none; pointer-events: auto; }
         .nav-popup .nav-popup-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; border-radius: 6px; transition: background 0.1s; }
         .nav-popup .nav-popup-item:hover { background: rgba(0,203,245,0.1); }
         .nav-popup .nav-popup-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #aaa; }
@@ -433,6 +431,7 @@
                 var area = document.getElementById('chatArea');
                 if (area) area.scrollTop = area.scrollHeight;
                 hljs.highlightAll();
+                buildNavDots();
             }, 100);
         }
         function copyMessage(index) {
@@ -876,6 +875,19 @@
             });
         }
 
+        function buildNavDots() {
+            var strip = document.getElementById('navStrip');
+            if (!strip) return;
+            var chat = chats.find(c => c.id === currentChatId);
+            if (!chat || chat.messages.length === 0) { strip.innerHTML = ''; return; }
+            var html = '';
+            for (var i = 0; i < chat.messages.length; i++) {
+                if (chat.messages[i].role === 'assistant' && chat.messages[i].content) {
+                    html += '<div class="nav-dot" data-msg-index="' + i + '"></div>';
+                }
+            }
+            strip.innerHTML = html;
+        }
         function showNavStrip(e) {
             var popup = document.getElementById('navPopup');
             if (!popup) {
@@ -890,18 +902,16 @@
             for (var i = 0; i < chat.messages.length; i++) {
                 if (chat.messages[i].role === 'assistant' && chat.messages[i].content) {
                     var preview = chat.messages[i].content.substring(0, 80);
-                    html += '<div class="nav-popup-item" onclick="scrollToMsg(' + i + ')"><div class="nav-dot"></div><span class="nav-popup-text">' + escapeHtml(preview) + '</span></div>';
+                    html += '<div class="nav-popup-item" data-msg-index="' + i + '"><div class="nav-dot"></div><span class="nav-popup-text">' + escapeHtml(preview) + '</span></div>';
                 }
             }
             if (!html) { popup.style.display = 'none'; return; }
             popup.innerHTML = html;
             popup.style.display = 'block';
-            var x = e.clientX - 330;
-            var y = e.clientY - 150;
-            if (x < 10) x = 10;
-            if (y < 10) y = 10;
-            popup.style.left = x + 'px';
-            popup.style.top = y + 'px';
+            popup.style.right = '20px';
+            popup.style.top = '50%';
+            popup.style.transform = 'translateY(-50%)';
+            popup.style.left = 'auto';
         }
         function hideNavStrip() {
             setTimeout(function() {
@@ -911,6 +921,13 @@
                 }
             }, 200);
         }
+        document.addEventListener('click', function(e) {
+            var item = e.target.closest('.nav-popup-item');
+            if (item) {
+                var index = parseInt(item.getAttribute('data-msg-index'));
+                if (!isNaN(index)) scrollToMsg(index);
+            }
+        });
         function scrollToMsg(index) {
             var chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
