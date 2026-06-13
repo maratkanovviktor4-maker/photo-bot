@@ -583,13 +583,13 @@
                     let pos = 0;
                     const streamDiv = document.getElementById('stream-' + msgIndex);
                     const streamAction = document.getElementById('actions-' + msgIndex);
-                    const chars = fullContent.split('');
+                    const words = fullContent.split(/(\s+)/);
                     function streamNext() {
                         let chunk = '';
-                        let charCount = 0;
-                        while (pos < chars.length && charCount < 3) {
-                            chunk += chars[pos];
-                            charCount++;
+                        let wordCount = 0;
+                        while (pos < words.length && wordCount < 2) {
+                            chunk += words[pos];
+                            wordCount++;
                             pos++;
                         }
                         if (chunk) {
@@ -713,7 +713,7 @@
                     function streamNext() {
                         let chunk = '';
                         let wordCount = 0;
-                        while (wordPos < words.length && wordCount < 50) {
+                        while (wordPos < words.length && wordCount < 2) {
                             chunk += words[wordPos];
                             wordCount++;
                             wordPos++;
