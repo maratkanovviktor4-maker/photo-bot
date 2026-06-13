@@ -6,6 +6,11 @@
     <title>PhotoBot — DeepSeek V4 Flash</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <style>
+        .hljs { background: #0a0a1a; border-radius: 10px; padding: 14px; font-size: 14px; font-family: 'Courier New', monospace; }
+        body.light .hljs { background: #f5f5f5; }
+    </style>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 6px; }
@@ -117,6 +122,7 @@
         .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; padding: 8px 12px 0 12px; }
         .input-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
 </head>
 <body>
@@ -375,6 +381,7 @@
             setTimeout(function() {
                 var area = document.getElementById('chatArea');
                 if (area) area.scrollTop = area.scrollHeight;
+                hljs.highlightAll();
             }, 100);
         }
         function copyMessage(index) {
@@ -612,6 +619,7 @@
                         if (chunk) {
                             chat.messages[msgIndex].content = words.slice(0, pos).join('');
                             streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
+                            streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
                             if (autoScroll) {
                                 document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                             }
@@ -671,7 +679,8 @@
             let result = '';
             for (const part of parts) {
                 if (part.type === 'code') {
-                    result += '<pre><code>' + escapeHtml(part.content) + '</code></pre>';
+                    var lang = part.lang || '';
+                    result += '<pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre>';
                 } else {
                     result += escapeHtml(part.content).replace(/`([^`]+)`/g, '<code>' + '$1' + '</code>').replace(/\n/g, '<br>');
                 }
@@ -745,7 +754,10 @@
                 msg._streamPos = pos;
                 if (chunk) {
                     chat.messages[index].content = words.slice(0, pos).join('');
-                    if (streamDiv) streamDiv.innerHTML = formatMessage(chat.messages[index].content);
+                    if (streamDiv) {
+                        streamDiv.innerHTML = formatMessage(chat.messages[index].content);
+                        streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
+                    }
                     if (autoScroll) {
                         document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                     }
