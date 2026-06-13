@@ -76,7 +76,7 @@
         body.light .mode-btn:hover:not(.active) { color: #111; }
         #balanceDisplay { font-size: 12px; color: #00CBF5; font-family: 'Inter', sans-serif; white-space: nowrap; margin-right: auto; }
         .chat-wrapper { width: 100%; max-width: 775px; display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0 auto; position: relative; }
-        .chat-area { flex: 1; overflow-y: auto; padding: 20px 0; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 0; }
+        .chat-area { flex: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px 0; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 0; }
         .scroll-bottom-btn { position: sticky; bottom: 10px; right: 20px; margin-left: auto; width: 36px; height: 36px; min-width: 36px; min-height: 36px; border-radius: 50%; background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; display: none; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10002; flex-shrink: 0; }
         .scroll-bottom-btn:hover { background: #e0e0e0; }
         body.light .scroll-bottom-btn { background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.15); }
@@ -222,26 +222,27 @@
         let activeStreamId = null;
 
         (function() {
-    let wheelAccum = 0;
-    let rafId = null;
-    const area = document.getElementById('chatArea');
-    if (!area) return;
-    window.addEventListener('wheel', function(e) {
-        if (isSending) return;
-        const target = e.target;
-        if (target && (target.closest('.chat-list') || target.closest('.chat-menu-dropdown') || target.closest('.sidebar'))) return;
-        if (target && target.closest('#userInput')) return;
-        e.preventDefault();
-        wheelAccum += e.deltaY;
-        if (!rafId) {
-            rafId = requestAnimationFrame(function() {
-                area.scrollBy({ top: wheelAccum, behavior: 'auto' });
-                wheelAccum = 0;
-                rafId = null;
-            });
-        }
-    }, { passive: false });
-})();
+            let wheelAccum = 0;
+            let rafId = null;
+            const area = document.getElementById('chatArea');
+            if (!area) return;
+
+            window.addEventListener('wheel', function(e) {
+                if (isSending) return;
+                const target = e.target;
+                if (target && (target.closest('.chat-list') || target.closest('.chat-menu-dropdown') || target.closest('.sidebar'))) return;
+                if (target && target.closest('#userInput')) return;
+                e.preventDefault();
+                wheelAccum += e.deltaY;
+                if (!rafId) {
+                    rafId = requestAnimationFrame(function() {
+                        area.scrollBy({ top: wheelAccum, behavior: 'auto' });
+                        wheelAccum = 0;
+                        rafId = null;
+                    });
+                }
+            }, { passive: false });
+        })();
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
         window.addEventListener('drop', function(e) { e.preventDefault(); e.stopPropagation(); });
