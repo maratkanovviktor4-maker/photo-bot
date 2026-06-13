@@ -674,7 +674,6 @@
                 if (lastMsg.role === 'assistant' && !lastMsg.finished) {
                     lastMsg.interrupted = true;
                     lastMsg._streamPos = window._streamPos || 0;
-                    lastMsg._streamWords = lastMsg._streamWords || null;
                 }
             }
             renderMessages();
@@ -703,8 +702,6 @@
             msg.finished = false;
             const shownContent = words.slice(0, pos).join('');
             msg.content = shownContent;
-            msg._streamPos = undefined;
-            msg._streamWords = undefined;
             renderMessages();
             await new Promise(r => setTimeout(r, 50));
             const allAssistant = document.querySelectorAll('.message-row.assistant .message-content');
@@ -736,7 +733,6 @@
                     chat.messages[index].finished = true;
                     chat.messages[index].interrupted = false;
                     typingInterval = null;
-                    chat.messages[index]._streamWords = undefined;
                     if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
                     autoNameChat(chat);
                     renderChatList();
