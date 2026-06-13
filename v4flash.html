@@ -897,6 +897,32 @@
             }
             container.innerHTML = html;
         }
+        function updateActiveNavFromScroll() {
+            var area = document.getElementById('chatArea');
+            if (!area) return;
+            var rows = area.querySelectorAll('.message-row.assistant[data-msg-index]');
+            var areaRect = area.getBoundingClientRect();
+            var closestIndex = null;
+            var closestDist = Infinity;
+            for (var r = 0; r < rows.length; r++) {
+                var rect = rows[r].getBoundingClientRect();
+                var mid = rect.top + rect.height / 2;
+                var dist = Math.abs(mid - (areaRect.top + areaRect.height / 2));
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestIndex = rows[r].getAttribute('data-msg-index');
+                }
+            }
+            document.querySelectorAll('.nav-strip').forEach(function(s) { s.classList.remove('active'); });
+            if (closestIndex !== null) {
+                var activeStrip = document.querySelector('.nav-strip[data-msg-index="' + closestIndex + '"]');
+                if (activeStrip) { activeStrip.classList.add('active'); }
+            }
+        }
+        var chatAreaEl = document.getElementById('chatArea');
+        if (chatAreaEl) {
+            chatAreaEl.addEventListener('scroll', updateActiveNavFromScroll);
+        }
         document.getElementById('navContainer').addEventListener('wheel', function(e) {
             e.stopPropagation();
         });
