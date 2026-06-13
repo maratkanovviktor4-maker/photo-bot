@@ -583,13 +583,13 @@
                     let pos = 0;
                     const streamDiv = document.getElementById('stream-' + msgIndex);
                     const streamAction = document.getElementById('actions-' + msgIndex);
-                    const words = fullContent.split(/(\s+)/);
+                    const chars = fullContent.split('');
                     function streamNext() {
                         let chunk = '';
-                        let wordCount = 0;
-                        while (pos < words.length && wordCount < 50) {
-                            chunk += words[pos];
-                            wordCount++;
+                        let charCount = 0;
+                        while (pos < chars.length && charCount < 3) {
+                            chunk += chars[pos];
+                            charCount++;
                             pos++;
                         }
                         if (chunk) {
@@ -598,7 +598,7 @@
                             if (autoScroll) {
                                 document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                             }
-                            setTimeout(streamNext, 5);
+                            setTimeout(streamNext, 20);
                         } else {
                             chat.messages[msgIndex].finished = true;
                             streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
@@ -724,7 +724,7 @@
                             if (autoScroll) {
                                 document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                             }
-                            setTimeout(streamNext, 5);
+                            setTimeout(streamNext, 20);
                         } else {
                             chat.messages[index].finished = true;
                             chat.messages[index].interrupted = false;
