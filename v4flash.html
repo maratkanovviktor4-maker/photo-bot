@@ -598,8 +598,9 @@
                     chat.messages[msgIndex]._streamWords = words;
                     var streamActive = true;
                     window._streamPos = 0;
+                    window._stopStream = false;
                     function streamNext() {
-                        if (!streamActive) return;
+                        if (window._stopStream) { typingInterval = null; return; }
                         let chunk = '';
                         let wordCount = 0;
                         while (pos < words.length && wordCount < 2) {
@@ -673,6 +674,7 @@
             return result;
         }
         function stopTyping() {
+            window._stopStream = true;
             if (typingInterval) {
                 clearTimeout(typingInterval);
                 typingInterval = null;
@@ -723,7 +725,9 @@
             const streamDiv = allAssistant[assistantIdx];
             const streamAction = allActions[assistantIdx];
             if (streamDiv) streamDiv.innerHTML = formatMessage(shownContent);
+            window._stopStream = false;
             function streamNext() {
+                if (window._stopStream) { typingInterval = null; return; }
                 let chunk = '';
                 let wordCount = 0;
                 while (pos < words.length && wordCount < 2) {
