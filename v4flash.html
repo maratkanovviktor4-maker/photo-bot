@@ -389,9 +389,10 @@
         function editMessage(index) {
             const chat = chats.find(c => c.id === currentChatId);
             if (chat) {
-                document.getElementById('userInput').value = chat.messages[index].content;
-                document.getElementById('userInput').focus();
-                if (window._updateSendBtn) window._updateSendBtn();
+                var input = document.getElementById('userInput');
+                input.value = chat.messages[index].content;
+                input.focus();
+                input.dispatchEvent(new Event('input', { bubbles: true }));
             }
         }
         function setMode(mode) { currentMode = mode; }
