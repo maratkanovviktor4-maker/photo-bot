@@ -742,7 +742,9 @@
                 btn.className = 'floating-copy-btn';
                 btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
                 btn.title = 'Копировать';
-                btn.style.cssText = 'position:fixed; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); color:#ccc; cursor:pointer; padding:6px 8px; border-radius:4px; font-family:Inter,sans-serif; z-index:9999; display:none; line-height:1;';
+                btn.style.cssText = 'position:fixed; background:transparent; border:none; color:#888; cursor:pointer; padding:6px 8px; border-radius:4px; font-family:Inter,sans-serif; z-index:9999; display:none; line-height:1; transition:background 0.15s;';
+                btn.onmouseenter = function() { btn.style.background = 'rgba(255,255,255,0.08)'; };
+                btn.onmouseleave = function() { btn.style.background = 'transparent'; };
                 btn.onclick = function() {
                     var code = pre.querySelector('code').textContent;
                     navigator.clipboard.writeText(code);
@@ -750,6 +752,11 @@
                     setTimeout(function() { btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 2000);
                 };
                 document.body.appendChild(btn);
+                if (document.body.classList.contains('light')) {
+                    btn.style.color = '#555';
+                    btn.onmouseenter = function() { btn.style.background = 'rgba(0,0,0,0.06)'; };
+                    btn.onmouseleave = function() { btn.style.background = 'transparent'; };
+                }
                 pre._floatBtn = btn;
             });
         }
