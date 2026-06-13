@@ -426,7 +426,8 @@
                         if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
                     }
                     actionsHtml += '</div>';
-                    return `<div class="message-row ${m.role}"><div><div class="message-content">${formatMessage(m.content)}</div>${actionsHtml}</div></div>`;
+                    var dataAttr = m.role === 'assistant' ? ' data-msg-index="' + i + '"' : '';
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + formatMessage(m.content) + '</div>' + actionsHtml + '</div></div>';
                 }).join('');
             }
             setTimeout(function() {
@@ -895,20 +896,11 @@
             e.stopPropagation();
         });
         function scrollToMsg(index) {
-            var chat = chats.find(c => c.id === currentChatId);
-            if (!chat) return;
             var area = document.getElementById('chatArea');
             if (!area) return;
-            var rows = area.querySelectorAll('.message-row');
-            var asstCount = 0;
-            for (var r = 0; r < rows.length; r++) {
-                if (rows[r].classList.contains('assistant')) {
-                    if (asstCount === index) {
-                        rows[r].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        return;
-                    }
-                    asstCount++;
-                }
+            var target = area.querySelector('.message-row.assistant[data-msg-index="' + index + '"]');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
 
