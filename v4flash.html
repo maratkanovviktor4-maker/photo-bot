@@ -258,19 +258,22 @@
             autoScroll = true;
         }
 
-        document.addEventListener('scroll', function(e) {
-            var btn = document.getElementById('scrollBottomBtn');
-            var area = document.getElementById('chatArea');
-            if (!area) return;
-            var atBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 300;
-            if (atBottom) {
-                btn.style.display = 'none';
-                autoScroll = true;
-            } else {
-                btn.style.display = 'flex';
-                autoScroll = false;
-            }
-        }, true);
+        var chatAreaForScrollBtn = document.getElementById('chatArea');
+        if (chatAreaForScrollBtn) {
+            chatAreaForScrollBtn.addEventListener('scroll', function(e) {
+                var btn = document.getElementById('scrollBottomBtn');
+                var area = document.getElementById('chatArea');
+                if (!area) return;
+                var atBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 300;
+                if (atBottom) {
+                    btn.style.display = 'none';
+                    autoScroll = true;
+                } else {
+                    btn.style.display = 'flex';
+                    autoScroll = false;
+                }
+            }, true);
+        }
 
         const savedAuth = localStorage.getItem('photobot_auth');
         if (savedAuth) {
