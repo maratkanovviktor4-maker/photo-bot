@@ -108,9 +108,11 @@
         body.light .file-tag { background: rgba(0,203,245,0.1); color: #005f73; }
         .file-tag button { background: transparent; border: none; color: #e74c3c; cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
         .file-tag button:hover { color: #ff6b6b; }
-        .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 8px 12px; transition: border-color 0.2s, box-shadow 0.2s; }
-        .input-row:focus-within { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
-        body.light .input-row { background: #ffffff; border: 1px solid rgba(0,0,0,0.15); }
+        .input-row-wrapper { width: 100%; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; transition: border-color 0.2s, box-shadow 0.2s; overflow: hidden; }
+        .input-row-wrapper:focus-within { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
+        body.light .input-row-wrapper { background: #ffffff; border: 1px solid rgba(0,0,0,0.15); }
+        .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; padding: 8px 12px 0 12px; }
+        .input-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
     </style>
 <script src="config.js"></script>
 </head>
@@ -142,13 +144,17 @@
             <div class="input-area" id="inputArea">
                 <div id="dropZone" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none;align-items:center;justify-content:center;background:rgba(0,203,245,0.1);border:2px dashed #00CBF5;border-radius:10px;font-size:14px;color:#00CBF5;">Отпустите файл для загрузки</div>
                 <div class="file-list" id="fileList"></div>
-                <div class="input-row">
-                    <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
-                    <textarea id="userInput" placeholder="Введите сообщение..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,200)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,200)+'px';this._init=true;}"></textarea>
-                    <button class="mode-btn" id="reasonerToggle" onclick="toggleReasoner()" style="font-size:11px;padding:4px 10px;flex-shrink:0;">Reasoner</button>
-                    <span class="file-name-inline" id="fileNameInline" style="flex-shrink:0;"></span>
-                    <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл" style="flex-shrink:0;">+</button>
-                    <button id="sendBtn" onclick="sendMessage()" style="flex-shrink:0;">Отправить</button>
+                <div class="input-row-wrapper">
+                    <div class="input-row">
+                        <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
+                        <textarea id="userInput" placeholder="Введите сообщение..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,200)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,200)+'px';this._init=true;}"></textarea>
+                    </div>
+                    <div class="input-toolbar">
+                        <button class="mode-btn" id="reasonerToggle" onclick="toggleReasoner()" style="font-size:11px;padding:4px 10px;">Reasoner</button>
+                        <span class="file-name-inline" id="fileNameInline"></span>
+                        <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл">+</button>
+                        <button id="sendBtn" onclick="sendMessage()">Отправить</button>
+                    </div>
                 </div>
             </div>
             <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="scrollToBottom()">↓</button>
