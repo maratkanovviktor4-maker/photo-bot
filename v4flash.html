@@ -34,8 +34,10 @@
         .chat-search::placeholder { color: #666; }
         body.light .chat-search::placeholder { color: #999; }
         .chat-search:focus { border-color: #00CBF5; }
-        .sidebar-toggle { position: fixed; top: 56px; left: 232px; width: 28px; height: 28px; background: rgba(34,34,34,0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #888; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: left 0.3s ease, background 0.15s; }
-        .collapsed-sidebar .sidebar-toggle { left: 8px; }
+        .search-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .search-row .chat-search { flex: 1; margin-bottom: 0; }
+        .sidebar-toggle { width: 28px; height: 28px; background: rgba(34,34,34,0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #888; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; flex-shrink: 0; }
+        .collapsed-sidebar .sidebar-toggle { position: fixed; top: 16px; left: 8px; z-index: 20; }
         .collapsed-sidebar .main { margin-left: -260px; }
         body.light .sidebar-toggle { background: rgba(240,240,240,0.9); border: 1px solid rgba(0,0,0,0.1); color: #555; }
         .sidebar-toggle:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
@@ -138,15 +140,17 @@
     <script src="config.js"></script>
 </head>
 <body>
-    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Свернуть панель">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
     <div class="sidebar">
         <div class="logo-row">
             <img src="deepseek_logo.png" alt="DeepSeek Flash" onerror="this.style.display='none'">
             <span class="logo-text"><span style="color:#8B5CF6;">V4 Flash</span></span>
         </div>
-        <input class="chat-search" id="chatSearch" placeholder="Поиск чата..." oninput="filterChats()" style="width: calc(100% - 36px);">
+        <div class="search-row">
+            <input class="chat-search" id="chatSearch" placeholder="Поиск чата..." oninput="filterChats()">
+            <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Свернуть панель">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+        </div>
         <button class="new-chat" onclick="newChat()">Новый чат</button>
         <div class="chat-list" id="chatList"></div>
         <div class="sidebar-footer">
