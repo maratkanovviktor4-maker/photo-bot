@@ -91,6 +91,7 @@
         .input-area textarea:focus { outline: none; border: none; box-shadow: none; }
         body.light .input-area textarea { background: transparent; border: none; color: #111; }
         body.light .input-area textarea:focus { outline: none; border: none; box-shadow: none; }
+        .input-area textarea:focus { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
         #sendBtn { width: 36px; height: 36px; padding: 0; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; border: 2px solid transparent; border-radius: 50%; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 16px; transition: 0.3s ease; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,203,245,0.3); display: inline-flex; align-items: center; justify-content: center; }
         #sendBtn:disabled { background: rgba(0,203,245,0.3); color: rgba(32,31,40,0.4); cursor: not-allowed; box-shadow: none; transform: none; }
         #sendBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,203,245,0.4); }
@@ -116,7 +117,7 @@
         .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; padding: 8px 12px 0 12px; }
         .input-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
     </style>
-<script src="config.js"></script>
+    <script src="config.js"></script>
 </head>
 <body>
     <div class="sidebar">
@@ -149,7 +150,7 @@
                 <div class="input-row-wrapper">
                     <div class="input-row">
                         <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
-                        <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();var b=document.getElementById('sendBtn');if(b)b.click();}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,300)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,300)+'px';this._init=true;}"></textarea>
+                        <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(isSending){stopTyping();}else{sendMessage();}}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,300)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,300)+'px';this._init=true;}"></textarea>
                     </div>
                     <div class="input-toolbar">
                         <button class="mode-btn" id="reasonerToggle" onclick="toggleReasoner()" style="font-size:11px;padding:4px 10px;">Reasoner</button>
@@ -165,9 +166,6 @@
 
     <script>
         var autoScroll = true;
-        window._stopStream = false;
-        window._streamPos = 0;
-        window.isSending = false;
 
         const SERVER_URL = CONFIG.SERVER_URL;
         let currentMode = 'chat';
@@ -175,12 +173,14 @@
         let currentChatId = null;
         let sessionToken = '';
         let currentUserId = null;
+        let isSending = false;
         let typingInterval = null;
         let pendingFile = null;
+        let activeStreamId = null;
 
         window.addEventListener('wheel', function(e) {
             const area = document.getElementById('chatArea');
-            if (!area || window.isSending) return;
+            if (!area || isSending) return;
             const target = e.target;
             if (target && (target.closest('.chat-list') || target.closest('.chat-menu-dropdown') || target.closest('.sidebar'))) return;
             if (target && target.closest('#userInput')) return;
@@ -518,22 +518,22 @@
         function sendBtnStop() {
             var btn = document.getElementById('sendBtn');
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
-            btn.onclick = stopTyping;
+            btn.onclick = function() { stopTyping(); };
         }
         async function sendMessage() {
-            if (window.isSending) return;
+            if (isSending) return;
             const input = document.getElementById('userInput');
             const text = input.value.trim();
             if (!text && !pendingFile) return;
             if (!currentUserId) { alert('Авторизуйтесь на главной странице'); return; }
             if (!currentChatId) { newChat(); }
             input.value = ''; input.style.height = 'auto'; input._init = false;
-            window.isSending = true;
+            isSending = true;
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
 
             const chat = chats.find(c => c.id === currentChatId);
-            if (!chat) { window.isSending = false; return; }
+            if (!chat) return;
 
             var lastMsg = chat.messages[chat.messages.length - 1];
             if (lastMsg && lastMsg.role === 'assistant' && lastMsg.interrupted) {
@@ -565,27 +565,29 @@
                 if (resp.status === 403) {
                     chat.messages.push({ role: 'assistant', content: 'Сессия устарела. Авторизуйтесь заново на главной странице.' });
                     renderMessages();
-                    window.isSending = false; sendBtnArrow();
+                    isSending = false; sendBtnArrow(); activeStreamId = null;
                     return;
                 }
                 if (resp.status === 402) {
                     const data = await resp.json();
                     chat.messages.push({ role: 'assistant', content: 'Недостаточно средств.' });
                     renderMessages(); updateBalance();
-                    window.isSending = false; sendBtnArrow();
+                    isSending = false; sendBtnArrow(); activeStreamId = null;
                     return;
                 }
                 if (!resp.ok) {
                     chat.messages.push({ role: 'assistant', content: 'Ошибка сервера. Попробуйте позже.' });
                     renderMessages();
-                    window.isSending = false; sendBtnArrow();
+                    isSending = false; sendBtnArrow(); activeStreamId = null;
                     return;
                 }
                 const data = await resp.json();
                 if (data.reply) {
                     const fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    chat.messages.push({ role: 'assistant', content: '', finished: false });
+                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0 });
                     const msgIndex = chat.messages.length - 1;
+                    const streamId = 'stream_' + msgIndex;
+                    activeStreamId = streamId;
                     renderChatList();
                     const area2 = document.getElementById('chatArea');
                     const newRow = document.createElement('div');
@@ -597,10 +599,8 @@
                     const streamAction = document.getElementById('actions-' + msgIndex);
                     const words = fullContent.split(/(\s+)/);
                     chat.messages[msgIndex]._streamWords = words;
-                    window._streamPos = 0;
-                    window._stopStream = false;
                     function streamNext() {
-                        if (window._stopStream) { typingInterval = null; return; }
+                        if (activeStreamId !== streamId) return;
                         let chunk = '';
                         let wordCount = 0;
                         while (pos < words.length && wordCount < 2) {
@@ -608,7 +608,7 @@
                             wordCount++;
                             pos++;
                         }
-                        window._streamPos = pos;
+                        chat.messages[msgIndex]._streamPos = pos;
                         if (chunk) {
                             chat.messages[msgIndex].content = words.slice(0, pos).join('');
                             streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
@@ -618,6 +618,7 @@
                             typingInterval = setTimeout(streamNext, 20);
                         } else {
                             chat.messages[msgIndex].finished = true;
+                            chat.messages[msgIndex].interrupted = false;
                             typingInterval = null;
                             streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
                             autoNameChat(chat);
@@ -625,23 +626,27 @@
                             if (autoScroll) {
                                 document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                             }
-                            window.isSending = false;
-                            sendBtnArrow();
+                            if (activeStreamId === streamId) {
+                                isSending = false;
+                                activeStreamId = null;
+                                sendBtnArrow();
+                            }
                         }
                     }
                     streamNext();
                 } else {
                     chat.messages.push({ role: 'assistant', content: 'Ошибка. Попробуйте позже.' });
                     renderMessages();
+                    isSending = false; sendBtnArrow(); activeStreamId = null;
                 }
             } catch (e) {
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 chat.messages.push({ role: 'assistant', content: 'Ошибка соединения.' });
                 renderMessages();
+                isSending = false; sendBtnArrow(); activeStreamId = null;
             }
             pendingFile = null;
             updateFileList();
-            window.isSending = false;
             updateBalance();
         }
         function formatMessage(text) {
@@ -674,7 +679,6 @@
             return result;
         }
         function stopTyping() {
-            window._stopStream = true;
             if (typingInterval) {
                 clearTimeout(typingInterval);
                 typingInterval = null;
@@ -684,20 +688,20 @@
                 const lastMsg = chat.messages[chat.messages.length - 1];
                 if (lastMsg.role === 'assistant' && !lastMsg.finished) {
                     lastMsg.interrupted = true;
-                    lastMsg._streamPos = window._streamPos || 0;
                 }
             }
+            activeStreamId = null;
             renderMessages();
-            window.isSending = false;
+            isSending = false;
             sendBtnArrow();
         }
         async function continueMessage(index) {
-            if (window.isSending) return;
+            if (isSending) return;
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
             const msg = chat.messages[index];
             if (!msg || msg.role !== 'assistant' || !msg.interrupted) return;
-            window.isSending = true;
+            isSending = true;
             sendBtnStop();
             const words = msg._streamWords;
             let pos = msg._streamPos || 0;
@@ -705,12 +709,14 @@
                 msg.interrupted = false;
                 msg.finished = true;
                 renderMessages();
-                window.isSending = false;
+                isSending = false;
                 sendBtnArrow();
                 return;
             }
             msg.interrupted = false;
             msg.finished = false;
+            const streamId = 'stream_' + index;
+            activeStreamId = streamId;
             const shownContent = words.slice(0, pos).join('');
             msg.content = shownContent;
             renderMessages();
@@ -725,9 +731,8 @@
             const streamDiv = allAssistant[assistantIdx];
             const streamAction = allActions[assistantIdx];
             if (streamDiv) streamDiv.innerHTML = formatMessage(shownContent);
-            window._stopStream = false;
             function streamNext() {
-                if (window._stopStream) { typingInterval = null; return; }
+                if (activeStreamId !== streamId) return;
                 let chunk = '';
                 let wordCount = 0;
                 while (pos < words.length && wordCount < 2) {
@@ -735,7 +740,7 @@
                     wordCount++;
                     pos++;
                 }
-                window._streamPos = pos;
+                msg._streamPos = pos;
                 if (chunk) {
                     chat.messages[index].content = words.slice(0, pos).join('');
                     if (streamDiv) streamDiv.innerHTML = formatMessage(chat.messages[index].content);
@@ -753,8 +758,11 @@
                     if (autoScroll) {
                         document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                     }
-                    window.isSending = false;
-                    sendBtnArrow();
+                    if (activeStreamId === streamId) {
+                        isSending = false;
+                        activeStreamId = null;
+                        sendBtnArrow();
+                    }
                 }
             }
             streamNext();
