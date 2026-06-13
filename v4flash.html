@@ -361,11 +361,11 @@
                 area.innerHTML = chat.messages.map((m, i) => {
                     let actionsHtml = '<div class="message-actions">';
                     if (m.role === 'user') {
-                        actionsHtml += `<button onclick="editMessage(${i})">Редактировать</button>`;
-                        actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}">Копировать</button>`;
+                        actionsHtml += `<button onclick="editMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
+                        actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                     } else {
-                        actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}">Копировать</button>`;
-                        if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})">Продолжить</button>`;
+                        actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+                        if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
                     }
                     actionsHtml += '</div>';
                     return `<div class="message-row ${m.role}"><div><div class="message-content">${formatMessage(m.content)}</div>${actionsHtml}</div></div>`;
@@ -382,8 +382,8 @@
             navigator.clipboard.writeText(chat.messages[index].content);
             const btn = document.getElementById('copy-btn-' + index);
             if (btn) {
-                btn.textContent = 'Скопировано';
-                setTimeout(function() { btn.textContent = 'Копировать'; }, 2000);
+                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+                setTimeout(function() { btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 2000);
             }
         }
         function editMessage(index) {
@@ -583,7 +583,7 @@
                             setTimeout(streamNext, 5);
                         } else {
                             chat.messages[msgIndex].finished = true;
-                            streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '">Копировать</button>';
+                            streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
                             autoNameChat(chat);
                             renderChatList();
                             if (autoScroll) {
@@ -712,7 +712,7 @@
                         } else {
                             chat.messages[index].finished = true;
                             chat.messages[index].interrupted = false;
-                            if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '">Копировать</button>';
+                            if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
                             autoNameChat(chat);
                             renderChatList();
                             if (autoScroll) {
