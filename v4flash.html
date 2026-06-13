@@ -682,15 +682,11 @@
             sendBtnArrow();
         }
         async function continueMessage(index) {
-            console.log('continueMessage called, index:', index);
             if (isSending) return;
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
             const msg = chat.messages[index];
-            console.log('msg:', msg);
-            if (!msg) { console.log('no msg'); return; }
-            if (msg.role !== 'assistant') { console.log('not assistant'); return; }
-            if (!msg.interrupted) { console.log('not interrupted'); return; }
+            if (!msg || msg.role !== 'assistant' || !msg.interrupted) return;
             isSending = true;
             sendBtnStop();
             const words = msg._streamWords;
