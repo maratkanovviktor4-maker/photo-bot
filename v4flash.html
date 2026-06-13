@@ -682,7 +682,10 @@
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
             const msg = chat.messages[index];
-            if (!msg || msg.role !== 'assistant' || !msg.interrupted) return;
+            console.log('msg:', msg);
+            if (!msg) { console.log('no msg'); return; }
+            if (msg.role !== 'assistant') { console.log('not assistant'); return; }
+            if (!msg.interrupted) { console.log('not interrupted'); return; }
             isSending = true;
             sendBtnStop();
             renderMessages();
