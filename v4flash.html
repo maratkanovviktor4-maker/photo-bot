@@ -670,6 +670,7 @@
                 const lastMsg = chat.messages[chat.messages.length - 1];
                 if (lastMsg.role === 'assistant' && !lastMsg.finished) {
                     lastMsg.interrupted = true;
+                    lastMsg._shownContent = lastMsg.content;
                 }
             }
             renderMessages();
@@ -690,8 +691,10 @@
             sendBtnStop();
             msg.interrupted = false;
             msg.finished = false;
-            const remaining = msg.content;
-            chat.messages[index].content = '';
+            const fullContent = msg.content;
+            const shownContent = msg._shownContent || '';
+            const remaining = fullContent.substring(shownContent.length);
+            msg.content = shownContent;
             renderMessages();
             await new Promise(r => setTimeout(r, 50));
             const allAssistant = document.querySelectorAll('.message-row.assistant .message-content');
@@ -706,7 +709,6 @@
             console.log('assistantIdx:', assistantIdx, 'streamDiv:', streamDiv);
             const words = remaining.split(/(\s+)/);
             let pos = 0;
-            if (streamDiv) streamDiv.innerHTML = '';
             function streamNext() {
                 let chunk = '';
                 let wordCount = 0;
@@ -716,7 +718,7 @@
                     pos++;
                 }
                 if (chunk) {
-                    chat.messages[index].content = words.slice(0, pos).join('');
+                    chat.messages[index].content = shownContent + words.slice(0, pos).join('');
                     if (streamDiv) streamDiv.innerHTML = formatMessage(chat.messages[index].content);
                     if (autoScroll) {
                         document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
