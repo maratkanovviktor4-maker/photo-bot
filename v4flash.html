@@ -65,7 +65,7 @@
         body.light .sidebar-footer { border-top: 1px solid rgba(0,0,0,0.08); }
         .sidebar-footer a { color: #888; text-decoration: none; font-size: 12px; display: block; text-align: center; font-family: 'Inter', sans-serif; transition: 0.2s; }
         .sidebar-footer a:hover { color: #00CBF5; }
-        .main { flex: 1; display: flex; flex-direction: column; background: #201F28; min-width: 0; margin-left: 260px; transition: margin-left 0.3s ease; height: 100vh; overflow-y: auto; position: relative; }
+        .main { flex: 1; display: flex; flex-direction: column; background: #201F28; min-width: 0; margin-left: 260px; transition: margin-left 0.3s ease; height: 100vh; overflow-y: auto; scroll-behavior: smooth; position: relative; }
         body.light .main { background: #ffffff; }
         .collapsed-sidebar .main { margin-left: 0; }
         .top-bar { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); background: #201F28; flex-shrink: 0; position: sticky; top: 0; z-index: 5; }
@@ -78,8 +78,8 @@
         body.light .mode-btn:hover:not(.active) { color: #111; }
         #balanceDisplay { font-size: 12px; color: #00CBF5; font-family: 'Inter', sans-serif; white-space: nowrap; margin-right: auto; }
         .chat-wrapper { width: 100%; max-width: 775px; display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0 auto; position: relative; }
-        .chat-area { flex: 1; padding: 20px 0; display: flex; flex-direction: column; gap: 20px; position: relative; }
-        .scroll-bottom-btn { position: absolute; bottom: 10px; right: 20px; width: 36px; height: 36px; min-width: 36px; min-height: 36px; border-radius: 50%; background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; display: none; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10002; flex-shrink: 0; }
+        .chat-area { flex: 1; padding: 20px 0; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 0; }
+        .scroll-bottom-btn { position: sticky; bottom: 10px; margin-left: auto; margin-right: 20px; width: 36px; height: 36px; min-width: 36px; min-height: 36px; border-radius: 50%; background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; display: none; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10002; flex-shrink: 0; }
         .scroll-bottom-btn:hover { background: #e0e0e0; }
         body.light .scroll-bottom-btn { background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.15); }
         body.light .scroll-bottom-btn:hover { background: #e0e0e0; }
@@ -108,7 +108,7 @@
         .message-actions button:hover { background: rgba(255,255,255,0.08); }
         body.light .message-actions button { background: transparent; border: none; color: #555; }
         body.light .message-actions button:hover { background: rgba(0,0,0,0.06); }
-        .input-area { padding: 0; border-top: none; display: flex; gap: 0; align-items: flex-end; background: #201F28; flex-shrink: 0; overflow: visible; position: sticky; bottom: 0; z-index: 5; flex-wrap: wrap; margin-top: auto; }
+        .input-area { padding: 0; border-top: none; display: flex; gap: 0; align-items: flex-end; background: #201F28; flex-shrink: 0; overflow: visible; position: sticky; bottom: 0; z-index: 5; flex-wrap: wrap; margin-top: auto; padding-bottom: 25px; }
         body.light .input-area { background: #ffffff; }
         .input-area textarea { flex: 1; padding: 0; border-radius: 0; border: none; background: transparent; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; outline: none; resize: none; min-height: 48px; max-height: 300px; overflow-y: auto; min-width: 0; width: 100%; }
         .input-area textarea:focus { outline: none; border: none; box-shadow: none; }
@@ -153,8 +153,6 @@
         .nav-container::-webkit-scrollbar { width: 4px; }
         .nav-container::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
         .nav-container:hover::-webkit-scrollbar-thumb { background: rgba(170,170,170,0.4); }
-        .input-area-padding { height: 25px; background: #201F28; }
-        body.light .input-area-padding { background: #ffffff; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -190,7 +188,6 @@
                     <div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div>
                 </div>
             </div>
-            <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="scrollToBottom()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
             <div class="input-area" id="inputArea">
                 <div id="dropZone" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none;align-items:center;justify-content:center;background:rgba(0,203,245,0.1);border:2px dashed #00CBF5;border-radius:10px;font-size:14px;color:#00CBF5;">Отпустите файл для загрузки</div>
                 <div class="file-list" id="fileList"></div>
@@ -207,7 +204,6 @@
                     </div>
                 </div>
             </div>
-            <div class="input-area-padding"></div>
         </div>
     </div>
     <div class="nav-container" id="navContainer"></div>
@@ -242,13 +238,13 @@
 
         function scrollToBottom() {
             var main = document.getElementById('mainContainer');
-            main.scrollTop = main.scrollHeight;
+            if (main) { main.scrollTop = main.scrollHeight; }
             autoScroll = true;
         }
 
         var mainEl = document.getElementById('mainContainer');
         if (mainEl) {
-            mainEl.addEventListener('scroll', function(e) {
+            mainEl.addEventListener('scroll', function() {
                 var btn = document.getElementById('scrollBottomBtn');
                 if (!btn) return;
                 var atBottom = mainEl.scrollHeight - mainEl.scrollTop - mainEl.clientHeight < 300;
@@ -301,8 +297,23 @@
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId); const area = document.getElementById('chatArea');
-            if (!chat || chat.messages.length === 0) { area.innerHTML = `<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display='none'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>`; }
-            else { area.innerHTML = chat.messages.map((m, i) => { let actionsHtml = '<div class="message-actions">'; if (m.role === 'user') { actionsHtml += `<button onclick="editMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`; actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`; } else { actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`; if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`; } actionsHtml += '</div>'; var dataAttr = m.role === 'assistant' ? ' data-msg-index="' + i + '"' : ''; return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + formatMessage(m.content) + '</div>' + actionsHtml + '</div></div>'; }).join(''); }
+            if (!chat || chat.messages.length === 0) {
+                area.innerHTML = '<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display=\'none\'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>';
+            } else {
+                area.innerHTML = chat.messages.map((m, i) => {
+                    let actionsHtml = '<div class="message-actions">';
+                    if (m.role === 'user') {
+                        actionsHtml += '<button onclick="editMessage(' + i + ')" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>';
+                        actionsHtml += '<button onclick="copyMessage(' + i + ')" id="copy-btn-' + i + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
+                    } else {
+                        actionsHtml += '<button onclick="copyMessage(' + i + ')" id="copy-btn-' + i + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
+                        if (m.interrupted) actionsHtml += '<button onclick="continueMessage(' + i + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
+                    }
+                    actionsHtml += '</div>';
+                    var dataAttr = m.role === 'assistant' ? ' data-msg-index="' + i + '"' : '';
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + formatMessage(m.content) + '</div>' + actionsHtml + '</div></div>';
+                }).join('') + '<button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="scrollToBottom()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>';
+            }
             setTimeout(function() { var main = document.getElementById('mainContainer'); if (main) main.scrollTop = main.scrollHeight; hljs.highlightAll(); buildNavContainer(); }, 100);
         }
         function copyMessage(index) { const chat = chats.find(c => c.id === currentChatId); if (!chat) return; navigator.clipboard.writeText(chat.messages[index].content); const btn = document.getElementById('copy-btn-' + index); if (btn) { btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'; setTimeout(function() { btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 2000); } }
@@ -333,8 +344,7 @@
             typingRow.className = 'message-row assistant'; typingRow.id = placeholderId;
             typingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
             area.appendChild(typingRow);
-            var main = document.getElementById('mainContainer');
-            if (main) main.scrollTop = main.scrollHeight;
+            var main = document.getElementById('mainContainer'); if (main) main.scrollTop = main.scrollHeight;
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken }, body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '' }) });
                 const el = document.getElementById(placeholderId); if (el) el.remove();
@@ -348,7 +358,7 @@
                     const area2 = document.getElementById('chatArea'); const newRow = document.createElement('div'); newRow.className = 'message-row assistant';
                     newRow.innerHTML = '<div><div class="message-content" id="stream-' + msgIndex + '"></div><div class="message-actions" id="actions-' + msgIndex + '"><button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div></div>';
                     area2.appendChild(newRow); let pos = 0; const streamDiv = document.getElementById('stream-' + msgIndex); const streamAction = document.getElementById('actions-' + msgIndex); const words = fullContent.split(/(\s+)/); chat.messages[msgIndex]._streamWords = words;
-                    function streamNext() { if (activeStreamId !== streamId) return; let chunk = ''; let wordCount = 0; while (pos < words.length && wordCount < 2) { chunk += words[pos]; wordCount++; pos++; } chat.messages[msgIndex]._streamPos = pos; if (chunk) { chat.messages[msgIndex].content = words.slice(0, pos).join(''); streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content); streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); }); if (autoScroll) { var main3 = document.getElementById('mainContainer'); if (main3) main3.scrollTop = main3.scrollHeight; } typingInterval = setTimeout(streamNext, 20); } else { chat.messages[msgIndex].finished = true; chat.messages[msgIndex].interrupted = false; typingInterval = null; streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'; autoNameChat(chat); renderChatList(); if (autoScroll) { var main4 = document.getElementById('mainContainer'); if (main4) main4.scrollTop = main4.scrollHeight; } if (activeStreamId === streamId) { isSending = false; activeStreamId = null; sendBtnArrow(); } } }
+                    function streamNext() { if (activeStreamId !== streamId) return; let chunk = ''; let wordCount = 0; while (pos < words.length && wordCount < 2) { chunk += words[pos]; wordCount++; pos++; } chat.messages[msgIndex]._streamPos = pos; if (chunk) { chat.messages[msgIndex].content = words.slice(0, pos).join(''); streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content); streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); }); if (autoScroll) { var m2 = document.getElementById('mainContainer'); if (m2) m2.scrollTop = m2.scrollHeight; } typingInterval = setTimeout(streamNext, 20); } else { chat.messages[msgIndex].finished = true; chat.messages[msgIndex].interrupted = false; typingInterval = null; streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'; autoNameChat(chat); renderChatList(); if (autoScroll) { var m3 = document.getElementById('mainContainer'); if (m3) m3.scrollTop = m3.scrollHeight; } if (activeStreamId === streamId) { isSending = false; activeStreamId = null; sendBtnArrow(); } } }
                     streamNext();
                 } else { chat.messages.push({ role: 'assistant', content: 'Ошибка. Попробуйте позже.' }); renderMessages(); isSending = false; sendBtnArrow(); activeStreamId = null; }
             } catch (e) { const el = document.getElementById(placeholderId); if (el) el.remove(); chat.messages.push({ role: 'assistant', content: 'Ошибка соединения.' }); renderMessages(); isSending = false; sendBtnArrow(); activeStreamId = null; }
@@ -356,18 +366,16 @@
         }
         function formatMessage(text) { var B = String.fromCharCode(96); if (/^\s*<(!DOCTYPE|html)/i.test(text)) { text = B + B + B + 'html\n' + text + '\n' + B + B + B; } let parts = []; let lastIndex = 0; const regex = new RegExp(B + B + B + '(\\w*)\\r?\\n([\\s\\S]*?)' + B + B + B, 'g'); let match; while ((match = regex.exec(text)) !== null) { if (match.index > lastIndex) { parts.push({type: 'text', content: text.substring(lastIndex, match.index)}); } parts.push({type: 'code', lang: match[1], content: match[2]}); lastIndex = regex.lastIndex; } if (lastIndex < text.length) { parts.push({type: 'text', content: text.substring(lastIndex)}); } let result = ''; for (const part of parts) { if (part.type === 'code') { var lang = part.lang || ''; result += '<pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre>'; } else { result += escapeHtml(part.content).replace(/`([^`]+)`/g, '<code>' + '$1' + '</code>').replace(/\n/g, '<br>'); } } return result; }
         function stopTyping() { if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; } const chat = chats.find(c => c.id === currentChatId); if (chat && chat.messages.length > 0) { const lastMsg = chat.messages[chat.messages.length - 1]; if (lastMsg.role === 'assistant' && !lastMsg.finished) { lastMsg.interrupted = true; } } activeStreamId = null; renderMessages(); isSending = false; sendBtnArrow(); }
-        async function continueMessage(index) { if (isSending) return; const chat = chats.find(c => c.id === currentChatId); if (!chat) return; const msg = chat.messages[index]; if (!msg || msg.role !== 'assistant' || !msg.interrupted) return; isSending = true; sendBtnStop(); const words = msg._streamWords; let pos = msg._streamPos || 0; if (!words || pos >= words.length) { msg.interrupted = false; msg.finished = true; renderMessages(); isSending = false; sendBtnArrow(); return; } msg.interrupted = false; msg.finished = false; const streamId = 'stream_' + index; activeStreamId = streamId; const shownContent = words.slice(0, pos).join(''); msg.content = shownContent; renderMessages(); var input2 = document.getElementById('userInput'); if (input2) input2.focus(); await new Promise(r => setTimeout(r, 50)); const allAssistant = document.querySelectorAll('.message-row.assistant .message-content'); const allActions = document.querySelectorAll('.message-row.assistant .message-actions'); let assistantIdx = 0; for (let i = 0; i <= index; i++) { if (chat.messages[i].role === 'assistant' && i === index) break; if (chat.messages[i].role === 'assistant') assistantIdx++; } const streamDiv = allAssistant[assistantIdx]; const streamAction = allActions[assistantIdx]; if (streamDiv) streamDiv.innerHTML = formatMessage(shownContent); function streamNext() { if (activeStreamId !== streamId) return; let chunk = ''; let wordCount = 0; while (pos < words.length && wordCount < 2) { chunk += words[pos]; wordCount++; pos++; } msg._streamPos = pos; if (chunk) { chat.messages[index].content = words.slice(0, pos).join(''); if (streamDiv) { streamDiv.innerHTML = formatMessage(chat.messages[index].content); streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); }); } if (autoScroll) { var main2 = document.getElementById('mainContainer'); if (main2) main2.scrollTop = main2.scrollHeight; } typingInterval = setTimeout(streamNext, 20); } else { chat.messages[index].finished = true; chat.messages[index].interrupted = false; typingInterval = null; if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'; autoNameChat(chat); renderChatList(); if (autoScroll) { var main2 = document.getElementById('mainContainer'); if (main2) main2.scrollTop = main2.scrollHeight; } if (activeStreamId === streamId) { isSending = false; activeStreamId = null; sendBtnArrow(); } } } streamNext(); }
+        async function continueMessage(index) { if (isSending) return; const chat = chats.find(c => c.id === currentChatId); if (!chat) return; const msg = chat.messages[index]; if (!msg || msg.role !== 'assistant' || !msg.interrupted) return; isSending = true; sendBtnStop(); const words = msg._streamWords; let pos = msg._streamPos || 0; if (!words || pos >= words.length) { msg.interrupted = false; msg.finished = true; renderMessages(); isSending = false; sendBtnArrow(); return; } msg.interrupted = false; msg.finished = false; const streamId = 'stream_' + index; activeStreamId = streamId; const shownContent = words.slice(0, pos).join(''); msg.content = shownContent; renderMessages(); var input2 = document.getElementById('userInput'); if (input2) input2.focus(); await new Promise(r => setTimeout(r, 50)); const allAssistant = document.querySelectorAll('.message-row.assistant .message-content'); const allActions = document.querySelectorAll('.message-row.assistant .message-actions'); let assistantIdx = 0; for (let i = 0; i <= index; i++) { if (chat.messages[i].role === 'assistant' && i === index) break; if (chat.messages[i].role === 'assistant') assistantIdx++; } const streamDiv = allAssistant[assistantIdx]; const streamAction = allActions[assistantIdx]; if (streamDiv) streamDiv.innerHTML = formatMessage(shownContent); function streamNext() { if (activeStreamId !== streamId) return; let chunk = ''; let wordCount = 0; while (pos < words.length && wordCount < 2) { chunk += words[pos]; wordCount++; pos++; } msg._streamPos = pos; if (chunk) { chat.messages[index].content = words.slice(0, pos).join(''); if (streamDiv) { streamDiv.innerHTML = formatMessage(chat.messages[index].content); streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); }); } if (autoScroll) { var m2 = document.getElementById('mainContainer'); if (m2) m2.scrollTop = m2.scrollHeight; } typingInterval = setTimeout(streamNext, 20); } else { chat.messages[index].finished = true; chat.messages[index].interrupted = false; typingInterval = null; if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'; autoNameChat(chat); renderChatList(); if (autoScroll) { var m2b = document.getElementById('mainContainer'); if (m2b) m2b.scrollTop = m2b.scrollHeight; } if (activeStreamId === streamId) { isSending = false; activeStreamId = null; sendBtnArrow(); } } } streamNext(); }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
         function setupFloatingCopyButtons() { document.querySelectorAll('.floating-copy-btn').forEach(function(btn) { btn.remove(); }); document.querySelectorAll('.message-content pre').forEach(function(pre) { if (pre.querySelector('.floating-copy-btn')) return; var btn = document.createElement('button'); btn.className = 'floating-copy-btn'; btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; btn.title = 'Копировать'; btn.style.cssText = 'position:fixed; background:transparent; border:none; color:#888; cursor:pointer; padding:6px 8px; border-radius:8px; font-family:Inter,sans-serif; z-index:9999; display:none; line-height:1; transition:background 0.15s;'; btn.onmouseenter = function() { btn.style.background = 'rgba(255,255,255,0.08)'; }; btn.onmouseleave = function() { btn.style.background = 'transparent'; }; btn.onclick = function() { var code = pre.querySelector('code').textContent; navigator.clipboard.writeText(code); btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'; setTimeout(function() { btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 2000); }; document.body.appendChild(btn); if (document.body.classList.contains('light')) { btn.style.color = '#555'; btn.onmouseenter = function() { btn.style.background = 'rgba(0,0,0,0.06)'; }; btn.onmouseleave = function() { btn.style.background = 'transparent'; }; } pre._floatBtn = btn; }); }
         function updateFloatingButtons() { document.querySelectorAll('.message-content pre').forEach(function(pre) { var btn = pre._floatBtn; if (!btn) return; var rect = pre.getBoundingClientRect(); var visible = rect.bottom > 0 && rect.top < window.innerHeight; if (visible) { btn.style.display = 'block'; btn.style.top = Math.max(rect.top, 60) + 'px'; btn.style.right = (window.innerWidth - rect.right + 8) + 'px'; } else { btn.style.display = 'none'; } }); }
         function buildNavContainer() { var container = document.getElementById('navContainer'); if (!container) return; var chat = chats.find(c => c.id === currentChatId); if (!chat || chat.messages.length === 0) { container.innerHTML = ''; return; } var html = ''; for (var i = 0; i < chat.messages.length; i++) { if (chat.messages[i].role === 'assistant' && chat.messages[i].content) { var preview = chat.messages[i].content.substring(0, 80); html += '<div class="nav-strip" data-msg-index="' + i + '" onclick="scrollToMsg(' + i + ')"><div class="nav-bar"></div><span class="nav-text">' + escapeHtml(preview) + '</span></div>'; } } container.innerHTML = html; }
         function updateActiveNavFromScroll() {
-            var main = document.getElementById('mainContainer');
-            if (!main) return;
+            var main = document.getElementById('mainContainer'); if (!main) return;
             var rows = document.querySelectorAll('.message-row.assistant[data-msg-index]');
             var mainRect = main.getBoundingClientRect();
-            var closestIndex = null;
-            var closestDist = Infinity;
+            var closestIndex = null; var closestDist = Infinity;
             for (var r = 0; r < rows.length; r++) {
                 var rect = rows[r].getBoundingClientRect();
                 if (rect.bottom < mainRect.top || rect.top > mainRect.bottom) continue;
@@ -381,11 +389,7 @@
                 if (activeStrip) {
                     activeStrip.classList.add('active');
                     var container = document.getElementById('navContainer');
-                    if (container) {
-                        var stripTop = activeStrip.offsetTop;
-                        var containerH = container.clientHeight;
-                        container.scrollTo({ top: stripTop - containerH / 2 + activeStrip.offsetHeight / 2, behavior: 'smooth' });
-                    }
+                    if (container) { var stripTop = activeStrip.offsetTop; var containerH = container.clientHeight; container.scrollTo({ top: stripTop - containerH / 2 + activeStrip.offsetHeight / 2, behavior: 'smooth' }); }
                 }
             }
         }
@@ -393,8 +397,7 @@
         if (mainEl2) { mainEl2.addEventListener('scroll', updateActiveNavFromScroll); }
         document.getElementById('navContainer').addEventListener('wheel', function(e) { e.stopPropagation(); });
         function scrollToMsg(index) {
-            var area = document.getElementById('chatArea');
-            if (!area) return;
+            var area = document.getElementById('chatArea'); if (!area) return;
             var target = area.querySelector('.message-row.assistant[data-msg-index="' + index + '"]');
             if (target) { target.scrollIntoView({ behavior: 'auto', block: 'center' }); }
             document.querySelectorAll('.nav-strip').forEach(function(s) { s.classList.remove('active'); });
@@ -402,11 +405,7 @@
             if (activeStrip) { activeStrip.classList.add('active'); }
         }
         var chatAreaObserver = new MutationObserver(function() { setupFloatingCopyButtons(); updateFloatingButtons(); });
-        window.addEventListener('load', function() {
-            var chatArea = document.getElementById('chatArea');
-            if (chatArea) { chatAreaObserver.observe(chatArea, { childList: true, subtree: true }); }
-            setupFloatingCopyButtons(); updateFloatingButtons();
-        });
+        window.addEventListener('load', function() { var chatArea = document.getElementById('chatArea'); if (chatArea) { chatAreaObserver.observe(chatArea, { childList: true, subtree: true }); } setupFloatingCopyButtons(); updateFloatingButtons(); });
         window.addEventListener('scroll', updateFloatingButtons, true);
         window.addEventListener('resize', updateFloatingButtons);
     </script>
