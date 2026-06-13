@@ -92,7 +92,7 @@
         body.light .input-area textarea { background: transparent; border: none; color: #111; }
         body.light .input-area textarea:focus { outline: none; border: none; box-shadow: none; }
         .input-area textarea:focus { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
-        #sendBtn { padding: 8px 16px; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; border: 2px solid transparent; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; transition: 0.3s ease; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
+        #sendBtn { width: 36px; height: 36px; padding: 0; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; border: 2px solid transparent; border-radius: 50%; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 16px; transition: 0.3s ease; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,203,245,0.3); display: inline-flex; align-items: center; justify-content: center; }
         #sendBtn:disabled { background: #2a2a2a; color: #666; cursor: not-allowed; box-shadow: none; transform: none; }
         #sendBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,203,245,0.4); }
         .attach-btn { padding: 8px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: #00CBF5; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 18px; transition: 0.3s ease; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -156,7 +156,7 @@
                         <button class="mode-btn" id="reasonerToggle" onclick="toggleReasoner()" style="font-size:11px;padding:4px 10px;">Reasoner</button>
                         <span class="file-name-inline" id="fileNameInline"></span>
                         <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл">+</button>
-                        <button id="sendBtn" onclick="sendMessage()">Отправить</button>
+                        <button id="sendBtn" onclick="sendMessage()" title="Отправить"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
                     </div>
                 </div>
             </div>
@@ -498,6 +498,16 @@
         setupDragDrop();
         setupPaste();
 
+        function sendBtnArrow() {
+            var btn = document.getElementById('sendBtn');
+            btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
+            btn.onclick = sendMessage;
+        }
+        function sendBtnStop() {
+            var btn = document.getElementById('sendBtn');
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
+            btn.onclick = stopTyping;
+        }
         async function sendMessage() {
             if (isSending) return;
             const input = document.getElementById('userInput');
@@ -507,8 +517,7 @@
             if (!currentChatId) { newChat(); }
             input.value = ''; input.style.height = 'auto'; input._init = false;
             isSending = true;
-            document.getElementById('sendBtn').textContent = 'Стоп';
-            document.getElementById('sendBtn').onclick = stopTyping;
+            sendBtnStop();
 
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
@@ -535,20 +544,20 @@
                 if (resp.status === 403) {
                     chat.messages.push({ role: 'assistant', content: 'Сессия устарела. Авторизуйтесь заново на главной странице.' });
                     renderMessages();
-                    isSending = false; document.getElementById('sendBtn').textContent = 'Отправить'; document.getElementById('sendBtn').onclick = sendMessage;
+                    isSending = false; sendBtnArrow();
                     return;
                 }
                 if (resp.status === 402) {
                     const data = await resp.json();
                     chat.messages.push({ role: 'assistant', content: 'Недостаточно средств.' });
                     renderMessages(); updateBalance();
-                    isSending = false; document.getElementById('sendBtn').textContent = 'Отправить'; document.getElementById('sendBtn').onclick = sendMessage;
+                    isSending = false; sendBtnArrow();
                     return;
                 }
                 if (!resp.ok) {
                     chat.messages.push({ role: 'assistant', content: 'Ошибка сервера. Попробуйте позже.' });
                     renderMessages();
-                    isSending = false; document.getElementById('sendBtn').textContent = 'Отправить'; document.getElementById('sendBtn').onclick = sendMessage;
+                    isSending = false; sendBtnArrow();
                     return;
                 }
                 const data = await resp.json();
@@ -560,7 +569,7 @@
                     const area2 = document.getElementById('chatArea');
                     const newRow = document.createElement('div');
                     newRow.className = 'message-row assistant';
-                    newRow.innerHTML = '<div><div class="message-content" id="stream-' + msgIndex + '"></div><div class="message-actions" id="actions-' + msgIndex + '"><button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '">Копировать</button></div></div>';
+                    newRow.innerHTML = '<div><div class="message-content" id="stream-' + msgIndex + '"></div><div class="message-actions" id="actions-' + msgIndex + '"><button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div></div>';
                     area2.appendChild(newRow);
                     let pos = 0;
                     const streamDiv = document.getElementById('stream-' + msgIndex);
@@ -590,8 +599,7 @@
                                 document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                             }
                             isSending = false;
-                            document.getElementById('sendBtn').textContent = 'Отправить';
-                            document.getElementById('sendBtn').onclick = sendMessage;
+                            sendBtnArrow();
                         }
                     }
                     streamNext();
@@ -607,6 +615,7 @@
             pendingFile = null;
             updateFileList();
             isSending = false; document.getElementById('sendBtn').disabled = false;
+            sendBtnArrow();
             updateBalance();
         }
         function formatMessage(text) {
@@ -651,8 +660,7 @@
                 }
                 renderMessages();
                 isSending = false;
-                document.getElementById('sendBtn').textContent = 'Отправить';
-                document.getElementById('sendBtn').onclick = sendMessage;
+                sendBtnArrow();
             }
         }
         async function continueMessage(index) {
@@ -667,8 +675,7 @@
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
             isSending = true;
-            document.getElementById('sendBtn').textContent = 'Стоп';
-            document.getElementById('sendBtn').onclick = stopTyping;
+            sendBtnStop();
             try {
                 const resp = await fetch(`${SERVER_URL}/get_full_response?user_id=${currentUserId}&model=flash&chat_id=${currentChatId}&session_token=${sessionToken}`);
                 if (resp.status === 403) {
@@ -684,7 +691,7 @@
                         chat.messages[index].finished = true;
                         chat.messages[index].interrupted = false;
                         renderMessages();
-                        isSending = false; document.getElementById('sendBtn').textContent = 'Отправить'; document.getElementById('sendBtn').onclick = sendMessage;
+                        isSending = false; sendBtnArrow();
                         return;
                     }
                     chat.messages[index].finished = false;
@@ -719,18 +726,17 @@
                                 document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                             }
                             isSending = false;
-                            document.getElementById('sendBtn').textContent = 'Отправить';
-                            document.getElementById('sendBtn').onclick = sendMessage;
+                            sendBtnArrow();
                         }
                     }
                     streamNext();
                 } else {
                     renderMessages();
-                    isSending = false; document.getElementById('sendBtn').textContent = 'Отправить'; document.getElementById('sendBtn').onclick = sendMessage;
+                    isSending = false; sendBtnArrow();
                 }
             } catch (e) {
                 renderMessages();
-                isSending = false; document.getElementById('sendBtn').textContent = 'Отправить'; document.getElementById('sendBtn').onclick = sendMessage;
+                isSending = false; sendBtnArrow();
             }
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
