@@ -21,14 +21,28 @@
         body.light ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
         body { font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; background: #201F28; color: #e0e0e0; height: 100vh; display: flex; overflow: hidden; width: 100vw; }
         body.light { background: #ffffff; color: #111111; }
-        .sidebar { width: 260px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); display: flex; flex-direction: column; padding: 16px; border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+        .sidebar { width: 260px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); display: flex; flex-direction: column; padding: 16px; border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; position: relative; transition: transform 0.3s ease; }
         body.light .sidebar { background: rgba(240,240,240,0.8); border-right: 1px solid rgba(0,0,0,0.08); }
         .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
         .logo-row img { height: 32px; }
         .logo-text { font-size: 15px; font-weight: 600; color: #00CBF5; margin-top: 4px; font-family: 'Inter', sans-serif; }
-        .new-chat { width: 100%; padding: 10px; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; border: 2px solid transparent; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 600; margin-bottom: 12px; transition: 0.3s ease; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
+        .new-chat { width: 100%; padding: 10px; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; border: 2px solid transparent; border-radius: 24px; font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 600; margin-top: 24px; margin-bottom: 12px; transition: 0.3s ease; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
         .new-chat:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,203,245,0.4); }
         .chat-list { flex: 1; overflow-y: auto; }
+        .chat-search { width: 100%; padding: 5px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #e0e0e0; font-size: 12px; font-family: 'Inter', sans-serif; outline: none; margin-bottom: 8px; height: 28px; }
+        body.light .chat-search { background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.1); color: #111; }
+        .chat-search::placeholder { color: #666; }
+        body.light .chat-search::placeholder { color: #999; }
+        .chat-search:focus { border-color: #00CBF5; }
+        .search-row { margin-bottom: 8px; }
+        .search-row .chat-search { width: calc(100% - 36px); margin-bottom: 0; }
+        .sidebar-toggle { position: fixed; top: 64px; left: 232px; width: 28px; height: 28px; background: rgba(34,34,34,0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #888; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: left 0.3s ease, background 0.15s; }
+        .collapsed-sidebar .sidebar-toggle { left: 8px; }
+        .collapsed-sidebar .main { margin-left: -260px; }
+        body.light .sidebar-toggle { background: rgba(240,240,240,0.9); border: 1px solid rgba(0,0,0,0.1); color: #555; }
+        .sidebar-toggle:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
+        body.light .sidebar-toggle:hover { background: rgba(0,0,0,0.06); }
+        .sidebar.collapsed { transform: translateX(-100%); }
         .chat-item { display: flex; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #a0a0b0; margin-bottom: 2px; transition: 0.15s; position: relative; font-family: 'Inter', sans-serif; }
         body.light .chat-item { color: #555; }
         .chat-item:hover { background: rgba(0,203,245,0.1); color: #e0e0e0; }
@@ -50,7 +64,7 @@
         body.light .sidebar-footer { border-top: 1px solid rgba(0,0,0,0.08); }
         .sidebar-footer a { color: #888; text-decoration: none; font-size: 12px; display: block; text-align: center; font-family: 'Inter', sans-serif; transition: 0.2s; }
         .sidebar-footer a:hover { color: #00CBF5; }
-        .main { flex: 1; display: flex; flex-direction: column; background: #201F28; max-width: calc(100vw - 280px); overflow: hidden; width: calc(100vw - 280px); }
+        .main { flex: 1; display: flex; flex-direction: column; background: #201F28; min-width: 0; overflow: hidden; margin-left: 0; transition: margin-left 0.3s ease; }
         body.light .main { background: #ffffff; }
         .top-bar { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); background: #201F28; flex-shrink: 0; }
         body.light .top-bar { background: rgba(240,240,240,0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.08); }
@@ -126,10 +140,16 @@
     <script src="config.js"></script>
 </head>
 <body>
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Свернуть панель">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
     <div class="sidebar">
         <div class="logo-row">
             <img src="deepseek_logo.png" alt="DeepSeek Flash" onerror="this.style.display='none'">
             <span class="logo-text"><span style="color:#8B5CF6;">V4 Flash</span></span>
+        </div>
+        <div class="search-row">
+            <input class="chat-search" id="chatSearch" placeholder="Поиск чата..." oninput="filterChats()">
         </div>
         <button class="new-chat" onclick="newChat()">Новый чат</button>
         <div class="chat-list" id="chatList"></div>
@@ -358,6 +378,26 @@
                 </div>
             `).join('');
         }
+        function filterChats() {
+            var query = document.getElementById('chatSearch').value.toLowerCase();
+            document.querySelectorAll('.chat-item').forEach(function(item) {
+                var name = item.querySelector('.chat-name').textContent.toLowerCase();
+                item.style.display = name.includes(query) ? 'flex' : 'none';
+            });
+        }
+        function toggleSidebar() {
+            var sidebar = document.querySelector('.sidebar');
+            var toggle = document.getElementById('sidebarToggle');
+            sidebar.classList.toggle('collapsed');
+            document.body.classList.toggle('collapsed-sidebar');
+            if (sidebar.classList.contains('collapsed')) {
+                toggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+                toggle.title = 'Развернуть панель';
+            } else {
+                toggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+                toggle.title = 'Свернуть панель';
+            }
+        }
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId);
@@ -559,7 +599,7 @@
             const area = document.getElementById('chatArea');
             const typingRow = document.createElement('div');
             typingRow.className = 'message-row assistant'; typingRow.id = placeholderId;
-            typingRow.innerHTML = '<div><div class="message-content"><span class="thinking-dots">Думаю</span></div></div>';
+            typingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
             area.appendChild(typingRow);
             area.scrollTop = area.scrollHeight;
 
