@@ -21,7 +21,7 @@
         body.light ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
         body { font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; background: #201F28; color: #e0e0e0; height: 100vh; display: flex; overflow: hidden; width: 100vw; }
         body.light { background: #ffffff; color: #111111; }
-        .sidebar { width: 260px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); display: flex; flex-direction: column; padding: 16px; border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+        .sidebar { width: 260px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); display: flex; flex-direction: column; padding: 16px; border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; position: relative; transition: width 0.3s ease, padding 0.3s ease; }
         body.light .sidebar { background: rgba(240,240,240,0.8); border-right: 1px solid rgba(0,0,0,0.08); }
         .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
         .logo-row img { height: 32px; }
@@ -29,6 +29,17 @@
         .new-chat { width: 100%; padding: 10px; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; border: 2px solid transparent; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 600; margin-bottom: 12px; transition: 0.3s ease; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
         .new-chat:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,203,245,0.4); }
         .chat-list { flex: 1; overflow-y: auto; }
+        .chat-search { width: 100%; padding: 8px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #e0e0e0; font-size: 12px; font-family: 'Inter', sans-serif; outline: none; margin-bottom: 8px; }
+        body.light .chat-search { background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.1); color: #111; }
+        .chat-search::placeholder { color: #666; }
+        body.light .chat-search::placeholder { color: #999; }
+        .chat-search:focus { border-color: #00CBF5; }
+        .sidebar-toggle { position: absolute; top: 12px; right: -36px; width: 28px; height: 28px; background: rgba(34,34,34,0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #888; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: background 0.15s; }
+        body.light .sidebar-toggle { background: rgba(240,240,240,0.9); border: 1px solid rgba(0,0,0,0.1); color: #555; }
+        .sidebar-toggle:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
+        body.light .sidebar-toggle:hover { background: rgba(0,0,0,0.06); }
+        .sidebar.collapsed { width: 0; padding: 0; border: none; overflow: hidden; }
+        .sidebar.collapsed .sidebar-toggle { right: -28px; }
         .chat-item { display: flex; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #a0a0b0; margin-bottom: 2px; transition: 0.15s; position: relative; font-family: 'Inter', sans-serif; }
         body.light .chat-item { color: #555; }
         .chat-item:hover { background: rgba(0,203,245,0.1); color: #e0e0e0; }
@@ -132,7 +143,11 @@
             <span class="logo-text"><span style="color:#8B5CF6;">V4 Flash</span></span>
         </div>
         <button class="new-chat" onclick="newChat()">Новый чат</button>
+        <input class="chat-search" id="chatSearch" placeholder="Поиск чата..." oninput="filterChats()">
         <div class="chat-list" id="chatList"></div>
+        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Свернуть панель">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
         <div class="sidebar-footer">
             <a href="index.html">На главную</a>
         </div>
@@ -358,6 +373,26 @@
                 </div>
             `).join('');
         }
+        function filterChats() {
+            var query = document.getElementById('chatSearch').value.toLowerCase();
+            document.querySelectorAll('.chat-item').forEach(function(item) {
+                var name = item.querySelector('.chat-name').textContent.toLowerCase();
+                item.style.display = name.includes(query) ? 'flex' : 'none';
+            });
+        }
+        function toggleSidebar() {
+            var sidebar = document.querySelector('.sidebar');
+            var toggle = document.getElementById('sidebarToggle');
+            sidebar.classList.toggle('collapsed');
+            if (sidebar.classList.contains('collapsed')) {
+                toggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+                toggle.title = 'Развернуть панель';
+            } else {
+                toggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+                toggle.title = 'Свернуть панель';
+            }
+        }
+        function renderMessages() {
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId);
