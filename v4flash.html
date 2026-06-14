@@ -349,7 +349,11 @@
             renderMessages();
             setTimeout(function() {
                 var main = document.querySelector('.main');
-                if (main) main.scrollTop = main.scrollHeight;
+                if (main) {
+                    main.style.scrollBehavior = 'auto';
+                    main.scrollTop = main.scrollHeight;
+                    main.style.scrollBehavior = 'smooth';
+                }
             }, 150);
         }
         function toggleChatMenu(e, id) {
@@ -442,7 +446,11 @@
             }
             setTimeout(function() {
                 var main = document.querySelector('.main');
-                if (main) main.scrollTop = main.scrollHeight;
+                if (main) {
+                    main.style.scrollBehavior = 'auto';
+                    main.scrollTop = main.scrollHeight;
+                    main.style.scrollBehavior = 'smooth';
+                }
                 hljs.highlightAll();
                 buildNavContainer();
             }, 100);
@@ -624,7 +632,12 @@
             typingRow.className = 'message-row assistant'; typingRow.id = placeholderId;
             typingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
             area.appendChild(typingRow);
-            document.querySelector('.main').scrollTop = document.querySelector('.main').scrollHeight;
+            var main = document.querySelector('.main');
+            if (main) {
+                main.style.scrollBehavior = 'auto';
+                main.scrollTop = main.scrollHeight;
+                main.style.scrollBehavior = 'smooth';
+            }
 
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
@@ -684,7 +697,12 @@
                             streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
                             streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
                             if (autoScroll) {
-                                document.querySelector('.main').scrollTop = document.querySelector('.main').scrollHeight;
+                                var main = document.querySelector('.main');
+                                if (main) {
+                                    main.style.scrollBehavior = 'auto';
+                                    main.scrollTop = main.scrollHeight;
+                                    main.style.scrollBehavior = 'smooth';
+                                }
                             }
                             typingInterval = setTimeout(streamNext, 20);
                         } else {
@@ -695,7 +713,12 @@
                             autoNameChat(chat);
                             renderChatList();
                             if (autoScroll) {
-                                document.querySelector('.main').scrollTop = document.querySelector('.main').scrollHeight;
+                                var main = document.querySelector('.main');
+                                if (main) {
+                                    main.style.scrollBehavior = 'auto';
+                                    main.scrollTop = main.scrollHeight;
+                                    main.style.scrollBehavior = 'smooth';
+                                }
                             }
                             if (activeStreamId === streamId) {
                                 isSending = false;
@@ -822,7 +845,12 @@
                         streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
                     }
                     if (autoScroll) {
-                        document.querySelector('.main').scrollTop = document.querySelector('.main').scrollHeight;
+                        var main = document.querySelector('.main');
+                        if (main) {
+                            main.style.scrollBehavior = 'auto';
+                            main.scrollTop = main.scrollHeight;
+                            main.style.scrollBehavior = 'smooth';
+                        }
                     }
                     typingInterval = setTimeout(streamNext, 20);
                 } else {
@@ -833,7 +861,12 @@
                     autoNameChat(chat);
                     renderChatList();
                     if (autoScroll) {
-                        document.querySelector('.main').scrollTop = document.querySelector('.main').scrollHeight;
+                        var main = document.querySelector('.main');
+                        if (main) {
+                            main.style.scrollBehavior = 'auto';
+                            main.scrollTop = main.scrollHeight;
+                            main.style.scrollBehavior = 'smooth';
+                        }
                     }
                     if (activeStreamId === streamId) {
                         isSending = false;
@@ -942,10 +975,12 @@
         function scrollToMsg(index) {
             var main = document.querySelector('.main');
             if (!main) return;
+            main.style.scrollBehavior = 'auto';
             var target = main.querySelector('.message-row.assistant[data-msg-index="' + index + '"]');
             if (target) {
                 target.scrollIntoView({ behavior: 'auto', block: 'center' });
             }
+            main.style.scrollBehavior = 'smooth';
             document.querySelectorAll('.nav-strip').forEach(function(s) { s.classList.remove('active'); });
             var activeStrip = document.querySelector('.nav-strip[data-msg-index="' + index + '"]');
             if (activeStrip) { activeStrip.classList.add('active'); }
