@@ -501,7 +501,7 @@
         }
         function autoNameChat(chat) {
             const lastAssistant = [...chat.messages].reverse().find(m => m.role === 'assistant');
-            if (lastAssistant && chat.title.startsWith('Чат ')) {
+            if (lastAssistant && !lastAssistant.interrupted && chat.title.startsWith('Чат ')) {
                 chat.title = lastAssistant.content.replace(/[#*`>\n]/g, ' ').split(' ').slice(0, 6).join(' ') || 'Новый чат';
                 if (chat.title.length > 40) chat.title = chat.title.substring(0, 40) + '...';
             }
