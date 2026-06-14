@@ -227,20 +227,14 @@
             const area = document.getElementById('chatArea');
             if (!area) return;
             window.addEventListener('wheel', function(e) {
-                if (isSending) return;
-                const target = e.target;
-                if (target && (target.closest('.chat-list') || target.closest('.chat-menu-dropdown') || target.closest('.sidebar'))) return;
-                if (target && target.closest('#userInput')) return;
-                e.preventDefault();
-                wheelAccum += e.deltaY;
-                if (!rafId) {
-                    rafId = requestAnimationFrame(function() {
-                        area.scrollBy({ top: wheelAccum, behavior: 'auto' });
-                        wheelAccum = 0;
-                        rafId = null;
-                    });
-                }
-            }, { passive: false });
+            const area = document.getElementById('chatArea');
+            if (!area || isSending) return;
+            const target = e.target;
+            if (target && (target.closest('.chat-list') || target.closest('.chat-menu-dropdown') || target.closest('.sidebar'))) return;
+            if (target && target.closest('#userInput')) return;
+            e.preventDefault();
+            area.scrollBy({ top: e.deltaY, behavior: 'smooth' });
+        }, { passive: false });
         })();
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
