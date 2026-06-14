@@ -64,9 +64,9 @@
         body.light .sidebar-footer { border-top: 1px solid rgba(0,0,0,0.08); }
         .sidebar-footer a { color: #888; text-decoration: none; font-size: 12px; display: block; text-align: center; font-family: 'Inter', sans-serif; transition: 0.2s; }
         .sidebar-footer a:hover { color: #00CBF5; }
-        .main { flex: 1; display: flex; flex-direction: column; background: #201F28; min-width: 0; overflow-y: auto; scroll-behavior: smooth; margin-left: 0; transition: margin-left 0.3s ease; }
+        .main { flex: 1; display: flex; flex-direction: column; background: #201F28; min-width: 0; overflow: hidden; margin-left: 0; transition: margin-left 0.3s ease; }
         body.light .main { background: #ffffff; }
-        .top-bar { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); background: #201F28; flex-shrink: 0; position: sticky; top: 0; z-index: 10; }
+        .top-bar { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); background: #201F28; flex-shrink: 0; }
         body.light .top-bar { background: rgba(240,240,240,0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.08); }
         .mode-btn { padding: 6px 16px; border-radius: 16px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid transparent; font-family: 'Inter', sans-serif; transition: 0.3s ease; background: rgba(34,34,34,0.8); color: #a0a0b0; }
         body.light .mode-btn { background: rgba(0,0,0,0.05); color: #555; }
@@ -75,8 +75,8 @@
         .mode-btn:hover:not(.active) { border-color: #00CBF5; color: #e0e0e0; }
         body.light .mode-btn:hover:not(.active) { color: #111; }
         #balanceDisplay { font-size: 12px; color: #00CBF5; font-family: 'Inter', sans-serif; white-space: nowrap; margin-right: auto; }
-        .chat-wrapper { width: 100%; max-width: 775px; display: flex; flex-direction: column; margin: 0 auto; position: relative; flex: 1 0 auto; }
-        .chat-area { flex: 1 0 auto; padding: 20px 0; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 0; }
+        .chat-wrapper { width: 100%; max-width: 775px; display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0 auto; position: relative; }
+        .chat-area { flex: 1; overflow-y: auto; padding: 20px 0; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 0; }
         .scroll-bottom-btn { position: sticky; bottom: 10px; right: 20px; margin-left: auto; width: 36px; height: 36px; min-width: 36px; min-height: 36px; border-radius: 50%; background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; display: none; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10002; flex-shrink: 0; }
         .scroll-bottom-btn:hover { background: #e0e0e0; }
         body.light .scroll-bottom-btn { background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.15); }
@@ -106,8 +106,8 @@
         .message-actions button:hover { background: rgba(255,255,255,0.08); }
         body.light .message-actions button { background: transparent; border: none; color: #555; }
         body.light .message-actions button:hover { background: rgba(0,0,0,0.06); }
-        .input-area { padding: 0; border-top: none; display: flex; gap: 0; align-items: flex-end; background: #201F28; flex-shrink: 0; overflow: visible; position: sticky; bottom: 0; z-index: 10; flex-wrap: wrap; margin-bottom: 0; }
-        body.light .input-area { background: #ffffff; border-top: none; }
+        .input-area { padding: 0; border-top: none; display: flex; gap: 0; align-items: flex-end; background: #201F28; flex-shrink: 0; overflow: visible; position: relative; flex-wrap: wrap; margin-bottom: 25px; }
+        body.light .input-area { background: #ffffff; border-top: none; margin-bottom: 25px; }
         .input-area textarea { flex: 1; padding: 0; border-radius: 0; border: none; background: transparent; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; outline: none; resize: none; min-height: 48px; max-height: 300px; overflow-y: auto; min-width: 0; width: 100%; }
         .input-area textarea:focus { outline: none; border: none; box-shadow: none; }
         body.light .input-area textarea { background: transparent; border: none; color: #111; }
@@ -221,7 +221,27 @@
         let pendingFile = null;
         let activeStreamId = null;
 
-        // кастомный обработчик колеса удалён — работает нативный скролл main
+        (function() {
+            let wheelAccum = 0;
+            let rafId = null;
+            const area = document.getElementById('chatArea');
+            if (!area) return;
+            window.addEventListener('wheel', function(e) {
+                if (isSending) return;
+                const target = e.target;
+                if (target && (target.closest('.chat-list') || target.closest('.chat-menu-dropdown') || target.closest('.sidebar'))) return;
+                if (target && target.closest('#userInput')) return;
+                e.preventDefault();
+                wheelAccum += e.deltaY;
+                if (!rafId) {
+                    rafId = requestAnimationFrame(function() {
+                        area.scrollBy({ top: wheelAccum, behavior: 'auto' });
+                        wheelAccum = 0;
+                        rafId = null;
+                    });
+                }
+            }, { passive: false });
+        })();
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
         window.addEventListener('drop', function(e) { e.preventDefault(); e.stopPropagation(); });
@@ -246,17 +266,18 @@
         })();
 
         function scrollToBottom() {
-            var main = document.querySelector('.main');
-            main.scrollTop = main.scrollHeight;
+            var area = document.getElementById('chatArea');
+            area.scrollTop = area.scrollHeight;
             autoScroll = true;
         }
 
-        var mainEl = document.querySelector('.main');
-        if (mainEl) {
-            mainEl.addEventListener('scroll', function(e) {
+        var chatAreaForScrollBtn = document.getElementById('chatArea');
+        if (chatAreaForScrollBtn) {
+            chatAreaForScrollBtn.addEventListener('scroll', function(e) {
                 var btn = document.getElementById('scrollBottomBtn');
-                if (!mainEl) return;
-                var atBottom = mainEl.scrollHeight - mainEl.scrollTop - mainEl.clientHeight < 300;
+                var area = document.getElementById('chatArea');
+                if (!area) return;
+                var atBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 300;
                 if (atBottom) {
                     btn.style.display = 'none';
                     autoScroll = true;
@@ -338,8 +359,8 @@
             renderChatList();
             renderMessages();
             setTimeout(function() {
-                var main = document.querySelector('.main');
-                if (main) main.scrollTop = main.scrollHeight;
+                var area = document.getElementById('chatArea');
+                if (area) area.scrollTop = area.scrollHeight;
             }, 150);
         }
         function toggleChatMenu(e, id) {
@@ -431,8 +452,8 @@
                 }).join('') + '<button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="scrollToBottom()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>';
             }
             setTimeout(function() {
-                var main = document.querySelector('.main');
-                if (main) main.scrollTop = main.scrollHeight;
+                var area = document.getElementById('chatArea');
+                if (area) area.scrollTop = area.scrollHeight;
                 hljs.highlightAll();
                 buildNavContainer();
             }, 100);
@@ -614,7 +635,7 @@
             typingRow.className = 'message-row assistant'; typingRow.id = placeholderId;
             typingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
             area.appendChild(typingRow);
-            document.querySelector('.main').scrollTop = document.querySelector('.main').scrollHeight;
+            area.scrollTop = area.scrollHeight;
 
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
@@ -674,7 +695,7 @@
                             streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
                             streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
                             if (autoScroll) {
-                                document.querySelector('.main').scrollTop = document.querySelector('.main').scrollHeight;
+                                document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                             }
                             typingInterval = setTimeout(streamNext, 20);
                         } else {
@@ -685,7 +706,7 @@
                             autoNameChat(chat);
                             renderChatList();
                             if (autoScroll) {
-                                document.querySelector('.main').scrollTop = document.querySelector('.main').scrollHeight;
+                                document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                             }
                             if (activeStreamId === streamId) {
                                 isSending = false;
@@ -812,7 +833,7 @@
                         streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
                     }
                     if (autoScroll) {
-                        document.querySelector('.main').scrollTop = document.querySelector('.main').scrollHeight;
+                        document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                     }
                     typingInterval = setTimeout(streamNext, 20);
                 } else {
@@ -823,7 +844,7 @@
                     autoNameChat(chat);
                     renderChatList();
                     if (autoScroll) {
-                        document.querySelector('.main').scrollTop = document.querySelector('.main').scrollHeight;
+                        document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
                     }
                     if (activeStreamId === streamId) {
                         isSending = false;
@@ -893,10 +914,10 @@
             container.innerHTML = html;
         }
         function updateActiveNavFromScroll() {
-            var main = document.querySelector('.main');
-            if (!main) return;
-            var rows = main.querySelectorAll('.message-row.assistant[data-msg-index]');
-            var areaRect = main.getBoundingClientRect();
+            var area = document.getElementById('chatArea');
+            if (!area) return;
+            var rows = area.querySelectorAll('.message-row.assistant[data-msg-index]');
+            var areaRect = area.getBoundingClientRect();
             var closestIndex = null;
             var closestDist = Infinity;
             for (var r = 0; r < rows.length; r++) {
@@ -922,17 +943,17 @@
                 }
             }
         }
-        var mainEl = document.querySelector('.main');
-        if (mainEl) {
-            mainEl.addEventListener('scroll', updateActiveNavFromScroll);
+        var chatAreaEl = document.getElementById('chatArea');
+        if (chatAreaEl) {
+            chatAreaEl.addEventListener('scroll', updateActiveNavFromScroll);
         }
         document.getElementById('navContainer').addEventListener('wheel', function(e) {
             e.stopPropagation();
         });
         function scrollToMsg(index) {
-            var main = document.querySelector('.main');
-            if (!main) return;
-            var target = main.querySelector('.message-row.assistant[data-msg-index="' + index + '"]');
+            var area = document.getElementById('chatArea');
+            if (!area) return;
+            var target = area.querySelector('.message-row.assistant[data-msg-index="' + index + '"]');
             if (target) {
                 target.scrollIntoView({ behavior: 'auto', block: 'center' });
             }
@@ -946,9 +967,9 @@
             updateFloatingButtons();
         });
         window.addEventListener('load', function() {
-            var main = document.querySelector('.main');
-            if (main) {
-                chatAreaObserver.observe(main, { childList: true, subtree: true });
+            var chatArea = document.getElementById('chatArea');
+            if (chatArea) {
+                chatAreaObserver.observe(chatArea, { childList: true, subtree: true });
             }
             setupFloatingCopyButtons();
             updateFloatingButtons();
