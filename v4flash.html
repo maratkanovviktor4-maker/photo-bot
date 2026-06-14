@@ -6,7 +6,7 @@
     <title>PhotoBot — DeepSeek V4 Flash</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" id="highlightTheme">
     <style>
         .hljs { background: #1a1a2e; border-radius: 10px; padding: 14px; font-size: 14px; font-family: 'Courier New', monospace; }
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
@@ -237,12 +237,25 @@
             var isLight = document.body.classList.contains('light');
             localStorage.setItem('photobot_theme', isLight ? 'light' : 'dark');
             document.getElementById('themeToggle').textContent = isLight ? '🌙' : '☀️';
+            var hlTheme = document.getElementById('highlightTheme');
+            if (hlTheme) {
+                hlTheme.href = isLight 
+                    ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css'
+                    : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
+            }
         }
         (function() {
             var saved = localStorage.getItem('photobot_theme');
-            if (saved === 'light') {
+            var isLight = saved === 'light';
+            if (isLight) {
                 document.body.classList.add('light');
                 document.getElementById('themeToggle').textContent = '🌙';
+            }
+            var hlTheme = document.getElementById('highlightTheme');
+            if (hlTheme) {
+                hlTheme.href = isLight 
+                    ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css'
+                    : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
             }
             var savedMode = localStorage.getItem('photobot_mode');
             if (savedMode === 'reasoner') {
