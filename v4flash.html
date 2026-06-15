@@ -697,6 +697,12 @@
                     const streamAction = document.getElementById('actions-' + msgIndex);
                     const words = fullContent.split(/(\s+)/);
                     chat.messages[msgIndex]._streamWords = words;
+                    var reasoningWords = reasoningText ? reasoningText.split(/(\s+)/) : [];
+                    var replyWords = data.reply.split(/(\s+)/);
+                    var allWords = reasoningWords.concat(reasoningText ? ['\n\n'] : []).concat(replyWords);
+                    chat.messages[msgIndex]._streamWords = allWords;
+                    words = allWords;
+                    pos = 0;
                     function streamNext() {
                         if (activeStreamId !== streamId) return;
                         let chunk = '';
@@ -709,28 +715,13 @@
                         chat.messages[msgIndex]._streamPos = pos;
                         if (chunk) {
                             var currentText = words.slice(0, pos).join('');
-                            var reasoningDivider = reasoningText.length > 0 ? currentText.indexOf('\n\n') : -1;
-                            if (reasoningDivider > 0 && !chat.messages[msgIndex]._reasoningDone) {
-                                chat.messages[msgIndex]._reasoningDone = true;
-                                chat.messages[msgIndex].content = '';
-                                streamDiv.innerHTML = formatMessage('', reasoningText) + formatMessage(currentText.slice(reasoningDivider + 2), '');
-                            } else if (reasoningDivider > 0 && chat.messages[msgIndex]._reasoningDone) {
-                                chat.messages[msgIndex].content = currentText.slice(reasoningDivider + 2);
-                                streamDiv.innerHTML = formatMessage('', reasoningText) + formatMessage(chat.messages[msgIndex].content, '');
-                            } else if (reasoningDivider <= 0 && !chat.messages[msgIndex]._reasoningDone) {
-                                chat.messages[msgIndex].content = '';
-                                streamDiv.innerHTML = formatMessage(currentText, reasoningText);
-                            } else {
-                                chat.messages[msgIndex].content = currentText;
-                                streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content, '');
-                            }
+                            chat.messages[msgIndex].content = currentText;
+                            streamDiv.innerHTML = formatMessage(currentText, reasoningText);
                             streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
                             if (autoScroll) {
                                 var main = document.querySelector('.main');
                                 if (main) {
-                                    main.style.scrollBehavior = 'auto';
-                                    main.scrollTop = main.scrollHeight;
-                                    main.style.scrollBehavior = 'smooth';
+                                    main.scrollTo({ top: main.scrollHeight, behavior: 'smooth' });
                                 }
                             }
                             typingInterval = setTimeout(streamNext, 20);
@@ -744,9 +735,7 @@
                             if (autoScroll) {
                                 var main = document.querySelector('.main');
                                 if (main) {
-                                    main.style.scrollBehavior = 'auto';
-                                    main.scrollTop = main.scrollHeight;
-                                    main.style.scrollBehavior = 'smooth';
+                                    main.scrollTo({ top: main.scrollHeight, behavior: 'smooth' });
                                 }
                             }
                             if (activeStreamId === streamId) {
