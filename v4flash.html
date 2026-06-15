@@ -456,13 +456,22 @@
                     }
                     actionsHtml += '</div>';
                     var dataAttr = m.role === 'assistant' ? ' data-msg-index="' + i + '"' : '';
-                    var reasoning = m.reasoning || '';
-                    if (reasoning) {
-                        var reasoningHtml = '<div class="reasoning-block">' + escapeHtml(reasoning).replace(/\n/g, '<br>') + '</div>';
-                    } else {
-                        var reasoningHtml = '';
+                    var reasoningHtml = '';
+                    var contentToShow = m.content;
+                    if (m.reasoning) {
+                        reasoningHtml = '<div class="reasoning-block">' + escapeHtml(m.reasoning).replace(/\n/g, '<br>') + '</div>';
+                        var endIdx = m.content.indexOf('\n\nОтвет:\n');
+                        if (endIdx !== -1) {
+                            contentToShow = m.content.substring(endIdx + '\n\nОтвет:\n'.length);
+                        }
+                    } else if (m._reasoningInProgress && m.content) {
+                        var startIdx = m.content.indexOf('Размышление:\n');
+                        if (startIdx !== -1) {
+                            reasoningHtml = '<div class="reasoning-block">' + escapeHtml(m.content.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
+                            contentToShow = '';
+                        }
                     }
-                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + reasoningHtml + formatMessage(m.content) + '</div>' + actionsHtml + '</div></div>';
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + reasoningHtml + formatMessage(contentToShow) + '</div>' + actionsHtml + '</div></div>';
                 }).join('');
             }
             setTimeout(function() {
@@ -688,7 +697,7 @@
                 const data = await resp.json();
                 if (data.reply) {
                     const fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0 });
+                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false });
                     const msgIndex = chat.messages.length - 1;
                     const streamId = 'stream_' + msgIndex;
                     activeStreamId = streamId;
@@ -721,11 +730,13 @@
                             var displayText = fullText;
                             if (!reasoningStarted && fullText.indexOf('Размышление:\n') !== -1) {
                                 reasoningStarted = true;
+                                chat.messages[msgIndex]._reasoningInProgress = true;
                             }
                             if (reasoningStarted && !reasoningEnded) {
                                 var endIdx = fullText.indexOf('\n\nОтвет:\n');
                                 if (endIdx !== -1) {
                                     reasoningEnded = true;
+                                    chat.messages[msgIndex]._reasoningInProgress = false;
                                     var reasoningText = fullText.substring('Размышление:\n'.length, endIdx);
                                     var replyText = fullText.substring(endIdx + '\n\nОтвет:\n'.length);
                                     streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(reasoningText).replace(/\n/g, '<br>') + '</div>' + formatMessage(replyText);
