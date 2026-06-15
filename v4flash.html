@@ -518,17 +518,15 @@
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + reasoningHtml + formatMessage(contentToShow) + '</div>' + actionsHtml + '</div></div>';
                 }).join('');
             }
-            setTimeout(function() {
-                var main = document.querySelector('.main');
-                if (main) {
-                    main.style.scrollBehavior = 'auto';
-                    main.scrollTop = main.scrollHeight;
-                    main.style.scrollBehavior = 'smooth';
-                }
-                hljs.highlightAll();
-                setupFloatingCopyButtons();
-                buildNavContainer();
-            }, 0);
+            hljs.highlightAll();
+            setupFloatingCopyButtons();
+            buildNavContainer();
+            var main = document.querySelector('.main');
+            if (main) {
+                main.style.scrollBehavior = 'auto';
+                main.scrollTop = main.scrollHeight;
+                main.style.scrollBehavior = 'smooth';
+            }
         }
         function copyMessage(index) {
             const chat = chats.find(c => c.id === currentChatId);
