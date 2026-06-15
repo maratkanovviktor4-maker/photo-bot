@@ -274,6 +274,17 @@
                 var btn = document.getElementById('reasonerToggle');
                 if (btn) btn.classList.add('active');
             }
+            var savedSidebar = localStorage.getItem('photobot_sidebar');
+            if (savedSidebar === 'collapsed') {
+                var sidebar = document.querySelector('.sidebar');
+                var toggle = document.getElementById('sidebarToggle');
+                if (sidebar) sidebar.classList.add('collapsed');
+                if (toggle) {
+                    toggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+                    toggle.title = 'Развернуть панель';
+                }
+                document.body.classList.add('collapsed-sidebar');
+            }
         })();
 
         function scrollToBottom() {
@@ -442,9 +453,11 @@
             if (sidebar.classList.contains('collapsed')) {
                 toggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
                 toggle.title = 'Развернуть панель';
+                localStorage.setItem('photobot_sidebar', 'collapsed');
             } else {
                 toggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
                 toggle.title = 'Свернуть панель';
+                localStorage.setItem('photobot_sidebar', 'expanded');
             }
             var main = document.querySelector('.main');
             if (main) {
