@@ -827,14 +827,6 @@
                 const lastMsg = chat.messages[chat.messages.length - 1];
                 if (lastMsg.role === 'assistant' && !lastMsg.finished) {
                     lastMsg.interrupted = true;
-                    if (lastMsg.content && lastMsg.content.indexOf('Размышление:\n') !== -1 && !lastMsg.reasoning) {
-                        var endIdx = lastMsg.content.indexOf('\n\nОтвет:\n');
-                        if (endIdx !== -1) {
-                            lastMsg.reasoning = lastMsg.content.substring('Размышление:\n'.length, endIdx);
-                        } else {
-                            lastMsg.reasoning = lastMsg.content.substring('Размышление:\n'.length);
-                        }
-                    }
                 }
             }
             activeStreamId = null;
