@@ -908,6 +908,13 @@
                                 var rText = sIdx2 !== -1 ? cur.substring(sIdx2 + 'Размышление:\n'.length) : cur;
                                 streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(rText).replace(/\n/g, '<br>') + '</div>';
                             }
+                        } else if (msg.reasoning) {
+                            var rIdx = cur.indexOf('\n\nОтвет:\n');
+                            if (rIdx !== -1) {
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(msg.reasoning).replace(/\n/g, '<br>') + '</div>' + formatMessage(cur.substring(rIdx + '\n\nОтвет:\n'.length));
+                            } else {
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(msg.reasoning).replace(/\n/g, '<br>') + '</div>';
+                            }
                         } else {
                             streamDiv.innerHTML = formatMessage(cur);
                         }
