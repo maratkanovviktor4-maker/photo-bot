@@ -456,7 +456,13 @@
                     }
                     actionsHtml += '</div>';
                     var dataAttr = m.role === 'assistant' ? ' data-msg-index="' + i + '"' : '';
-                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + formatMessage(m.content) + '</div>' + actionsHtml + '</div></div>';
+                    var reasoning = m.reasoning || '';
+                    if (reasoning) {
+                        var reasoningHtml = '<div class="reasoning-block">' + escapeHtml(reasoning).replace(/\n/g, '<br>') + '</div>';
+                    } else {
+                        var reasoningHtml = '';
+                    }
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + reasoningHtml + formatMessage(m.content) + '</div>' + actionsHtml + '</div></div>';
                 }).join('');
             }
             setTimeout(function() {
