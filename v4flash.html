@@ -94,7 +94,15 @@
         body.light .message-row.assistant .message-content { background: #ffffff; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
         .message-row.user .message-content { background: rgba(0,203,245,0.15); border-radius: 18px; }
         body.light .message-row.user .message-content { background: #EDF3FE; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
-        .message-content pre { background: #1a1a2e; padding: 14px; border-radius: 10px; overflow-x: auto; font-size: 14px; margin: 8px 0; border: none; white-space: pre-wrap; word-break: break-all; position: relative; }
+        .code-header { display: flex; justify-content: space-between; align-items: center; background: #16162a; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; position: sticky; top: 0; z-index: 10; }
+        body.light .code-header { background: #e8e8e8; color: #555; }
+        .code-header + pre { margin-top: 0; border-radius: 0 0 10px 10px; }
+        .code-header .code-lang { font-weight: 600; }
+        .code-header .code-actions { display: flex; gap: 6px; }
+        .code-header .code-actions button { background: transparent; border: none; color: #aaa; cursor: pointer; padding: 4px 6px; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 11px; transition: background 0.15s; }
+        body.light .code-header .code-actions button { color: #555; }
+        .code-header .code-actions button:hover { background: rgba(255,255,255,0.1); }
+        body.light .code-header .code-actions button:hover { background: rgba(0,0,0,0.08); }
         body.light .message-content pre { background: #f8f8f8; border: none; color: #111; }
         .message-content pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; border-radius: 0; display: block; color: inherit; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; }
@@ -525,6 +533,7 @@
                     main.style.scrollBehavior = 'smooth';
                 }
                 hljs.highlightAll();
+                setupFloatingCopyButtons();
                 buildNavContainer();
             }, 100);
         }
@@ -796,6 +805,7 @@
                                 streamDiv.innerHTML = formatMessage(displayText);
                             }
                             streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
+                            setupFloatingCopyButtons();
                             if (autoScroll) {
                                 var main = document.querySelector('.main');
                                 if (main) {
@@ -873,9 +883,9 @@
                 if (part.type === 'code') {
                     var lang = part.lang || '';
                     if (lang) {
-                        result += '<div style="display:flex;justify-content:space-between;align-items:center;background:#16162a;border-radius:10px 10px 0 0;padding:6px 14px;font-size:12px;color:#888;font-family:Inter,sans-serif;"><span>' + escapeHtml(lang) + '</span></div>';
+                        result += '<div class="code-header"><span class="code-lang">' + escapeHtml(lang) + '</span><span class="code-actions"></span></div>';
                     }
-                    result += '<pre style="margin-top:0;border-radius:' + (lang ? '0 0 10px 10px' : '10px') + ';"><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre>';
+                    result += '<pre' + (lang ? '' : ' style="border-radius:10px;"') + '><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre>';
                 } else {
                     result += escapeHtml(part.content).replace(/`([^`]+)`/g, '<code>' + '$1' + '</code>').replace(/\n/g, '<br>');
                 }
@@ -973,6 +983,7 @@
                             streamDiv.innerHTML = formatMessage(cur);
                         }
                         streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
+                        setupFloatingCopyButtons();
                     }
                     if (autoScroll) {
                         var main = document.querySelector('.main');
@@ -1009,35 +1020,30 @@
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
         function setupFloatingCopyButtons() {
-            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn').forEach(function(btn) { btn.remove(); });
+            document.querySelectorAll('.code-header .code-actions').forEach(function(actions) {
+                actions.innerHTML = '';
+            });
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
-                if (pre.querySelector('.floating-copy-btn')) return;
-                var btn = document.createElement('button');
-                btn.className = 'floating-copy-btn';
-                btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
-                btn.style.cssText = 'position:fixed; background:transparent; border:none; color:#888; cursor:pointer; padding:6px 8px; border-radius:8px; font-family:Inter,sans-serif; z-index:9999; display:none; line-height:1; transition:background 0.15s;';
-                btn.onmouseenter = function() { btn.style.background = 'rgba(255,255,255,0.08)'; };
-                btn.onmouseleave = function() { btn.style.background = 'transparent'; };
-                btn.onclick = function() {
+                var header = pre.previousElementSibling;
+                if (!header || !header.classList.contains('code-header')) return;
+                var actions = header.querySelector('.code-actions');
+                if (!actions) return;
+                if (actions.querySelector('.code-copy-btn')) return;
+                
+                var copyBtn = document.createElement('button');
+                copyBtn.className = 'code-copy-btn';
+                copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+                copyBtn.onclick = function() {
                     var code = pre.querySelector('code').textContent;
                     navigator.clipboard.writeText(code);
-                    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copy';
-                    setTimeout(function() { btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy'; }, 2000);
+                    copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied';
+                    setTimeout(function() { copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy'; }, 2000);
                 };
-                document.body.appendChild(btn);
-                if (document.body.classList.contains('light')) {
-                    btn.style.color = '#555';
-                    btn.onmouseenter = function() { btn.style.background = 'rgba(0,0,0,0.06)'; };
-                    btn.onmouseleave = function() { btn.style.background = 'transparent'; };
-                }
-                pre._floatBtn = btn;
+                actions.appendChild(copyBtn);
 
                 var downloadBtn = document.createElement('button');
-                downloadBtn.className = 'floating-download-btn';
+                downloadBtn.className = 'code-download-btn';
                 downloadBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download';
-                downloadBtn.style.cssText = 'position:fixed; background:transparent; border:none; color:#888; cursor:pointer; padding:6px 8px; border-radius:8px; font-family:Inter,sans-serif; z-index:9999; display:none; line-height:1; transition:background 0.15s;';
-                downloadBtn.onmouseenter = function() { downloadBtn.style.background = 'rgba(255,255,255,0.08)'; };
-                downloadBtn.onmouseleave = function() { downloadBtn.style.background = 'transparent'; };
                 downloadBtn.onclick = function() {
                     var code = pre.querySelector('code').textContent;
                     var blob = new Blob([code], {type: 'text/plain'});
@@ -1048,22 +1054,13 @@
                     a.click();
                     URL.revokeObjectURL(url);
                 };
-                document.body.appendChild(downloadBtn);
-                if (document.body.classList.contains('light')) {
-                    downloadBtn.style.color = '#555';
-                    downloadBtn.onmouseenter = function() { downloadBtn.style.background = 'rgba(0,0,0,0.06)'; };
-                    downloadBtn.onmouseleave = function() { downloadBtn.style.background = 'transparent'; };
-                }
-                pre._floatDownloadBtn = downloadBtn;
+                actions.appendChild(downloadBtn);
 
                 var isHtml = pre.querySelector('code.language-html') || pre.querySelector('code.language-htm') || (pre.textContent.trim().match(/^<(!DOCTYPE|html)/i));
                 if (isHtml) {
                     var previewBtn = document.createElement('button');
-                    previewBtn.className = 'floating-preview-btn';
+                    previewBtn.className = 'code-preview-btn';
                     previewBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Предпросмотр';
-                    previewBtn.style.cssText = 'position:fixed; background:transparent; border:none; color:#888; cursor:pointer; padding:6px 8px; border-radius:8px; font-family:Inter,sans-serif; z-index:9999; display:none; line-height:1; transition:background 0.15s;';
-                    previewBtn.onmouseenter = function() { previewBtn.style.background = 'rgba(255,255,255,0.08)'; };
-                    previewBtn.onmouseleave = function() { previewBtn.style.background = 'transparent'; };
                     previewBtn.onclick = function() {
                         var code = pre.querySelector('code').textContent;
                         var panel = document.getElementById('previewPanel');
@@ -1103,7 +1100,6 @@
                                 var newWidth = Math.max(20, Math.min(maxPw, handle._startWidth + (dx / window.innerWidth) * 100));
                                 document.body.style.setProperty('--preview-width', newWidth + '%');
                                 handle.style.right = newWidth + '%';
-                                updateFloatingButtons();
                             });
                             handle.addEventListener('pointerup', function(e) {
                                 handle.classList.remove('dragging');
@@ -1121,61 +1117,15 @@
                         handle.classList.add('active');
                         handle.style.right = '50%';
                         document.querySelector('.main').classList.add('preview-open');
-                        updateFloatingButtons();
-                        var main = document.querySelector('.main');
-                        if (main) {
-                            var rafId;
-                            var tick = function() {
-                                updateFloatingButtons();
-                                rafId = requestAnimationFrame(tick);
-                            };
-                            rafId = requestAnimationFrame(tick);
-                            main.addEventListener('transitionend', function() {
-                                cancelAnimationFrame(rafId);
-                                updateFloatingButtons();
-                            }, { once: true });
-                        }
                         iframe.srcdoc = code;
                     };
-                    document.body.appendChild(previewBtn);
-                    if (document.body.classList.contains('light')) {
-                        previewBtn.style.color = '#555';
-                        previewBtn.onmouseenter = function() { previewBtn.style.background = 'rgba(0,0,0,0.06)'; };
-                        previewBtn.onmouseleave = function() { previewBtn.style.background = 'transparent'; };
-                    }
-                    pre._floatPreviewBtn = previewBtn;
+                    actions.appendChild(previewBtn);
                 }
             });
         }
 
         function updateFloatingButtons() {
-            document.querySelectorAll('.message-content pre').forEach(function(pre) {
-                var btn = pre._floatBtn;
-                var downloadBtn = pre._floatDownloadBtn;
-                var rect = pre.getBoundingClientRect();
-                var visible = rect.bottom > 0 && rect.top < window.innerHeight;
-                if (visible) {
-                    if (downloadBtn) {
-                        downloadBtn.style.display = 'block';
-                        downloadBtn.style.top = Math.max(rect.top, 60) + 'px';
-                        downloadBtn.style.right = (window.innerWidth - rect.right + 8) + 'px';
-                    }
-                    if (btn) {
-                        btn.style.display = 'block';
-                        btn.style.top = Math.max(rect.top, 60) + 'px';
-                        btn.style.right = (window.innerWidth - rect.right + 120) + 'px';
-                    }
-                    if (pre._floatPreviewBtn) {
-                        pre._floatPreviewBtn.style.display = 'block';
-                        pre._floatPreviewBtn.style.top = Math.max(rect.top, 60) + 'px';
-                        pre._floatPreviewBtn.style.right = (window.innerWidth - rect.right + 250) + 'px';
-                    }
-                } else {
-                    if (btn) btn.style.display = 'none';
-                    if (downloadBtn) downloadBtn.style.display = 'none';
-                    if (pre._floatPreviewBtn) pre._floatPreviewBtn.style.display = 'none';
-                }
-            });
+            // кнопки теперь в .code-header, позиционирование не требуется
         }
 
         function buildNavContainer() {
