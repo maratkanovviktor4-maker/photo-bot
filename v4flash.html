@@ -1041,33 +1041,32 @@
                         if (!handle) {
                             handle = document.createElement('div');
                             handle.id = 'resizeHandle';
-                            handle.className = 'resize-handle active';
+                            handle.className = 'resize-handle';
                             document.body.appendChild(handle);
                             var startX, startWidth;
                             handle.addEventListener('mousedown', function(e) {
                                 e.preventDefault();
                                 startX = e.clientX;
-                                startWidth = parseInt(getComputedStyle(document.body).getPropertyValue('--preview-width'));
+                                startWidth = parseInt(getComputedStyle(document.body).getPropertyValue('--preview-width')) || 50;
                                 handle.classList.add('dragging');
                                 document.body.style.userSelect = 'none';
-                                function onMove(e2) {
-                                    var dx = startX - e2.clientX;
-                                    var newWidth = Math.max(20, Math.min(80, startWidth + (dx / window.innerWidth) * 100));
-                                    document.body.style.setProperty('--preview-width', newWidth + '%');
-                                    handle.style.right = newWidth + '%';
-                                }
-                                function onUp() {
+                            });
+                            document.addEventListener('mousemove', function(e) {
+                                if (!handle.classList.contains('dragging')) return;
+                                var dx = startX - e.clientX;
+                                var newWidth = Math.max(20, Math.min(80, startWidth + (dx / window.innerWidth) * 100));
+                                document.body.style.setProperty('--preview-width', newWidth + '%');
+                                handle.style.right = newWidth + '%';
+                            });
+                            document.addEventListener('mouseup', function() {
+                                if (handle.classList.contains('dragging')) {
                                     handle.classList.remove('dragging');
                                     document.body.style.userSelect = '';
-                                    document.removeEventListener('mousemove', onMove);
-                                    document.removeEventListener('mouseup', onUp);
                                 }
-                                document.addEventListener('mousemove', onMove);
-                                document.addEventListener('mouseup', onUp);
                             });
                         }
                         handle.classList.add('active');
-                        handle.style.right = getComputedStyle(document.body).getPropertyValue('--preview-width');
+                        handle.style.right = '50%';
                         iframe.srcdoc = code;
                     };
                     document.body.appendChild(previewBtn);
