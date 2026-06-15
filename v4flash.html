@@ -1164,7 +1164,10 @@
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 var header = pre._floatHeader;
                 var rect = pre.getBoundingClientRect();
-                var visible = rect.bottom > 0 && rect.top < window.innerHeight;
+                var inputArea = document.getElementById('inputArea');
+                var bottomLimit = inputArea ? inputArea.getBoundingClientRect().top : window.innerHeight;
+                var topLimit = 60;
+                var visible = rect.bottom > topLimit && rect.top < bottomLimit;
                 if (header) {
                     if (visible) {
                         header.style.display = 'flex';
