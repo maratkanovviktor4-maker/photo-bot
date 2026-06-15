@@ -1040,30 +1040,32 @@
                             handle.id = 'resizeHandle';
                             handle.className = 'resize-handle';
                             document.body.appendChild(handle);
-                            var startX, startWidth;
-                            handle.addEventListener('mousedown', function(e) {
+                            handle._startX = 0;
+                            handle._startWidth = 50;
+                            handle.addEventListener('pointerdown', function(e) {
                                 e.preventDefault();
-                                document.body._resizeDragging = true;
-                                startX = e.clientX;
-                                startWidth = parseInt(getComputedStyle(document.body).getPropertyValue('--preview-width'));
+                                handle.setPointerCapture(e.pointerId);
+                                handle._startX = e.clientX;
+                                handle._startWidth = parseInt(getComputedStyle(document.body).getPropertyValue('--preview-width')) || 50;
                                 handle.classList.add('dragging');
                                 document.body.style.userSelect = 'none';
-                                document.body.style.cursor = 'col-resize';
                             });
-                            document.addEventListener('mousemove', function(e) {
-                                if (!document.body._resizeDragging) return;
-                                var dx = startX - e.clientX;
-                                var newWidth = Math.max(20, Math.min(80, startWidth + (dx / window.innerWidth) * 100));
+                            handle.addEventListener('pointermove', function(e) {
+                                if (!handle.classList.contains('dragging')) return;
+                                var dx = handle._startX - e.clientX;
+                                var newWidth = Math.max(20, Math.min(80, handle._startWidth + (dx / window.innerWidth) * 100));
                                 document.body.style.setProperty('--preview-width', newWidth + '%');
                                 handle.style.right = newWidth + '%';
                             });
-                            document.addEventListener('mouseup', function() {
-                                if (document.body._resizeDragging) {
-                                    document.body._resizeDragging = false;
-                                    handle.classList.remove('dragging');
-                                    document.body.style.userSelect = '';
-                                    document.body.style.cursor = '';
-                                }
+                            handle.addEventListener('pointerup', function(e) {
+                                handle.classList.remove('dragging');
+                                document.body.style.userSelect = '';
+                                handle.releasePointerCapture(e.pointerId);
+                            });
+                            handle.addEventListener('pointercancel', function(e) {
+                                handle.classList.remove('dragging');
+                                document.body.style.userSelect = '';
+                                handle.releasePointerCapture(e.pointerId);
                             });
                         }
                         document.body.style.setProperty('--preview-width', '50%');
