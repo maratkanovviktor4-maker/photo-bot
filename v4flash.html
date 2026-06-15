@@ -1020,9 +1020,6 @@
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
         function setupFloatingCopyButtons() {
-            document.querySelectorAll('.code-header .code-actions').forEach(function(actions) {
-                actions.innerHTML = '';
-            });
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 var header = pre.previousElementSibling;
                 if (!header || !header.classList.contains('code-header')) return;
@@ -1214,8 +1211,20 @@
             }
         }
 
-        var chatAreaObserver = new MutationObserver(function() {
-            setupFloatingCopyButtons();
+        var chatAreaObserver = new MutationObserver(function(mutations) {
+            var hasNewCode = false;
+            mutations.forEach(function(m) {
+                m.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1) {
+                        if (node.querySelectorAll && (node.querySelectorAll('pre').length > 0 || node.classList.contains('code-header'))) {
+                            hasNewCode = true;
+                        }
+                    }
+                });
+            });
+            if (hasNewCode) {
+                setupFloatingCopyButtons();
+            }
             updateFloatingButtons();
         });
         window.addEventListener('load', function() {
