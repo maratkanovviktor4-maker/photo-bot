@@ -167,8 +167,7 @@
         .resize-handle:hover { background: rgba(0,203,245,0.4); }
         .resize-handle.dragging { background: rgba(0,203,245,0.6); }
         .main.preview-open { padding-right: var(--preview-width, 50%); }
-        /* bottom container: кнопка + поле ввода всегда снизу */
-       .bottom-container { position: sticky; bottom: 0; z-index: 10000; background: #201F28; }
+        .bottom-container { position: sticky; bottom: 0; z-index: 10000; background: #201F28; }
         body.light .bottom-container { background: #ffffff; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -449,14 +448,17 @@
             }
             var main = document.querySelector('.main');
             if (main) {
-                main.addEventListener('transitionend', function handler() {
+                var rafId;
+                var tick = function() {
                     updateFloatingButtons();
-                    main.removeEventListener('transitionend', handler);
-                });
+                    rafId = requestAnimationFrame(tick);
+                };
+                rafId = requestAnimationFrame(tick);
+                main.addEventListener('transitionend', function() {
+                    cancelAnimationFrame(rafId);
+                    updateFloatingButtons();
+                }, { once: true });
             }
-            setTimeout(updateFloatingButtons, 50);
-            setTimeout(updateFloatingButtons, 150);
-            setTimeout(updateFloatingButtons, 300);
         }
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn').forEach(function(btn) { btn.remove(); });
@@ -1089,6 +1091,20 @@
                         handle.classList.add('active');
                         handle.style.right = '50%';
                         document.querySelector('.main').classList.add('preview-open');
+                        updateFloatingButtons();
+                        var main = document.querySelector('.main');
+                        if (main) {
+                            var rafId;
+                            var tick = function() {
+                                updateFloatingButtons();
+                                rafId = requestAnimationFrame(tick);
+                            };
+                            rafId = requestAnimationFrame(tick);
+                            main.addEventListener('transitionend', function() {
+                                cancelAnimationFrame(rafId);
+                                updateFloatingButtons();
+                            }, { once: true });
+                        }
                         iframe.srcdoc = code;
                     };
                     document.body.appendChild(previewBtn);
@@ -1203,9 +1219,19 @@
             if (panel) panel.classList.remove('active');
             if (handle) handle.classList.remove('active');
             document.querySelector('.main').classList.remove('preview-open');
-            updateFloatingButtons();
-            setTimeout(updateFloatingButtons, 100);
-            setTimeout(updateFloatingButtons, 300);
+            var main = document.querySelector('.main');
+            if (main) {
+                var rafId;
+                var tick = function() {
+                    updateFloatingButtons();
+                    rafId = requestAnimationFrame(tick);
+                };
+                rafId = requestAnimationFrame(tick);
+                main.addEventListener('transitionend', function() {
+                    cancelAnimationFrame(rafId);
+                    updateFloatingButtons();
+                }, { once: true });
+            }
         }
 
         var chatAreaObserver = new MutationObserver(function() {
