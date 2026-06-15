@@ -94,15 +94,7 @@
         body.light .message-row.assistant .message-content { background: #ffffff; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
         .message-row.user .message-content { background: rgba(0,203,245,0.15); border-radius: 18px; }
         body.light .message-row.user .message-content { background: #EDF3FE; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
-        .code-header { display: flex; justify-content: space-between; align-items: center; background: #16162a; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; position: sticky; top: 0; z-index: 10; }
-        body.light .code-header { background: #e8e8e8; color: #555; }
-        .code-header + pre { margin-top: 0; border-radius: 0 0 10px 10px; }
-        .code-header .code-lang { font-weight: 600; }
-        .code-header .code-actions { display: flex; gap: 6px; }
-        .code-header .code-actions button { background: transparent; border: none; color: #aaa; cursor: pointer; padding: 4px 6px; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 11px; transition: background 0.15s; }
-        body.light .code-header .code-actions button { color: #555; }
-        .code-header .code-actions button:hover { background: rgba(255,255,255,0.1); }
-        body.light .code-header .code-actions button:hover { background: rgba(0,0,0,0.08); }
+        .message-content pre { background: #1a1a2e; padding: 14px; border-radius: 10px; overflow-x: auto; font-size: 14px; margin: 8px 0; border: none; white-space: pre-wrap; word-break: break-all; position: relative; }
         body.light .message-content pre { background: #f8f8f8; border: none; color: #111; }
         .message-content pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; border-radius: 0; display: block; color: inherit; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; }
@@ -490,7 +482,7 @@
             }
         }
         function renderMessages() {
-            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn').forEach(function(btn) { btn.remove(); });
+            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
             if (!chat || chat.messages.length === 0) {
@@ -883,9 +875,9 @@
                 if (part.type === 'code') {
                     var lang = part.lang || '';
                     if (lang) {
-                        result += '<div class="code-header"><span class="code-lang">' + escapeHtml(lang) + '</span><span class="code-actions"></span></div>';
+                        result += '<div class="floating-code-header" style="display:none;">' + escapeHtml(lang) + '</div>';
                     }
-                    result += '<pre' + (lang ? '' : ' style="border-radius:10px;"') + '><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre>';
+                    result += '<pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre>';
                 } else {
                     result += escapeHtml(part.content).replace(/`([^`]+)`/g, '<code>' + '$1' + '</code>').replace(/\n/g, '<br>');
                 }
@@ -1020,16 +1012,36 @@
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
         function setupFloatingCopyButtons() {
+            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(el) { el.remove(); });
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
-                var header = pre.previousElementSibling;
-                if (!header || !header.classList.contains('code-header')) return;
-                var actions = header.querySelector('.code-actions');
-                if (!actions) return;
-                if (actions.querySelector('.code-copy-btn')) return;
+                if (pre._hasFloatingBtns) return;
+                pre._hasFloatingBtns = true;
                 
+                var codeBlock = pre.querySelector('code');
+                var lang = '';
+                if (codeBlock) {
+                    var cls = codeBlock.className;
+                    var m = cls.match(/language-(\w+)/);
+                    if (m) lang = m[1];
+                }
+
+                var header = document.createElement('div');
+                header.className = 'floating-code-header';
+                header.style.cssText = 'position:fixed; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:9999; display:none; line-height:1; transition:background 0.15s;';
+                if (document.body.classList.contains('light')) {
+                    header.style.background = '#e8e8e8';
+                    header.style.color = '#555';
+                }
+                header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;margin-left:12px;"></span>';
+                document.body.appendChild(header);
+                pre._floatHeader = header;
+                var actions = header.querySelector('span:last-child');
+
                 var copyBtn = document.createElement('button');
-                copyBtn.className = 'code-copy-btn';
+                copyBtn.className = 'floating-copy-btn';
                 copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+                copyBtn.style.cssText = 'background:transparent; border:none; color:#aaa; cursor:pointer; padding:4px 6px; border-radius:4px; font-family:Inter,sans-serif; font-size:11px;';
+                if (document.body.classList.contains('light')) copyBtn.style.color = '#555';
                 copyBtn.onclick = function() {
                     var code = pre.querySelector('code').textContent;
                     navigator.clipboard.writeText(code);
@@ -1039,8 +1051,10 @@
                 actions.appendChild(copyBtn);
 
                 var downloadBtn = document.createElement('button');
-                downloadBtn.className = 'code-download-btn';
+                downloadBtn.className = 'floating-download-btn';
                 downloadBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download';
+                downloadBtn.style.cssText = 'background:transparent; border:none; color:#aaa; cursor:pointer; padding:4px 6px; border-radius:4px; font-family:Inter,sans-serif; font-size:11px;';
+                if (document.body.classList.contains('light')) downloadBtn.style.color = '#555';
                 downloadBtn.onclick = function() {
                     var code = pre.querySelector('code').textContent;
                     var blob = new Blob([code], {type: 'text/plain'});
@@ -1053,11 +1067,13 @@
                 };
                 actions.appendChild(downloadBtn);
 
-                var isHtml = pre.querySelector('code.language-html') || pre.querySelector('code.language-htm') || (pre.textContent.trim().match(/^<(!DOCTYPE|html)/i));
+                var isHtml = lang === 'html' || lang === 'htm' || (pre.textContent.trim().match(/^<(!DOCTYPE|html)/i));
                 if (isHtml) {
                     var previewBtn = document.createElement('button');
-                    previewBtn.className = 'code-preview-btn';
+                    previewBtn.className = 'floating-preview-btn';
                     previewBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Предпросмотр';
+                    previewBtn.style.cssText = 'background:transparent; border:none; color:#aaa; cursor:pointer; padding:4px 6px; border-radius:4px; font-family:Inter,sans-serif; font-size:11px;';
+                    if (document.body.classList.contains('light')) previewBtn.style.color = '#555';
                     previewBtn.onclick = function() {
                         var code = pre.querySelector('code').textContent;
                         var panel = document.getElementById('previewPanel');
@@ -1097,6 +1113,7 @@
                                 var newWidth = Math.max(20, Math.min(maxPw, handle._startWidth + (dx / window.innerWidth) * 100));
                                 document.body.style.setProperty('--preview-width', newWidth + '%');
                                 handle.style.right = newWidth + '%';
+                                updateFloatingButtons();
                             });
                             handle.addEventListener('pointerup', function(e) {
                                 handle.classList.remove('dragging');
@@ -1114,15 +1131,45 @@
                         handle.classList.add('active');
                         handle.style.right = '50%';
                         document.querySelector('.main').classList.add('preview-open');
+                        updateFloatingButtons();
+                        var main = document.querySelector('.main');
+                        if (main) {
+                            var rafId;
+                            var tick = function() {
+                                updateFloatingButtons();
+                                rafId = requestAnimationFrame(tick);
+                            };
+                            rafId = requestAnimationFrame(tick);
+                            main.addEventListener('transitionend', function() {
+                                cancelAnimationFrame(rafId);
+                                updateFloatingButtons();
+                            }, { once: true });
+                        }
                         iframe.srcdoc = code;
                     };
                     actions.appendChild(previewBtn);
                 }
             });
+            updateFloatingButtons();
         }
 
         function updateFloatingButtons() {
-            // кнопки теперь в .code-header, позиционирование не требуется
+            document.querySelectorAll('.message-content pre').forEach(function(pre) {
+                var header = pre._floatHeader;
+                var rect = pre.getBoundingClientRect();
+                var visible = rect.bottom > 0 && rect.top < window.innerHeight;
+                if (header) {
+                    if (visible) {
+                        header.style.display = 'flex';
+                        header.style.top = Math.max(rect.top, 60) + 'px';
+                        header.style.right = (window.innerWidth - rect.right) + 'px';
+                        header.style.justifyContent = 'space-between';
+                        header.style.alignItems = 'center';
+                    } else {
+                        header.style.display = 'none';
+                    }
+                }
+            });
         }
 
         function buildNavContainer() {
@@ -1211,20 +1258,8 @@
             }
         }
 
-        var chatAreaObserver = new MutationObserver(function(mutations) {
-            var hasNewCode = false;
-            mutations.forEach(function(m) {
-                m.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) {
-                        if (node.querySelectorAll && (node.querySelectorAll('pre').length > 0 || node.classList.contains('code-header'))) {
-                            hasNewCode = true;
-                        }
-                    }
-                });
-            });
-            if (hasNewCode) {
-                setupFloatingCopyButtons();
-            }
+        var chatAreaObserver = new MutationObserver(function() {
+            setupFloatingCopyButtons();
             updateFloatingButtons();
         });
         window.addEventListener('load', function() {
