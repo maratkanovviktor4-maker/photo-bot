@@ -94,12 +94,12 @@
         body.light .message-row.assistant .message-content { background: #ffffff; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
         .message-row.user .message-content { background: rgba(0,203,245,0.15); border-radius: 18px; }
         body.light .message-row.user .message-content { background: #EDF3FE; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
-        .message-content .code-block-wrapper { position: relative; }
-        .message-content .code-block-wrapper .code-block-toolbar { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 10; opacity: 0; transition: opacity 0.15s; }
-        .message-content .code-block-wrapper:hover .code-block-toolbar { opacity: 1; }
+        .code-block-wrapper { position: relative; }
+        .code-block-toolbar { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 10; opacity: 0; transition: opacity 0.15s; }
+        .code-block-wrapper:hover .code-block-toolbar { opacity: 1; }
         .code-block-toolbar button { background: rgba(0,0,0,0.5); border: none; color: #ccc; cursor: pointer; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-family: 'Inter', sans-serif; display: inline-flex; align-items: center; gap: 4px; line-height: 1; }
         .code-block-toolbar button:hover { background: rgba(0,0,0,0.7); color: #fff; }
-        .message-content pre { background: #1a1a2e; padding: 14px; border-radius: 10px; overflow-x: auto; font-size: 14px; margin: 8px 0; border: none; white-space: pre-wrap; word-break: break-all; }
+        .message-content pre { background: #1a1a2e; padding: 14px; border-radius: 10px; overflow-x: auto; font-size: 14px; margin: 8px 0; border: none; white-space: pre-wrap; word-break: break-all; position: relative; }
         body.light .message-content pre { background: #f8f8f8; border: none; color: #111; }
         .message-content pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; border-radius: 0; display: block; color: inherit; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; }
@@ -232,6 +232,7 @@
         </div>
     </div>
     <div class="nav-container" id="navContainer"></div>
+
     <script>
         var autoScroll = true;
 
@@ -451,7 +452,6 @@
                 toggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
                 toggle.title = 'Свернуть панель';
             }
-            setTimeout(function() { updateFloatingButtons(); }, 300);
         }
         function renderMessages() {
             const chat = chats.find(c => c.id === currentChatId);
@@ -497,7 +497,6 @@
                 }
                 hljs.highlightAll();
                 buildNavContainer();
-                setupFloatingCopyButtons();
             }, 100);
         }
         function copyMessage(index) {
@@ -978,15 +977,16 @@
                 if (!pre) return;
                 var toolbar = document.createElement('div');
                 toolbar.className = 'code-block-toolbar';
-                var copyBtn = document.createElement('button');
-                copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
-                copyBtn.onclick = function() {
+                var btn = document.createElement('button');
+                btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+                btn.onclick = function() {
                     var code = pre.querySelector('code').textContent;
                     navigator.clipboard.writeText(code);
-                    copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copy';
-                    setTimeout(function() { copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy'; }, 2000);
+                    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copy';
+                    setTimeout(function() { btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy'; }, 2000);
                 };
                 toolbar.appendChild(copyBtn);
+
                 var downloadBtn = document.createElement('button');
                 downloadBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download';
                 downloadBtn.onclick = function() {
@@ -1000,9 +1000,11 @@
                     URL.revokeObjectURL(url);
                 };
                 toolbar.appendChild(downloadBtn);
+
                 var isHtml = pre.querySelector('code.language-html') || pre.querySelector('code.language-htm') || (pre.textContent.trim().match(/^<(!DOCTYPE|html)/i));
                 if (isHtml) {
                     var previewBtn = document.createElement('button');
+                    previewBtn.className = '';
                     previewBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Предпросмотр';
                     previewBtn.onclick = function() {
                         var code = pre.querySelector('code').textContent;
@@ -1069,7 +1071,33 @@
         }
 
         function updateFloatingButtons() {
-            setupFloatingCopyButtons();
+            document.querySelectorAll('.message-content pre').forEach(function(pre) {
+                var btn = pre._floatBtn;
+                var downloadBtn = pre._floatDownloadBtn;
+                var rect = pre.getBoundingClientRect();
+                var visible = rect.bottom > 0 && rect.top < window.innerHeight;
+                if (visible) {
+                    if (downloadBtn) {
+                        downloadBtn.style.display = 'block';
+                        downloadBtn.style.top = Math.max(rect.top, 60) + 'px';
+                        downloadBtn.style.right = (window.innerWidth - rect.right + 8) + 'px';
+                    }
+                    if (btn) {
+                        btn.style.display = 'block';
+                        btn.style.top = Math.max(rect.top, 60) + 'px';
+                        btn.style.right = (window.innerWidth - rect.right + 120) + 'px';
+                    }
+                    if (pre._floatPreviewBtn) {
+                        pre._floatPreviewBtn.style.display = 'block';
+                        pre._floatPreviewBtn.style.top = Math.max(rect.top, 60) + 'px';
+                        pre._floatPreviewBtn.style.right = (window.innerWidth - rect.right + 250) + 'px';
+                    }
+                } else {
+                    if (btn) btn.style.display = 'none';
+                    if (downloadBtn) downloadBtn.style.display = 'none';
+                    if (pre._floatPreviewBtn) pre._floatPreviewBtn.style.display = 'none';
+                }
+            });
         }
 
         function buildNavContainer() {
@@ -1147,6 +1175,7 @@
 
         var chatAreaObserver = new MutationObserver(function() {
             setupFloatingCopyButtons();
+            updateFloatingButtons();
         });
         window.addEventListener('load', function() {
             var main = document.querySelector('.main');
@@ -1154,7 +1183,10 @@
                 chatAreaObserver.observe(main, { childList: true, subtree: true });
             }
             setupFloatingCopyButtons();
+            updateFloatingButtons();
         });
+        window.addEventListener('scroll', updateFloatingButtons, true);
+        window.addEventListener('resize', updateFloatingButtons);
     </script>
 </body>
 </html>
