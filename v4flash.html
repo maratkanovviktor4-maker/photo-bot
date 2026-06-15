@@ -680,8 +680,9 @@
                 }
                 const data = await resp.json();
                 if (data.reply) {
-                    const fullContent = data.reply;
-                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, reasoning: data.reasoning || '' });
+                    const reasoningText = data.reasoning || '';
+                    const fullContent = reasoningText + '\n\n' + data.reply;
+                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, reasoning: reasoningText, _reasoningDone: false });
                     const msgIndex = chat.messages.length - 1;
                     const streamId = 'stream_' + msgIndex;
                     activeStreamId = streamId;
@@ -707,8 +708,22 @@
                         }
                         chat.messages[msgIndex]._streamPos = pos;
                         if (chunk) {
-                            chat.messages[msgIndex].content = words.slice(0, pos).join('');
-                            streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content, chat.messages[msgIndex].reasoning);
+                            var currentText = words.slice(0, pos).join('');
+                            var reasoningDivider = reasoningText.length > 0 ? currentText.indexOf('\n\n') : -1;
+                            if (reasoningDivider > 0 && !chat.messages[msgIndex]._reasoningDone) {
+                                chat.messages[msgIndex]._reasoningDone = true;
+                                chat.messages[msgIndex].content = '';
+                                streamDiv.innerHTML = formatMessage('', reasoningText) + formatMessage(currentText.slice(reasoningDivider + 2), '');
+                            } else if (reasoningDivider > 0 && chat.messages[msgIndex]._reasoningDone) {
+                                chat.messages[msgIndex].content = currentText.slice(reasoningDivider + 2);
+                                streamDiv.innerHTML = formatMessage('', reasoningText) + formatMessage(chat.messages[msgIndex].content, '');
+                            } else if (reasoningDivider <= 0 && !chat.messages[msgIndex]._reasoningDone) {
+                                chat.messages[msgIndex].content = '';
+                                streamDiv.innerHTML = formatMessage(currentText, reasoningText);
+                            } else {
+                                chat.messages[msgIndex].content = currentText;
+                                streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content, '');
+                            }
                             streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
                             if (autoScroll) {
                                 var main = document.querySelector('.main');
