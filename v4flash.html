@@ -1050,16 +1050,19 @@
                                 startWidth = parseInt(getComputedStyle(document.body).getPropertyValue('--preview-width'));
                                 handle.classList.add('dragging');
                                 document.body.style.userSelect = 'none';
-                            });
-                            document.addEventListener('mousemove', function(e) {
-                                if (!handle.classList.contains('dragging')) return;
-                                var dx = startX - e.clientX;
-                                var newWidth = Math.max(20, Math.min(80, startWidth + (dx / window.innerWidth) * 100));
-                                document.body.style.setProperty('--preview-width', newWidth + '%');
-                            });
-                            document.addEventListener('mouseup', function() {
-                                handle.classList.remove('dragging');
-                                document.body.style.userSelect = '';
+                                function onMove(e2) {
+                                    var dx = startX - e2.clientX;
+                                    var newWidth = Math.max(20, Math.min(80, startWidth + (dx / window.innerWidth) * 100));
+                                    document.body.style.setProperty('--preview-width', newWidth + '%');
+                                }
+                                function onUp() {
+                                    handle.classList.remove('dragging');
+                                    document.body.style.userSelect = '';
+                                    document.removeEventListener('mousemove', onMove);
+                                    document.removeEventListener('mouseup', onUp);
+                                }
+                                document.addEventListener('mousemove', onMove);
+                                document.addEventListener('mouseup', onUp);
                             });
                         }
                         handle.classList.add('active');
