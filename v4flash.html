@@ -860,7 +860,13 @@
                 lastIndex = regex.lastIndex;
             }
             if (lastIndex < text.length) {
-                parts.push({type: 'text', content: text.substring(lastIndex)});
+                var remaining = text.substring(lastIndex);
+                var openCode = remaining.match(new RegExp(B + B + B + '(\\w*)\\r?\\n([\\s\\S]*)'));
+                if (openCode) {
+                    parts.push({type: 'code', lang: openCode[1], content: openCode[2]});
+                } else {
+                    parts.push({type: 'text', content: remaining});
+                }
             }
             let result = '';
             for (const part of parts) {
