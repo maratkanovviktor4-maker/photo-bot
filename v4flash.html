@@ -153,7 +153,8 @@
         .nav-container::-webkit-scrollbar { width: 4px; }
         .nav-container::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
         .nav-container:hover::-webkit-scrollbar-thumb { background: rgba(170,170,170,0.4); }
-
+        .reasoning-block { background: rgba(0,203,245,0.06); border-left: 3px solid #00CBF5; padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; font-size: 14px; color: #aab; }
+        body.light .reasoning-block { background: rgba(0,180,220,0.06); color: #556; }
         /* bottom container: кнопка + поле ввода всегда снизу */
        .bottom-container { position: sticky; bottom: 0; z-index: 10000; background: #201F28; }
         body.light .bottom-container { background: #ffffff; }
@@ -696,6 +697,8 @@
                     const streamAction = document.getElementById('actions-' + msgIndex);
                     const words = fullContent.split(/(\s+)/);
                     chat.messages[msgIndex]._streamWords = words;
+                    var reasoningStarted = false;
+                    var reasoningEnded = false;
                     function streamNext() {
                         if (activeStreamId !== streamId) return;
                         let chunk = '';
@@ -707,8 +710,29 @@
                         }
                         chat.messages[msgIndex]._streamPos = pos;
                         if (chunk) {
-                            chat.messages[msgIndex].content = words.slice(0, pos).join('');
-                            streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
+                            var fullText = words.slice(0, pos).join('');
+                            chat.messages[msgIndex].content = fullText;
+                            var displayText = fullText;
+                            if (!reasoningStarted && fullText.indexOf('Размышление:\n') !== -1) {
+                                reasoningStarted = true;
+                            }
+                            if (reasoningStarted && !reasoningEnded) {
+                                var endIdx = fullText.indexOf('\n\nОтвет:\n');
+                                if (endIdx !== -1) {
+                                    reasoningEnded = true;
+                                    var reasoningText = fullText.substring('Размышление:\n'.length, endIdx);
+                                    var replyText = fullText.substring(endIdx + '\n\nОтвет:\n'.length);
+                                    streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(reasoningText).replace(/\n/g, '<br>') + '</div>' + formatMessage(replyText);
+                                } else {
+                                    var reasoningText2 = fullText.substring(Math.max(0, fullText.indexOf('Размышление:\n') + 'Размышление:\n'.length));
+                                    streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(reasoningText2).replace(/\n/g, '<br>') + '</div>';
+                                }
+                            } else if (reasoningEnded) {
+                                var replyStart = fullText.indexOf('\n\nОтвет:\n') + '\n\nОтвет:\n'.length;
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(fullText.substring('Размышление:\n'.length, fullText.indexOf('\n\nОтвет:\n'))).replace(/\n/g, '<br>') + '</div>' + formatMessage(fullText.substring(replyStart));
+                            } else {
+                                streamDiv.innerHTML = formatMessage(displayText);
+                            }
                             streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
                             if (autoScroll) {
                                 var main = document.querySelector('.main');
