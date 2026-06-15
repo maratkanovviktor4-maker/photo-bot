@@ -155,7 +155,7 @@
         .nav-container:hover::-webkit-scrollbar-thumb { background: rgba(170,170,170,0.4); }
         .reasoning-block { background: rgba(0,203,245,0.06); border-left: 3px solid #00CBF5; padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; font-size: 14px; color: #aab; }
         body.light .reasoning-block { background: rgba(0,180,220,0.06); color: #556; }
-        .preview-panel { position: fixed; right: 0; top: 0; width: 50%; height: 100vh; background: #fff; z-index: 9998; border-left: 1px solid rgba(0,0,0,0.1); display: none; flex-direction: column; }
+        .preview-panel { position: fixed; right: 0; top: 0; width: var(--preview-width, 50%); height: 100vh; background: #fff; z-index: 9998; border-left: 1px solid rgba(0,0,0,0.1); display: none; flex-direction: column; }
         body.light .preview-panel { background: #fff; }
         .preview-panel.active { display: flex; }
         .preview-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f5f5f5; border-bottom: 1px solid rgba(0,0,0,0.1); }
@@ -164,9 +164,12 @@
         .preview-close { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; padding: 0 4px; line-height: 1; }
         .preview-close:hover { color: #333; }
         .preview-iframe { flex: 1; width: 100%; border: none; }
-        .main.preview-open .chat-wrapper { max-width: 100%; margin-right: 50%; }
+        .resize-handle { position: fixed; top: 0; right: var(--preview-width, 50%); width: 6px; height: 100vh; cursor: col-resize; z-index: 9999; background: transparent; display: none; }
+        .resize-handle.active { display: block; }
+        .resize-handle:hover, .resize-handle.dragging { background: rgba(0,203,245,0.3); }
+        .main.preview-open .chat-wrapper { max-width: 100%; margin-right: var(--preview-width, 50%); }
         .main.preview-open { padding-right: 0; }
-        .main.preview-open .bottom-container { margin-right: 50%; }
+        .main.preview-open .bottom-container { margin-right: var(--preview-width, 50%); }
         /* bottom container: кнопка + поле ввода всегда снизу */
        .bottom-container { position: sticky; bottom: 0; z-index: 10000; background: #201F28; }
         body.light .bottom-container { background: #ffffff; }
@@ -1033,6 +1036,34 @@
                         }
                         panel.classList.add('active');
                         document.querySelector('.main').classList.add('preview-open');
+                        document.body.style.setProperty('--preview-width', '50%');
+                        var handle = document.getElementById('resizeHandle');
+                        if (!handle) {
+                            handle = document.createElement('div');
+                            handle.id = 'resizeHandle';
+                            handle.className = 'resize-handle active';
+                            document.body.appendChild(handle);
+                            var startX, startWidth;
+                            handle.addEventListener('mousedown', function(e) {
+                                e.preventDefault();
+                                startX = e.clientX;
+                                startWidth = parseInt(getComputedStyle(document.body).getPropertyValue('--preview-width'));
+                                handle.classList.add('dragging');
+                                document.body.style.userSelect = 'none';
+                            });
+                            document.addEventListener('mousemove', function(e) {
+                                if (!handle.classList.contains('dragging')) return;
+                                var dx = startX - e.clientX;
+                                var newWidth = Math.max(20, Math.min(80, startWidth + (dx / window.innerWidth) * 100));
+                                document.body.style.setProperty('--preview-width', newWidth + '%');
+                            });
+                            document.addEventListener('mouseup', function() {
+                                handle.classList.remove('dragging');
+                                document.body.style.userSelect = '';
+                            });
+                        }
+                        handle.classList.add('active');
+                        handle.style.right = getComputedStyle(document.body).getPropertyValue('--preview-width');
                         iframe.srcdoc = code;
                     };
                     document.body.appendChild(previewBtn);
@@ -1150,6 +1181,8 @@
             var panel = document.getElementById('previewPanel');
             if (panel) panel.classList.remove('active');
             document.querySelector('.main').classList.remove('preview-open');
+            var handle = document.getElementById('resizeHandle');
+            if (handle) handle.classList.remove('active');
         }
 
         var chatAreaObserver = new MutationObserver(function() {
