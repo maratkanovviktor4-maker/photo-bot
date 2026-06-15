@@ -455,7 +455,7 @@
                     }
                     actionsHtml += '</div>';
                     var dataAttr = m.role === 'assistant' ? ' data-msg-index="' + i + '"' : '';
-                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + formatMessage(m.content, m.reasoning) + '</div>' + actionsHtml + '</div></div>';
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + formatMessage(m.content) + '</div>' + actionsHtml + '</div></div>';
                 }).join('');
             }
             setTimeout(function() {
@@ -680,9 +680,8 @@
                 }
                 const data = await resp.json();
                 if (data.reply) {
-                    const reasoningText = data.reasoning || '';
-                    const fullContent = reasoningText + '\n\n' + data.reply;
-                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, reasoning: reasoningText, _reasoningDone: false });
+                    const fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0 });
                     const msgIndex = chat.messages.length - 1;
                     const streamId = 'stream_' + msgIndex;
                     activeStreamId = streamId;
@@ -697,12 +696,6 @@
                     const streamAction = document.getElementById('actions-' + msgIndex);
                     const words = fullContent.split(/(\s+)/);
                     chat.messages[msgIndex]._streamWords = words;
-                    var reasoningWords = reasoningText ? reasoningText.split(/(\s+)/) : [];
-                    var replyWords = data.reply.split(/(\s+)/);
-                    var allWords = reasoningWords.concat(reasoningText ? ['\n\n'] : []).concat(replyWords);
-                    chat.messages[msgIndex]._streamWords = allWords;
-                    words = allWords;
-                    pos = 0;
                     function streamNext() {
                         if (activeStreamId !== streamId) return;
                         let chunk = '';
@@ -714,14 +707,15 @@
                         }
                         chat.messages[msgIndex]._streamPos = pos;
                         if (chunk) {
-                            var currentText = words.slice(0, pos).join('');
-                            chat.messages[msgIndex].content = currentText;
-                            streamDiv.innerHTML = formatMessage(currentText, reasoningText);
+                            chat.messages[msgIndex].content = words.slice(0, pos).join('');
+                            streamDiv.innerHTML = formatMessage(chat.messages[msgIndex].content);
                             streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
                             if (autoScroll) {
                                 var main = document.querySelector('.main');
                                 if (main) {
-                                    main.scrollTo({ top: main.scrollHeight, behavior: 'smooth' });
+                                    main.style.scrollBehavior = 'auto';
+                                    main.scrollTop = main.scrollHeight;
+                                    main.style.scrollBehavior = 'smooth';
                                 }
                             }
                             typingInterval = setTimeout(streamNext, 20);
@@ -735,7 +729,9 @@
                             if (autoScroll) {
                                 var main = document.querySelector('.main');
                                 if (main) {
-                                    main.scrollTo({ top: main.scrollHeight, behavior: 'smooth' });
+                                    main.style.scrollBehavior = 'auto';
+                                    main.scrollTop = main.scrollHeight;
+                                    main.style.scrollBehavior = 'smooth';
                                 }
                             }
                             if (activeStreamId === streamId) {
@@ -761,7 +757,7 @@
             updateFileList();
             updateBalance();
         }
-        function formatMessage(text, reasoning) {
+        function formatMessage(text) {
             var B = String.fromCharCode(96);
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) {
                 text = B + B + B + 'html\n' + text + '\n' + B + B + B;
@@ -788,10 +784,6 @@
                 } else {
                     result += escapeHtml(part.content).replace(/`([^`]+)`/g, '<code>' + '$1' + '</code>').replace(/\n/g, '<br>');
                 }
-            }
-            if (reasoning) {
-                var reasoningHtml = escapeHtml(reasoning).replace(/\n/g, '<br>');
-                result = '<div class="reasoning-block" style="background:rgba(0,203,245,0.08);border-left:3px solid #00CBF5;padding:10px 14px;margin-bottom:12px;border-radius:8px;font-size:14px;">' + reasoningHtml + '</div>' + result;
             }
             return result;
         }
@@ -836,7 +828,6 @@
             activeStreamId = streamId;
             const shownContent = words.slice(0, pos).join('');
             msg.content = shownContent;
-            msg.reasoning = msg.reasoning || '';
             renderMessages();
             var input = document.getElementById('userInput');
             if (input) input.focus();
@@ -850,7 +841,7 @@
             }
             const streamDiv = allAssistant[assistantIdx];
             const streamAction = allActions[assistantIdx];
-            if (streamDiv) streamDiv.innerHTML = formatMessage(shownContent, msg.reasoning);
+            if (streamDiv) streamDiv.innerHTML = formatMessage(shownContent);
             function streamNext() {
                 if (activeStreamId !== streamId) return;
                 let chunk = '';
@@ -864,7 +855,7 @@
                 if (chunk) {
                     chat.messages[index].content = words.slice(0, pos).join('');
                     if (streamDiv) {
-                        streamDiv.innerHTML = formatMessage(chat.messages[index].content, chat.messages[index].reasoning);
+                        streamDiv.innerHTML = formatMessage(chat.messages[index].content);
                         streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
                     }
                     if (autoScroll) {
