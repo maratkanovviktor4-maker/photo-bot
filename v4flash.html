@@ -305,19 +305,15 @@
         }
 
         var mainEl = document.querySelector('.main');
-        var lastScrollHeight = 0;
         if (mainEl) {
             mainEl.addEventListener('scroll', function(e) {
+                if (e.target !== mainEl) return;
                 var btn = document.getElementById('scrollBottomBtn');
                 if (!mainEl) return;
                 var atBottom = mainEl.scrollHeight - mainEl.scrollTop - mainEl.clientHeight < 5;
                 if (atBottom) {
                     btn.style.display = 'none';
                     autoScroll = true;
-                    lastScrollHeight = mainEl.scrollHeight;
-                } else if (mainEl.scrollHeight !== lastScrollHeight) {
-                    btn.style.display = 'none';
-                    lastScrollHeight = mainEl.scrollHeight;
                 } else {
                     btn.style.display = 'flex';
                     autoScroll = false;
