@@ -1053,7 +1053,12 @@
                             handle.addEventListener('pointermove', function(e) {
                                 if (!handle.classList.contains('dragging')) return;
                                 var dx = handle._startX - e.clientX;
-                                var newWidth = Math.max(20, Math.min(80, handle._startWidth + (dx / window.innerWidth) * 100));
+                                var mainWidth = document.querySelector('.main').clientWidth;
+                                var minChat = 400;
+                                var maxPw = ((mainWidth - minChat) / window.innerWidth) * 100;
+                                if (maxPw < 20) maxPw = 20;
+                                if (maxPw > 80) maxPw = 80;
+                                var newWidth = Math.max(20, Math.min(maxPw, handle._startWidth + (dx / window.innerWidth) * 100));
                                 document.body.style.setProperty('--preview-width', newWidth + '%');
                                 handle.style.right = newWidth + '%';
                             });
