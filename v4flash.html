@@ -464,7 +464,7 @@
                         if (endIdx !== -1) {
                             contentToShow = m.content.substring(endIdx + '\n\nОтвет:\n'.length);
                         }
-                    } else if (m._reasoningInProgress && m.content) {
+                    } else if ((m._reasoningInProgress || m._hasReasoning) && m.content) {
                         var startIdx = m.content.indexOf('Размышление:\n');
                         if (startIdx !== -1) {
                             reasoningHtml = '<div class="reasoning-block">' + escapeHtml(m.content.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
@@ -697,7 +697,7 @@
                 const data = await resp.json();
                 if (data.reply) {
                     const fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false });
+                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, _hasReasoning: false });
                     const msgIndex = chat.messages.length - 1;
                     const streamId = 'stream_' + msgIndex;
                     activeStreamId = streamId;
@@ -731,6 +731,7 @@
                             if (!reasoningStarted && fullText.indexOf('Размышление:\n') !== -1) {
                                 reasoningStarted = true;
                                 chat.messages[msgIndex]._reasoningInProgress = true;
+                                chat.messages[msgIndex]._hasReasoning = true;
                             }
                             if (reasoningStarted && !reasoningEnded) {
                                 var endIdx = fullText.indexOf('\n\nОтвет:\n');
@@ -925,13 +926,6 @@
                 } else {
                     chat.messages[index].finished = true;
                     chat.messages[index].interrupted = false;
-                    if (!chat.messages[index].reasoning) {
-                        var fc = chat.messages[index].content;
-                        var ei = fc.indexOf('\n\nОтвет:\n');
-                        if (ei !== -1) {
-                            chat.messages[index].reasoning = fc.substring('Размышление:\n'.length, ei);
-                        }
-                    }
                     typingInterval = null;
                     if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
                     autoNameChat(chat);
