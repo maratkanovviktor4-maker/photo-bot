@@ -896,7 +896,22 @@
                 if (chunk) {
                     chat.messages[index].content = words.slice(0, pos).join('');
                     if (streamDiv) {
-                        streamDiv.innerHTML = formatMessage(chat.messages[index].content);
+                        var curContent = chat.messages[index].content;
+                        if (msg._reasoningInProgress) {
+                            var endIdx3 = curContent.indexOf('\n\nОтвет:\n');
+                            if (endIdx3 !== -1) {
+                                msg._reasoningInProgress = false;
+                                var reasoningText3 = curContent.substring('Размышление:\n'.length, endIdx3);
+                                var replyText3 = curContent.substring(endIdx3 + '\n\nОтвет:\n'.length);
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(reasoningText3).replace(/\n/g, '<br>') + '</div>' + formatMessage(replyText3);
+                            } else {
+                                var startIdx3 = curContent.indexOf('Размышление:\n');
+                                var reasoningText4 = startIdx3 !== -1 ? curContent.substring(startIdx3 + 'Размышление:\n'.length) : curContent;
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(reasoningText4).replace(/\n/g, '<br>') + '</div>';
+                            }
+                        } else {
+                            streamDiv.innerHTML = formatMessage(curContent);
+                        }
                         streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
                     }
                     if (autoScroll) {
