@@ -459,7 +459,7 @@
                     var reasoningHtml = '';
                     var contentToShow = m.content;
                     if (m.reasoning) {
-                        reasoningHtml = '<div class="reasoning-block">' + escapeHtml(m.reasoning).replace(/\n/g, '<br>') + '</div>';
+                        reasoningHtml = '<div class="reasoning-block">' + formatMessage(m.reasoning) + '</div>';
                         var endIdx = m.content.indexOf('\n\nОтвет:\n');
                         if (endIdx !== -1) {
                             contentToShow = m.content.substring(endIdx + '\n\nОтвет:\n'.length);
@@ -740,15 +740,15 @@
                                     chat.messages[msgIndex].reasoning = fullText.substring('Размышление:\n'.length, endIdx);
                                     var reasoningText = chat.messages[msgIndex].reasoning;
                                     var replyText = fullText.substring(endIdx + '\n\nОтвет:\n'.length);
-                                    streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(reasoningText).replace(/\n/g, '<br>') + '</div>' + formatMessage(replyText);
+                                    streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' + formatMessage(replyText);
                                 } else {
                                     var reasoningText2 = fullText.substring(Math.max(0, fullText.indexOf('Размышление:\n') + 'Размышление:\n'.length));
-                                    streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(reasoningText2).replace(/\n/g, '<br>') + '</div>';
+                                    streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(reasoningText2) + '</div>';
                                 }
                             } else if (reasoningEnded) {
                                 var replyStart = fullText.indexOf('\n\nОтвет:\n') + '\n\nОтвет:\n'.length;
                                 chat.messages[msgIndex].reasoning = fullText.substring('Размышление:\n'.length, fullText.indexOf('\n\nОтвет:\n'));
-                                streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(chat.messages[msgIndex].reasoning).replace(/\n/g, '<br>') + '</div>' + formatMessage(fullText.substring(replyStart));
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(chat.messages[msgIndex].reasoning) + '</div>' + formatMessage(fullText.substring(replyStart));
                             } else {
                                 streamDiv.innerHTML = formatMessage(displayText);
                             }
@@ -904,18 +904,18 @@
                             if (eIdx !== -1) {
                                 msg._reasoningInProgress = false;
                                 msg.reasoning = cur.substring('Размышление:\n'.length, eIdx);
-                                streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(msg.reasoning).replace(/\n/g, '<br>') + '</div>' + formatMessage(cur.substring(eIdx + '\n\nОтвет:\n'.length));
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(msg.reasoning) + '</div>' + formatMessage(cur.substring(eIdx + '\n\nОтвет:\n'.length));
                             } else {
                                 var sIdx2 = cur.indexOf('Размышление:\n');
                                 var rText = sIdx2 !== -1 ? cur.substring(sIdx2 + 'Размышление:\n'.length) : cur;
-                                streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(rText).replace(/\n/g, '<br>') + '</div>';
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(rText) + '</div>';
                             }
                         } else if (msg.reasoning) {
                             var rIdx = cur.indexOf('\n\nОтвет:\n');
                             if (rIdx !== -1) {
-                                streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(msg.reasoning).replace(/\n/g, '<br>') + '</div>' + formatMessage(cur.substring(rIdx + '\n\nОтвет:\n'.length));
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(msg.reasoning) + '</div>' + formatMessage(cur.substring(rIdx + '\n\nОтвет:\n'.length));
                             } else {
-                                streamDiv.innerHTML = '<div class="reasoning-block">' + escapeHtml(msg.reasoning).replace(/\n/g, '<br>') + '</div>';
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(msg.reasoning) + '</div>';
                             }
                         } else {
                             streamDiv.innerHTML = formatMessage(cur);
