@@ -363,8 +363,10 @@
                 chats.push(chat);
             }
             renderChatList();
-            currentChatId = chats[chats.length - 1].id;
-            openChat(currentChatId);
+            var savedId = localStorage.getItem('photobot_active_chat');
+            var found = savedId ? chats.find(function(c) { return c.id === savedId; }) : null;
+            currentChatId = found ? found.id : (chats.length > 0 ? chats[chats.length - 1].id : null);
+            if (currentChatId) openChat(currentChatId);
         }
         async function updateBalance() {
             try {
@@ -390,6 +392,7 @@
         function openChat(id) {
             closePreview();
             currentChatId = id;
+            localStorage.setItem('photobot_active_chat', id);
             renderChatList();
             renderMessages();
             setTimeout(function() {
