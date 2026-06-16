@@ -1014,9 +1014,9 @@
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
         function setupFloatingCopyButtons() {
-            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(el) { el.remove(); });
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 if (pre.querySelector('.floating-code-header')) return;
+                document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn').forEach(function(el) { if (!pre.contains(el)) el.remove(); });
                 
                 var codeBlock = pre.querySelector('code');
                 var lang = '';
@@ -1244,14 +1244,7 @@
             }
         }
 
-        var chatAreaObserver = new MutationObserver(function() {
-            setupFloatingCopyButtons();
-        });
         window.addEventListener('load', function() {
-            var main = document.querySelector('.main');
-            if (main) {
-                chatAreaObserver.observe(main, { childList: true, subtree: true });
-            }
             setupFloatingCopyButtons();
         });
     </script>
