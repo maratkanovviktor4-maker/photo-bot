@@ -94,10 +94,11 @@
     </div>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('photos')" data-t="tab_photos">📸 FLUX.2</button>
-        <button class="tab-btn" onclick="switchTab('stable_audio')" data-t="tab_stable_audio">🎵 Stable Audio 3</button>
-        <button class="tab-btn" onclick="switchTab('ace_audio')" data-t="tab_ace_audio">🎶 Ace Step 1.5</button>
-        <button class="tab-btn" onclick="switchTab('hunyuan')" data-t="tab_hunyuan">🧊 Hunyuan 2.1</button>
+        <button class="tab-btn" data-tab="photos" onclick="switchTab('photos')" data-t="tab_photos">📸 FLUX.2</button>
+        <button class="tab-btn" data-tab="stable_audio" onclick="switchTab('stable_audio')" data-t="tab_stable_audio">🎵 Stable Audio 3</button>
+        <button class="tab-btn" data-tab="ace_audio" onclick="switchTab('ace_audio')" data-t="tab_ace_audio">🎶 Ace Step 1.5</button>
+        <button class="tab-btn" data-tab="hunyuan" onclick="switchTab('hunyuan')" data-t="tab_hunyuan">🧊 Hunyuan 2.1</button>
+
     </div>
 
     <div class="container" id="container">
@@ -113,7 +114,8 @@
         const SERVER_URL = CONFIG.SERVER_URL;
         let sessionToken = '';
         let currentUserId = null;
-        let currentTab = 'photos';
+        let currentTab = localStorage.getItem('photobot_storage_tab') || 'photos';
+
 
         let currentLang = localStorage.getItem('photobot_lang') || 'en';
         function setLanguage(lang) { currentLang = lang; localStorage.setItem('photobot_lang', lang); document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === lang)); applyTranslations(); }
@@ -158,10 +160,12 @@
 
         function switchTab(tab) {
             currentTab = tab;
+            localStorage.setItem('photobot_storage_tab', tab);
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+            document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
             loadStorage();
         }
+
         async function loadHunyuan(container) {
             try {
                 const resp = await fetch(`${SERVER_URL}/hunyuan_history?user_id=${currentUserId}&session_token=${sessionToken}`);
@@ -319,7 +323,7 @@
             } catch (e) { container.innerHTML = `<div class="empty-state">${t('error_loading')}</div>`; }
         }
 
-        loadStorage();
+        switchTab(currentTab);
     </script>
 </body>
 </html>
