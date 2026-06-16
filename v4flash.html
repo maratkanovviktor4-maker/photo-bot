@@ -1027,8 +1027,14 @@
 
                 var header = document.createElement('div');
                 header.className = 'floating-code-header';
+                header.style.cssText = 'position:fixed; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1;';
+                if (document.body.classList.contains('light')) {
+                    header.style.background = '#f8f8f8';
+                    header.style.color = '#555';
+                }
                 header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
                 pre.insertBefore(header, pre.firstChild);
+                pre._floatHeader = header;
                 var actions = header.querySelector('span:last-child');
 
                 var copyBtn = document.createElement('button');
@@ -1151,10 +1157,28 @@
                     downloadBtn.style.color = '#555';
                     if (typeof previewBtn !== 'undefined') previewBtn.style.color = '#555';
                 }
+                updateFloatingButtons();
             });
         }
 
         function updateFloatingButtons() {
+            document.querySelectorAll('.message-content pre').forEach(function(pre) {
+                var header = pre._floatHeader;
+                if (!header) return;
+                var rect = pre.getBoundingClientRect();
+                var visible = rect.bottom > 0 && rect.top < window.innerHeight;
+                if (visible) {
+                    header.style.display = 'flex';
+                    var topBar = document.querySelector('.top-bar');
+                    var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
+                    var top = Math.max(rect.top, topBarBottom);
+                    header.style.top = top + 'px';
+                    header.style.right = (window.innerWidth - rect.right) + 'px';
+                    header.style.width = rect.width + 'px';
+                } else {
+                    header.style.display = 'none';
+                }
+            });
         }
 
         function buildNavContainer() {
@@ -1246,6 +1270,8 @@
         window.addEventListener('load', function() {
             setupFloatingCopyButtons();
         });
+        window.addEventListener('scroll', updateFloatingButtons, true);
+        window.addEventListener('resize', updateFloatingButtons);
     </script>
 </body>
 </html>
