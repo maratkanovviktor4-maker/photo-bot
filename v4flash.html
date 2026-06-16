@@ -1166,12 +1166,23 @@
                 var header = pre._floatHeader;
                 if (!header) return;
                 var rect = pre.getBoundingClientRect();
-                var visible = rect.bottom > 0 && rect.top < window.innerHeight;
+                var topBar = document.querySelector('.top-bar');
+                var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
+                var visibleTop = Math.max(rect.top, topBarBottom);
+                var visibleBottom = Math.min(rect.bottom, window.innerHeight);
+                var visibleHeight = visibleBottom - visibleTop;
+                var visible = visibleHeight >= 100;
                 if (visible) {
                     header.style.display = 'flex';
-                    var topBar = document.querySelector('.top-bar');
-                    var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
-                    var top = Math.max(rect.top, topBarBottom);
+                    var headerHeight = header.offsetHeight || 28;
+                    var top = visibleTop;
+                    var bottomLimit = rect.bottom - headerHeight;
+                    if (top > bottomLimit) {
+                        top = bottomLimit;
+                    }
+                    if (top < topBarBottom) {
+                        top = topBarBottom;
+                    }
                     header.style.top = top + 'px';
                     header.style.left = rect.left + 'px';
                     header.style.right = 'auto';
