@@ -107,7 +107,9 @@
         body.light .ace-settings-row .ace-field input, body.light .ace-settings-row .ace-field select { background: #f0f0f0; color: #333; border-color: rgba(0,0,0,0.15); }
         body.light .audio-settings-row .audio-field input, body.light .audio-settings-row .audio-field select { background: #f0f0f0; color: #333; border-color: rgba(0,0,0,0.15); }
         body.light #text2imgSettings input { background: #f0f0f0 !important; color: #333; border-color: rgba(0,0,0,0.15); }
-        #text2imgSettings input:focus { border-color: #00CBF5; box-shadow: 0 0 0 2px rgba(0,203,245,0.15); }
+        #text2imgSettings input:focus, #svobodaSizeSettings input:focus { border-color: #00CBF5; box-shadow: 0 0 0 2px rgba(0,203,245,0.15); }
+        #svobodaSizeSettings input { background: rgba(34,34,34,0.6); }
+        body.light #svobodaSizeSettings input { background: #f0f0f0 !important; color: #333; border-color: rgba(0,0,0,0.15); }
         * { scrollbar-width: thin; scrollbar-color: #3a3a5a transparent; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #3a3a5a; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: #4a4a6a; }
         .hint { font-size: 10px; color: #888; margin: 3px 0 6px 0; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -260,8 +262,14 @@
                             <button class="mode-sub-btn" data-mode="flowers" data-t="flowers">Цветы в авто</button>
                             <button class="mode-sub-btn" data-mode="mirror_male" data-t="mirror_male">Мужское в зеркале</button>
                         </div>
-                        <button class="mode-sub-btn" data-mode="svoboda" data-t="svoboda_f">Свободный (ж)</button>
-                        <button class="mode-sub-btn" data-mode="svoboda_male" data-t="svoboda_m">Свободный (м)</button>
+                        <button class="mode-sub-btn" data-mode="svoboda" data-t="svoboda_size">Выбор размера</button>
+                        <div id="svobodaSizeSettings" style="display:none;padding:4px 12px;">
+                            <div style="display:flex;gap:6px;">
+                                <div style="flex:1;"><label style="display:block;font-size:9px;color:#888;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;">Ширина</label><input type="number" id="svobodaWidth" min="64" max="2560" placeholder="2560" style="width:100%;padding:7px 8px;border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;"></div>
+                                <div style="flex:1;"><label style="display:block;font-size:9px;color:#888;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;">Высота</label><input type="number" id="svobodaHeight" min="64" max="1440" placeholder="1440" style="width:100%;padding:7px 8px;border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;"></div>
+                            </div>
+                        </div>
+                        <button class="mode-sub-btn" data-mode="svoboda_male" data-t="svoboda_social">Фото для соцсетей</button>
                     </div>
                     <button class="mode-sub-btn" data-mode="text2img" data-t="text2img">Текст в изображение</button>
                     <div id="text2imgSettings" style="display:none;padding:4px 12px;">
@@ -368,6 +376,7 @@
                 const fv = document.getElementById('fluxVideo'); if (fv) fv.pause();
                 const banner = document.getElementById('bannerImg'); if (banner) { banner.style.display = 'block'; banner.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => banner.classList.add('show')); }); }
                 document.getElementById('text2imgSettings').style.display = 'none';
+                document.getElementById('svobodaSizeSettings').style.display = 'none';
                 document.getElementById('aceSettings').style.display = 'none';
                 document.getElementById('audioSettings').style.display = 'none';
                 document.getElementById('gemmaChat').style.display = 'none';
@@ -454,12 +463,14 @@
             selectedMode = mode;
             document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected"));
             document.getElementById("text2imgSettings").style.display = "none";
+            document.getElementById("svobodaSizeSettings").style.display = "none";
             if (currentGroup === 'flux') { document.getElementById("photoInput").style.display = "block"; }
             document.getElementById("lyrics").style.display = "none";
             document.getElementById("audioSettings").style.display = "none";
             document.getElementById("aceSettings").style.display = "none";
             document.getElementById("gemmaChat").style.display = "none";
             if (mode === "text2img") { document.getElementById("text2imgSettings").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; }
+            if (mode === "svoboda") { document.getElementById("svobodaSizeSettings").style.display = "block"; document.getElementById("photoInput").style.display = "block"; }
             if (mode && mode.startsWith("audio_")) { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("audioSettings").style.display = "flex"; }
             if (mode === "ace_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("lyrics").style.display = "block"; document.getElementById("aceSettings").style.display = "flex"; }
             if (mode === "gemma_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("gemmaChat").style.display = "flex"; }
@@ -536,6 +547,11 @@
             if (selectedMode === 'text2img') {
                 const w = document.getElementById('text2imgWidth').value.trim();
                 const h = document.getElementById('text2imgHeight').value.trim();
+                if (!w || !h) { document.getElementById('status').textContent = 'Укажите ширину и высоту'; return; }
+            }
+            if (selectedMode === 'svoboda') {
+                const w = document.getElementById('svobodaWidth').value.trim();
+                const h = document.getElementById('svobodaHeight').value.trim();
                 if (!w || !h) { document.getElementById('status').textContent = 'Укажите ширину и высоту'; return; }
             }
             if (currentGroup === 'hunyuan' && !uploadedFile) { document.getElementById('status').textContent = 'Выберите файл'; return; }
@@ -655,13 +671,13 @@
                         document.getElementById("status").textContent = "Время ожидания истекло.";
                     }
                 } else if (selectedMode !== "gemma_free") {
-                    if (selectedMode !== "text2img" && !uploadedFile) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
+                    if (selectedMode !== "text2img" && selectedMode !== "svoboda" && !uploadedFile) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
                     const formData = new FormData();
                     if (uploadedFile) formData.append("image", uploadedFile);
                     formData.append("mode", selectedMode); formData.append("caption", caption || "черная рубашка"); formData.append("user_id", currentUserId); formData.append("source", "web");
-                    if (selectedMode === "text2img") {
-                        formData.append("width", document.getElementById('text2imgWidth').value);
-                        formData.append("height", document.getElementById('text2imgHeight').value);
+                    if (selectedMode === "text2img" || selectedMode === "svoboda") {
+                        formData.append("width", document.getElementById(selectedMode === 'text2img' ? 'text2imgWidth' : 'svobodaWidth').value);
+                        formData.append("height", document.getElementById(selectedMode === 'text2img' ? 'text2imgHeight' : 'svobodaHeight').value);
                     }
                     if (sessionToken) formData.append("session_token", sessionToken);
                     document.getElementById("status").textContent = "Добавлено в очередь...";
@@ -978,6 +994,16 @@
             if (v > 2560) this.value = 2560;
         });
         document.getElementById('text2imgHeight').addEventListener('change', function() {
+            var v = parseInt(this.value);
+            if (isNaN(v) || v < 64) this.value = 64;
+            if (v > 1440) this.value = 1440;
+        });
+        document.getElementById('svobodaWidth').addEventListener('change', function() {
+            var v = parseInt(this.value);
+            if (isNaN(v) || v < 64) this.value = 64;
+            if (v > 2560) this.value = 2560;
+        });
+        document.getElementById('svobodaHeight').addEventListener('change', function() {
             var v = parseInt(this.value);
             if (isNaN(v) || v < 64) this.value = 64;
             if (v > 1440) this.value = 1440;
