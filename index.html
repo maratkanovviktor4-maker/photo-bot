@@ -411,7 +411,6 @@
                 const banner = document.getElementById('bannerImg'); if (banner) { banner.style.display = 'block'; banner.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => banner.classList.add('show')); }); }
                 document.getElementById('text2imgSettings').style.display = 'none';
                 document.getElementById('fluxImg2imgSettings').style.display = 'none';
-                document.getElementById('svobodaSizeSettings').style.display = 'none';
                 document.getElementById('aceSettings').style.display = 'none';
                 document.getElementById('audioSettings').style.display = 'none';
                 document.getElementById('gemmaChat').style.display = 'none';
@@ -477,7 +476,7 @@
             const modes = { wallpaper: ['wallpaper'], flux: [], text: [], audio: [], ace: [], gemma: [] };
             (modes[group] || []).forEach(m => { const img = collages.querySelector('[data-mode="' + m + '"]'); if (img) { img.style.display = 'block'; img.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => img.classList.add('show')); }); } });
         }
-        document.querySelectorAll(".mode-sub-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected")); this.classList.add("selected"); selectMode(this.dataset.mode); }); });
+        document.querySelectorAll(".mode-sub-btn").forEach(btn => { btn.addEventListener("click", function() { if (this.dataset.mode === 'text2img') return; document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected")); this.classList.add("selected"); selectMode(this.dataset.mode); }); });
         document.querySelectorAll("#collages img").forEach(img => { img.addEventListener("click", function() { selectMode(this.dataset.mode); document.querySelectorAll('#collages img[data-mode]').forEach(i => i.style.borderColor = 'transparent'); this.style.borderColor = '#00CBF5'; }); });
         const audioSubcategories = {
             music: [['audio_music_energetic','Энергичная / Танцевальная'],['audio_music_poprock','Поп / Рок'],['audio_music_cinematic','Кино / Эмбиент']],
