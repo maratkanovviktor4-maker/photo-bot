@@ -106,6 +106,8 @@
         body.light #modelName::placeholder { color: #888; }
         body.light .ace-settings-row .ace-field input, body.light .ace-settings-row .ace-field select { background: #f0f0f0; color: #333; border-color: rgba(0,0,0,0.15); }
         body.light .audio-settings-row .audio-field input, body.light .audio-settings-row .audio-field select { background: #f0f0f0; color: #333; border-color: rgba(0,0,0,0.15); }
+        body.light #text2imgSettings input { background: #f0f0f0; color: #333; border-color: rgba(0,0,0,0.15); }
+        #text2imgSettings input:focus { border-color: #00CBF5; box-shadow: 0 0 0 2px rgba(0,203,245,0.15); }
         * { scrollbar-width: thin; scrollbar-color: #3a3a5a transparent; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #3a3a5a; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: #4a4a6a; }
         .hint { font-size: 10px; color: #888; margin: 3px 0 6px 0; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -261,12 +263,12 @@
                         <button class="mode-sub-btn" data-mode="svoboda" data-t="svoboda_f">Свободный (ж)</button>
                         <button class="mode-sub-btn" data-mode="svoboda_male" data-t="svoboda_m">Свободный (м)</button>
                     </div>
-                    <button class="mode-sub-btn accordion-btn" onclick="toggleFluxSubgroup('wallpaper')"><span data-t="text2img">Текст в изображение</span> <span class="accordion-arrow">▾</span></button>
-                    <div class="mode-sub-group" id="group-wallpaper" style="max-height:0;padding-left:12px;">
-                        <button class="mode-sub-btn" data-mode="wallpaper" data-t="wallpaper">Арты, Обои</button>
-                        <div id="wallpaperSize" style="display:none;"><div class="size-btns"><button class="size-btn active" data-wp="phone">9:16 2K</button><button class="size-btn" data-wp="pc">16:9 2K</button></div></div>
-                        <button class="mode-sub-btn" data-mode="logo">Логотип</button>
-                        <div id="logoSize" style="display:none;"><div class="size-btns"><button class="size-btn active" data-wp="sq256">256×256</button><button class="size-btn" data-wp="sq512">512×512</button><button class="size-btn" data-wp="sq1024">1024×1024</button></div></div>
+                    <button class="mode-sub-btn" data-mode="text2img" data-t="text2img">Текст в изображение</button>
+                    <div id="text2imgSettings" style="display:none;padding:4px 12px;">
+                        <div style="display:flex;gap:6px;">
+                            <div style="flex:1;"><label style="display:block;font-size:9px;color:#888;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;">Ширина</label><input type="number" id="text2imgWidth" min="64" max="2560" placeholder="2560" style="width:100%;padding:7px 8px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;"></div>
+                            <div style="flex:1;"><label style="display:block;font-size:9px;color:#888;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;">Высота</label><input type="number" id="text2imgHeight" min="64" max="1440" placeholder="1440" style="width:100%;padding:7px 8px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;"></div>
+                        </div>
                     </div>
                 </div>
                 <button class="mode-group-btn" onclick="toggleModeGroup('audio')" data-t="audio_models">Stable Audio 3 <span data-t="audio_sub">Текст в музыку</span></button>
@@ -329,10 +331,9 @@
             en: { title: "PhotoBot — Photo for documents", login: "Log in with Telegram", auth_code: "Enter the authorization code from the bot", send: "Send", auth_info: "Logged in as", subscribe_block: "Subscribe to our Telegram", subscribe_ok: "You are subscribed", flux: "FLUX 2", flux_sub: "Black Forest Labs", img2img: "Image to Image", ready_modes: "Ready Modes", documents: "ID Photo", beach: "Beach Sunset", birthday: "Birthday", flowers: "Flowers in Car", mirror_male: "Male Mirror Selfie", svoboda_f: "Free (F)", svoboda_m: "Free (M)", text2img: "Text to Image", wallpaper: "Wallpaper", audio_models: "Stable Audio 3", audio_sub: "Text to Music", music: "Music", music_energetic: "Energetic / Dance", music_poprock: "Pop / Rock", music_cinematic: "Cinematic / Ambient", instrument: "Instrument", instrument_loops: "Loops", instrument_stems: "Stems", sfx: "Sound Effects", sfx_short: "Short", sfx_medium: "Medium", sfx_ambience: "Ambience", oneshot: "One-shot", ace_models: "Ace Step 1.5", ace_sub: "Text to Music + Vocals", gemma_models: "Gemma 4", gemma_sub: "Media Analysis", hunyuan_models: "Hunyuan 2.1", hunyuan_sub: "Image-to-3D", text_models: "DeepSeek v4", v4flash: "DeepSeek V4 Flash", v4pro: "DeepSeek V4 Pro", phone: "9:16", pc: "16:9", prompt_placeholder: "Enter your prompt here...", lyrics_placeholder: "Lyrics (optional)...", hint: "Select mode and enter prompt", etalon: "Use Reference", generate: "Generate", prompts: "Prompt Library", storage: "Generation Storage", agreement: "User Agreement", privacy: "Privacy Policy", chat_title: "PhotoBot", chat_subtitle: "shared history with your Assistant", chat_placeholder: "Ask a question about the service", chat_input: "Type a message...", cookie: "We use essential cookies for authorization and service operation.", cookie_btn: "OK", flash_title: "DeepSeek V4 Flash", flash_desc: "Fast model for code, texts, everyday tasks. Mixture of Experts architecture (236B parameters, 16B active). Context window: 1M tokens, output up to 384K tokens. Supports Reasoner mode. Open MIT license.", pro_title: "DeepSeek V4 Pro", pro_desc: "Flagship model for complex projects, analysis, large tasks. Mixture of Experts architecture (685B parameters, 37B active). Context window: 1M tokens, output up to 384K tokens. Built-in Reasoner mode. Open MIT license." }
         };
         const SERVER_URL = CONFIG.SERVER_URL;
-        let selectedMode = "documents", uploadedFile = null, wallpaperSize = "pc", currentUserId = null, currentUsername = null, isSubscribed = false, sessionToken = '';
+        let selectedMode = "documents", uploadedFile = null, currentUserId = null, currentUsername = null, isSubscribed = false, sessionToken = '';
         let gemmaFile = null;
         const hints = { documents: "Фото на документы: укажите одежду", beach: "Закат на пляже: укажите одежду", birthday: "День рождения: укажите число и цвет платья", flowers: "Цветы в авто: укажите одежду", mirror_male: "Мужское в зеркале: опишите одежду", svoboda: "Свободный (ж): введите промт", svoboda_male: "Свободный (м): введите промт", wallpaper: "Обои: введите промт", audio_music_energetic: "Опишите музыку", audio_music_poprock: "Опишите музыку", audio_music_cinematic: "Опишите музыку", audio_instrument_loops: "Опишите инструмент", audio_instrument_stems: "Опишите инструмент", audio_sfx_short: "Опишите звук", audio_sfx_medium: "Опишите звук", audio_sfx_ambience: "Опишите окружение", audio_oneshot: "Опишите инструмент или звук", ace_free: "Опишите музыку. Можно добавить текст песни.", gemma_free: "Опишите что нужно сделать с файлом." };
-        const wallpaperSizes = { phone: [1440, 2560], pc: [2560, 1440], sq256: [256, 256], sq512: [512, 512], sq1024: [1024, 1024] };
         let currentGroup = null;
         let currentLang = 'en';
         const savedLang = localStorage.getItem('photobot_lang') || 'en';
@@ -366,7 +367,7 @@
                 blocks.forEach(id => { const el = document.getElementById(id); if (el) { el.style.display = 'none'; if (el.classList) el.classList.remove('show'); } });
                 const fv = document.getElementById('fluxVideo'); if (fv) fv.pause();
                 const banner = document.getElementById('bannerImg'); if (banner) { banner.style.display = 'block'; banner.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => banner.classList.add('show')); }); }
-                document.getElementById('wallpaperSize').style.display = 'none';
+                document.getElementById('text2imgSettings').style.display = 'none';
                 document.getElementById('aceSettings').style.display = 'none';
                 document.getElementById('audioSettings').style.display = 'none';
                 document.getElementById('gemmaChat').style.display = 'none';
@@ -429,7 +430,6 @@
         }
         document.querySelectorAll(".mode-sub-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected")); this.classList.add("selected"); selectMode(this.dataset.mode); }); });
         document.querySelectorAll("#collages img").forEach(img => { img.addEventListener("click", function() { selectMode(this.dataset.mode); document.querySelectorAll('#collages img[data-mode]').forEach(i => i.style.borderColor = 'transparent'); this.style.borderColor = '#00CBF5'; }); });
-        document.querySelectorAll(".size-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".size-btn").forEach(b => b.classList.remove("active")); this.classList.add("active"); wallpaperSize = this.dataset.wp; }); });
         const audioSubcategories = {
             music: [['audio_music_energetic','Энергичная / Танцевальная'],['audio_music_poprock','Поп / Рок'],['audio_music_cinematic','Кино / Эмбиент']],
             instrument: [['audio_instrument_loops','Лупы'],['audio_instrument_stems','Стемы']],
@@ -453,15 +453,13 @@
         function selectMode(mode) {
             selectedMode = mode;
             document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected"));
-            document.getElementById("wallpaperSize").style.display = "none";
-            document.getElementById("logoSize").style.display = "none";
+            document.getElementById("text2imgSettings").style.display = "none";
             if (currentGroup === 'flux') { document.getElementById("photoInput").style.display = "block"; }
             document.getElementById("lyrics").style.display = "none";
             document.getElementById("audioSettings").style.display = "none";
             document.getElementById("aceSettings").style.display = "none";
             document.getElementById("gemmaChat").style.display = "none";
-            if (mode === "wallpaper") { document.getElementById("wallpaperSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; }
-            if (mode === "logo") { document.getElementById("logoSize").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; wallpaperSize = "sq256"; }
+            if (mode === "text2img") { document.getElementById("text2imgSettings").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; }
             if (mode && mode.startsWith("audio_")) { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("audioSettings").style.display = "flex"; }
             if (mode === "ace_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("lyrics").style.display = "block"; document.getElementById("aceSettings").style.display = "flex"; }
             if (mode === "gemma_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("gemmaChat").style.display = "flex"; }
@@ -534,7 +532,12 @@
             if (currentGroup === 'gemma' || currentGroup === 'text') { return; }
             const caption = document.getElementById('caption').value.trim();
             if ((currentGroup === 'flux' || currentGroup === 'audio') && !caption) { document.getElementById('status').textContent = 'Введите промт'; return; }
-            if (currentGroup === 'flux' && selectedMode !== 'wallpaper' && selectedMode !== 'logo' && !uploadedFile) { document.getElementById('status').textContent = 'Выберите файл'; return; }
+            if (currentGroup === 'flux' && selectedMode !== 'text2img' && !uploadedFile) { document.getElementById('status').textContent = 'Выберите файл'; return; }
+            if (selectedMode === 'text2img') {
+                const w = document.getElementById('text2imgWidth').value.trim();
+                const h = document.getElementById('text2imgHeight').value.trim();
+                if (!w || !h) { document.getElementById('status').textContent = 'Укажите ширину и высоту'; return; }
+            }
             if (currentGroup === 'hunyuan' && !uploadedFile) { document.getElementById('status').textContent = 'Выберите файл'; return; }
             if (currentGroup === 'audio' && !selectedMode.startsWith('audio_')) { document.getElementById('status').textContent = 'Выберите режим'; return; }
             if (selectedMode === "ace_free") {
@@ -652,10 +655,14 @@
                         document.getElementById("status").textContent = "Время ожидания истекло.";
                     }
                 } else if (selectedMode !== "gemma_free") {
-                    if (selectedMode !== "wallpaper" && selectedMode !== "logo" && !uploadedFile) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
+                    if (selectedMode !== "text2img" && !uploadedFile) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
                     const formData = new FormData();
                     if (uploadedFile) formData.append("image", uploadedFile);
-                    formData.append("mode", selectedMode); formData.append("caption", caption || "черная рубашка"); formData.append("user_id", currentUserId); formData.append("source", "web"); formData.append("size", wallpaperSize);
+                    formData.append("mode", selectedMode); formData.append("caption", caption || "черная рубашка"); formData.append("user_id", currentUserId); formData.append("source", "web");
+                    if (selectedMode === "text2img") {
+                        formData.append("width", document.getElementById('text2imgWidth').value);
+                        formData.append("height", document.getElementById('text2imgHeight').value);
+                    }
                     if (sessionToken) formData.append("session_token", sessionToken);
                     document.getElementById("status").textContent = "Добавлено в очередь...";
                     const enqResp = await fetch(`${SERVER_URL}/enqueue`, { method: "POST", body: formData, headers: { "X-Session-Token": sessionToken } });
@@ -965,6 +972,14 @@
     layout();
     animate();
 })();
+        document.getElementById('text2imgWidth').addEventListener('input', function() {
+            if (parseInt(this.value) > 2560) this.value = 2560;
+            if (parseInt(this.value) < 64) this.value = 64;
+        });
+        document.getElementById('text2imgHeight').addEventListener('input', function() {
+            if (parseInt(this.value) > 1440) this.value = 1440;
+            if (parseInt(this.value) < 64) this.value = 64;
+        });
 function tryFlux(){
     document.querySelector('.mode-group-btn[onclick*="flux"]').click();
     window.scrollTo({top:0,behavior:'smooth'});
