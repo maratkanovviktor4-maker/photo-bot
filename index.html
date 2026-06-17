@@ -357,6 +357,19 @@
         document.getElementById('sendBtn').addEventListener('click', async function() { const c = document.getElementById('authCode').value; if (c.length !== 4) return; try { const r = await fetch(`${SERVER_URL}/verify_code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: c }) }); const d = await r.json(); if (d.success) { currentUserId = d.user_id; currentUsername = d.username; isSubscribed = d.subscribed; sessionToken = d.session_token || ''; localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken })); showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); document.getElementById('authBlock').style.display = 'none'; if (isSubscribed) { document.getElementById('subscribeBlock').style.display = 'none'; document.getElementById('subscribeOk').style.display = 'block'; } else { document.getElementById('subscribeBlock').style.display = 'block'; } updateUnviewedCount(); } else { alert('Неверный код'); } } catch (err) { document.getElementById('status').textContent = 'Ошибка соединения'; } });
         function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; loadFreeChatHistory(); }
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
+        document.querySelector('#group-flux .mode-sub-btn[data-mode="text2img"]').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const t2i = document.getElementById('text2imgSettings');
+            const btn = this;
+            if (t2i.style.display === 'block') {
+                t2i.style.display = 'none';
+                btn.classList.remove('selected');
+            } else {
+                t2i.style.display = 'block';
+                btn.classList.add('selected');
+                selectMode('text2img');
+            }
+        });
         document.getElementById('fluxImg2imgBtn').addEventListener('click', function() {
             const panel = document.getElementById('fluxImg2imgPanel');
             const settings = document.getElementById('fluxImg2imgSettings');
@@ -412,10 +425,9 @@
                 currentGroup = group;
                 showCollagesForGroup(group);
                 if (group === 'flux') {
-                    document.getElementById('fluxImg2imgBtn').classList.add('selected');
-                    document.getElementById('fluxImg2imgPanel').style.display = 'block';
-                    document.getElementById('fluxImg2imgSettings').style.display = 'flex';
-                    document.getElementById('fluxImg2imgType').dispatchEvent(new Event('change'));
+                    document.getElementById('fluxImg2imgPanel').style.display = 'none';
+                    document.getElementById('fluxImg2imgSettings').style.display = 'none';
+                    document.getElementById('fluxImg2imgBtn').classList.remove('selected');
                 }
                 if (group === 'flux' || group === 'audio' || group === 'ace') {
                     document.getElementById('caption').style.display = 'block';
