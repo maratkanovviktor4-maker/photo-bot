@@ -83,6 +83,10 @@
         .ace-settings-row .ace-field label { display: block; font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
         .ace-settings-row .ace-field input, .ace-settings-row .ace-field select { width: 100%; padding: 7px 8px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); color: #fff; border-radius: 8px; font-size: 12px; font-family: 'Inter', sans-serif; outline: none; }
         .ace-settings-row .ace-field select { cursor: pointer; }
+        #fluxImg2imgSettings .ace-field select, #fluxImg2imgSettings .ace-field input { width: 100%; padding: 7px 8px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); color: #fff; border-radius: 8px; font-size: 12px; font-family: 'Inter', sans-serif; outline: none; }
+        #fluxImg2imgSettings .ace-field select { cursor: pointer; }
+        #fluxImg2imgSettings .ace-field select:focus, #fluxImg2imgSettings .ace-field input:focus { border-color: #00CBF5; box-shadow: 0 0 0 2px rgba(0,203,245,0.15); }
+        body.light #fluxImg2imgSettings .ace-field select, body.light #fluxImg2imgSettings .ace-field input { background: #f0f0f0; color: #333; border-color: rgba(0,0,0,0.15); }
         .audio-settings-row { display: none; gap: 6px; padding: 4px 0; flex-wrap: wrap; }
         .audio-settings-row .audio-field { flex: 1; min-width: 0; }
         .audio-settings-row .audio-field label { display: block; font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -252,24 +256,11 @@
             <div id="modes">
                 <button class="mode-group-btn" onclick="toggleModeGroup('flux')" data-t="flux">FLUX 2 <span data-t="flux_sub">Black Forest Labs</span></button>
                 <div class="mode-sub-group" id="group-flux" style="max-height:0;">
-                    <button class="mode-sub-btn accordion-btn" onclick="toggleFluxSubgroup('free')"><span data-t="img2img">Изображение в изображение</span> <span class="accordion-arrow">▾</span></button>
-                    <div class="mode-sub-group" id="group-free" style="max-height:0;padding-left:12px;">
-                        <button class="mode-sub-btn accordion-btn" onclick="toggleReadySubgroup()"><span data-t="ready_modes">Готовые режимы</span> <span class="accordion-arrow">▾</span></button>
-                        <div class="mode-sub-group" id="group-ready-inner" style="max-height:0;padding-left:12px;">
-                            <button class="mode-sub-btn" data-mode="documents" data-t="documents">Фото на документы</button>
-                            <button class="mode-sub-btn" data-mode="beach" data-t="beach">Закат на пляже</button>
-                            <button class="mode-sub-btn" data-mode="birthday" data-t="birthday">День рождения</button>
-                            <button class="mode-sub-btn" data-mode="flowers" data-t="flowers">Цветы в авто</button>
-                            <button class="mode-sub-btn" data-mode="mirror_male" data-t="mirror_male">Мужское в зеркале</button>
-                        </div>
-                        <button class="mode-sub-btn" data-mode="svoboda" data-t="svoboda_size">Выбор размера</button>
-                        <div id="svobodaSizeSettings" style="display:none;padding:4px 12px;">
-                            <div style="display:flex;gap:6px;">
-                                <div style="flex:1;"><label style="display:block;font-size:9px;color:#888;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;">Ширина</label><input type="number" id="svobodaWidth" min="64" max="2560" placeholder="2560" style="width:100%;padding:7px 8px;border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;"></div>
-                                <div style="flex:1;"><label style="display:block;font-size:9px;color:#888;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;">Высота</label><input type="number" id="svobodaHeight" min="64" max="1440" placeholder="1440" style="width:100%;padding:7px 8px;border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;"></div>
-                            </div>
-                        </div>
-                        <button class="mode-sub-btn" data-mode="svoboda_male" data-t="svoboda_social">Фото для соцсетей</button>
+                    <div class="ace-settings-row" id="fluxImg2imgSettings" style="display:flex;gap:6px;padding:4px 0;flex-wrap:wrap;">
+                        <div class="ace-field"><label>Тип</label><select id="fluxImg2imgType"><option value="ready" data-t="ready_modes">Готовые режимы</option><option value="svoboda" data-t="svoboda_size">Выбор размера</option><option value="svoboda_male" data-t="svoboda_social">Фото для соцсетей</option></select></div>
+                        <div class="ace-field" id="fluxReadyField" style="display:none;"><label data-t="ready_modes">Готовые режимы</label><select id="fluxReadyMode"><option value="documents" data-t="documents">Фото на документы</option><option value="beach" data-t="beach">Закат на пляже</option><option value="birthday" data-t="birthday">День рождения</option><option value="flowers" data-t="flowers">Цветы в авто</option><option value="mirror_male" data-t="mirror_male">Мужское в зеркале</option></select></div>
+                        <div class="ace-field" id="fluxSvobodaWidthField" style="display:none;"><label>Ширина</label><input type="number" id="svobodaWidth" min="64" max="2560" placeholder="2560"></div>
+                        <div class="ace-field" id="fluxSvobodaHeightField" style="display:none;"><label>Высота</label><input type="number" id="svobodaHeight" min="64" max="1440" placeholder="1440"></div>
                     </div>
                     <button class="mode-sub-btn" data-mode="text2img" data-t="text2img">Текст в изображение</button>
                     <div id="text2imgSettings" style="display:none;padding:4px 12px;">
@@ -363,8 +354,20 @@
         document.getElementById('sendBtn').addEventListener('click', async function() { const c = document.getElementById('authCode').value; if (c.length !== 4) return; try { const r = await fetch(`${SERVER_URL}/verify_code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: c }) }); const d = await r.json(); if (d.success) { currentUserId = d.user_id; currentUsername = d.username; isSubscribed = d.subscribed; sessionToken = d.session_token || ''; localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken })); showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); document.getElementById('authBlock').style.display = 'none'; if (isSubscribed) { document.getElementById('subscribeBlock').style.display = 'none'; document.getElementById('subscribeOk').style.display = 'block'; } else { document.getElementById('subscribeBlock').style.display = 'block'; } updateUnviewedCount(); } else { alert('Неверный код'); } } catch (err) { document.getElementById('status').textContent = 'Ошибка соединения'; } });
         function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; loadFreeChatHistory(); }
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
-        function toggleFluxSubgroup(sub) { const div = document.getElementById('group-' + sub); if (!div) return; const btn = document.querySelector(`[onclick="toggleFluxSubgroup('${sub}')"]`); if (div.style.maxHeight === '300px') { div.style.maxHeight = '0'; if (btn) btn.classList.remove('open'); } else { div.style.maxHeight = '300px'; if (btn) btn.classList.add('open'); showCollagesForGroup(sub); } }
-        function toggleReadySubgroup() { const inner = document.getElementById('group-ready-inner'); const freeGroup = document.getElementById('group-free'); const btn = document.querySelector('[onclick="toggleReadySubgroup()"]'); if (inner.style.maxHeight === '300px') { inner.style.maxHeight = '0'; freeGroup.style.maxHeight = '300px'; if (btn) btn.classList.remove('open'); } else { inner.style.maxHeight = '300px'; freeGroup.style.maxHeight = '600px'; if (btn) btn.classList.add('open'); showCollagesForGroup('ready'); } }
+        document.getElementById('fluxImg2imgType').addEventListener('change', function() {
+            const type = this.value;
+            document.getElementById('fluxReadyField').style.display = type === 'ready' ? 'block' : 'none';
+            document.getElementById('fluxSvobodaWidthField').style.display = type === 'svoboda' ? 'block' : 'none';
+            document.getElementById('fluxSvobodaHeightField').style.display = type === 'svoboda' ? 'block' : 'none';
+            if (type === 'ready') {
+                selectMode(document.getElementById('fluxReadyMode').value);
+            } else {
+                selectMode(type);
+            }
+        });
+        document.getElementById('fluxReadyMode').addEventListener('change', function() {
+            selectMode(this.value);
+        });
         function toggleModeGroup(group) {
             const groups = ['flux', 'audio', 'ace', 'gemma', 'hunyuan', 'text'];
             groups.forEach(g => { const div = document.getElementById('group-' + g); if (!div) return; if (g === group && currentGroup !== group) { div.style.maxHeight = g === 'flux' ? '600px' : '300px'; } else { div.style.maxHeight = '0'; } });
@@ -376,6 +379,7 @@
                 const fv = document.getElementById('fluxVideo'); if (fv) fv.pause();
                 const banner = document.getElementById('bannerImg'); if (banner) { banner.style.display = 'block'; banner.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => banner.classList.add('show')); }); }
                 document.getElementById('text2imgSettings').style.display = 'none';
+                document.getElementById('fluxImg2imgSettings').style.display = 'none';
                 document.getElementById('svobodaSizeSettings').style.display = 'none';
                 document.getElementById('aceSettings').style.display = 'none';
                 document.getElementById('audioSettings').style.display = 'none';
@@ -389,6 +393,10 @@
             } else {
                 currentGroup = group;
                 showCollagesForGroup(group);
+                if (group === 'flux') {
+                    document.getElementById('fluxImg2imgSettings').style.display = 'flex';
+                    document.getElementById('fluxImg2imgType').dispatchEvent(new Event('change'));
+                }
                 if (group === 'flux' || group === 'audio' || group === 'ace') {
                     document.getElementById('caption').style.display = 'block';
                 }
@@ -420,7 +428,7 @@
             collages.querySelectorAll('img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; });
             if (textInfo) { textInfo.style.display = 'none'; textInfo.classList.remove('show'); }
             if (fluxBlock) { fluxBlock.style.display = 'none'; fluxBlock.classList.remove('show'); if (fluxVideo) fluxVideo.pause(); }
-            if (!['ready','free','wallpaper','music_sub','instrument_sub','sfx_sub'].includes(group)) { const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) audioBlock.style.display = 'none'; }
+            if (!['wallpaper','music_sub','instrument_sub','sfx_sub'].includes(group)) { const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) audioBlock.style.display = 'none'; }
             const aceBlock = document.getElementById('aceInfoBlock'); if (aceBlock) aceBlock.style.display = 'none';
             const gemmaBlock = document.getElementById('gemmaInfoBlock'); if (gemmaBlock) gemmaBlock.style.display = 'none';
             const hunyuanBlock = document.getElementById('hunyuanInfoBlock'); if (hunyuanBlock) hunyuanBlock.style.display = 'none';
@@ -434,7 +442,7 @@
             if (group === 'audio') { const audioBlock = document.getElementById('audioInfoBlock'); if (audioBlock) { audioBlock.style.display = 'flex'; loadAudioExamples(); } document.getElementById('audioSettings').style.display = 'flex'; const audioCat = document.getElementById('audioCategory'); audioCat.dispatchEvent(new Event('change')); return; }
             if (group === 'ace') { if (aceBlock) { aceBlock.style.display = 'flex'; loadAceExamples(); } document.getElementById('aceSettings').style.display = 'flex'; document.getElementById('caption').style.display = 'block'; document.getElementById('lyrics').style.display = 'block'; selectMode('ace_free'); return; }
             if (group === 'gemma') { if (gemmaBlock) { gemmaBlock.style.display = 'flex'; } document.getElementById('gemmaChat').style.display = 'flex'; document.getElementById('caption').style.display = 'none'; document.getElementById('modeHint').style.display = 'none'; selectMode('gemma_free'); setTimeout(function(){ var mc = document.getElementById('gemmaMessages'); if(mc) mc.scrollTop = mc.scrollHeight; }, 100); return; }
-            const modes = { ready: ['documents','beach','birthday','flowers','mirror_male'], free: ['svoboda','svoboda_male'], wallpaper: ['wallpaper'], flux: [], text: [], audio: [], ace: [], gemma: [] };
+            const modes = { wallpaper: ['wallpaper'], flux: [], text: [], audio: [], ace: [], gemma: [] };
             (modes[group] || []).forEach(m => { const img = collages.querySelector('[data-mode="' + m + '"]'); if (img) { img.style.display = 'block'; img.classList.add('appearing'); requestAnimationFrame(() => { requestAnimationFrame(() => img.classList.add('show')); }); } });
         }
         document.querySelectorAll(".mode-sub-btn").forEach(btn => { btn.addEventListener("click", function() { document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected")); this.classList.add("selected"); selectMode(this.dataset.mode); }); });
@@ -463,14 +471,13 @@
             selectedMode = mode;
             document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected"));
             document.getElementById("text2imgSettings").style.display = "none";
-            document.getElementById("svobodaSizeSettings").style.display = "none";
             if (currentGroup === 'flux') { document.getElementById("photoInput").style.display = "block"; }
             document.getElementById("lyrics").style.display = "none";
             document.getElementById("audioSettings").style.display = "none";
             document.getElementById("aceSettings").style.display = "none";
             document.getElementById("gemmaChat").style.display = "none";
             if (mode === "text2img") { document.getElementById("text2imgSettings").style.display = "block"; document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; }
-            if (mode === "svoboda") { document.getElementById("svobodaSizeSettings").style.display = "block"; document.getElementById("photoInput").style.display = "block"; }
+            if (mode === "svoboda") { document.getElementById("photoInput").style.display = "block"; }
             if (mode && mode.startsWith("audio_")) { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("audioSettings").style.display = "flex"; }
             if (mode === "ace_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("lyrics").style.display = "block"; document.getElementById("aceSettings").style.display = "flex"; }
             if (mode === "gemma_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("gemmaChat").style.display = "flex"; }
