@@ -77,6 +77,9 @@
         .mode-sub-btn.selected { background: linear-gradient(90deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; font-weight: 600; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
         body.light .mode-sub-btn { background: #f5f5f5; color: #555; }
         body.light .mode-sub-btn:hover { background: #e8e8e8; color: #111; border-color: transparent; }
+        .flux-subclass-btn { flex: 1; text-align: center; font-size: 12px; padding: 6px 0; }
+        .flux-subclass-btn.active { background: linear-gradient(90deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; font-weight: 600; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
+        body.light .flux-subclass-btn.active { background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; }
         .mode-sub-group { overflow: hidden; transition: max-height 0.3s ease; }
         .ace-settings-row { display: none; gap: 6px; padding: 4px 0; flex-wrap: wrap; }
         .ace-settings-row .ace-field { flex: 1; min-width: 0; }
@@ -256,17 +259,24 @@
             <div id="modes">
                 <button class="mode-group-btn" onclick="toggleModeGroup('flux')" data-t="flux">FLUX 2 <span data-t="flux_sub">Black Forest Labs</span></button>
                 <div class="mode-sub-group" id="group-flux" style="max-height:0;">
-                    <div class="ace-settings-row" id="fluxImg2imgSettings" style="display:flex;gap:6px;padding:4px 0;flex-wrap:wrap;">
-                        <div class="ace-field"><label>Тип</label><select id="fluxImg2imgType"><option value="ready" data-t="ready_modes">Готовые режимы</option><option value="svoboda" data-t="svoboda_size">Выбор размера</option><option value="svoboda_male" data-t="svoboda_social">Фото для соцсетей</option></select></div>
-                        <div class="ace-field" id="fluxReadyField" style="display:none;"><label data-t="ready_modes">Готовые режимы</label><select id="fluxReadyMode"><option value="documents" data-t="documents">Фото на документы</option><option value="beach" data-t="beach">Закат на пляже</option><option value="birthday" data-t="birthday">День рождения</option><option value="flowers" data-t="flowers">Цветы в авто</option><option value="mirror_male" data-t="mirror_male">Мужское в зеркале</option></select></div>
-                        <div class="ace-field" id="fluxSvobodaWidthField" style="display:none;"><label>Ширина</label><input type="number" id="svobodaWidth" min="64" max="2560" placeholder="2560"></div>
-                        <div class="ace-field" id="fluxSvobodaHeightField" style="display:none;"><label>Высота</label><input type="number" id="svobodaHeight" min="64" max="1440" placeholder="1440"></div>
+                    <div style="display:flex;gap:8px;padding:4px 0;">
+                        <button class="mode-sub-btn flux-subclass-btn active" id="fluxSubImg2img" data-t="img2img">Изображение в изображение</button>
+                        <button class="mode-sub-btn flux-subclass-btn" id="fluxSubText2img" data-t="text2img">Текст в изображение</button>
                     </div>
-                    <button class="mode-sub-btn" data-mode="text2img" data-t="text2img">Текст в изображение</button>
-                    <div id="text2imgSettings" style="display:none;padding:4px 12px;">
-                        <div style="display:flex;gap:6px;">
-                            <div style="flex:1;"><label style="display:block;font-size:9px;color:#888;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;">Ширина</label><input type="number" id="text2imgWidth" min="64" max="2560" placeholder="2560" style="width:100%;padding:7px 8px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;"></div>
-                            <div style="flex:1;"><label style="display:block;font-size:9px;color:#888;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;">Высота</label><input type="number" id="text2imgHeight" min="64" max="1440" placeholder="1440" style="width:100%;padding:7px 8px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;"></div>
+                    <div id="fluxImg2imgPanel">
+                        <div class="ace-settings-row" id="fluxImg2imgSettings" style="display:flex;gap:6px;padding:4px 0;flex-wrap:wrap;">
+                            <div class="ace-field"><label>Тип</label><select id="fluxImg2imgType"><option value="ready" data-t="ready_modes">Готовые режимы</option><option value="svoboda" data-t="svoboda_size">Выбор размера</option><option value="svoboda_male" data-t="svoboda_social">Фото для соцсетей</option></select></div>
+                            <div class="ace-field" id="fluxReadyField" style="display:none;"><label data-t="ready_modes">Готовые режимы</label><select id="fluxReadyMode"><option value="documents" data-t="documents">Фото на документы</option><option value="beach" data-t="beach">Закат на пляже</option><option value="birthday" data-t="birthday">День рождения</option><option value="flowers" data-t="flowers">Цветы в авто</option><option value="mirror_male" data-t="mirror_male">Мужское в зеркале</option></select></div>
+                            <div class="ace-field" id="fluxSvobodaWidthField" style="display:none;"><label>Ширина</label><input type="number" id="svobodaWidth" min="64" max="2560" placeholder="2560"></div>
+                            <div class="ace-field" id="fluxSvobodaHeightField" style="display:none;"><label>Высота</label><input type="number" id="svobodaHeight" min="64" max="1440" placeholder="1440"></div>
+                        </div>
+                    </div>
+                    <div id="fluxText2imgPanel" style="display:none;">
+                        <div id="text2imgSettings" style="padding:4px 0;">
+                            <div style="display:flex;gap:6px;">
+                                <div style="flex:1;"><label style="display:block;font-size:9px;color:#888;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;">Ширина</label><input type="number" id="text2imgWidth" min="64" max="2560" placeholder="2560" style="width:100%;padding:7px 8px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;"></div>
+                                <div style="flex:1;"><label style="display:block;font-size:9px;color:#888;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;">Высота</label><input type="number" id="text2imgHeight" min="64" max="1440" placeholder="1440" style="width:100%;padding:7px 8px;background:rgba(34,34,34,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -354,6 +364,27 @@
         document.getElementById('sendBtn').addEventListener('click', async function() { const c = document.getElementById('authCode').value; if (c.length !== 4) return; try { const r = await fetch(`${SERVER_URL}/verify_code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: c }) }); const d = await r.json(); if (d.success) { currentUserId = d.user_id; currentUsername = d.username; isSubscribed = d.subscribed; sessionToken = d.session_token || ''; localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken })); showAuthInfo(currentUsername ? '@' + currentUsername : 'ID:' + currentUserId); document.getElementById('authBlock').style.display = 'none'; if (isSubscribed) { document.getElementById('subscribeBlock').style.display = 'none'; document.getElementById('subscribeOk').style.display = 'block'; } else { document.getElementById('subscribeBlock').style.display = 'block'; } updateUnviewedCount(); } else { alert('Неверный код'); } } catch (err) { document.getElementById('status').textContent = 'Ошибка соединения'; } });
         function showAuthInfo(name) { document.getElementById('authInfo').style.display = 'block'; document.getElementById('authName').textContent = name; document.querySelector('button[onclick="openBot()"]').style.display = 'none'; loadFreeChatHistory(); }
         function showSubscribeBlock() { document.getElementById('subscribeBlock').style.display = 'block'; }
+        document.getElementById('fluxSubImg2img').addEventListener('click', function() {
+            document.getElementById('fluxSubImg2img').classList.add('active');
+            document.getElementById('fluxSubText2img').classList.remove('active');
+            document.getElementById('fluxImg2imgPanel').style.display = 'block';
+            document.getElementById('fluxText2imgPanel').style.display = 'none';
+            document.getElementById('photoInput').style.display = 'block';
+            document.getElementById('text2imgSettings').style.display = 'none';
+            document.getElementById('fluxImg2imgSettings').style.display = 'flex';
+            document.getElementById('fluxImg2imgType').dispatchEvent(new Event('change'));
+        });
+        document.getElementById('fluxSubText2img').addEventListener('click', function() {
+            document.getElementById('fluxSubText2img').classList.add('active');
+            document.getElementById('fluxSubImg2img').classList.remove('active');
+            document.getElementById('fluxImg2imgPanel').style.display = 'none';
+            document.getElementById('fluxText2imgPanel').style.display = 'block';
+            document.getElementById('fluxImg2imgSettings').style.display = 'none';
+            document.getElementById('text2imgSettings').style.display = 'block';
+            document.getElementById('photoInput').style.display = 'none';
+            document.getElementById('preview').style.display = 'none';
+            selectMode('text2img');
+        });
         document.getElementById('fluxImg2imgType').addEventListener('change', function() {
             const type = this.value;
             document.getElementById('fluxReadyField').style.display = type === 'ready' ? 'block' : 'none';
@@ -394,8 +425,7 @@
                 currentGroup = group;
                 showCollagesForGroup(group);
                 if (group === 'flux') {
-                    document.getElementById('fluxImg2imgSettings').style.display = 'flex';
-                    document.getElementById('fluxImg2imgType').dispatchEvent(new Event('change'));
+                    document.getElementById('fluxSubImg2img').click();
                 }
                 if (group === 'flux' || group === 'audio' || group === 'ace') {
                     document.getElementById('caption').style.display = 'block';
