@@ -1037,6 +1037,17 @@
                 pre._floatHeader = header;
                 var actions = header.querySelector('span:last-child');
 
+                // Кнопка Редактировать
+                var editBtn = document.createElement('button');
+                editBtn.className = 'floating-edit-btn';
+                editBtn.innerHTML = '✏️';
+                editBtn.title = 'Редактировать код';
+                editBtn.style.cssText = 'background:transparent; border:none; color:#aaa; cursor:pointer; padding:4px 6px; border-radius:4px; font-family:Inter,sans-serif; font-size:12px; pointer-events:auto; line-height:1;';
+                editBtn.onmouseenter = function() { editBtn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
+                editBtn.onmouseleave = function() { editBtn.style.background = 'transparent'; };
+                editBtn.onclick = function() { toggleCodeEditor(pre); };
+                actions.appendChild(editBtn);
+
                 var copyBtn = document.createElement('button');
                 copyBtn.className = 'floating-copy-btn';
                 copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
@@ -1044,7 +1055,7 @@
                 copyBtn.onmouseenter = function() { copyBtn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
                 copyBtn.onmouseleave = function() { copyBtn.style.background = 'transparent'; };
                 copyBtn.onclick = function() {
-                    var code = pre.querySelector('code').textContent;
+                    var code = pre._editorActive && pre._textarea ? pre._textarea.value : (pre.querySelector('code') ? pre.querySelector('code').textContent : '');
                     navigator.clipboard.writeText(code);
                     copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copy';
                     setTimeout(function() { copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy'; }, 2000);
@@ -1058,7 +1069,7 @@
                 downloadBtn.onmouseenter = function() { downloadBtn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
                 downloadBtn.onmouseleave = function() { downloadBtn.style.background = 'transparent'; };
                 downloadBtn.onclick = function() {
-                    var code = pre.querySelector('code').textContent;
+                    var code = pre._editorActive && pre._textarea ? pre._textarea.value : (pre.querySelector('code') ? pre.querySelector('code').textContent : '');
                     var blob = new Blob([code], {type: 'text/plain'});
                     var url = URL.createObjectURL(blob);
                     var a = document.createElement('a');
@@ -1078,7 +1089,7 @@
                     previewBtn.onmouseenter = function() { previewBtn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
                     previewBtn.onmouseleave = function() { previewBtn.style.background = 'transparent'; };
                     previewBtn.onclick = function() {
-                        var code = pre.querySelector('code').textContent;
+                        var code = pre._editorActive && pre._textarea ? pre._textarea.value : (pre.querySelector('code') ? pre.querySelector('code').textContent : '');
                         var panel = document.getElementById('previewPanel');
                         var iframe = document.getElementById('previewIframe');
                         var handle = document.getElementById('resizeHandle');
@@ -1153,6 +1164,7 @@
                     actions.appendChild(previewBtn);
                 }
                 if (document.body.classList.contains('light')) {
+                    editBtn.style.color = '#555';
                     copyBtn.style.color = '#555';
                     downloadBtn.style.color = '#555';
                     if (typeof previewBtn !== 'undefined') previewBtn.style.color = '#555';
@@ -1161,6 +1173,58 @@
             });
         }
 
+        function toggleCodeEditor(pre) {
+            var codeEl = pre.querySelector('code');
+            if (!codeEl) return;
+
+            if (pre._editorActive) {
+                var textarea = pre._textarea;
+                var newCode = textarea ? textarea.value : '';
+                codeEl.textContent = newCode;
+                if (textarea) textarea.remove();
+                if (pre._editorToolbar) pre._editorToolbar.remove();
+                codeEl.style.display = '';
+                pre._editorActive = false;
+                pre._textarea = null;
+                pre._editorToolbar = null;
+                if (typeof hljs !== 'undefined' && hljs.highlightElement) {
+                    hljs.highlightElement(codeEl);
+                }
+            } else {
+                var originalCode = codeEl.textContent;
+                pre._originalCode = originalCode;
+                codeEl.style.display = 'none';
+
+                var toolbar = document.createElement('div');
+                toolbar.style.cssText = 'display:flex;gap:6px;padding:6px 0;align-items:center;';
+                toolbar.innerHTML = '<span style="font-size:11px;color:#aaa;font-family:Inter,sans-serif;">Редактор</span>' +
+                    '<button class="editor-apply-btn" style="background:#00CBF5;border:none;color:#201F28;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-family:Inter,sans-serif;font-weight:600;">✅ Применить</button>' +
+                    '<button class="editor-cancel-btn" style="background:transparent;border:1px solid #666;color:#aaa;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-family:Inter,sans-serif;">↩ Отмена</button>';
+                pre.appendChild(toolbar);
+                pre._editorToolbar = toolbar;
+
+                var textarea = document.createElement('textarea');
+                textarea.value = originalCode;
+                textarea.style.cssText = 'width:100%;min-height:200px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:10px;font-family:\'Courier New\',monospace;font-size:13px;resize:vertical;outline:none;';
+                if (document.body.classList.contains('light')) {
+                    textarea.style.background = '#ffffff';
+                    textarea.style.color = '#111';
+                    textarea.style.border = '1px solid rgba(0,0,0,0.15)';
+                }
+                pre.appendChild(textarea);
+                pre._textarea = textarea;
+                pre._editorActive = true;
+
+                toolbar.querySelector('.editor-apply-btn').onclick = function() {
+                    toggleCodeEditor(pre);
+                };
+                toolbar.querySelector('.editor-cancel-btn').onclick = function() {
+                    var orig = pre._originalCode || '';
+                    codeEl.textContent = orig;
+                    toggleCodeEditor(pre);
+                };
+            }
+        }
         function updateFloatingButtons() {
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 var header = pre._floatHeader;
