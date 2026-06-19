@@ -604,7 +604,18 @@
                 btn.onclick = function() {
                     var output = fullText;
                     if (f.ext === 'doc') {
-                        output = '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:14px;line-height:1.6;white-space:pre-wrap;padding:20px;}</style></head><body>' + output.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</body></html>';
+                        var allAssistant = document.querySelectorAll('.message-row.assistant .message-content');
+                        var assistantIdx = 0;
+                        for (var k = 0; k <= index; k++) {
+                            if (chat.messages[k].role === 'assistant' && k === index) break;
+                            if (chat.messages[k].role === 'assistant') assistantIdx++;
+                        }
+                        var msgEl = allAssistant[assistantIdx];
+                        if (msgEl) {
+                            output = '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:14px;line-height:1.6;padding:20px;color:#000;}h1,h2,h3{margin:12px 0 6px;}table{border-collapse:collapse;width:100%;margin:8px 0;}th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;}th{background:#f0f0f0;}pre{background:#f5f5f5;padding:10px;border-radius:6px;font-family:monospace;}code{background:#f5f5f5;padding:2px 5px;border-radius:4px;font-family:monospace;}ul,ol{padding-left:24px;}</style></head><body>' + msgEl.innerHTML + '</body></html>';
+                        } else {
+                            output = '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:14px;line-height:1.6;white-space:pre-wrap;padding:20px;}</style></head><body>' + output.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</body></html>';
+                        }
                     }
                     var blob = new Blob([output], { type: f.mime });
                     var url = URL.createObjectURL(blob);
