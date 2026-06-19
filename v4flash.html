@@ -1225,7 +1225,13 @@
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             var msg = chat.messages[index];
-            
+            // Проверка лимита регенераций
+            if (msg.regenerations && msg.regenerations.length >= 6) {
+                alert('Достигнут лимит регенераций (6/6).');
+                isSending = false;
+                sendBtnArrow();
+                return;
+            }            
             // Инициализируем regenerations если нет
             if (!msg.regenerations) {
                 msg.regenerations = [{
