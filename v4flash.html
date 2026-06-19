@@ -173,6 +173,11 @@
         body.light .bottom-container { background: #ffffff; }
         .message-content ol, .message-content ul { padding-left: 24px; margin: 6px 0; }
         .message-content li { margin: 2px 0; }
+        .message-content table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 14px; }
+        .message-content th, .message-content td { border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; text-align: left; }
+        .message-content th { background: rgba(0,203,245,0.1); font-weight: 600; }
+        body.light .message-content th { background: rgba(0,0,0,0.05); }
+        body.light .message-content th, body.light .message-content td { border-color: rgba(0,0,0,0.1); }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -992,6 +997,28 @@
                     text2 = text2.replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>');
                     text2 = text2.replace(/^\d+\.\s(.+)$/gm, '<li>$1</li>');
                     text2 = text2.replace(/((?:<li>.*<\/li>\s*)+)/g, '<ol>$1</ol>');
+                    // Таблицы
+                    text2 = text2.replace(/^\|(.+)\|$/gm, function(row) {
+                        var cells = row.split('|').filter(function(c) { return c.trim() !== ''; });
+                        var isHeader = /^[\s:-]+$/.test(cells[0] || '');
+                        if (isHeader) return '';
+                        var tag = 'td';
+                        if (cells.length > 0 && /^[\s:-]+$/.test(cells[0])) tag = 'th';
+                        return '<tr>' + cells.map(function(c) { return '<' + tag + '>' + c.trim() + '</' + tag + '>'; }).join('') + '</tr>';
+                    });
+                    text2 = text2.replace(/((?:<tr>.*<\/tr>\s*)+)/g, function(match) {
+                        var rows = match.match(/<tr>/g);
+                        if (!rows) return match;
+                        var firstRow = match.match(/<tr>(.*?)<\/tr>/);
+                        var hasHeader = firstRow && /<th>/.test(firstRow[1]);
+                        var headerHtml = '';
+                        var bodyHtml = match;
+                        if (hasHeader) {
+                            headerHtml = match.match(/<tr>.*?<\/tr>/)[0].replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
+                            bodyHtml = match.replace(/<tr>.*?<\/tr>/, '');
+                        }
+                        return '<table><thead>' + (hasHeader ? headerHtml : '') + '</thead><tbody>' + (hasHeader ? bodyHtml : match) + '</tbody></table>';
+                    });
                     text2 = text2.replace(/\n/g, '<br>');
                     result += text2;
                 }
