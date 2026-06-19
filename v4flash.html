@@ -379,7 +379,32 @@
                     chats = [];
                     for (const [chatId, messages] of Object.entries(data.history)) {
                         const title = data.titles && data.titles[chatId] ? data.titles[chatId] : ('Чат ' + chatId);
-                        chats.push({ id: chatId, title: title, messages: messages });
+                        // Группируем последовательные ответы ассистента
+                        var grouped = [];
+                        for (var i = 0; i < messages.length; i++) {
+                            var msg = messages[i];
+                            if (msg.role === 'assistant' && grouped.length > 0) {
+                                var prev = grouped[grouped.length - 1];
+                                if (prev.role === 'assistant') {
+                                    if (!prev.regenerations) {
+                                        prev.regenerations = [{
+                                            content: prev.content,
+                                            reasoning: prev.reasoning || '',
+                                            finished: true
+                                        }];
+                                        prev.activeRegeneration = 0;
+                                    }
+                                    prev.regenerations.push({
+                                        content: msg.content,
+                                        reasoning: msg.reasoning || '',
+                                        finished: true
+                                    });
+                                    continue;
+                                }
+                            }
+                            grouped.push(msg);
+                        }
+                        chats.push({ id: chatId, title: title, messages: grouped });
                     }
                     chats.sort((a, b) => a.id.localeCompare(b.id));
                 }
