@@ -173,6 +173,10 @@
         body.light .bottom-container { background: #ffffff; }
         .message-content ol, .message-content ul { padding-left: 24px; margin: 6px 0; }
         .message-content li { margin: 2px 0; }
+        .message-content ul ul, .message-content ol ol, .message-content ul ol, .message-content ol ul { padding-left: 20px; }
+        .message-content blockquote { border-left: 3px solid #00CBF5; padding: 6px 14px; margin: 8px 0; color: #aab; background: rgba(0,203,245,0.05); border-radius: 0 6px 6px 0; }
+        body.light .message-content blockquote { color: #556; background: rgba(0,0,0,0.03); }
+        .message-content del { opacity: 0.6; }
         .message-content table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 14px; }
         .message-content th, .message-content td { border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; text-align: left; }
         .message-content th { background: rgba(0,203,245,0.1); font-weight: 600; }
@@ -1030,6 +1034,15 @@
                         }
                         return '<table><thead>' + (hasHeader ? headerHtml : '') + '</thead><tbody>' + (hasHeader ? bodyHtml : match) + '</tbody></table>';
                     });
+                    // Зачёркнутый
+                    text2 = text2.replace(/~~(.+?)~~/g, '<del>$1</del>');
+                    // Изображения
+                    text2 = text2.replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">');
+                    // Цитаты
+                    text2 = text2.replace(/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>');
+                    // Чекбоксы
+                    text2 = text2.replace(/^[-*]\s\[x\]\s(.+)$/gm, '<div>✅ $1</div>');
+                    text2 = text2.replace(/^[-*]\s\[\s\]\s(.+)$/gm, '<div>☐ $1</div>');
                     text2 = text2.replace(/\n/g, '<br>');
                     result += text2;
                 }
