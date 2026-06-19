@@ -256,6 +256,20 @@
                     ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css'
                     : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
             }
+            document.querySelectorAll('.floating-code-header').forEach(function(h) {
+                h.style.background = isLight ? '#f8f8f8' : '#1a1a2e';
+                h.style.color = isLight ? '#555' : '#aaa';
+                h.querySelectorAll('button').forEach(function(b) {
+                    b.style.color = isLight ? '#555' : '#aaa';
+                });
+            });
+            document.querySelectorAll('.message-content pre').forEach(function(pre) {
+                if (pre._textarea) {
+                    pre._textarea.style.background = isLight ? '#ffffff' : '#0d0d1a';
+                    pre._textarea.style.color = isLight ? '#111' : '#e0e0e0';
+                    pre._textarea.style.border = isLight ? '1px solid rgba(0,0,0,0.15)' : '1px solid rgba(255,255,255,0.1)';
+                }
+            });
         }
         (function() {
             var saved = localStorage.getItem('photobot_theme');
