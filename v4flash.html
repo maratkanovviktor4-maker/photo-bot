@@ -614,9 +614,14 @@
             var downloadBtn = document.getElementById('download-btn-' + index);
             if (downloadBtn) {
                 var rect = downloadBtn.getBoundingClientRect();
-                dropdown.style.top = (rect.bottom + 4) + 'px';
                 dropdown.style.left = rect.left + 'px';
                 document.body.appendChild(dropdown);
+                var isLast = (index === chat.messages.length - 1);
+                if (isLast) {
+                    dropdown.style.top = (rect.top - dropdown.offsetHeight - 4) + 'px';
+                } else {
+                    dropdown.style.top = (rect.bottom + 4) + 'px';
+                }
                 setTimeout(function() {
                     document.addEventListener('click', function closeDrop(e) {
                         if (!dropdown.contains(e.target) && e.target !== downloadBtn) {
