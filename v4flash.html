@@ -623,12 +623,17 @@
                     dropdown.style.top = (rect.bottom + 4) + 'px';
                 }
                 setTimeout(function() {
-                    document.addEventListener('click', function closeDrop(e) {
+                    function closeDrop(e) {
                         if (!dropdown.contains(e.target) && e.target !== downloadBtn) {
                             dropdown.remove();
                             document.removeEventListener('click', closeDrop);
+                            document.removeEventListener('wheel', closeDrop);
+                            document.removeEventListener('touchmove', closeDrop);
                         }
-                    });
+                    }
+                    document.addEventListener('click', closeDrop);
+                    document.addEventListener('wheel', closeDrop);
+                    document.addEventListener('touchmove', closeDrop);
                 }, 10);
             }
         }
