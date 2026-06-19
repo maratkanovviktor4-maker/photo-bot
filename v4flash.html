@@ -515,7 +515,8 @@
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="editMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
                     } else {
-                        actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+                        actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2  0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+                        actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
                         if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
                     }
                     actionsHtml += '</div>';
@@ -556,6 +557,74 @@
             if (btn) {
                 btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
                 setTimeout(function() { btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 2000);
+            }
+        }
+        function downloadMessage(index) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[index];
+            if (!msg) return;
+            var content = msg.content || '';
+            var reasoning = msg.reasoning || '';
+            var fullText = reasoning ? 'Размышление:\n' + reasoning + '\n\nОтвет:\n' + content : content;
+            
+            var existing = document.getElementById('download-dropdown-' + index);
+            if (existing) { existing.remove(); return; }
+            
+            var dropdown = document.createElement('div');
+            dropdown.id = 'download-dropdown-' + index;
+            dropdown.style.cssText = 'position:fixed;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px;z-index:20;min-width:140px;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+            if (document.body.classList.contains('light')) {
+                dropdown.style.background = '#ffffff';
+                dropdown.style.border = '1px solid rgba(0,0,0,0.1)';
+                dropdown.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
+            }
+            
+            var formats = [
+                { label: '📄 Текст (.txt)', ext: 'txt', mime: 'text/plain;charset=utf-8' },
+                { label: '📝 Word (.doc)', ext: 'doc', mime: 'application/msword' }
+            ];
+            
+            formats.forEach(function(f) {
+                var btn = document.createElement('button');
+                btn.textContent = f.label;
+                btn.style.cssText = 'display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;white-space:nowrap;';
+                if (document.body.classList.contains('light')) {
+                    btn.style.color = '#333';
+                }
+                btn.onmouseenter = function() { btn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
+                btn.onmouseleave = function() { btn.style.background = 'transparent'; };
+                btn.onclick = function() {
+                    var output = fullText;
+                    if (f.ext === 'doc') {
+                        output = '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:14px;line-height:1.6;white-space:pre-wrap;padding:20px;}</style></head><body>' + output.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</body></html>';
+                    }
+                    var blob = new Blob([output], { type: f.mime });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'response.' + f.ext;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    dropdown.remove();
+                };
+                dropdown.appendChild(btn);
+            });
+            
+            var downloadBtn = document.getElementById('download-btn-' + index);
+            if (downloadBtn) {
+                var rect = downloadBtn.getBoundingClientRect();
+                dropdown.style.top = (rect.bottom + 4) + 'px';
+                dropdown.style.left = rect.left + 'px';
+                document.body.appendChild(dropdown);
+                setTimeout(function() {
+                    document.addEventListener('click', function closeDrop(e) {
+                        if (!dropdown.contains(e.target) && e.target !== downloadBtn) {
+                            dropdown.remove();
+                            document.removeEventListener('click', closeDrop);
+                        }
+                    });
+                }, 10);
             }
         }
         function editMessage(index) {
