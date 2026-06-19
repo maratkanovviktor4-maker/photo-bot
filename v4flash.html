@@ -868,9 +868,12 @@
             }
             if (lastIndex < text.length) {
                 var remaining = text.substring(lastIndex);
-                var openCode = remaining.match(new RegExp(B + B + B + '(\\w*)\\r?\\n([\\s\\S]*)'));
+                var openCode = remaining.match(new RegExp('^([\\s\\S]*?)' + B + B + B + '(\\w*)\\r?\\n([\\s\\S]*)'));
                 if (openCode) {
-                    parts.push({type: 'code', lang: openCode[1], content: openCode[2]});
+                    if (openCode[1]) {
+                        parts.push({type: 'text', content: openCode[1]});
+                    }
+                    parts.push({type: 'code', lang: openCode[2], content: openCode[3]});
                 } else {
                     parts.push({type: 'text', content: remaining});
                 }
