@@ -382,7 +382,21 @@
                         var grouped = [];
                         for (var mi = 0; mi < messages.length; mi++) {
                             var msg = messages[mi];
-                            if (msg.role === 'assistant' && grouped.length >= 2 && grouped[grouped.length - 2].role === 'user') {
+                            if (msg.role === 'user' && grouped.length > 0 && grouped[grouped.length - 1].role === 'user') {
+                                // Повторный user — пропускаем (это регенерация)
+                                continue;
+                            }
+                            if (msg.role === 'assistant' && grouped.length > 0 && grouped[grouped.length - 1].role === 'assistant') {
+                                var prev = grouped[grouped.length - 1];
+                                if (!prev.regenerations) {
+                                    prev.regenerations = [{content: prev.content, reasoning: prev.reasoning || '', finished: true}];
+                                    prev.activeRegeneration = 0;
+                                }
+                                prev.regenerations.push({content: msg.content, reasoning: msg.reasoning || '', finished: true});
+                            } else {
+                                grouped.push(msg);
+                            }
+                        }
                                 var prevAssistant = grouped[grouped.length - 1];
                                 if (!prevAssistant.regenerations) {
                                     prevAssistant.regenerations = [{content: prevAssistant.content, reasoning: prevAssistant.reasoning || '', finished: true}];
