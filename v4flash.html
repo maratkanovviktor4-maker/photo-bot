@@ -369,12 +369,14 @@
         async function loadChatsFromServer() {
             try {
                 const resp = await fetch(`${SERVER_URL}/get_chat_history?user_id=${currentUserId}&model=flash&session_token=${sessionToken}`);
+                console.log('Loading chats...');
                 if (resp.status === 403) {
                     alert('Сессия устарела. Авторизуйтесь заново.');
                     window.location.href = 'index.html';
                     return;
                 }
                 const data = await resp.json();
+                console.log('Chats loaded:', data);
                 console.log('Server history:', JSON.stringify(data.history, null, 2));
                 if (data.history) {
                     chats = [];
