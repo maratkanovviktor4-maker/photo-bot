@@ -1323,11 +1323,20 @@
             activeStreamId = 'regen_' + msgIndex;
             var streamId = activeStreamId;
             
+            // Находим текст запроса пользователя
+            var userText = '';
+            for (var k = msgIndex - 1; k >= 0; k--) {
+                if (chat.messages[k].role === 'user') {
+                    userText = chat.messages[k].content;
+                    break;
+                }
+            }
+            
             try {
-                const resp = await fetch(`${SERVER_URL}/regenerate`, {
+                const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, message_index: msgIndex, mode: currentMode, prompt_mod: promptMod })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, message: userText, mode: currentMode, action: 'regenerate', reply_to_index: msgIndex, prompt_mod: promptMod })
                 });
                 
                 if (!resp.ok) {
@@ -1336,23 +1345,20 @@
                 
                 const data = await resp.json();
                 if (data.reply && activeStreamId === streamId) {
-                    // Сохраняем текущий reply если ещё не сохранён
                     if (!msg._allReplies) {
                         msg._allReplies = [{ content: msg.content, reasoning: msg.reasoning, interrupted: msg.interrupted !== false, finished: msg.finished !== false }];
                     }
                     
-                    // Добавляем новый reply
                     var newReplyIdx = msg._allReplies.length;
                     msg._allReplies.push({ content: data.reply, reasoning: data.reasoning || '', interrupted: false, finished: true });
                     msg._repliesCount = msg._allReplies.length;
                     msg._replyIndex = newReplyIdx;
                     
-                    // Настраиваем стрим через continueMessage
                     var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
                     msg.content = '';
                     msg.reasoning = '';
                     msg.finished = false;
-                    msg.interrupted = true;  // чтобы continueMessage сработал
+                    msg.interrupted = true;
                     msg._streamWords = fullContent.split(/(\s+)/);
                     msg._streamPos = 0;
                     msg._reasoningInProgress = false;
@@ -1363,7 +1369,6 @@
                     renderMessages();
                     updateBalance();
                     
-                    // Запускаем continueMessage
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
