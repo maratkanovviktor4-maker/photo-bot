@@ -1314,18 +1314,12 @@
                     msg._streamWords = fullContent.split(/(\s+)/);
                     msg._streamPos = 0;
                     msg._reasoningInProgress = false;
-                    
-                    // Если есть reasoning, сразу показываем его в content для renderMessages
                     if (data.reasoning) {
-                        msg.content = fullContent;
-                        msg.reasoning = data.reasoning;
+                        msg._reasoningInProgress = true;
                     }
                     
                     renderMessages();
                     updateBalance();
-                    
-                    // Сбрасываем для стрима
-                    msg.content = '';
                     
                     // Запускаем continueMessage
                     isSending = false;
