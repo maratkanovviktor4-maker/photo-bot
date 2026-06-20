@@ -390,7 +390,7 @@
                         const title = data.titles && data.titles[chatId] ? data.titles[chatId] : ('Чат ' + chatId);
                         // Восстанавливаем _allReplies для ассистентов
                         for (var m of messages) {
-                            m.id = m.id || '';
+                            if (!m.id) { m.id = 'msg_' + chatId + '_' + i; }
                             if (m.role === 'assistant') {
                                 if (!m._allReplies || m._allReplies.length === 0) {
                                     m._allReplies = [{ content: m.content || '', reasoning: m.reasoning || '', interrupted: m.interrupted || false, finished: m.finished !== false }];
