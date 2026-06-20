@@ -840,10 +840,8 @@
 
             var isRegen = (currentMode === 'regenerate');
             var regenTarget = null;
-            if (isRegen) {
-                for (var i = chat.messages.length - 1; i >= 0; i--) {
-                    if (chat.messages[i].role === 'assistant') { regenTarget = chat.messages[i]; break; }
-                }
+            if (isRegen && window._regenTargetIndex !== undefined) {
+                regenTarget = chat.messages[window._regenTargetIndex];
             }
 
             var lastMsg = chat.messages[chat.messages.length - 1];
@@ -878,6 +876,7 @@
                     body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, reasonerMode: window._regenerateReasonerMode || currentMode, chat_id: currentChatId, file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '' })
                 });
                 window._regenerateReasonerMode = null;
+                window._regenTargetIndex = undefined;
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (resp.status === 403) {
                     chat.messages.push({ role: 'assistant', content: 'Сессия устарела. Авторизуйтесь заново на главной странице.' });
@@ -1253,6 +1252,7 @@
             msg.regenerated = true;
             var input = document.getElementById('userInput');
             if (input) { input.value = userMsg.content; }
+            window._regenTargetIndex = index;
             var savedMode = currentMode;
             currentMode = 'regenerate';
             window._regenerateReasonerMode = savedMode;
