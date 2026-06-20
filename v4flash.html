@@ -1294,119 +1294,35 @@
                 
                 const data = await resp.json();
                 if (data.reply && activeStreamId === streamId) {
-                    // Инициализируем _allReplies если нет
+                    // Сохраняем текущий reply если ещё не сохранён
                     if (!msg._allReplies) {
                         msg._allReplies = [{ content: msg.content, reasoning: msg.reasoning, interrupted: msg.interrupted !== false, finished: msg.finished !== false }];
                     }
                     
-                    // Добавляем новый reply (пока пустой, заполнится стримом)
+                    // Добавляем новый reply
                     var newReplyIdx = msg._allReplies.length;
-                    msg._allReplies.push({ content: '', reasoning: data.reasoning || '', interrupted: false, finished: false });
+                    msg._allReplies.push({ content: data.reply, reasoning: data.reasoning || '', interrupted: false, finished: true });
                     msg._repliesCount = msg._allReplies.length;
                     msg._replyIndex = newReplyIdx;
                     
-                    // Настраиваем стриминг для нового reply
+                    // Настраиваем стрим через continueMessage
                     var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
                     msg.content = '';
                     msg.reasoning = '';
                     msg.finished = false;
-                    msg.interrupted = false;
+                    msg.interrupted = true;  // чтобы continueMessage сработал
                     msg._streamWords = fullContent.split(/(\s+)/);
                     msg._streamPos = 0;
                     msg._reasoningInProgress = false;
                     
                     renderMessages();
-                    await new Promise(r => setTimeout(r, 50));
+                    updateBalance();
                     
-                    var allAssistant = document.querySelectorAll('.message-row.assistant .message-content');
-                    var allActions = document.querySelectorAll('.message-row.assistant .message-actions');
-                    var assistantIdx = 0;
-                    for (var k = 0; k <= msgIndex; k++) {
-                        if (chat.messages[k].role === 'assistant' && k === msgIndex) break;
-                        if (chat.messages[k].role === 'assistant') assistantIdx++;
-                    }
-                    var streamDiv = allAssistant[assistantIdx];
-                    var streamAction = allActions[assistantIdx];
-                    
-                    var pos = 0;
-                    var words = msg._streamWords;
-                    var reasoningStarted = false;
-                    var reasoningEnded = false;
-                    
-                    function streamNext() {
-                        if (activeStreamId !== streamId) return;
-                        var chunk = '';
-                        var wordCount = 0;
-                        while (pos < words.length && wordCount < 2) {
-                            chunk += words[pos];
-                            wordCount++;
-                            pos++;
-                        }
-                        msg._streamPos = pos;
-                        if (chunk) {
-                            var fullText = words.slice(0, pos).join('');
-                            msg.content = fullText;
-                            if (!reasoningStarted && fullText.indexOf('Размышление:\n') !== -1) {
-                                reasoningStarted = true;
-                                msg._reasoningInProgress = true;
-                            }
-                            if (reasoningStarted && !reasoningEnded) {
-                                var endIdx = fullText.indexOf('\n\nОтвет:\n');
-                                if (endIdx !== -1) {
-                                    reasoningEnded = true;
-                                    msg._reasoningInProgress = false;
-                                    msg.reasoning = fullText.substring('Размышление:\n'.length, endIdx);
-                                    var replyText = fullText.substring(endIdx + '\n\nОтвет:\n'.length);
-                                    if (streamDiv) streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(msg.reasoning) + '</div>' + formatMessage(replyText);
-                                } else {
-                                    var rText = fullText.substring(Math.max(0, fullText.indexOf('Размышление:\n') + 'Размышление:\n'.length));
-                                    if (streamDiv) streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(rText) + '</div>';
-                                }
-                            } else if (reasoningEnded) {
-                                var replyStart = fullText.indexOf('\n\nОтвет:\n') + '\n\nОтвет:\n'.length;
-                                if (streamDiv) streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(msg.reasoning) + '</div>' + formatMessage(fullText.substring(replyStart));
-                            } else {
-                                if (streamDiv) streamDiv.innerHTML = formatMessage(fullText);
-                            }
-                            if (streamDiv) {
-                                streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
-                            }
-                            setupFloatingCopyButtons();
-                            if (autoScroll) {
-                                var main = document.querySelector('.main');
-                                if (main) { main.scrollTop = main.scrollHeight; }
-                            }
-                            typingInterval = setTimeout(streamNext, 20);
-                        } else {
-                            msg.finished = true;
-                            msg.interrupted = false;
-                            msg._allReplies[msg._replyIndex] = { content: msg.content, reasoning: msg.reasoning, interrupted: false, finished: true };
-                            typingInterval = null;
-                            if (streamAction) {
-                                streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>' +
-                                '<button onclick="downloadMessage(' + msgIndex + ')" id="download-btn-' + msgIndex + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>' +
-                                '<span style="display:inline-flex;align-items:center;gap:2px;font-size:11px;color:#888;font-family:Inter,sans-serif;margin-left:4px;">' +
-                                '<button onclick="switchReply(' + msgIndex + ', -1)" style="background:transparent;border:none;color:#888;cursor:pointer;padding:2px 4px;font-size:11px;">◀</button>' +
-                                '<span>' + (msg._replyIndex + 1) + '/' + msg._repliesCount + '</span>' +
-                                '<button onclick="switchReply(' + msgIndex + ', 1)" style="background:transparent;border:none;color:#888;cursor:pointer;padding:2px 4px;font-size:11px;" disabled style="opacity:0.3">▶</button>' +
-                                '</span>' +
-                                '<button onclick="regenerateMessage(' + msgIndex + ')" title="Новый ответ" style="background:transparent;border:none;color:#888;cursor:pointer;padding:4px 6px;font-size:12px;">🔄</button>';
-                            }
-                            autoNameChat(chat);
-                            renderChatList();
-                            if (autoScroll) {
-                                var main = document.querySelector('.main');
-                                if (main) { main.scrollTop = main.scrollHeight; }
-                            }
-                            if (activeStreamId === streamId) {
-                                isSending = false;
-                                activeStreamId = null;
-                                sendBtnArrow();
-                            }
-                            updateBalance();
-                        }
-                    }
-                    streamNext();
+                    // Запускаем continueMessage — он идёт по тем же рельсам что обычный стрим
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                    continueMessage(msgIndex);
                 }
             } catch (e) {
                 isSending = false; sendBtnArrow(); activeStreamId = null;
