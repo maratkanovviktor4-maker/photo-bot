@@ -1347,10 +1347,13 @@
             for (var k = msgIndex - 1; k >= 0; k--) {
                 if (chat.messages[k].role === 'user') {
                     userText = chat.messages[k].content;
-                    // parent_msg_id = ID предыдущего ассистента перед этим user
-                    if (k > 0 && chat.messages[k - 1].role === 'assistant') {
-                        parentMsgId = chat.messages[k - 1].id || '';
-                    }
+                    break;
+                }
+            }
+            // parent_msg_id = ID предыдущего ассистента (перед user, на которого отвечали)
+            for (var k = msgIndex - 1; k >= 0; k--) {
+                if (chat.messages[k].role === 'assistant') {
+                    parentMsgId = chat.messages[k].id || '';
                     break;
                 }
             }
