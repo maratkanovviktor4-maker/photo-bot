@@ -1209,7 +1209,20 @@
                     chat.messages[index].finished = true;
                     chat.messages[index].interrupted = false;
                     typingInterval = null;
-                    if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + index + ')" id="download-btn-' + index + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button><button onclick="regenerateMessage(' + index + ')" title="Новый ответ" style="background:transparent;border:none;color:#888;cursor:pointer;padding:4px 6px;font-size:12px;">🔄</button>';
+                    if (streamAction) {
+                        var msg2 = chat.messages[index];
+                        var rc = msg2._repliesCount || 1;
+                        var ri = msg2._replyIndex || 0;
+                        var arrowsHtml = '';
+                        if (rc > 1) {
+                            arrowsHtml = '<span style="display:inline-flex;align-items:center;gap:2px;font-size:11px;color:#888;font-family:Inter,sans-serif;margin-left:4px;">' +
+                                '<button onclick="switchReply(' + index + ', -1)" style="background:transparent;border:none;color:#888;cursor:pointer;padding:2px 4px;font-size:11px;"' + (ri <= 0 ? ' disabled style="opacity:0.3"' : '') + '>◀</button>' +
+                                '<span>' + (ri + 1) + '/' + rc + '</span>' +
+                                '<button onclick="switchReply(' + index + ', 1)" style="background:transparent;border:none;color:#888;cursor:pointer;padding:2px 4px;font-size:11px;"' + (ri >= rc - 1 ? ' disabled style="opacity:0.3"' : '') + '>▶</button>' +
+                                '</span>';
+                        }
+                        streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + index + ')" id="download-btn-' + index + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>' + arrowsHtml + '<button onclick="regenerateMessage(' + index + ')" title="Новый ответ" style="background:transparent;border:none;color:#888;cursor:pointer;padding:4px 6px;font-size:12px;">🔄</button>';
+                    }
                     autoNameChat(chat);
                     renderChatList();
                     if (autoScroll) {
