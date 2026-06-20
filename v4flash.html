@@ -564,7 +564,7 @@
                         actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
                         actionsHtml += `<div style="position:relative;display:inline-flex;">
                             <button onclick="regenerateMessage(${i})" id="regen-btn-${i}" title="Перегенерировать" onmouseenter="showRegenMenu(event, ${i})" onmouseleave="hideRegenMenu(${i})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
-                            <div id="regen-menu-${i}" style="display:none;position:absolute;bottom:100%;left:0;margin-bottom:4px;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px;z-index:30;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.4);white-space:nowrap;" onmouseenter="cancelHideRegen(${i})" onmouseleave="hideRegenMenu(${i})">
+                            <div id="regen-menu-${i}" style="display:none;position:fixed;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px;z-index:30;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.4);white-space:nowrap;" onmouseenter="cancelHideRegen(${i})" onmouseleave="hideRegenMenu(${i})">
                                 <button onclick="regenerateMessage(${i})" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;">🔄 Попробовать снова</button>
                                 <button onclick="regenerateWithStyle(${i}, 'кратко')" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;">📝 Более кратко</button>
                                 <button onclick="regenerateWithStyle(${i}, 'подробно')" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;">📖 Более подробно</button>
@@ -1224,7 +1224,20 @@
         function showRegenMenu(e, index) {
             clearTimeout(regenHideTimers[index]);
             var menu = document.getElementById('regen-menu-' + index);
-            if (menu) menu.style.display = 'block';
+            if (!menu) return;
+            var btn = document.getElementById('regen-btn-' + index);
+            if (btn) {
+                var rect = btn.getBoundingClientRect();
+                menu.style.left = rect.left + 'px';
+                var chat = chats.find(function(c) { return c.id === currentChatId; });
+                var isLast = chat && index === chat.messages.length - 1;
+                if (isLast) {
+                    menu.style.top = (rect.top - menu.offsetHeight - 4) + 'px';
+                } else {
+                    menu.style.top = (rect.bottom + 4) + 'px';
+                }
+            }
+            menu.style.display = 'block';
         }
         function hideRegenMenu(index) {
             regenHideTimers[index] = setTimeout(function() {
