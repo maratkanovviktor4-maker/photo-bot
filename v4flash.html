@@ -866,7 +866,8 @@
             }
 
             let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
-            chat.messages.push({ id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6), role: 'user', content: displayText });
+            let userMsgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+            chat.messages.push({ id: userMsgId, role: 'user', content: displayText });
             renderChatList();
             renderMessages();
 
@@ -1377,13 +1378,28 @@
                         var branchChatId = currentChatId + '/' + data.branch_id;
                         var branchChat = { id: branchChatId, title: chat.title + ' (ветка)', messages: [] };
                         
-                        // Копируем сообщения до точки ветвления
-                        for (var bi = 0; bi <= msgIndex; bi++) {
+                        // Копируем сообщения до точки ветвления (включая user-сообщение)
+                        for (var bi = 0; bi < chat.messages.length; bi++) {
                             branchChat.messages.push(chat.messages[bi]);
+                            if (chat.messages[bi].role === 'user' && chat.messages[bi].id === (data.parent_msg_id || parentMsgId)) {
+                                break;
+                            }
                         }
                         
                         // Добавляем новый ответ
-                        var newMsg = { role: 'assistant', content: data.reply, reasoning: data.reasoning || '', finished: true, interrupted: false, _allReplies: [{ content: data.reply, reasoning: data.reasoning || '', finished: true, interrupted: false }], _repliesCount: 1, _replyIndex: 0 };
+                        var newAssistantId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+                        var newReplyId = newAssistantId + '_r0';
+                        var newMsg = { 
+                            id: newAssistantId,
+                            role: 'assistant', 
+                            content: data.reply, 
+                            reasoning: data.reasoning || '', 
+                            finished: true, 
+                            interrupted: false, 
+                            _allReplies: [{ id: newReplyId, content: data.reply, reasoning: data.reasoning || '', finished: true, interrupted: false }], 
+                            _repliesCount: 1, 
+                            _replyIndex: 0 
+                        };
                         branchChat.messages.push(newMsg);
                         
                         chats.push(branchChat);
