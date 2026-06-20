@@ -389,9 +389,11 @@
                     for (const [chatId, messages] of Object.entries(data.history)) {
                         const title = data.titles && data.titles[chatId] ? data.titles[chatId] : ('Чат ' + chatId);
                         // Восстанавливаем _allReplies для ассистентов
+                        var msgIdx = 0;
                         for (var m of messages) {
-                            if (!m.id) { m.id = 'msg_' + chatId + '_' + i; }
+                            if (!m.id) { m.id = 'msg_' + chatId + '_' + msgIdx; }
                             if (m.role === 'assistant') {
+                            msgIdx++;
                                 if (!m._allReplies || m._allReplies.length === 0) {
                                     m._allReplies = [{ content: m.content || '', reasoning: m.reasoning || '', interrupted: m.interrupted || false, finished: m.finished !== false }];
                                 }
