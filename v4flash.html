@@ -1382,6 +1382,10 @@
                         for (var bi = 0; bi < chat.messages.length; bi++) {
                             branchChat.messages.push(chat.messages[bi]);
                             if (chat.messages[bi].role === 'user' && chat.messages[bi].id === (data.parent_msg_id || parentMsgId)) {
+                                // Обновляем id user-сообщения на серверный
+                                if (data.new_user_msg_id) {
+                                    branchChat.messages[branchChat.messages.length - 1].id = data.new_user_msg_id;
+                                }
                                 break;
                             }
                         }
