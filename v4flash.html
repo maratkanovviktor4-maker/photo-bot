@@ -390,7 +390,7 @@
                                     prev.activeRegeneration = 0;
                                 }
                                 prev.regenerations.push({content: msg.content, reasoning: msg.reasoning || '', finished: true});
-                                prev._regenerated = true;
+                                 prev.regenerated = true;
                             } else if (msg.role === 'user' && grouped.length > 0 && grouped[grouped.length - 1].role === 'user') {
                                 continue;
                             } else {
@@ -550,7 +550,7 @@
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="editMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
                     } else {
-                        if (m._regenerated && m.regenerations && m.regenerations.length > 1) {
+                        if (m.regenerated && m.regenerations && m.regenerations.length > 1) {
                             var ar = m.activeRegeneration || 0;
                             actionsHtml += `<button onclick="prevRegeneration(${i})" ${ar === 0 ? 'disabled style="opacity:0.4"' : ''}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>`;
                             actionsHtml += `<span style="font-size:11px;color:#888;padding:4px;">${ar + 1}/${m.regenerations.length}</span>`;
@@ -1225,7 +1225,7 @@
             if (!msg.regenerations) {
                 msg.regenerations = [{content: msg.content, reasoning: msg.reasoning || '', finished: true}];
                 msg.activeRegeneration = 0;
-                msg._regenerated = true;
+                msg.regenerated = true;
             }
             var ri = msg.regenerations.length;
             msg.regenerations.push({content: '', reasoning: '', finished: false, _streamWords: null, _streamPos: 0});
@@ -1234,7 +1234,7 @@
             msg.reasoning = '';
             msg.interrupted = false;
             msg.finished = false;
-            msg._regenerated = true;
+            msg.regenerated = true;
             isSending = true;
             sendBtnStop();
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(b) { b.remove(); });
