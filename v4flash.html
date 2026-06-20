@@ -1311,9 +1311,6 @@
             var menu = document.getElementById('regen-menu-' + msgIndex);
             if (menu) menu.style.display = 'none';
             
-            var promptMod = '';
-            if (style === 'shorter') promptMod = '\n\nОтветь более кратко.';
-            else if (style === 'longer') promptMod = '\n\nОтветь более подробно.';
             
             isSending = true;
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
@@ -1336,7 +1333,7 @@
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, message: userText, mode: currentMode, action: 'regenerate', reply_to_index: msgIndex, prompt_mod: promptMod })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, message: userText, mode: currentMode, action: 'regenerate', reply_to_index: msgIndex, prompt_mod: style || '' })
                 });
                 
                 if (!resp.ok) {
