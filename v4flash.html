@@ -888,7 +888,7 @@
                 const data = await resp.json();
                 if (data.reply) {
                     const fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, _allReplies: null, _repliesCount: 1, _replyIndex: 0 });
+                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, _allReplies: [], _repliesCount: 1, _replyIndex: 0 });
                     const msgIndex = chat.messages.length - 1;
                     const streamId = 'stream_' + msgIndex;
                     activeStreamId = streamId;
@@ -958,12 +958,13 @@
                             chat.messages[msgIndex].finished = true;
                             chat.messages[msgIndex].interrupted = false;
                             // Сохраняем первый reply
-                            if (!chat.messages[msgIndex]._allReplies) {
+                            if (!chat.messages[msgIndex]._allReplies || chat.messages[msgIndex]._allReplies.length === 0) {
                                 chat.messages[msgIndex]._allReplies = [{ content: chat.messages[msgIndex].content, reasoning: chat.messages[msgIndex].reasoning, interrupted: false, finished: true }];
                             } else {
                                 chat.messages[msgIndex]._allReplies[0] = { content: chat.messages[msgIndex].content, reasoning: chat.messages[msgIndex].reasoning, interrupted: false, finished: true };
                             }
                             chat.messages[msgIndex]._repliesCount = chat.messages[msgIndex]._allReplies.length;
+                            chat.messages[msgIndex]._replyIndex = 0;
                             typingInterval = null;
                             streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + msgIndex + ')" id="download-btn-' + msgIndex + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
                             autoNameChat(chat);
