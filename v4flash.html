@@ -108,6 +108,10 @@
         .message-actions button:hover { background: rgba(255,255,255,0.08); }
         body.light .message-actions button { background: transparent; border: none; color: #555; }
         body.light .message-actions button:hover { background: rgba(0,0,0,0.06); }
+        .message-actions div div button:hover { background: rgba(0,203,245,0.15) !important; }
+        body.light .message-actions div div { background: #ffffff; border-color: rgba(0,0,0,0.1); }
+        body.light .message-actions div div button { color: #333; }
+        body.light .message-actions div div button:hover { background: rgba(0,0,0,0.06) !important; }
         .input-area { padding: 0; border-top: none; display: flex; gap: 0; align-items: flex-end; background: #201F28; flex-shrink: 0; overflow: visible; position: relative; flex-wrap: wrap; margin-bottom: 25px; }
         body.light .input-area { background: #ffffff; border-top: none; }
         .input-area textarea { flex: 1; padding: 0; border-radius: 0; border: none; background: transparent; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; outline: none; resize: none; min-height: 48px; max-height: 300px; overflow-y: auto; min-width: 0; width: 100%; }
@@ -558,7 +562,14 @@
                         }
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
-                        actionsHtml += `<button onclick="regenerateMessage(${i})" id="regen-btn-${i}" title="Перегенерировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>`;
+                        actionsHtml += `<div style="position:relative;display:inline-flex;">
+                            <button onclick="regenerateMessage(${i})" id="regen-btn-${i}" title="Перегенерировать" onmouseenter="showRegenMenu(event, ${i})" onmouseleave="hideRegenMenu(${i})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+                            <div id="regen-menu-${i}" style="display:none;position:absolute;bottom:100%;left:0;margin-bottom:4px;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px;z-index:30;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.4);white-space:nowrap;" onmouseenter="cancelHideRegen(${i})" onmouseleave="hideRegenMenu(${i})">
+                                <button onclick="regenerateMessage(${i})" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;">🔄 Попробовать снова</button>
+                                <button onclick="regenerateWithStyle(${i}, 'кратко')" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;">📝 Более кратко</button>
+                                <button onclick="regenerateWithStyle(${i}, 'подробно')" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;">📖 Более подробно</button>
+                            </div>
+                        </div>`;
                         if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
                     }
                     actionsHtml += '</div>';
@@ -1100,6 +1111,8 @@
         }
         async function continueMessage(index) {
             if (isSending) return;
+            var menu = document.getElementById('regen-menu-' + index);
+            if (menu) menu.style.display = 'none';
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
             const msg = chat.messages[index];
@@ -1206,6 +1219,87 @@
                 }
             }
             streamNext();
+        }
+        var regenHideTimers = {};
+        function showRegenMenu(e, index) {
+            clearTimeout(regenHideTimers[index]);
+            var menu = document.getElementById('regen-menu-' + index);
+            if (menu) menu.style.display = 'block';
+        }
+        function hideRegenMenu(index) {
+            regenHideTimers[index] = setTimeout(function() {
+                var menu = document.getElementById('regen-menu-' + index);
+                if (menu) menu.style.display = 'none';
+            }, 200);
+        }
+        function cancelHideRegen(index) {
+            clearTimeout(regenHideTimers[index]);
+        }
+        function regenerateWithStyle(index, style) {
+            var menu = document.getElementById('regen-menu-' + index);
+            if (menu) menu.style.display = 'none';
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[index];
+            if (!msg || msg.role !== 'assistant') return;
+            var userMsg = null;
+            for (var i = index - 1; i >= 0; i--) {
+                if (chat.messages[i].role === 'user') { userMsg = chat.messages[i]; break; }
+            }
+            if (!userMsg) return;
+            if (msg.regenerations && msg.regenerations.length >= 6) {
+                alert('Достигнут лимит регенераций (6/6).');
+                return;
+            }
+            if (!msg.regenerations) {
+                msg.regenerations = [{content: msg.content, reasoning: msg.reasoning || '', finished: true}];
+                msg.activeRegeneration = 0;
+                msg.regenerated = true;
+            }
+            var ri = msg.regenerations.length;
+            msg.regenerations.push({content: '', reasoning: '', finished: false, _streamWords: null, _streamPos: 0});
+            msg.activeRegeneration = ri;
+            msg.content = '';
+            msg.reasoning = '';
+            msg.interrupted = false;
+            msg.finished = false;
+            msg.regenerated = true;
+            isSending = true;
+            sendBtnStop();
+            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(b) { b.remove(); });
+            renderMessages();
+            var styledMessage = userMsg.content;
+            if (style === 'кратко') styledMessage = styledMessage + '\n\n[отвечай кратко]';
+            if (style === 'подробно') styledMessage = styledMessage + '\n\n[отвечай подробно]';
+            fetch(SERVER_URL + '/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                body: JSON.stringify({user_id: currentUserId, message: styledMessage, model: 'flash', mode: 'regenerate', chat_id: currentChatId})
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.reply) {
+                    var fc = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                    var words = fc.split(/(\s+)/);
+                    msg.regenerations[ri]._streamWords = words;
+                    msg.regenerations[ri]._streamPos = 0;
+                    if (data.reasoning) msg.regenerations[ri]._reasoningInProgress = true;
+                    streamRegen(index, ri);
+                } else {
+                    msg.regenerations[ri].content = 'Ошибка.';
+                    msg.regenerations[ri].finished = true;
+                    msg.content = 'Ошибка.';
+                    isSending = false; sendBtnArrow(); updateBalance();
+                    renderMessages();
+                }
+            })
+            .catch(function() {
+                msg.regenerations[ri].content = 'Ошибка соединения.';
+                msg.regenerations[ri].finished = true;
+                msg.content = 'Ошибка соединения.';
+                isSending = false; sendBtnArrow();
+                renderMessages();
+            });
         }
         function regenerateMessage(index) {
             if (isSending) return;
