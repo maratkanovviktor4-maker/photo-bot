@@ -1345,18 +1345,16 @@
             console.log('messages for branch:', chat.messages.map(function(m, i) { return i + ':' + m.role + ' id=' + (m.id || 'none'); }));
             var userText = '';
             var parentMsgId = '';
+            // Ищем текст запроса пользователя (для отправки в API)
             for (var k = msgIndex - 1; k >= 0; k--) {
                 if (chat.messages[k].role === 'user') {
                     userText = chat.messages[k].content;
                     break;
                 }
             }
-            // parent_msg_id = ID предыдущего ассистента (перед user, на которого отвечали)
-            for (var k = msgIndex - 1; k >= 0; k--) {
-                if (chat.messages[k].role === 'assistant') {
-                    parentMsgId = chat.messages[k].id || '';
-                    break;
-                }
+            // parent_msg_id = ID сообщения прямо перед регенерируемым ассистентом
+            if (msgIndex > 0) {
+                parentMsgId = chat.messages[msgIndex - 1].id || '';
             }
             
             console.log('sending branch request, parent_msg_id:', parentMsgId, 'message:', userText);
