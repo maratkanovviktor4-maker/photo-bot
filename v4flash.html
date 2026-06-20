@@ -1098,9 +1098,11 @@
             }
             const chat = chats.find(c => c.id === currentChatId);
             if (chat && chat.messages.length > 0) {
-                const lastMsg = chat.messages[chat.messages.length - 1];
-                if (lastMsg.role === 'assistant' && !lastMsg.finished) {
-                    lastMsg.interrupted = true;
+                for (var i = chat.messages.length - 1; i >= 0; i--) {
+                    if (chat.messages[i].role === 'assistant' && !chat.messages[i].finished) {
+                        chat.messages[i].interrupted = true;
+                        break;
+                    }
                 }
             }
             activeStreamId = null;
