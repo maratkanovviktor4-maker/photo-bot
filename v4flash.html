@@ -1378,13 +1378,15 @@
                         var branchChatId = currentChatId + '/' + data.branch_id;
                         var branchChat = { id: branchChatId, title: chat.title + ' (ветка)', messages: [] };
                         
-                        // Копируем сообщения до точки ветвления (включая user-сообщение)
-                        for (var bi = 0; bi < chat.messages.length; bi++) {
+                        // Копируем сообщения до точки ветвления: все ДО регенерируемого ассистента
+                        for (var bi = 0; bi < msgIndex; bi++) {
                             branchChat.messages.push(chat.messages[bi]);
-                            if (chat.messages[bi].role === 'user' && chat.messages[bi].id === (data.parent_msg_id || parentMsgId)) {
-                                // Обновляем id user-сообщения на серверный
+                        }
+                        // Обновляем id последнего user-сообщения на серверный
+                        for (var bi = branchChat.messages.length - 1; bi >= 0; bi--) {
+                            if (branchChat.messages[bi].role === 'user') {
                                 if (data.new_user_msg_id) {
-                                    branchChat.messages[branchChat.messages.length - 1].id = data.new_user_msg_id;
+                                    branchChat.messages[bi].id = data.new_user_msg_id;
                                 }
                                 break;
                             }
