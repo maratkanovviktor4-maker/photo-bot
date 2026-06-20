@@ -714,60 +714,43 @@
             
             var modal = document.createElement('div');
             modal.id = 'persona-modal';
-            modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;z-index:1000;min-width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = '<div style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;max-width:400px;width:90%;box-shadow:0 16px 48px rgba(0,0,0,0.5);"><div style="font-size:16px;font-weight:600;color:#e0e0e0;margin-bottom:4px;">🎭 Стиль ассистента</div><div style="font-size:12px;color:#888;margin-bottom:16px;">Выберите как DeepSeek будет отвечать</div><div id="persona-list" style="display:flex;flex-direction:column;gap:8px;">Загрузка...</div></div>';
             if (document.body.classList.contains('light')) {
-                modal.style.background = '#ffffff';
-                modal.style.border = '1px solid rgba(0,0,0,0.1)';
-                modal.style.boxShadow = '0 8px 32px rgba(0,0,0,0.15)';
+                modal.querySelector('div').style.background = '#ffffff';
+                modal.querySelector('div').style.border = '1px solid rgba(0,0,0,0.08)';
+                modal.querySelector('div').style.boxShadow = '0 16px 48px rgba(0,0,0,0.15)';
             }
-            modal.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:12px;color:#e0e0e0;">Выберите стиль ассистента</div><div id="persona-list" style="display:flex;flex-direction:column;gap:4px;">Загрузка...</div>';
             document.body.appendChild(modal);
             
-            try {
-                var resp = await fetch(SERVER_URL + '/get_personas?user_id=' + currentUserId + '&session_token=' + sessionToken);
-                var data = await resp.json();
-                var list = document.getElementById('persona-list');
-                list.innerHTML = '';
-                
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) modal.remove();
+            });
+            
+            var personas = [
+                {id: '', name: '🔄 Обычный', desc: 'Без ограничений и стилей', content: ''},
+                {id: 'coder', name: '💻 Кодер', desc: 'Помощь с кодом, архитектурой, багами', content: ''},
+                {id: 'student', name: '📚 Студент', desc: 'Обучение, объяснения, подготовка', content: ''},
+                {id: 'kids', name: '🎈 Для детей', desc: 'Просто, весело и безопасно', content: ''}
+            ];
+            
+            var list = document.getElementById('persona-list');
+            list.innerHTML = '';
+            personas.forEach(function(p) {
+                var isActive = activePersona === p.id;
                 var btn = document.createElement('button');
-                btn.textContent = '🔄 Обычный (без стиля)';
-                btn.style.cssText = 'display:block;width:100%;padding:10px 12px;border:none;background:' + (activePersona === '' ? '#00CBF5' : 'transparent') + ';color:' + (activePersona === '' ? '#201F28' : '#e0e0e0') + ';font-size:13px;cursor:pointer;text-align:left;border-radius:8px;font-family:Inter,sans-serif;';
+                btn.style.cssText = 'display:flex;flex-direction:column;width:100%;padding:12px 14px;border:1px solid ' + (isActive ? '#00CBF5' : 'rgba(255,255,255,0.08)') + ';background:' + (isActive ? 'rgba(0,203,245,0.1)' : 'transparent') + ';border-radius:10px;cursor:pointer;text-align:left;font-family:Inter,sans-serif;transition:0.15s;';
+                btn.innerHTML = '<span style="font-size:14px;font-weight:600;color:' + (isActive ? '#00CBF5' : '#e0e0e0') + ';">' + p.name + '</span><span style="font-size:11px;color:#888;margin-top:2px;">' + p.desc + '</span>';
+                btn.onmouseenter = function() { if (!isActive) btn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)'; };
+                btn.onmouseleave = function() { if (!isActive) btn.style.background = 'transparent'; };
                 btn.onclick = function() {
-                    activePersona = '';
-                    localStorage.setItem('photobot_persona', '');
-                    document.getElementById('personaBtn').textContent = '🎭 Стиль';
+                    activePersona = p.id;
+                    localStorage.setItem('photobot_persona', p.id);
+                    document.getElementById('personaBtn').textContent = p.id ? p.name : '🎭 Стиль';
                     modal.remove();
                 };
                 list.appendChild(btn);
-                
-                (data.personas || []).forEach(function(p) {
-                    var btn = document.createElement('button');
-                    btn.textContent = p.name;
-                    var isActive = activePersona === p.id;
-                    btn.style.cssText = 'display:block;width:100%;padding:10px 12px;border:none;background:' + (isActive ? '#00CBF5' : 'transparent') + ';color:' + (isActive ? '#201F28' : '#e0e0e0') + ';font-size:13px;cursor:pointer;text-align:left;border-radius:8px;font-family:Inter,sans-serif;';
-                    btn.onmouseenter = function() { if (!isActive) btn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
-                    btn.onmouseleave = function() { if (!isActive) btn.style.background = 'transparent'; };
-                    btn.onclick = function() {
-                        activePersona = p.id;
-                        localStorage.setItem('photobot_persona', p.id);
-                        document.getElementById('personaBtn').textContent = p.name;
-                        modal.remove();
-                    };
-                    list.appendChild(btn);
-                });
-            } catch(e) {
-                document.getElementById('persona-list').innerHTML = 'Ошибка загрузки';
-            }
-            
-            modal.addEventListener('click', function(e) { e.stopPropagation(); });
-            setTimeout(function() {
-                document.addEventListener('click', function closeModal(e) {
-                    if (!modal.contains(e.target)) {
-                        modal.remove();
-                        document.removeEventListener('click', closeModal);
-                    }
-                });
-            }, 10);
+            });
         }
         function toggleReasoner() {
             if (currentMode === 'reasoner') {
