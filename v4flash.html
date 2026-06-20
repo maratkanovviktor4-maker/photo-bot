@@ -108,9 +108,6 @@
         .message-actions button:hover { background: rgba(255,255,255,0.08); }
         body.light .message-actions button { background: transparent; border: none; color: #555; }
         body.light .message-actions button:hover { background: rgba(0,0,0,0.06); }
-        body.light .message-actions div div { background: #ffffff !important; border-color: rgba(0,0,0,0.1) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important; }
-        body.light .message-actions div div button { color: #333 !important; }
-        body.light .message-actions div div button:hover { background: rgba(0,0,0,0.06) !important; }
         .input-area { padding: 0; border-top: none; display: flex; gap: 0; align-items: flex-end; background: #201F28; flex-shrink: 0; overflow: visible; position: relative; flex-wrap: wrap; margin-bottom: 25px; }
         body.light .input-area { background: #ffffff; border-top: none; }
         .input-area textarea { flex: 1; padding: 0; border-radius: 0; border: none; background: transparent; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; outline: none; resize: none; min-height: 48px; max-height: 300px; overflow-y: auto; min-width: 0; width: 100%; }
@@ -230,7 +227,7 @@
                     <div class="input-row-wrapper">
                         <div class="input-row">
                             <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
-                            <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="console.log('keydown', event.key, isSending);if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(isSending){stopTyping();}else{sendMessage();}}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,300)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,300)+'px';this._init=true;}"></textarea>
+                            <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(isSending){stopTyping();}else{sendMessage();}}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,300)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,300)+'px';this._init=true;}"></textarea>
                         </div>
                         <div class="input-toolbar">
                             <button class="mode-btn" id="reasonerToggle" onclick="toggleReasoner()" style="font-size:11px;padding:4px 10px;">Reasoner</button>
@@ -383,24 +380,7 @@
                     chats = [];
                     for (const [chatId, messages] of Object.entries(data.history)) {
                         const title = data.titles && data.titles[chatId] ? data.titles[chatId] : ('Чат ' + chatId);
-                        var grouped = [];
-                        for (var mi = 0; mi < messages.length; mi++) {
-                            var msg = messages[mi];
-                            if (msg.role === 'assistant' && msg.regenerated && grouped.length > 0) {
-                                var prev = grouped[grouped.length - 1];
-                                if (prev.role === 'assistant' && prev.regenerated) {
-                                    if (!prev.regenerations) prev.regenerations = [{content: prev.content, reasoning: prev.reasoning || '', finished: true}];
-                                    prev.regenerations.push({content: msg.content, reasoning: msg.reasoning || '', finished: true});
-                                    prev.activeRegeneration = prev.regenerations.length - 1;
-                                    prev.content = msg.content;
-                                    prev.reasoning = msg.reasoning;
-                                    continue;
-                                }
-                            }
-                            if (msg.role === 'user' && msg.regenerated) continue;
-                            grouped.push(msg);
-                        }
-                        chats.push({ id: chatId, title: title, messages: grouped });
+                        chats.push({ id: chatId, title: title, messages: messages });
                     }
                     chats.sort((a, b) => a.id.localeCompare(b.id));
                 }
@@ -553,22 +533,8 @@
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="editMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
                     } else {
-                        if (m.regenerated && m.regenerations && m.regenerations.length > 1) {
-                            var ar = m.activeRegeneration || 0;
-                            actionsHtml += `<button onclick="prevRegeneration(${i})" ${ar === 0 ? 'disabled style="opacity:0.4"' : ''}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>`;
-                            actionsHtml += `<span style="font-size:11px;color:#888;padding:4px;">${ar + 1}/${m.regenerations.length}</span>`;
-                            actionsHtml += `<button onclick="nextRegeneration(${i})" ${ar === m.regenerations.length - 1 ? 'disabled style="opacity:0.4"' : ''}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>`;
-                        }
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
-                        actionsHtml += `<div style="position:relative;display:inline-flex;">
-                            <button onclick="regenerateMessage(${i})" id="regen-btn-${i}" title="Перегенерировать" onmouseenter="showRegenMenu(event, ${i})" onmouseleave="hideRegenMenu(${i})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
-                            <div id="regen-menu-${i}" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px;z-index:10001;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.4);white-space:nowrap;" onmouseenter="cancelHideRegen(${i})" onmouseleave="hideRegenMenu(${i})">
-                                <button onclick="regenerateMessage(${i})" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background='rgba(0,203,245,0.15)'" onmouseleave="this.style.background='transparent'">🔄 Попробовать снова</button>
-                                <button onclick="regenerateWithStyle(${i}, 'кратко')" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background='rgba(0,203,245,0.15)'" onmouseleave="this.style.background='transparent'">📝 Более кратко</button>
-                                <button onclick="regenerateWithStyle(${i}, 'подробно')" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background='rgba(0,203,245,0.15)'" onmouseleave="this.style.background='transparent'">📖 Более подробно</button>
-                            </div>
-                        </div>`;
                         if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
                     }
                     actionsHtml += '</div>';
@@ -584,15 +550,8 @@
                     } else if (m._reasoningInProgress && m.content) {
                         var startIdx = m.content.indexOf('Размышление:\n');
                         if (startIdx !== -1) {
-                            var rawReasoning = m.content.substring(startIdx + 'Размышление:\n'.length);
-                            var endIdx = rawReasoning.indexOf('\n\nОтвет:\n');
-                            if (endIdx !== -1) {
-                                reasoningHtml = '<div class="reasoning-block">' + formatMessage(rawReasoning.substring(0, endIdx)) + '</div>';
-                                contentToShow = rawReasoning.substring(endIdx + '\n\nОтвет:\n'.length);
-                            } else {
-                                reasoningHtml = '<div class="reasoning-block">' + formatMessage(rawReasoning) + '</div>';
-                                contentToShow = '';
-                            }
+                            reasoningHtml = '<div class="reasoning-block">' + escapeHtml(m.content.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
+                            contentToShow = '';
                         }
                     }
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + reasoningHtml + formatMessage(contentToShow) + '</div>' + actionsHtml + '</div></div>';
@@ -979,7 +938,7 @@
                             chat.messages[msgIndex].finished = true;
                             chat.messages[msgIndex].interrupted = false;
                             typingInterval = null;
-                            streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + msgIndex + ')" id="download-btn-' + msgIndex + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button><div style="position:relative;display:inline-flex;"><button onclick="regenerateMessage(' + msgIndex + ')" id="regen-btn-' + msgIndex + '" title="Перегенерировать" onmouseenter="showRegenMenuStream(' + msgIndex + ')" onmouseleave="hideRegenMenuStream(' + msgIndex + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button><div id="regen-menu-' + msgIndex + '" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px;z-index:10001;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.4);white-space:nowrap;" onmouseenter="cancelHideRegenStream(' + msgIndex + ')" onmouseleave="hideRegenMenuStream(' + msgIndex + ')"><button onclick="regenerateMessage(' + msgIndex + ')" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(0,203,245,0.15)\'" onmouseleave="this.style.background=\'transparent\'">🔄 Попробовать снова</button><button onclick="regenerateWithStyle(' + msgIndex + ', \'кратко\')" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(0,203,245,0.15)\'" onmouseleave="this.style.background=\'transparent\'">📝 Более кратко</button><button onclick="regenerateWithStyle(' + msgIndex + ', \'подробно\')" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(0,203,245,0.15)\'" onmouseleave="this.style.background=\'transparent\'">📖 Более подробно</button></div></div>';
+                            streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + msgIndex + ')" id="download-btn-' + msgIndex + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
                             autoNameChat(chat);
                             renderChatList();
                             if (autoScroll) {
@@ -1105,11 +1064,9 @@
             }
             const chat = chats.find(c => c.id === currentChatId);
             if (chat && chat.messages.length > 0) {
-                for (var i = chat.messages.length - 1; i >= 0; i--) {
-                    if (chat.messages[i].role === 'assistant' && !chat.messages[i].finished) {
-                        chat.messages[i].interrupted = true;
-                        break;
-                    }
+                const lastMsg = chat.messages[chat.messages.length - 1];
+                if (lastMsg.role === 'assistant' && !lastMsg.finished) {
+                    lastMsg.interrupted = true;
                 }
             }
             activeStreamId = null;
@@ -1125,14 +1082,7 @@
             if (!msg || msg.role !== 'assistant' || !msg.interrupted) return;
             isSending = true;
             sendBtnStop();
-            var words;
-            if (msg.regenerations && msg.activeRegeneration !== undefined) {
-                var regen = msg.regenerations[msg.activeRegeneration];
-                words = regen._streamWords;
-                msg._streamPos = regen._streamPos;
-            } else {
-                words = msg._streamWords;
-            }
+            const words = msg._streamWords;
             let pos = msg._streamPos || 0;
             if (!words || pos >= words.length) {
                 msg.interrupted = false;
@@ -1213,7 +1163,7 @@
                     chat.messages[index].finished = true;
                     chat.messages[index].interrupted = false;
                     typingInterval = null;
-                    if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + index + ')" id="download-btn-' + index + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button><div style="position:relative;display:inline-flex;"><button onclick="regenerateMessage(' + index + ')" id="regen-btn-' + index + '" title="Перегенерировать" onmouseenter="showRegenMenuStream(' + index + ')" onmouseleave="hideRegenMenuStream(' + index + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button><div id="regen-menu-' + index + '" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px;z-index:10001;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.4);white-space:nowrap;" onmouseenter="cancelHideRegenStream(' + index + ')" onmouseleave="hideRegenMenuStream(' + index + ')"><button onclick="regenerateMessage(' + index + ')" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(0,203,245,0.15)\'" onmouseleave="this.style.background=\'transparent\'">🔄 Попробовать снова</button><button onclick="regenerateWithStyle(' + index + ', \'кратко\')" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(0,203,245,0.15)\'" onmouseleave="this.style.background=\'transparent\'">📝 Более кратко</button><button onclick="regenerateWithStyle(' + index + ', \'подробно\')" style="display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(0,203,245,0.15)\'" onmouseleave="this.style.background=\'transparent\'">📖 Более подробно</button></div></div>';
+                    if (streamAction) streamAction.innerHTML = '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + index + ')" id="download-btn-' + index + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
                     autoNameChat(chat);
                     renderChatList();
                     if (autoScroll) {
@@ -1232,231 +1182,6 @@
                 }
             }
             streamNext();
-        }
-        var regenHideTimers = {};
-        var regenStreamHideTimers = {};
-        function showRegenMenuStream(index) {
-            clearTimeout(regenStreamHideTimers[index]);
-            var menu = document.getElementById('regen-menu-' + index);
-            if (menu) menu.style.display = 'block';
-        }
-        function hideRegenMenuStream(index) {
-            regenStreamHideTimers[index] = setTimeout(function() {
-                var menu = document.getElementById('regen-menu-' + index);
-                if (menu) menu.style.display = 'none';
-            }, 200);
-        }
-        function cancelHideRegenStream(index) {
-            clearTimeout(regenStreamHideTimers[index]);
-        }
-        function showRegenMenu(e, index) {
-            clearTimeout(regenHideTimers[index]);
-            var menu = document.getElementById('regen-menu-' + index);
-            if (menu) menu.style.display = 'block';
-        }
-        function hideRegenMenu(index) {
-            regenHideTimers[index] = setTimeout(function() {
-                var menu = document.getElementById('regen-menu-' + index);
-                if (menu) menu.style.display = 'none';
-            }, 200);
-        }
-        function cancelHideRegen(index) {
-            clearTimeout(regenHideTimers[index]);
-        }
-        function regenerateWithStyle(index, style) {
-            var menu = document.getElementById('regen-menu-' + index);
-            if (menu) menu.style.display = 'none';
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var msg = chat.messages[index];
-            if (!msg || msg.role !== 'assistant') return;
-            var userMsg = null;
-            for (var i = index - 1; i >= 0; i--) {
-                if (chat.messages[i].role === 'user') { userMsg = chat.messages[i]; break; }
-            }
-            if (!userMsg) return;
-            if (msg.regenerations && msg.regenerations.length >= 6) {
-                alert('Достигнут лимит регенераций (6/6).');
-                return;
-            }
-            if (!msg.regenerations) {
-                msg.regenerations = [{content: msg.content, reasoning: msg.reasoning || '', finished: true}];
-                msg.activeRegeneration = 0;
-                msg.regenerated = true;
-            }
-            var ri = msg.regenerations.length;
-            msg.regenerations.push({content: '', reasoning: '', finished: false, _streamWords: null, _streamPos: 0});
-            msg.activeRegeneration = ri;
-            msg.content = '';
-            msg.reasoning = '';
-            msg.interrupted = false;
-            msg.finished = false;
-            msg.regenerated = true;
-            isSending = true;
-            sendBtnStop();
-            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(b) { b.remove(); });
-            renderMessages();
-            var input = document.getElementById('userInput');
-            if (input) input.focus();
-            var styledMessage = userMsg.content;
-            if (style === 'кратко') styledMessage = styledMessage + '\n\n[отвечай кратко]';
-            if (style === 'подробно') styledMessage = styledMessage + '\n\n[отвечай подробно]';
-            fetch(SERVER_URL + '/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                body: JSON.stringify({user_id: currentUserId, message: styledMessage, model: 'flash', mode: 'regenerate', reasonerMode: currentMode, chat_id: currentChatId})
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.reply) {
-                    var fc = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    var words = fc.split(/(\s+)/);
-                    msg.regenerations[ri]._streamWords = words;
-                    msg.regenerations[ri]._streamPos = 0;
-                    if (data.reasoning) msg.regenerations[ri]._reasoningInProgress = true;
-                    streamRegen(index, ri);
-                } else {
-                    msg.regenerations[ri].content = 'Ошибка.';
-                    msg.regenerations[ri].finished = true;
-                    msg.content = 'Ошибка.';
-                    isSending = false; sendBtnArrow(); updateBalance();
-                    renderMessages();
-                }
-            })
-            .catch(function() {
-                msg.regenerations[ri].content = 'Ошибка соединения.';
-                msg.regenerations[ri].finished = true;
-                msg.content = 'Ошибка соединения.';
-                isSending = false; sendBtnArrow();
-                renderMessages();
-            });
-        }
-        function regenerateMessage(index) {
-            if (isSending) return;
-            var menu = document.getElementById('regen-menu-' + index);
-            if (menu) menu.style.display = 'none';
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var msg = chat.messages[index];
-            if (!msg || msg.role !== 'assistant') return;
-            var userMsg = null;
-            for (var i = index - 1; i >= 0; i--) {
-                if (chat.messages[i].role === 'user') { userMsg = chat.messages[i]; break; }
-            }
-            if (!userMsg) return;
-            if (msg.regenerations && msg.regenerations.length >= 6) {
-                alert('Достигнут лимит регенераций (6/6).');
-                return;
-            }
-            if (!msg.regenerations) {
-                msg.regenerations = [{content: msg.content, reasoning: msg.reasoning || '', finished: true}];
-                msg.activeRegeneration = 0;
-                msg.regenerated = true;
-            }
-            var ri = msg.regenerations.length;
-            msg.regenerations.push({content: '', reasoning: '', finished: false, _streamWords: null, _streamPos: 0});
-            msg.activeRegeneration = ri;
-            msg.content = '';
-            msg.reasoning = '';
-            msg.interrupted = false;
-            msg.finished = false;
-            msg.regenerated = true;
-            isSending = true;
-            sendBtnStop();
-            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(b) { b.remove(); });
-            renderMessages();
-            var input = document.getElementById('userInput');
-            if (input) input.focus();
-            fetch(SERVER_URL + '/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                body: JSON.stringify({user_id: currentUserId, message: userMsg.content, model: 'flash', mode: 'regenerate', reasonerMode: currentMode, chat_id: currentChatId})
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.reply) {
-                    var fc = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    var words = fc.split(/(\s+)/);
-                    msg.regenerations[ri]._streamWords = words;
-                    msg.regenerations[ri]._streamPos = 0;
-                    if (data.reasoning) msg.regenerations[ri]._reasoningInProgress = true;
-                    streamRegen(index, ri);
-                } else {
-                    msg.regenerations[ri].content = 'Ошибка.';
-                    msg.regenerations[ri].finished = true;
-                    msg.content = 'Ошибка.';
-                    isSending = false; sendBtnArrow(); updateBalance();
-                    renderMessages();
-                }
-            })
-            .catch(function() {
-                msg.regenerations[ri].content = 'Ошибка соединения.';
-                msg.regenerations[ri].finished = true;
-                msg.content = 'Ошибка соединения.';
-                isSending = false; sendBtnArrow();
-                renderMessages();
-            });
-        }
-        function streamRegen(msgIdx, regenIdx) {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var msg = chat.messages[msgIdx];
-            msg.finished = false;
-            var regen = msg.regenerations[regenIdx];
-            var words = regen._streamWords;
-            var pos = regen._streamPos || 0;
-            if (pos >= words.length) {
-                regen.finished = true;
-                msg.content = regen.content;
-                msg.reasoning = regen.reasoning;
-                msg._reasoningInProgress = false;
-                msg.finished = true;
-                isSending = false; sendBtnArrow(); updateBalance();
-                autoNameChat(chat); renderChatList();
-                document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(b) { b.remove(); });
-                renderMessages();
-                return;
-            }
-            var c = 0;
-            while (pos < words.length && c < 2) { pos++; c++; }
-            regen._streamPos = pos;
-            var ft = words.slice(0, pos).join('');
-            regen.content = ft;
-            if (regen._reasoningInProgress) {
-                var ei = ft.indexOf('\n\nОтвет:\n');
-                if (ei !== -1) {
-                    regen._reasoningInProgress = false;
-                    regen.reasoning = ft.substring('Размышление:\n'.length, ei);
-                    regen.content = ft.substring(ei + '\n\nОтвет:\n'.length);
-                }
-            }
-            msg.content = regen.content;
-            msg.reasoning = regen._reasoningInProgress ? '' : regen.reasoning;
-            msg._reasoningInProgress = regen._reasoningInProgress;
-            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(b) { b.remove(); });
-            renderMessages();
-            if (autoScroll) { var m = document.querySelector('.main'); if (m) { m.style.scrollBehavior = 'auto'; m.scrollTop = m.scrollHeight; m.style.scrollBehavior = 'smooth'; } }
-            typingInterval = setTimeout(function() { streamRegen(msgIdx, regenIdx); }, 20);
-        }
-        function prevRegeneration(index) {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var msg = chat.messages[index];
-            if (!msg || !msg.regenerations || msg.activeRegeneration <= 0) return;
-            msg.activeRegeneration--;
-            msg.content = msg.regenerations[msg.activeRegeneration].content;
-            msg.reasoning = msg.regenerations[msg.activeRegeneration].reasoning;
-            renderMessages();
-        }
-        function nextRegeneration(index) {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var msg = chat.messages[index];
-            if (!msg || !msg.regenerations || msg.activeRegeneration >= msg.regenerations.length - 1) return;
-            msg.activeRegeneration++;
-            msg.content = msg.regenerations[msg.activeRegeneration].content;
-            msg.reasoning = msg.regenerations[msg.activeRegeneration].reasoning;
-            renderMessages();
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
         function setupFloatingCopyButtons() {
