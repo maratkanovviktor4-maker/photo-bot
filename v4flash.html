@@ -838,6 +838,14 @@
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
 
+            var isRegen = (currentMode === 'regenerate');
+            var regenTarget = null;
+            if (isRegen) {
+                for (var i = chat.messages.length - 1; i >= 0; i--) {
+                    if (chat.messages[i].role === 'assistant') { regenTarget = chat.messages[i]; break; }
+                }
+            }
+
             var lastMsg = chat.messages[chat.messages.length - 1];
             if (lastMsg && lastMsg.role === 'assistant' && lastMsg.interrupted) {
                 lastMsg.interrupted = false;
@@ -962,6 +970,17 @@
                             chat.messages[msgIndex].finished = true;
                             chat.messages[msgIndex].interrupted = false;
                             typingInterval = null;
+                            if (isRegen && regenTarget) {
+                                regenTarget.regenerations[regenTarget.activeRegeneration].content = chat.messages[msgIndex].content;
+                                regenTarget.regenerations[regenTarget.activeRegeneration].reasoning = chat.messages[msgIndex].reasoning || '';
+                                regenTarget.regenerations[regenTarget.activeRegeneration].finished = true;
+                                regenTarget.content = chat.messages[msgIndex].content;
+                                regenTarget.reasoning = chat.messages[msgIndex].reasoning || '';
+                                regenTarget.finished = true;
+                                regenTarget._reasoningInProgress = false;
+                                chat.messages.pop();
+                                chat.messages.pop();
+                            }
                             streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + msgIndex + ')" id="download-btn-' + msgIndex + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
                             autoNameChat(chat);
                             renderChatList();
