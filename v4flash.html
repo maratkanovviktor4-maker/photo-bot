@@ -389,11 +389,9 @@
                     for (const [chatId, messages] of Object.entries(data.history)) {
                         const title = data.titles && data.titles[chatId] ? data.titles[chatId] : ('Чат ' + chatId);
                         // Восстанавливаем _allReplies для ассистентов
-                        var msgIdx = 0;
                         for (var m of messages) {
-                            if (!m.id) { m.id = 'msg_' + chatId + '_' + msgIdx; }
+                            // Не перезаписываем id — берём с сервера
                             if (m.role === 'assistant') {
-                            msgIdx++;
                                 if (!m._allReplies || m._allReplies.length === 0) {
                                     m._allReplies = [{ content: m.content || '', reasoning: m.reasoning || '', interrupted: m.interrupted || false, finished: m.finished !== false }];
                                 }
@@ -1352,9 +1350,12 @@
                     break;
                 }
             }
-            // parent_msg_id = ID сообщения прямо перед регенерируемым ассистентом
-            if (msgIndex > 0) {
-                parentMsgId = chat.messages[msgIndex - 1].id || '';
+            // parent_msg_id = ID последнего user перед регенерируемым ассистентом
+            for (var k = msgIndex - 1; k >= 0; k--) {
+                if (chat.messages[k].role === 'user') {
+                    parentMsgId = chat.messages[k].id || '';
+                    break;
+                }
             }
             
             console.log('sending branch request, parent_msg_id:', parentMsgId, 'message:', userText);
