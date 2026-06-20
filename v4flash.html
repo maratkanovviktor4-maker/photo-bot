@@ -1125,7 +1125,14 @@
             if (!msg || msg.role !== 'assistant' || !msg.interrupted) return;
             isSending = true;
             sendBtnStop();
-            const words = msg._streamWords;
+            var words;
+            if (msg.regenerations && msg.activeRegeneration !== undefined) {
+                var regen = msg.regenerations[msg.activeRegeneration];
+                words = regen._streamWords;
+                msg._streamPos = regen._streamPos;
+            } else {
+                words = msg._streamWords;
+            }
             let pos = msg._streamPos || 0;
             if (!words || pos >= words.length) {
                 msg.interrupted = false;
