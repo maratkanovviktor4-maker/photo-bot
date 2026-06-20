@@ -584,8 +584,15 @@
                     } else if (m._reasoningInProgress && m.content) {
                         var startIdx = m.content.indexOf('Размышление:\n');
                         if (startIdx !== -1) {
-                            reasoningHtml = '<div class="reasoning-block">' + escapeHtml(m.content.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
-                            contentToShow = '';
+                            var reasoningText = m.content.substring(startIdx + 'Размышление:\n'.length);
+                            var endIdx = reasoningText.indexOf('\n\nОтвет:\n');
+                            if (endIdx !== -1) {
+                                reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText.substring(0, endIdx)) + '</div>';
+                                contentToShow = reasoningText.substring(endIdx + '\n\nОтвет:\n'.length);
+                            } else {
+                                reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
+                                contentToShow = '';
+                            }
                         }
                     }
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + reasoningHtml + formatMessage(contentToShow) + '</div>' + actionsHtml + '</div></div>';
