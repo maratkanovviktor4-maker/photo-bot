@@ -1252,7 +1252,15 @@
         function showRegenMenu(e, index) {
             if (regenHideTimer[index]) { clearTimeout(regenHideTimer[index]); delete regenHideTimer[index]; }
             var menu = document.getElementById('regen-menu-' + index);
-            if (menu) menu.style.display = 'block';
+            if (menu) {
+                menu.style.display = 'block';
+                var isLight = document.body.classList.contains('light');
+                menu.style.background = isLight ? '#ffffff' : '#1a1a2e';
+                menu.style.border = isLight ? '1px solid rgba(0,0,0,0.1)' : '1px solid rgba(255,255,255,0.1)';
+                menu.querySelectorAll('button').forEach(function(b) {
+                    b.style.color = isLight ? '#333' : '#e0e0e0';
+                });
+            }
         }
         function hideRegenMenu(index) {
             regenHideTimer[index] = setTimeout(function() {
