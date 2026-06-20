@@ -1315,10 +1315,19 @@
                     msg._streamPos = 0;
                     msg._reasoningInProgress = false;
                     
+                    // Если есть reasoning, сразу показываем его в content для renderMessages
+                    if (data.reasoning) {
+                        msg.content = fullContent;
+                        msg.reasoning = data.reasoning;
+                    }
+                    
                     renderMessages();
                     updateBalance();
                     
-                    // Запускаем continueMessage — он идёт по тем же рельсам что обычный стрим
+                    // Сбрасываем для стрима
+                    msg.content = '';
+                    
+                    // Запускаем continueMessage
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
