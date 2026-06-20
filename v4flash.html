@@ -584,15 +584,8 @@
                     } else if (m._reasoningInProgress && m.content) {
                         var startIdx = m.content.indexOf('Размышление:\n');
                         if (startIdx !== -1) {
-                            var reasoningText = m.content.substring(startIdx + 'Размышление:\n'.length);
-                            var endIdx = reasoningText.indexOf('\n\nОтвет:\n');
-                            if (endIdx !== -1) {
-                                reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText.substring(0, endIdx)) + '</div>';
-                                contentToShow = reasoningText.substring(endIdx + '\n\nОтвет:\n'.length);
-                            } else {
-                                reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
-                                contentToShow = '';
-                            }
+                            reasoningHtml = '<div class="reasoning-block">' + escapeHtml(m.content.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
+                            contentToShow = '';
                         }
                     }
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + reasoningHtml + formatMessage(contentToShow) + '</div>' + actionsHtml + '</div></div>';
@@ -1297,7 +1290,7 @@
             fetch(SERVER_URL + '/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                body: JSON.stringify({user_id: currentUserId, message: styledMessage, model: 'flash', mode: 'regenerate', reasonerMode: currentMode, chat_id: currentChatId})
+                body: JSON.stringify({user_id: currentUserId, message: styledMessage, model: 'flash', mode: 'regenerate', chat_id: currentChatId})
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -1363,7 +1356,7 @@
             fetch(SERVER_URL + '/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                body: JSON.stringify({user_id: currentUserId, message: userMsg.content, model: 'flash', mode: 'regenerate', reasonerMode: currentMode, chat_id: currentChatId})
+                body: JSON.stringify({user_id: currentUserId, message: userMsg.content, model: 'flash', mode: 'regenerate', chat_id: currentChatId})
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -1401,12 +1394,12 @@
             if (pos >= words.length) {
                 regen.finished = true;
                 msg.content = regen.content;
-            msg.reasoning = regen.reasoning;
-            if (regen._reasoningInProgress && regen.content.indexOf('Размышление:\n') !== -1) {
-                msg._reasoningInProgress = true;
-            }
-            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(b) { b.remove(); });
-            renderMessages();
+                msg.reasoning = regen.reasoning;
+                msg.finished = true;
+                isSending = false; sendBtnArrow(); updateBalance();
+                autoNameChat(chat); renderChatList();
+                document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(b) { b.remove(); });
+                renderMessages();
                 return;
             }
             var c = 0;
