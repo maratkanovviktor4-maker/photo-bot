@@ -1394,12 +1394,12 @@
             if (pos >= words.length) {
                 regen.finished = true;
                 msg.content = regen.content;
-                msg.reasoning = regen.reasoning;
-                msg.finished = true;
-                isSending = false; sendBtnArrow(); updateBalance();
-                autoNameChat(chat); renderChatList();
-                document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(b) { b.remove(); });
-                renderMessages();
+            msg.reasoning = regen.reasoning;
+            if (regen._reasoningInProgress && regen.content.indexOf('Размышление:\n') !== -1) {
+                msg._reasoningInProgress = true;
+            }
+            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(b) { b.remove(); });
+            renderMessages();
                 return;
             }
             var c = 0;
