@@ -563,7 +563,13 @@
                                 '<button onclick="switchReply(' + i + ', 1)" style="background:transparent;border:none;color:#888;cursor:pointer;padding:2px 4px;font-size:11px;"' + (replyIndex >= repliesCount - 1 ? ' disabled style="opacity:0.3"' : '') + '>▶</button>' +
                                 '</span>';
                         }
-                        actionsHtml += '<button onclick="regenerateMessage(' + i + ')" title="Новый ответ" style="background:transparent;border:none;color:#888;cursor:pointer;padding:4px 6px;font-size:12px;">🔄</button>';
+                        actionsHtml += '<span style="position:relative;display:inline-flex;">' +
+                            '<button onclick="regenerateMessage(' + i + ')" title="Новый ответ" style="background:transparent;border:none;color:#888;cursor:pointer;padding:4px 6px;font-size:12px;" onmouseenter="showRegenMenu(event, ' + i + ')" onmouseleave="hideRegenMenu(' + i + ')">🔄</button>' +
+                            '<div id="regen-menu-' + i + '" style="position:absolute;top:100%;left:0;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px;z-index:99999;min-width:150px;display:none;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,0.4);" onmouseenter="cancelHideRegen(' + i + ')" onmouseleave="hideRegenMenu(' + i + ')">' +
+                            '<button onclick="regenerateMessage(' + i + ')" style="display:block;width:100%;padding:6px 10px;border:none;background:transparent;color:#e0e0e0;font-size:11px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'transparent\'">🔄 Попробовать снова</button>' +
+                            '<button onclick="regenerateMessage(' + i + ', \'shorter\')" style="display:block;width:100%;padding:6px 10px;border:none;background:transparent;color:#e0e0e0;font-size:11px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'transparent\'">📝 Более кратко</button>' +
+                            '<button onclick="regenerateMessage(' + i + ', \'longer\')" style="display:block;width:100%;padding:6px 10px;border:none;background:transparent;color:#e0e0e0;font-size:11px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'transparent\'">📄 Более подробно</button>' +
+                            '</div></span>';
                     }
                     actionsHtml += '</div>';
                     var dataAttr = ' data-msg-index="' + i + '"';
@@ -1242,6 +1248,21 @@
             }
             streamNext();
         }
+        var regenHideTimer = {};
+        function showRegenMenu(e, index) {
+            if (regenHideTimer[index]) { clearTimeout(regenHideTimer[index]); delete regenHideTimer[index]; }
+            var menu = document.getElementById('regen-menu-' + index);
+            if (menu) menu.style.display = 'block';
+        }
+        function hideRegenMenu(index) {
+            regenHideTimer[index] = setTimeout(function() {
+                var menu = document.getElementById('regen-menu-' + index);
+                if (menu) menu.style.display = 'none';
+            }, 200);
+        }
+        function cancelHideRegen(index) {
+            if (regenHideTimer[index]) { clearTimeout(regenHideTimer[index]); delete regenHideTimer[index]; }
+        }
         async function switchReply(msgIndex, direction) {
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
@@ -1279,12 +1300,20 @@
             }
         }
 
-        async function regenerateMessage(msgIndex) {
+        async function regenerateMessage(msgIndex, style) {
             if (isSending) return;
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
             const msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'assistant') return;
+            
+            // Закрываем меню
+            var menu = document.getElementById('regen-menu-' + msgIndex);
+            if (menu) menu.style.display = 'none';
+            
+            var promptMod = '';
+            if (style === 'shorter') promptMod = '\n\nОтветь более кратко.';
+            else if (style === 'longer') promptMod = '\n\nОтветь более подробно.';
             
             isSending = true;
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
@@ -1298,7 +1327,7 @@
                 const resp = await fetch(`${SERVER_URL}/regenerate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, message_index: msgIndex, mode: currentMode })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, message_index: msgIndex, mode: currentMode, prompt_mod: promptMod })
                 });
                 
                 if (!resp.ok) {
