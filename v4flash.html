@@ -209,6 +209,7 @@
     <div class="main">
         <div class="top-bar">
             <span id="balanceDisplay"> ...</span>
+            <button class="mode-btn" onclick="togglePersona()" id="personaBtn" style="font-size:11px;padding:4px 10px;">🎭 Стиль</button>
             <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
         </div>
         <div class="chat-wrapper">
@@ -254,6 +255,7 @@
         let isSending = false;
         let typingInterval = null;
         let pendingFile = null;
+        let activePersona = localStorage.getItem('photobot_persona') || '';
         let activeStreamId = null;
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
@@ -296,6 +298,11 @@
                 hlTheme.href = isLight 
                     ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css'
                     : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
+            }
+            if (activePersona) {
+                var personaNames = {coder: '💻 Кодер', student: '📚 Студент', kids: '🎈 Для детей'};
+                var personaBtn = document.getElementById('personaBtn');
+                if (personaBtn) personaBtn.textContent = personaNames[activePersona] || '🎭 Стиль';
             }
             var savedMode = localStorage.getItem('photobot_mode');
             if (savedMode === 'reasoner') {
@@ -701,6 +708,67 @@
             }
         }
         function setMode(mode) { currentMode = mode; }
+        async function togglePersona() {
+            var existing = document.getElementById('persona-modal');
+            if (existing) { existing.remove(); return; }
+            
+            var modal = document.createElement('div');
+            modal.id = 'persona-modal';
+            modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;z-index:1000;min-width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+            if (document.body.classList.contains('light')) {
+                modal.style.background = '#ffffff';
+                modal.style.border = '1px solid rgba(0,0,0,0.1)';
+                modal.style.boxShadow = '0 8px 32px rgba(0,0,0,0.15)';
+            }
+            modal.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:12px;color:#e0e0e0;">Выберите стиль ассистента</div><div id="persona-list" style="display:flex;flex-direction:column;gap:4px;">Загрузка...</div>';
+            document.body.appendChild(modal);
+            
+            try {
+                var resp = await fetch(SERVER_URL + '/get_personas?user_id=' + currentUserId + '&session_token=' + sessionToken);
+                var data = await resp.json();
+                var list = document.getElementById('persona-list');
+                list.innerHTML = '';
+                
+                var btn = document.createElement('button');
+                btn.textContent = '🔄 Обычный (без стиля)';
+                btn.style.cssText = 'display:block;width:100%;padding:10px 12px;border:none;background:' + (activePersona === '' ? '#00CBF5' : 'transparent') + ';color:' + (activePersona === '' ? '#201F28' : '#e0e0e0') + ';font-size:13px;cursor:pointer;text-align:left;border-radius:8px;font-family:Inter,sans-serif;';
+                btn.onclick = function() {
+                    activePersona = '';
+                    localStorage.setItem('photobot_persona', '');
+                    document.getElementById('personaBtn').textContent = '🎭 Стиль';
+                    modal.remove();
+                };
+                list.appendChild(btn);
+                
+                (data.personas || []).forEach(function(p) {
+                    var btn = document.createElement('button');
+                    btn.textContent = p.name;
+                    var isActive = activePersona === p.id;
+                    btn.style.cssText = 'display:block;width:100%;padding:10px 12px;border:none;background:' + (isActive ? '#00CBF5' : 'transparent') + ';color:' + (isActive ? '#201F28' : '#e0e0e0') + ';font-size:13px;cursor:pointer;text-align:left;border-radius:8px;font-family:Inter,sans-serif;';
+                    btn.onmouseenter = function() { if (!isActive) btn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
+                    btn.onmouseleave = function() { if (!isActive) btn.style.background = 'transparent'; };
+                    btn.onclick = function() {
+                        activePersona = p.id;
+                        localStorage.setItem('photobot_persona', p.id);
+                        document.getElementById('personaBtn').textContent = p.name;
+                        modal.remove();
+                    };
+                    list.appendChild(btn);
+                });
+            } catch(e) {
+                document.getElementById('persona-list').innerHTML = 'Ошибка загрузки';
+            }
+            
+            modal.addEventListener('click', function(e) { e.stopPropagation(); });
+            setTimeout(function() {
+                document.addEventListener('click', function closeModal(e) {
+                    if (!modal.contains(e.target)) {
+                        modal.remove();
+                        document.removeEventListener('click', closeModal);
+                    }
+                });
+            }, 10);
+        }
         function toggleReasoner() {
             if (currentMode === 'reasoner') {
                 currentMode = 'chat';
@@ -868,7 +936,7 @@
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '' })
+                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '', persona: activePersona })
                 });
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (resp.status === 403) {
