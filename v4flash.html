@@ -380,7 +380,16 @@
                     chats = [];
                     for (const [chatId, messages] of Object.entries(data.history)) {
                         const title = data.titles && data.titles[chatId] ? data.titles[chatId] : ('Чат ' + chatId);
-                        // Сервер уже отдал плоский вид (current_reply развёрнут)
+                        // Восстанавливаем _allReplies для ассистентов
+                        for (var m of messages) {
+                            if (m.role === 'assistant') {
+                                if (!m._allReplies) {
+                                    m._allReplies = [{ content: m.content || '', reasoning: m.reasoning || '', interrupted: m.interrupted || false, finished: m.finished !== false }];
+                                }
+                                m._repliesCount = m._allReplies.length;
+                                m._replyIndex = m._replyIndex || 0;
+                            }
+                        }
                         chats.push({ id: chatId, title: title, messages: messages });
                     }
                     chats.sort((a, b) => a.id.localeCompare(b.id));
@@ -537,10 +546,16 @@
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
                         if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
-                        if (m._repliesCount && m._repliesCount > 1) {
-                            actionsHtml += `<span style="display:inline-flex;align-items:center;gap:2px;font-size:11px;color:#888;font-family:Inter,sans-serif;margin-left:4px;"><button onclick="switchReply(${i}, -1)" style="background:transparent;border:none;color:#888;cursor:pointer;padding:2px 4px;font-size:11px;" ${m._replyIndex <= 0 ? 'disabled style="opacity:0.3"' : ''}>◀</button><span>${m._replyIndex + 1}/${m._repliesCount}</span><button onclick="switchReply(${i}, 1)" style="background:transparent;border:none;color:#888;cursor:pointer;padding:2px 4px;font-size:11px;" ${m._replyIndex >= m._repliesCount - 1 ? 'disabled style="opacity:0.3"' : ''}>▶</button></span>`;
+                        var repliesCount = m._repliesCount || 1;
+                        var replyIndex = m._replyIndex || 0;
+                        if (repliesCount > 1) {
+                            actionsHtml += '<span style="display:inline-flex;align-items:center;gap:2px;font-size:11px;color:#888;font-family:Inter,sans-serif;margin-left:4px;">' +
+                                '<button onclick="switchReply(' + i + ', -1)" style="background:transparent;border:none;color:#888;cursor:pointer;padding:2px 4px;font-size:11px;"' + (replyIndex <= 0 ? ' disabled style="opacity:0.3"' : '') + '>◀</button>' +
+                                '<span>' + (replyIndex + 1) + '/' + repliesCount + '</span>' +
+                                '<button onclick="switchReply(' + i + ', 1)" style="background:transparent;border:none;color:#888;cursor:pointer;padding:2px 4px;font-size:11px;"' + (replyIndex >= repliesCount - 1 ? ' disabled style="opacity:0.3"' : '') + '>▶</button>' +
+                                '</span>';
                         }
-                        actionsHtml += `<button onclick="regenerateMessage(${i})" title="Новый ответ" style="background:transparent;border:none;color:#888;cursor:pointer;padding:4px 6px;font-size:12px;">🔄</button>`;
+                        actionsHtml += '<button onclick="regenerateMessage(' + i + ')" title="Новый ответ" style="background:transparent;border:none;color:#888;cursor:pointer;padding:4px 6px;font-size:12px;">🔄</button>';
                     }
                     actionsHtml += '</div>';
                     var dataAttr = ' data-msg-index="' + i + '"';
@@ -1252,15 +1267,8 @@
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
             
-            // Плейсхолдер
-            const area = document.getElementById('chatArea');
-            const placeholderId = 'reg_' + Date.now();
-            const typingRow = document.createElement('div');
-            typingRow.className = 'message-row assistant'; typingRow.id = placeholderId;
-            typingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
-            area.appendChild(typingRow);
-            var main = document.querySelector('.main');
-            if (main) { main.scrollTop = main.scrollHeight; }
+            activeStreamId = 'regen_' + msgIndex;
+            var streamId = activeStreamId;
             
             try {
                 const resp = await fetch(`${SERVER_URL}/regenerate`, {
@@ -1268,38 +1276,130 @@
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
                     body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, message_index: msgIndex })
                 });
-                const el = document.getElementById(placeholderId); if (el) el.remove();
                 
                 if (!resp.ok) {
-                    alert('Ошибка регенерации');
-                    isSending = false; sendBtnArrow(); return;
+                    isSending = false; sendBtnArrow(); activeStreamId = null; return;
                 }
                 
                 const data = await resp.json();
-                if (data.reply) {
-                    // Добавляем новый reply
+                if (data.reply && activeStreamId === streamId) {
+                    // Инициализируем _allReplies если нет
                     if (!msg._allReplies) {
-                        msg._allReplies = [{ content: msg.content, reasoning: msg.reasoning, interrupted: msg.interrupted, finished: msg.finished }];
+                        msg._allReplies = [{ content: msg.content, reasoning: msg.reasoning, interrupted: msg.interrupted !== false, finished: msg.finished !== false }];
                     }
-                    msg._allReplies.push({ content: data.reply, reasoning: data.reasoning || '', interrupted: false, finished: true });
+                    
+                    // Добавляем новый reply (пока пустой, заполнится стримом)
+                    var newReplyIdx = msg._allReplies.length;
+                    msg._allReplies.push({ content: '', reasoning: data.reasoning || '', interrupted: false, finished: false });
                     msg._repliesCount = msg._allReplies.length;
-                    msg._replyIndex = msg._allReplies.length - 1;
-                    msg.content = data.reply;
-                    msg.reasoning = data.reasoning || '';
+                    msg._replyIndex = newReplyIdx;
+                    
+                    // Настраиваем стриминг для нового reply
+                    var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                    msg.content = '';
+                    msg.reasoning = '';
+                    msg.finished = false;
                     msg.interrupted = false;
-                    msg.finished = true;
-                    msg._streamWords = null;
+                    msg._streamWords = fullContent.split(/(\s+)/);
                     msg._streamPos = 0;
+                    msg._reasoningInProgress = false;
                     
                     renderMessages();
-                    updateBalance();
+                    await new Promise(r => setTimeout(r, 50));
+                    
+                    var allAssistant = document.querySelectorAll('.message-row.assistant .message-content');
+                    var allActions = document.querySelectorAll('.message-row.assistant .message-actions');
+                    var assistantIdx = 0;
+                    for (var k = 0; k <= msgIndex; k++) {
+                        if (chat.messages[k].role === 'assistant' && k === msgIndex) break;
+                        if (chat.messages[k].role === 'assistant') assistantIdx++;
+                    }
+                    var streamDiv = allAssistant[assistantIdx];
+                    var streamAction = allActions[assistantIdx];
+                    
+                    var pos = 0;
+                    var words = msg._streamWords;
+                    var reasoningStarted = false;
+                    var reasoningEnded = false;
+                    
+                    function streamNext() {
+                        if (activeStreamId !== streamId) return;
+                        var chunk = '';
+                        var wordCount = 0;
+                        while (pos < words.length && wordCount < 2) {
+                            chunk += words[pos];
+                            wordCount++;
+                            pos++;
+                        }
+                        msg._streamPos = pos;
+                        if (chunk) {
+                            var fullText = words.slice(0, pos).join('');
+                            msg.content = fullText;
+                            if (!reasoningStarted && fullText.indexOf('Размышление:\n') !== -1) {
+                                reasoningStarted = true;
+                                msg._reasoningInProgress = true;
+                            }
+                            if (reasoningStarted && !reasoningEnded) {
+                                var endIdx = fullText.indexOf('\n\nОтвет:\n');
+                                if (endIdx !== -1) {
+                                    reasoningEnded = true;
+                                    msg._reasoningInProgress = false;
+                                    msg.reasoning = fullText.substring('Размышление:\n'.length, endIdx);
+                                    var replyText = fullText.substring(endIdx + '\n\nОтвет:\n'.length);
+                                    if (streamDiv) streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(msg.reasoning) + '</div>' + formatMessage(replyText);
+                                } else {
+                                    var rText = fullText.substring(Math.max(0, fullText.indexOf('Размышление:\n') + 'Размышление:\n'.length));
+                                    if (streamDiv) streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(rText) + '</div>';
+                                }
+                            } else if (reasoningEnded) {
+                                var replyStart = fullText.indexOf('\n\nОтвет:\n') + '\n\nОтвет:\n'.length;
+                                if (streamDiv) streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(msg.reasoning) + '</div>' + formatMessage(fullText.substring(replyStart));
+                            } else {
+                                if (streamDiv) streamDiv.innerHTML = formatMessage(fullText);
+                            }
+                            if (streamDiv) {
+                                streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
+                            }
+                            setupFloatingCopyButtons();
+                            if (autoScroll) {
+                                var main = document.querySelector('.main');
+                                if (main) { main.scrollTop = main.scrollHeight; }
+                            }
+                            typingInterval = setTimeout(streamNext, 20);
+                        } else {
+                            msg.finished = true;
+                            msg.interrupted = false;
+                            msg._allReplies[msg._replyIndex] = { content: msg.content, reasoning: msg.reasoning, interrupted: false, finished: true };
+                            typingInterval = null;
+                            if (streamAction) {
+                                streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>' +
+                                '<button onclick="downloadMessage(' + msgIndex + ')" id="download-btn-' + msgIndex + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>' +
+                                '<span style="display:inline-flex;align-items:center;gap:2px;font-size:11px;color:#888;font-family:Inter,sans-serif;margin-left:4px;">' +
+                                '<button onclick="switchReply(' + msgIndex + ', -1)" style="background:transparent;border:none;color:#888;cursor:pointer;padding:2px 4px;font-size:11px;">◀</button>' +
+                                '<span>' + (msg._replyIndex + 1) + '/' + msg._repliesCount + '</span>' +
+                                '<button onclick="switchReply(' + msgIndex + ', 1)" style="background:transparent;border:none;color:#888;cursor:pointer;padding:2px 4px;font-size:11px;" disabled style="opacity:0.3">▶</button>' +
+                                '</span>' +
+                                '<button onclick="regenerateMessage(' + msgIndex + ')" title="Новый ответ" style="background:transparent;border:none;color:#888;cursor:pointer;padding:4px 6px;font-size:12px;">🔄</button>';
+                            }
+                            autoNameChat(chat);
+                            renderChatList();
+                            if (autoScroll) {
+                                var main = document.querySelector('.main');
+                                if (main) { main.scrollTop = main.scrollHeight; }
+                            }
+                            if (activeStreamId === streamId) {
+                                isSending = false;
+                                activeStreamId = null;
+                                sendBtnArrow();
+                            }
+                            updateBalance();
+                        }
+                    }
+                    streamNext();
                 }
             } catch (e) {
-                const el = document.getElementById(placeholderId); if (el) el.remove();
-                alert('Ошибка соединения');
+                isSending = false; sendBtnArrow(); activeStreamId = null;
             }
-            isSending = false;
-            sendBtnArrow();
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
         function setupFloatingCopyButtons() {
