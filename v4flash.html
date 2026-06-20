@@ -1402,6 +1402,7 @@
                 regen.finished = true;
                 msg.content = regen.content;
                 msg.reasoning = regen.reasoning;
+                msg._reasoningInProgress = false;
                 msg.finished = true;
                 isSending = false; sendBtnArrow(); updateBalance();
                 autoNameChat(chat); renderChatList();
@@ -1423,7 +1424,8 @@
                 }
             }
             msg.content = regen.content;
-            msg.reasoning = regen.reasoning;
+            msg.reasoning = regen._reasoningInProgress ? '' : regen.reasoning;
+            msg._reasoningInProgress = regen._reasoningInProgress;
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(b) { b.remove(); });
             renderMessages();
             if (autoScroll) { var m = document.querySelector('.main'); if (m) { m.style.scrollBehavior = 'auto'; m.scrollTop = m.scrollHeight; m.style.scrollBehavior = 'smooth'; } }
