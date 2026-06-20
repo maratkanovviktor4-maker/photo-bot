@@ -910,6 +910,20 @@
                     return;
                 }
                 const data = await resp.json();
+                // Обновляем id user-сообщения на серверный
+                if (data.user_msg_id && chat.messages.length > 0) {
+                    var lastUser = null;
+                    for (var ui = chat.messages.length - 1; ui >= 0; ui--) {
+                        if (chat.messages[ui].role === 'user') {
+                            lastUser = chat.messages[ui];
+                            break;
+                        }
+                    }
+                    if (lastUser) {
+                        lastUser.id = data.user_msg_id;
+                    }
+                }
+                if (data.reply) {
                 if (data.reply) {
                     const fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
                     chat.messages.push({ id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6), role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, _allReplies: [], _repliesCount: 1, _replyIndex: 0 });
