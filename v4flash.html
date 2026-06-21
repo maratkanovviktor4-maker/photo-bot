@@ -487,19 +487,24 @@
                     if (data.branches) {
                         for (var i = 0; i < chats.length; i++) {
                             var cid = chats[i].id;
-                            if (data.branches[cid]) {
+                            if (data.branches[cid] && data.branches[cid].length > 0) {
+                                var msgs = chats[i].messages;
                                 var lastUserIdx = -1;
-                                for (var j = chats[i].messages.length - 1; j >= 0; j--) {
-                                    if (chats[i].messages[j].role === 'user') { lastUserIdx = j; break; }
+                                for (var j = msgs.length - 1; j >= 0; j--) {
+                                    if (msgs[j].role === 'user') { lastUserIdx = j; break; }
                                 }
-                                if (lastUserIdx >= 0) {
-                                    var userMsg = chats[i].messages[lastUserIdx];
-                                    userMsg.replies = [chats[i].messages[lastUserIdx + 1]];
+                                if (lastUserIdx >= 0 && lastUserIdx + 1 < msgs.length && msgs[lastUserIdx + 1].role === 'assistant') {
+                                    var userMsg = msgs[lastUserIdx];
+                                    var originalReply = msgs[lastUserIdx + 1];
+                                    userMsg.replies = [originalReply];
                                     for (var k = 0; k < data.branches[cid].length; k++) {
                                         userMsg.replies.push(data.branches[cid][k]);
                                     }
                                     userMsg._activeReply = 0;
-                                    chats[i].messages = chats[i].messages.slice(0, lastUserIdx + 1);
+                                    msgs.splice(lastUserIdx + 1, 1);
+                                    if (lastUserIdx + 1 < msgs.length && msgs[lastUserIdx + 1].role === 'assistant') {
+                                        msgs.splice(lastUserIdx + 1, 1);
+                                    }
                                 }
                             }
                         }
