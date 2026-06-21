@@ -1343,11 +1343,6 @@
             var menu = document.getElementById('regen-menu-' + msgIndex);
             if (menu) menu.style.display = 'none';
             
-            isSending = true;
-            if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
-            sendBtnStop();
-            document.getElementById('userInput').focus();
-            
             var userText = '';
             for (var k = msgIndex - 1; k >= 0; k--) {
                 if (chat.messages[k].role === 'user') {
@@ -1356,34 +1351,14 @@
                 }
             }
             
-            var branchChatId = currentChatId + '/' + Date.now().toString(36);
-            var branchChat = { id: branchChatId, title: chat.title + ' (ветка)', messages: [] };
+            if (style === 'shorter') userText = userText + '\n\nОтветь более кратко.';
+            else if (style === 'longer') userText = userText + '\n\nОтветь более подробно.';
             
-            for (var bi = 0; bi <= msgIndex; bi++) {
-                branchChat.messages.push(chat.messages[bi]);
-            }
-            
-            try {
-                await fetch(`${SERVER_URL}/init_chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: branchChatId, messages: branchChat.messages })
-                });
-            } catch (e) {}
-            
-            chats.push(branchChat);
-            openChat(branchChatId);
-            
-            var branchInput = document.getElementById('userInput');
-            var msgText = userText;
-            if (style === 'shorter') msgText = userText + '\n\nОтветь более кратко.';
-            else if (style === 'longer') msgText = userText + '\n\nОтветь более подробно.';
-            branchInput.value = msgText;
-            branchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            newChat();
+            var input = document.getElementById('userInput');
+            input.value = userText;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
             updateSendBtn();
-            isSending = false;
-            activeStreamId = null;
-            sendBtnArrow();
             sendMessage();
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
