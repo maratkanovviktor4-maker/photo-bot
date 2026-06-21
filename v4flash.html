@@ -1355,6 +1355,20 @@
             else if (style === 'longer') userText = userText + '\n\nОтветь более подробно.';
             
             newChat();
+            
+            var branchChat = chats.find(c => c.id === currentChatId);
+            for (var bi = 0; bi <= msgIndex; bi++) {
+                branchChat.messages.push(chat.messages[bi]);
+            }
+            
+            try {
+                await fetch(`${SERVER_URL}/init_chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, messages: branchChat.messages })
+                });
+            } catch (e) {}
+            
             var input = document.getElementById('userInput');
             input.value = userText;
             input.dispatchEvent(new Event('input', { bubbles: true }));
