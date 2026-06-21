@@ -1333,6 +1333,132 @@
             }
         }
 
+        async function continueMessageInChat(chat, msgIndex) {
+            if (isSending) return;
+            var msg = chat.messages[msgIndex];
+            if (!msg || msg.role !== 'assistant' || !msg.interrupted) return;
+
+            isSending = true;
+            sendBtnStop();
+
+            var words = msg._streamWords;
+            var pos = msg._streamPos || 0;
+            if (!words || pos >= words.length) {
+                msg.interrupted = false;
+                msg.finished = true;
+                renderMessages();
+                isSending = false;
+                sendBtnArrow();
+                return;
+            }
+
+            msg.interrupted = false;
+            msg.finished = false;
+            var streamId = 'stream_branch_' + msgIndex;
+            activeStreamId = streamId;
+            var shownContent = words.slice(0, pos).join('');
+            msg.content = shownContent;
+            renderMessages();
+
+            var input = document.getElementById('userInput');
+            if (input) input.focus();
+            await new Promise(function(r) { setTimeout(r, 50); });
+
+            var allAssistant = document.querySelectorAll('.message-row.assistant .message-content');
+            var allActions = document.querySelectorAll('.message-row.assistant .message-actions');
+            var assistantIdx = 0;
+            for (var i = 0; i <= msgIndex; i++) {
+                if (chat.messages[i].role === 'assistant' && i === msgIndex) break;
+                if (chat.messages[i].role === 'assistant') assistantIdx++;
+            }
+            var streamDiv = allAssistant[assistantIdx];
+            var streamAction = allActions[assistantIdx];
+            if (streamDiv) streamDiv.innerHTML = formatMessage(shownContent);
+
+            function streamNext() {
+                if (activeStreamId !== streamId) return;
+                var chunk = '';
+                var wordCount = 0;
+                while (pos < words.length && wordCount < 2) {
+                    chunk += words[pos];
+                    wordCount++;
+                    pos++;
+                }
+                msg._streamPos = pos;
+                if (chunk) {
+                    msg.content = words.slice(0, pos).join('');
+                    if (streamDiv) {
+                        var cur = msg.content;
+                        if (msg._reasoningInProgress) {
+                            var eIdx = cur.indexOf('\n\nОтвет:\n');
+                            if (eIdx !== -1) {
+                                msg._reasoningInProgress = false;
+                                msg.reasoning = cur.substring('Размышление:\n'.length, eIdx);
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(msg.reasoning) + '</div>' + formatMessage(cur.substring(eIdx + '\n\nОтвет:\n'.length));
+                            } else {
+                                var sIdx2 = cur.indexOf('Размышление:\n');
+                                var rText = sIdx2 !== -1 ? cur.substring(sIdx2 + 'Размышление:\n'.length) : cur;
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(rText) + '</div>';
+                            }
+                        } else if (msg.reasoning) {
+                            var rIdx = cur.indexOf('\n\nОтвет:\n');
+                            if (rIdx !== -1) {
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(msg.reasoning) + '</div>' + formatMessage(cur.substring(rIdx + '\n\nОтвет:\n'.length));
+                            } else {
+                                streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(msg.reasoning) + '</div>';
+                            }
+                        } else {
+                            streamDiv.innerHTML = formatMessage(cur);
+                        }
+                        streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
+                        setupFloatingCopyButtons();
+                    }
+                    if (autoScroll) {
+                        var main = document.querySelector('.main');
+                        if (main) {
+                            main.style.scrollBehavior = 'auto';
+                            main.scrollTop = main.scrollHeight;
+                            main.style.scrollBehavior = 'smooth';
+                        }
+                    }
+                    typingInterval = setTimeout(streamNext, 20);
+                } else {
+                    msg.finished = true;
+                    msg.interrupted = false;
+                    typingInterval = null;
+                    if (streamAction) {
+                        var rc = msg._repliesCount || 1;
+                        var ri = msg._replyIndex || 0;
+                        var arrowsHtml = '';
+                        if (rc > 1) {
+                            arrowsHtml = '<span style="display:inline-flex;align-items:center;gap:2px;font-size:11px;color:#888;font-family:Inter,sans-serif;margin-left:4px;">' +
+                                '<button onclick="switchReply(' + msgIndex + ', -1)" class="arrow-btn"' + (ri <= 0 ? ' disabled style="opacity:0.3"' : '') + '><svg width="12" height="12" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="bevel"><polyline points="37 15 20 32 37 49"/></svg></button>' +
+                                '<span>' + (ri + 1) + '/' + rc + '</span>' +
+                                '<button onclick="switchReply(' + msgIndex + ', 1)" class="arrow-btn"' + (ri >= rc - 1 ? ' disabled style="opacity:0.3"' : '') + '><svg width="12" height="12" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="bevel"><polyline points="27 15 44 32 27 49"/></svg></button>' +
+                                '</span>';
+                        }
+                        streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + msgIndex + ')" id="download-btn-' + msgIndex + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>' + arrowsHtml + '<span style="position:relative;display:inline-flex;"><button onclick="regenerateMessage(' + msgIndex + ')" class="regen-btn" onmouseenter="showRegenMenu(event, ' + msgIndex + ')" onmouseleave="hideRegenMenu(' + msgIndex + ')"><svg width="14" height="14" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.4 11.65a1.09 1.09 0 0 0 1.09 1.09H34.43V1.81a1.09 1.09 0 1 0-2.19 0V8.95a16.41 16.41 0 1 0 1.47 15.86 1.12 1.12 0 0 0-2.05-.9 14.18 14.18 0 1 1-1.05-13.36H23.5a1.09 1.09 0 0 0-1.1-1.1Z"/></svg></button><div id="regen-menu-' + msgIndex + '" style="position:absolute;top:100%;left:0;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px;z-index:99999;min-width:150px;display:none;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,0.4);" onmouseenter="cancelHideRegen(' + msgIndex + ')" onmouseleave="hideRegenMenu(' + msgIndex + ')"><button onclick="regenerateMessage(' + msgIndex + ')" style="display:flex;align-items:center;gap:6px;width:100%;padding:6px 10px;border:none;background:transparent;color:#e0e0e0;font-size:11px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'transparent\'"><svg width="14" height="14" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.4 11.65a1.09 1.09 0 0 0 1.09 1.09H34.43V1.81a1.09 1.09 0 1 0-2.19 0V8.95a16.41 16.41 0 1 0 1.47 15.86 1.12 1.12 0 0 0-2.05-.9 14.18 14.18 0 1 1-1.05-13.36H23.5a1.09 1.09 0 0 0-1.1-1.1Z"/></svg>Попробовать снова</button><button onclick="regenerateMessage(' + msgIndex + ', \'shorter\')" style="display:flex;align-items:center;gap:6px;width:100%;padding:6px 10px;border:none;background:transparent;color:#e0e0e0;font-size:11px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'transparent\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.25 12c.414 0 .75.336.75.75s-.336.75-.75.75H3.75a.75.75 0 0 1 0-1.5h16.5Zm0-6c.414 0 .75.336.75.75s-.336.75-.75.75H3.75a.75.75 0 0 1 0-1.5h16.5Z"/></svg>Более кратко</button><button onclick="regenerateMessage(' + msgIndex + ', \'longer\')" style="display:flex;align-items:center;gap:6px;width:100%;padding:6px 10px;border:none;background:transparent;color:#e0e0e0;font-size:11px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'transparent\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4H3v2h16V4Zm0 4H3v2h16V8ZM3 12h8v2H3v-2Zm8 4H3v2h8v-2Zm7-1h3v2h-3v3h-2v-3h-3v-2h3v-3h2v3Z"/></svg>Подробнее</button></div></span>';
+                    }
+                    autoNameChat(chat);
+                    renderChatList();
+                    if (autoScroll) {
+                        var main = document.querySelector('.main');
+                        if (main) {
+                            main.style.scrollBehavior = 'auto';
+                            main.scrollTop = main.scrollHeight;
+                            main.style.scrollBehavior = 'smooth';
+                        }
+                    }
+                    if (activeStreamId === streamId) {
+                        isSending = false;
+                        activeStreamId = null;
+                        sendBtnArrow();
+                    }
+                }
+            }
+            streamNext();
+        }
+
         async function regenerateMessage(msgIndex, style) {
             if (isSending) return;
             const chat = chats.find(c => c.id === currentChatId);
@@ -1405,19 +1531,21 @@
                             }
                         }
                         
-                        // Добавляем новый ответ
-                        var newAssistantId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-                        var newReplyId = newAssistantId + '_r0';
+                        // Добавляем пустой ответ для стриминга
+                        var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
                         var newMsg = { 
-                            id: newAssistantId,
+                            id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
                             role: 'assistant', 
-                            content: data.reply, 
-                            reasoning: data.reasoning || '', 
-                            finished: true, 
-                            interrupted: false, 
-                            _allReplies: [{ id: newReplyId, content: data.reply, reasoning: data.reasoning || '', finished: true, interrupted: false }], 
-                            _repliesCount: 1, 
-                            _replyIndex: 0 
+                            content: '', 
+                            reasoning: '',
+                            finished: false, 
+                            interrupted: true,
+                            _streamWords: fullContent.split(/(\s+)/),
+                            _streamPos: 0,
+                            _reasoningInProgress: data.reasoning ? true : false,
+                            _allReplies: [{ content: data.reply, reasoning: data.reasoning || '', finished: true, interrupted: false }],
+                            _repliesCount: 1,
+                            _replyIndex: 0
                         };
                         branchChat.messages.push(newMsg);
                         
@@ -1427,6 +1555,10 @@
                         isSending = false;
                         activeStreamId = null;
                         sendBtnArrow();
+                        
+                        // Запускаем стриминг на новый ответ
+                        var streamMsgIndex = branchChat.messages.length - 1;
+                        continueMessageInChat(branchChat, streamMsgIndex);
                     } else {
                         if (!msg._allReplies) {
                             msg._allReplies = [{ content: msg.content, reasoning: msg.reasoning, interrupted: msg.interrupted !== false, finished: msg.finished !== false }];
