@@ -1383,70 +1383,31 @@
                 
                 const data = await resp.json();
                 if (data.reply && activeStreamId === streamId) {
-                    if (data.branch_id) {
-                        // Создаём новый дочерний чат
-                        var branchChatId = currentChatId + '/' + data.branch_id;
-                        var branchChat = { id: branchChatId, title: chat.title + ' (ветка)', messages: [] };
-                        
-                        // Копируем все сообщения ДО регенерируемого (цепочка вверх)
-                        for (var bi = 0; bi < msgIndex; bi++) {
-                            branchChat.messages.push(chat.messages[bi]);
-                        }
-                        // Добавляем новый user с серверным id
-                        branchChat.messages.push({ id: data.new_user_msg_id, role: 'user', content: userText });
-                        
-                        // Добавляем новый ответ
-                        var newAssistantId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-                        var newReplyId = newAssistantId + '_r0';
-                        var newMsg = { 
-                            id: newAssistantId,
-                            role: 'assistant', 
-                            content: data.reply, 
-                            reasoning: data.reasoning || '', 
-                            finished: true, 
-                            interrupted: false, 
-                            _allReplies: [{ id: newReplyId, content: data.reply, reasoning: data.reasoning || '', finished: true, interrupted: false }], 
-                            _repliesCount: 1, 
-                            _replyIndex: 0 
-                        };
-                        branchChat.messages.push(newMsg);
-                        
-                        chats.push(branchChat);
-                        openChat(branchChatId);
-                        updateBalance();
-                        isSending = false;
-                        activeStreamId = null;
-                        sendBtnArrow();
-                    } else {
-                        if (!msg._allReplies) {
-                            msg._allReplies = [{ content: msg.content, reasoning: msg.reasoning, interrupted: msg.interrupted !== false, finished: msg.finished !== false }];
-                        }
-                        
-                        var newReplyIdx = msg._allReplies.length;
-                        msg._allReplies.push({ content: data.reply, reasoning: data.reasoning || '', interrupted: false, finished: true });
-                        msg._repliesCount = msg._allReplies.length;
-                        msg._replyIndex = newReplyIdx;
-                        
-                        var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                        msg.content = '';
-                        msg.reasoning = '';
-                        msg.finished = false;
-                        msg.interrupted = true;
-                        msg._streamWords = fullContent.split(/(\s+)/);
-                        msg._streamPos = 0;
-                        msg._reasoningInProgress = false;
-                        if (data.reasoning) {
-                            msg._reasoningInProgress = true;
-                        }
-                        
-                        renderMessages();
-                        updateBalance();
-                        
-                        isSending = false;
-                        activeStreamId = null;
-                        sendBtnArrow();
-                        continueMessage(msgIndex);
-                    }
+                    // Добавляем новый user_msg в чат
+                    chat.messages.push({ id: data.new_user_msg_id, role: 'user', content: userText });
+                    
+                    // Добавляем ответ ассистента
+                    var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                    var newAssistantId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+                    var newReplyId = newAssistantId + '_r0';
+                    chat.messages.push({ 
+                        id: newAssistantId,
+                        role: 'assistant', 
+                        content: data.reply, 
+                        reasoning: data.reasoning || '', 
+                        finished: true, 
+                        interrupted: false, 
+                        _allReplies: [{ id: newReplyId, content: data.reply, reasoning: data.reasoning || '', finished: true, interrupted: false }], 
+                        _repliesCount: 1, 
+                        _replyIndex: 0 
+                    });
+                    
+                    renderChatList();
+                    renderMessages();
+                    updateBalance();
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
                 }
             } catch (e) {
                 isSending = false; sendBtnArrow(); activeStreamId = null;
