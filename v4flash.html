@@ -309,14 +309,24 @@
             if (!ind) return;
             if (currentPersonality === 'default') {
                 ind.style.display = 'none';
+                ind.title = '';
+                ind.style.cursor = 'default';
+                ind.onclick = null;
             } else if (currentPersonality === 'custom') {
                 ind.style.display = 'inline';
                 ind.textContent = '🎭 Кастом';
                 ind.style.color = '#00CBF5';
+                ind.style.cursor = 'pointer';
+                var customPrompt = document.getElementById('customPersonalityInput').value || 'не задан';
+                ind.title = 'Системный промпт: ' + customPrompt;
+                ind.onclick = function() { alert('🎭 Кастомный промпт:\n\n' + customPrompt); };
             } else if (personalities[currentPersonality]) {
                 ind.style.display = 'inline';
                 ind.textContent = personalities[currentPersonality].name;
                 ind.style.color = '#00CBF5';
+                ind.style.cursor = 'pointer';
+                ind.title = 'Системный промпт: ' + personalities[currentPersonality].prompt;
+                ind.onclick = function() { alert(personalities[currentPersonality].name + ':\n\n' + (personalities[currentPersonality].prompt || 'стандартный')); };
             }
         }
         function changePersonality() {
