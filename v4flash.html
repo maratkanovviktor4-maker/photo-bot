@@ -1368,6 +1368,11 @@
             if (msgIndex > 0) {
                 parentMsgId = chat.messages[msgIndex - 1].id || '';
             }
+            // Если перед ассистентом user — берём его родителя (предыдущего ассистента)
+            // чтобы новый user привязался к старому ассистенту, а не к старому user
+            if (msgIndex >= 2 && chat.messages[msgIndex - 1].role === 'user') {
+                parentMsgId = chat.messages[msgIndex - 2].id || '';
+            }
             
             console.log('sending branch request, parent_msg_id:', parentMsgId, 'message:', userText);
             try {
