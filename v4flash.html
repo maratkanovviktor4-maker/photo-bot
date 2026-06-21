@@ -500,7 +500,9 @@
                                 for (var mi2 = 0; mi2 < msgs.length; mi2++) {
                                     if (msgs[mi2].role === 'user') userPositions.push(mi2);
                                 }
-                                for (var uiKey in branchesByUser) {
+                                var sortedKeys = Object.keys(branchesByUser).sort(function(a, b) { return parseInt(b) - parseInt(a); });
+                                for (var ki = 0; ki < sortedKeys.length; ki++) {
+                                    var uiKey = sortedKeys[ki];
                                     var userCountIdx = parseInt(uiKey);
                                     var uIdx = userPositions[userCountIdx];
                                     if (uIdx !== undefined && uIdx >= 0 && uIdx < msgs.length && msgs[uIdx].role === 'user') {
