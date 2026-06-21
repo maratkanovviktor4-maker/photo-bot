@@ -1083,7 +1083,15 @@
                 const data = await resp.json();
                 if (data.reply) {
                     const fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false });
+                    var newAssistant = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false };
+                    var lastUserMsg = chat.messages[chat.messages.length - 1];
+                    if (lastUserMsg && lastUserMsg.role === 'user') {
+                        if (!lastUserMsg.replies) lastUserMsg.replies = [];
+                        lastUserMsg.replies.push(newAssistant);
+                        lastUserMsg._activeReply = lastUserMsg.replies.length - 1;
+                    } else {
+                        chat.messages.push(newAssistant);
+                    }
                     const msgIndex = chat.messages.length - 1;
                     const streamId = 'stream_' + msgIndex;
                     activeStreamId = streamId;
