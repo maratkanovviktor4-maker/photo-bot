@@ -908,12 +908,19 @@
             if (newIdx < 0) newIdx = msg.replies.length - 1;
             if (newIdx >= msg.replies.length) newIdx = 0;
             msg._activeReply = newIdx;
-            var branchKey = chat.id + '_activeBranch_' + userMsgIndex;
+            var userCountIdx = 0;
+            for (var i = 0; i < chat.messages.length; i++) {
+                if (chat.messages[i].role === 'user') {
+                    if (i === userMsgIndex) break;
+                    userCountIdx++;
+                }
+            }
+            var branchKey = chat.id + '_activeBranch_' + userCountIdx;
             localStorage.setItem(branchKey, newIdx);
             fetch(SERVER_URL + '/save_active_reply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: chat.id, user_msg_index: userMsgIndex, active_reply: newIdx })
+                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: chat.id, user_msg_index: userCountIdx, active_reply: newIdx })
             }).catch(function(e) { console.error(e); });
             renderMessages();
         }
