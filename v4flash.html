@@ -1092,7 +1092,11 @@
                 const data = await resp.json();
                 if (data.reply) {
                     const fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false });
+                    var parentUser = chat.messages[chat.messages.length - 1];
+                    if (!parentUser.replies) parentUser.replies = [];
+                    var newAssistant = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false };
+                    parentUser.replies.push(newAssistant);
+                    parentUser._activeReply = parentUser.replies.length - 1;
                     const msgIndex = chat.messages.length - 1;
                     const streamId = 'stream_' + msgIndex;
                     activeStreamId = streamId;
@@ -1118,10 +1122,10 @@
                             wordCount++;
                             pos++;
                         }
-                        chat.messages[msgIndex]._streamPos = pos;
+                        newAssistant._streamPos = pos;
                         if (chunk) {
                             var fullText = words.slice(0, pos).join('');
-                            chat.messages[msgIndex].content = fullText;
+                            newAssistant.content = fullText;
                             var displayText = fullText;
                             if (!reasoningStarted && fullText.indexOf('Размышление:\n') !== -1) {
                                 reasoningStarted = true;
@@ -1163,14 +1167,6 @@
                             chat.messages[msgIndex].interrupted = false;
                             typingInterval = null;
                             streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + msgIndex + ')" id="download-btn-' + msgIndex + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
-                            var parentUserIdx3 = msgIndex - 1;
-                            if (parentUserIdx3 >= 0 && chat.messages[parentUserIdx3].role === 'user') {
-                                var parentUser3 = chat.messages[parentUserIdx3];
-                                if (!parentUser3.replies) parentUser3.replies = [];
-                                parentUser3.replies.push(chat.messages[msgIndex]);
-                                parentUser3._activeReply = parentUser3.replies.length - 1;
-                                chat.messages.splice(msgIndex, 1);
-                            }
                             autoNameChat(chat);
                             renderChatList();
                             renderMessages();
