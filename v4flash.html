@@ -516,7 +516,8 @@
                                         for (var bi = 0; bi < branchesByUser[uiKey].length; bi++) {
                                             userMsg.replies.push(branchesByUser[uiKey][bi]);
                                         }
-                                        userMsg._activeReply = 0;
+                                        var savedBranch = localStorage.getItem(cid + '_activeBranch_' + userCountIdx);
+                                        userMsg._activeReply = savedBranch !== null ? parseInt(savedBranch) : 0;
                                     }
                                 }
                                 var newMsgs = [];
@@ -887,6 +888,8 @@
             if (newIdx < 0) newIdx = msg.replies.length - 1;
             if (newIdx >= msg.replies.length) newIdx = 0;
             msg._activeReply = newIdx;
+            var branchKey = chat.id + '_activeBranch_' + userMsgIndex;
+            localStorage.setItem(branchKey, newIdx);
             renderMessages();
         }
         function copyMessage(index) {
