@@ -1166,7 +1166,18 @@
             }
 
             let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
-            chat.messages.push({ role: 'user', content: displayText });
+            var lastMsg = chat.messages[chat.messages.length - 1];
+            var targetParent = null;
+            if (lastMsg && lastMsg.role === 'user' && lastMsg.replies && lastMsg.replies.length > 0) {
+                targetParent = lastMsg;
+            }
+            if (targetParent) {
+                var activeReply = targetParent.replies[targetParent._activeReply || 0];
+                if (!activeReply.children) activeReply.children = [];
+                activeReply.children.push({ role: 'user', content: displayText });
+            } else {
+                chat.messages.push({ role: 'user', content: displayText });
+            }
             renderChatList();
             renderMessages();
 
@@ -1211,7 +1222,14 @@
                 const data = await resp.json();
                 if (data.reply) {
                     const fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false });
+                    var newAssistant = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false };
+                    if (targetParent) {
+                        var activeReply2 = targetParent.replies[targetParent._activeReply || 0];
+                        if (!activeReply2.children) activeReply2.children = [];
+                        activeReply2.children.push(newAssistant);
+                    } else {
+                        chat.messages.push(newAssistant);
+                    }
                     const msgIndex = chat.messages.length - 1;
                     const streamId = 'stream_' + msgIndex;
                     activeStreamId = streamId;
