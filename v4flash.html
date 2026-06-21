@@ -1054,10 +1054,10 @@
                 main.style.scrollBehavior = 'smooth';
             }
 
+            var treeClone = JSON.parse(JSON.stringify(chat.messages));
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    var treeClone = JSON.parse(JSON.stringify(chat.messages));
                     body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, personality: (chat && chat.messages.length === 0 ? currentPersonality : 'default'), file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '', tree: JSON.stringify(treeClone) })
                 });
                 const el = document.getElementById(placeholderId); if (el) el.remove();
