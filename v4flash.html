@@ -209,7 +209,6 @@
     <div class="main">
         <div class="top-bar">
             <span id="balanceDisplay"> ...</span>
-            <span id="personalityIndicator" style="font-size:11px;color:#00CBF5;margin-right:4px;display:none;">🎭</span>
             <select id="personalitySelect" onchange="changePersonality()" style="padding:6px 10px;border-radius:16px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;margin-right:8px;">
                 <option value="default">🤖 Ассистент</option>
             </select>
@@ -301,33 +300,7 @@
                         }
                     }
                 }
-                updatePersonalityIndicator();
             } catch(e) { console.error('loadPersonalities:', e); }
-        }
-        function updatePersonalityIndicator() {
-            var ind = document.getElementById('personalityIndicator');
-            if (!ind) return;
-            if (currentPersonality === 'default') {
-                ind.style.display = 'none';
-                ind.title = '';
-                ind.style.cursor = 'default';
-                ind.onclick = null;
-            } else if (currentPersonality === 'custom') {
-                ind.style.display = 'inline';
-                ind.textContent = '🎭 Кастом';
-                ind.style.color = '#00CBF5';
-                ind.style.cursor = 'pointer';
-                var customPrompt = document.getElementById('customPersonalityInput').value || 'не задан';
-                ind.title = 'Системный промпт: ' + customPrompt;
-                ind.onclick = function() { alert('🎭 Кастомный промпт:\n\n' + customPrompt); };
-            } else if (personalities[currentPersonality]) {
-                ind.style.display = 'inline';
-                ind.textContent = personalities[currentPersonality].name;
-                ind.style.color = '#00CBF5';
-                ind.style.cursor = 'pointer';
-                ind.title = 'Системный промпт: ' + personalities[currentPersonality].prompt;
-                ind.onclick = function() { alert(personalities[currentPersonality].name + ':\n\n' + (personalities[currentPersonality].prompt || 'стандартный')); };
-            }
         }
         function changePersonality() {
             var val = document.getElementById('personalitySelect').value;
@@ -339,7 +312,6 @@
             currentPersonality = val;
             localStorage.setItem('photobot_personality', val);
             document.getElementById('personalitySelect').value = val;
-            updatePersonalityIndicator();
             var currentChat = chats.find(function(c) { return c.id === currentChatId; });
             if (currentChat && currentChat.messages.length > 0 && oldPersonality !== val) {
                 newChat();
