@@ -763,10 +763,27 @@
             var msg = chat.messages[index];
             if (!msg || msg.role !== 'assistant') return;
             var parentUserIdx = -1;
-            for (var i = index - 1; i >= 0; i--) {
-                if (chat.messages[i].role === 'user') { parentUserIdx = i; break; }
+            var userCounter = 0;
+            for (var i = 0; i < chat.messages.length; i++) {
+                if (chat.messages[i].role === 'user') {
+                    userCounter++;
+                    if (i === index - 1 || (chat.messages[i].replies && chat.messages[i].replies.indexOf(msg) !== -1)) {
+                        parentUserIdx = i;
+                        break;
+                    }
+                }
+            }
+            if (parentUserIdx === -1) {
+                for (var i = index - 1; i >= 0; i--) {
+                    if (chat.messages[i].role === 'user') { parentUserIdx = i; break; }
+                }
+                userCounter = 0;
+                for (var j = 0; j <= parentUserIdx; j++) {
+                    if (chat.messages[j].role === 'user') userCounter++;
+                }
             }
             if (parentUserIdx === -1) return;
+            var userMsgIndex = userCounter - 1;
             var parentMsg = chat.messages[parentUserIdx];
             if (!parentMsg.replies) parentMsg.replies = [msg];
             if (parentMsg.replies.length >= 5) { alert('Максимум 5 веток'); return; }
@@ -790,7 +807,7 @@
                 var resp = await fetch(SERVER_URL + '/regenerate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: currentMode, chat_id: currentChatId, messages: messagesBefore, user_msg_index: parentUserIdx })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: currentMode, chat_id: currentChatId, messages: messagesBefore, user_msg_index: userMsgIndex })
                 });
                 if (!resp.ok) {
                     newReply.content = 'Ошибка сервера. Попробуйте позже.';
