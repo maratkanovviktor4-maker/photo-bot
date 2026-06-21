@@ -209,6 +209,9 @@
     <div class="main">
         <div class="top-bar">
             <span id="balanceDisplay"> ...</span>
+            <select id="personalitySelect" onchange="changePersonality()" style="padding:6px 10px;border-radius:16px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;margin-right:8px;">
+                <option value="default">🤖 Ассистент</option>
+            </select>
             <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
         </div>
         <div class="chat-wrapper">
@@ -241,12 +244,23 @@
         </div>
     </div>
     <div class="nav-container" id="navContainer"></div>
-
+    <div id="customPersonalityModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10001;align-items:center;justify-content:center;">
+        <div style="background:#1a1a2e;border-radius:16px;padding:20px;width:90%;max-width:500px;border:1px solid rgba(255,255,255,0.08);">
+            <div style="font-size:16px;font-weight:600;margin-bottom:12px;color:#e0e0e0;">🎭 Кастомная личность</div>
+            <textarea id="customPersonalityInput" placeholder="Опиши, как должен отвечать ассистент..." style="width:100%;min-height:120px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;font-family:Inter,sans-serif;font-size:13px;resize:vertical;outline:none;"></textarea>
+            <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
+                <button onclick="closeCustomPersonality()" style="padding:8px 16px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#aaa;border-radius:8px;cursor:pointer;font-family:Inter,sans-serif;">Отмена</button>
+                <button onclick="saveCustomPersonality()" style="padding:8px 16px;background:linear-gradient(90deg,#00CBF5,#14E9FC);border:none;color:#201F28;border-radius:8px;cursor:pointer;font-family:Inter,sans-serif;font-weight:600;">Сохранить</button>
+            </div>
+        </div>
+    </div>
     <script>
         var autoScroll = true;
 
         const SERVER_URL = CONFIG.SERVER_URL;
         let currentMode = 'chat';
+        let currentPersonality = localStorage.getItem('photobot_personality') || 'default';
+        let personalities = {};
         let chats = [];
         let currentChatId = null;
         let sessionToken = '';
@@ -258,6 +272,68 @@
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
         window.addEventListener('drop', function(e) { e.preventDefault(); e.stopPropagation(); });
+        async function loadPersonalities() {
+            try {
+                var resp = await fetch(SERVER_URL + '/get_personalities?session_token=' + sessionToken);
+                if (resp.ok) {
+                    var data = await resp.json();
+                    personalities = data.personalities;
+                    var select = document.getElementById('personalitySelect');
+                    select.innerHTML = '';
+                    for (var key in personalities) {
+                        var opt = document.createElement('option');
+                        opt.value = key;
+                        opt.textContent = personalities[key].name;
+                        if (key === currentPersonality) opt.selected = true;
+                        select.appendChild(opt);
+                    }
+                    var customOpt = document.createElement('option');
+                    customOpt.value = 'custom';
+                    customOpt.textContent = '🎭 Кастомная...';
+                    if (currentPersonality === 'custom') customOpt.selected = true;
+                    select.appendChild(customOpt);
+                    if (currentPersonality === 'custom') {
+                        var customResp = await fetch(SERVER_URL + '/get_custom_personality?user_id=' + currentUserId + '&session_token=' + sessionToken);
+                        if (customResp.ok) {
+                            var customData = await customResp.json();
+                            document.getElementById('customPersonalityInput').value = customData.custom_prompt || '';
+                        }
+                    }
+                }
+            } catch(e) { console.error('loadPersonalities:', e); }
+        }
+        function changePersonality() {
+            var val = document.getElementById('personalitySelect').value;
+            if (val === 'custom') {
+                document.getElementById('customPersonalityModal').style.display = 'flex';
+                return;
+            }
+            currentPersonality = val;
+            localStorage.setItem('photobot_personality', val);
+            document.getElementById('personalitySelect').value = val;
+        }
+        function closeCustomPersonality() {
+            document.getElementById('customPersonalityModal').style.display = 'none';
+            document.getElementById('personalitySelect').value = currentPersonality;
+        }
+        async function saveCustomPersonality() {
+            var prompt = document.getElementById('customPersonalityInput').value.trim();
+            if (!prompt) {
+                closeCustomPersonality();
+                return;
+            }
+            try {
+                await fetch(SERVER_URL + '/save_custom_personality', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ user_id: currentUserId, prompt: prompt })
+                });
+                currentPersonality = 'custom';
+                localStorage.setItem('photobot_personality', 'custom');
+                document.getElementById('personalitySelect').value = 'custom';
+                document.getElementById('customPersonalityModal').style.display = 'none';
+            } catch(e) { console.error(e); }
+        }
         function toggleTheme() {
             document.body.classList.toggle('light');
             var isLight = document.body.classList.contains('light');
@@ -361,6 +437,7 @@
             } else {
                 loadChatsFromServer();
                 updateBalance();
+                loadPersonalities();
             }
         } else {
             alert('Авторизуйтесь на главной странице');
@@ -843,7 +920,7 @@
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '' })
+                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, personality: currentPersonality, file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '' })
                 });
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (resp.status === 403) {
