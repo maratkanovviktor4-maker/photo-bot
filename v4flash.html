@@ -516,8 +516,10 @@
                                         for (var bi = 0; bi < branchesByUser[uiKey].length; bi++) {
                                             userMsg.replies.push(branchesByUser[uiKey][bi]);
                                         }
+                                        var activeReplies = data.active_replies && data.active_replies[cid] ? data.active_replies[cid] : {};
+                                        var serverActive = activeReplies[String(userCountIdx)];
                                         var savedBranch = localStorage.getItem(cid + '_activeBranch_' + userCountIdx);
-                                        userMsg._activeReply = savedBranch !== null ? parseInt(savedBranch) : 0;
+                                        userMsg._activeReply = serverActive !== undefined ? parseInt(serverActive) : (savedBranch !== null ? parseInt(savedBranch) : 0);
                                     }
                                 }
                                 var newMsgs = [];
@@ -1229,7 +1231,19 @@
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, personality: (chat && chat.messages.length === 0 ? currentPersonality : 'default'), file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '' })
+                    var activeReplyVal = null;
+                    var userMsgIdx = null;
+                    if (targetParent) {
+                        activeReplyVal = targetParent._activeReply || 0;
+                        var userCount = 0;
+                        for (var ui = 0; ui < chat.messages.length; ui++) {
+                            if (chat.messages[ui].role === 'user') {
+                                if (chat.messages[ui] === targetParent) { userMsgIdx = userCount; break; }
+                                userCount++;
+                            }
+                        }
+                    }
+                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, personality: (chat && chat.messages.length === 0 ? currentPersonality : 'default'), file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '', active_reply: activeReplyVal, user_msg_index: userMsgIdx })
                 });
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (resp.status === 403) {
