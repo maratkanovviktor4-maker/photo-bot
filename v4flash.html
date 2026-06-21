@@ -740,48 +740,112 @@
             }
         }
         
-        async function createBranchFromMessage(msgIndex) {
+        function createBranchFromMessage(msgIndex) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             
             var msg = chat.messages[msgIndex];
             if (!msg) return;
             
-            var branchName = prompt('Название новой ветки:', 'Ветка от сообщения ' + (msgIndex + 1));
-            if (!branchName) return;
+            // Показываем модалку с полем ввода промта
+            var existing = document.getElementById('branchModal');
+            if (existing) existing.remove();
             
-            try {
-                var resp = await fetch(SERVER_URL + '/create_branch', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({
-                        user_id: currentUserId,
-                        model: 'flash',
-                        chat_id: currentChatId,
-                        source_msg_id: msg.msg_id,
-                        branch_name: branchName
-                    })
-                });
-                if (resp.ok) {
-                    var data = await resp.json();
-                    currentBranchId = data.branch_id;
-                    chat.activeBranch = data.branch_id;
+            var modal = document.createElement('div');
+            modal.id = 'branchModal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10002;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = '<div style="background:#1a1a2e;border-radius:16px;padding:20px;width:90%;max-width:500px;border:1px solid rgba(255,255,255,0.08);">' +
+                '<div style="font-size:16px;font-weight:600;margin-bottom:8px;color:#e0e0e0;">🌿 Новая ветка</div>' +
+                '<div style="font-size:12px;color:#888;margin-bottom:8px;">от сообщения: «' + escapeHtml((msg.content || '').substring(0, 60)) + '»</div>' +
+                '<input id="branchNameInput" placeholder="Название ветки (необязательно)" style="width:100%;padding:8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;font-family:Inter,sans-serif;outline:none;margin-bottom:8px;">' +
+                '<textarea id="branchPromptInput" placeholder="Введите сообщение для новой ветки..." style="width:100%;min-height:80px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;font-size:13px;font-family:Inter,sans-serif;resize:vertical;outline:none;margin-bottom:12px;"></textarea>' +
+                '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
+                    '<button id="branchCancelBtn" style="padding:8px 16px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#aaa;border-radius:8px;cursor:pointer;font-family:Inter,sans-serif;">Отмена</button>' +
+                    '<button id="branchCreateBtn" style="padding:8px 16px;background:linear-gradient(90deg,#00CBF5,#14E9FC);border:none;color:#201F28;border-radius:8px;cursor:pointer;font-family:Inter,sans-serif;font-weight:600;">Создать и отправить</button>' +
+                '</div></div>';
+            document.body.appendChild(modal);
+            
+            var promptInput = document.getElementById('branchPromptInput');
+            var nameInput = document.getElementById('branchNameInput');
+            
+            document.getElementById('branchCancelBtn').onclick = function() { modal.remove(); };
+            modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+            
+            document.getElementById('branchCreateBtn').onclick = async function() {
+                var prompt = promptInput.value.trim();
+                if (!prompt) { promptInput.focus(); return; }
+                
+                var branchName = nameInput.value.trim();
+                modal.remove();
+                
+                // Показываем индикатор загрузки
+                var area = document.getElementById('chatArea');
+                var loadingRow = document.createElement('div');
+                loadingRow.className = 'message-row assistant';
+                loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
+                area.appendChild(loadingRow);
+                var main = document.querySelector('.main');
+                if (main) { main.scrollTop = main.scrollHeight; }
+                
+                try {
+                    var resp = await fetch(SERVER_URL + '/create_branch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({
+                            user_id: currentUserId,
+                            model: 'flash',
+                            chat_id: currentChatId,
+                            source_msg_id: msg.msg_id,
+                            branch_name: branchName,
+                            prompt: prompt
+                        })
+                    });
                     
-                    if (!chat.allBranches) chat.allBranches = {};
-                    chat.allBranches[data.branch_id] = {
-                        name: data.branch_name,
-                        messages: [],
-                        msg_ids: data.msg_ids || []
-                    };
+                    loadingRow.remove();
                     
-                    await loadChatsFromServer();
-                    openChat(currentChatId);
+                    if (resp.ok) {
+                        var data = await resp.json();
+                        // Обновляем чат
+                        await loadChatsFromServer();
+                        currentBranchId = data.branch_id;
+                        var updatedChat = chats.find(function(c) { return c.id === currentChatId; });
+                        if (updatedChat) {
+                            updatedChat.activeBranch = data.branch_id;
+                            if (data.reply) {
+                                // Добавляем сообщения в кеш если их нет
+                                if (!updatedChat.allBranches[data.branch_id]) {
+                                    updatedChat.allBranches[data.branch_id] = { name: data.branch_name, messages: [], msg_ids: data.msg_ids || [] };
+                                }
+                                var branchMsgs = updatedChat.allBranches[data.branch_id].messages;
+                                branchMsgs.push({ role: 'user', content: prompt, msg_id: data.user_msg_id });
+                                branchMsgs.push({ role: 'assistant', content: data.reply, reasoning: data.reasoning, msg_id: data.assistant_msg_id });
+                                updatedChat.messages = branchMsgs;
+                            }
+                        }
+                        openChat(currentChatId);
+                        updateBalance();
+                    } else {
+                        var errData = await resp.json();
+                        alert('Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
+                    }
+                } catch(e) {
+                    loadingRow.remove();
+                    console.error('createBranchFromMessage error:', e);
+                    alert('Ошибка соединения.');
                 }
-            } catch(e) {
-                console.error('createBranchFromMessage error:', e);
-            }
-        }
-        
+            };
+            
+            // Фокус на поле ввода
+            setTimeout(function() { promptInput.focus(); }, 100);
+            
+            // Enter = отправить, Shift+Enter = новая строка
+            promptInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    document.getElementById('branchCreateBtn').click();
+                }
+            });
+        }        
         function getMsgIdByIndex(chat, index) {
             if (!chat || !chat.messages || index >= chat.messages.length) return null;
             return chat.messages[index].msg_id || null;
