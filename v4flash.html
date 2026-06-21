@@ -573,7 +573,12 @@
                                 '</span>';
                         }
                         actionsHtml += '<span style="position:relative;display:inline-flex;">' +
-                            '<button onclick="regenerateMessage(' + i + ')" class="regen-btn" onmouseenter="showRegenMenu(event, ' + i + ')" onmouseleave="hideRegenMenu(' + i + ')"><svg width="14" height="14" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.4 11.65a1.09 1.09 0 0 0 1.09 1.09H34.43V1.81a1.09 1.09 0 1 0-2.19 0V8.95a16.41 16.41 0 1 0 1.47 15.86 1.12 1.12 0 0 0-2.05-.9 14.18 14.18 0 1 1-1.05-13.36H23.5a1.09 1.09 0 0 0-1.1-1.1Z"/></svg></button>' +
+                            '<button onclick="regenerateMessage(' + i + ')" class="regen-btn" onmouseenter="showRegenMenu(event, ' + i + ')" onmouseleave="hideRegenMenu(' + i + ')">...' +
+                            '<div id="regen-menu-' + i + '" ...>' +
+                            // ... (старые кнопки) ...
+                            '<button onclick="branchMessage(' + i + ')" style="...">Создать ответ</button>' +
+                            '</div></span>';
+
                             '<div id="regen-menu-' + i + '" style="position:absolute;top:100%;left:0;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px;z-index:99999;min-width:150px;display:none;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,0.4);" onmouseenter="cancelHideRegen(' + i + ')" onmouseleave="hideRegenMenu(' + i + ')">' +
                             '<button onclick="regenerateMessage(' + i + ')" style="display:flex;align-items:center;gap:6px;width:100%;padding:6px 10px;border:none;background:transparent;color:#e0e0e0;font-size:11px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'transparent\'"><svg width="14" height="14" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.4 11.65a1.09 1.09 0 0 0 1.09 1.09H34.43V1.81a1.09 1.09 0 1 0-2.19 0V8.95a16.41 16.41 0 1 0 1.47 15.86 1.12 1.12 0 0 0-2.05-.9 14.18 14.18 0 1 1-1.05-13.36H23.5a1.09 1.09 0 0 0-1.1-1.1Z"/></svg>Попробовать снова</button>' +
                             '<button onclick="regenerateMessage(' + i + ', \'shorter\')" style="display:flex;align-items:center;gap:6px;width:100%;padding:6px 10px;border:none;background:transparent;color:#e0e0e0;font-size:11px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'transparent\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.25 12c.414 0 .75.336.75.75s-.336.75-.75.75H3.75a.75.75 0 0 1 0-1.5h16.5Zm0-6c.414 0 .75.336.75.75s-.336.75-.75.75H3.75a.75.75 0 0 1 0-1.5h16.5Z"/></svg>Более кратко</button>' +
@@ -1351,29 +1356,51 @@
                 }
             }
             
-            if (style === 'shorter') userText = userText + '\n\nОтветь более кратко.';
-            else if (style === 'longer') userText = userText + '\n\nОтветь более подробно.';
-            
-            newChat();
-            
-            var branchChat = chats.find(c => c.id === currentChatId);
-            for (var bi = 0; bi < msgIndex - 1; bi++) {
-                branchChat.messages.push(chat.messages[bi]);
-            }
+            isSending = true;
+            if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
+            sendBtnStop();
             
             try {
-                await fetch(`${SERVER_URL}/init_chat`, {
+                var resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, messages: branchChat.messages })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, message: userText, mode: currentMode, action: 'regenerate', reply_to_index: msgIndex, prompt_mod: style || '' })
                 });
-            } catch (e) {}
-            
-            var input = document.getElementById('userInput');
-            input.value = userText;
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-            updateSendBtn();
-            sendMessage();
+                
+                if (!resp.ok) {
+                    isSending = false; sendBtnArrow(); return;
+                }
+                
+                var data = await resp.json();
+                if (data.reply) {
+                    if (!msg._allReplies) {
+                        msg._allReplies = [{ content: msg.content, reasoning: msg.reasoning, interrupted: msg.interrupted !== false, finished: msg.finished !== false }];
+                    }
+                    
+                    var newReplyIdx = msg._allReplies.length;
+                    msg._allReplies.push({ content: data.reply, reasoning: data.reasoning || '', interrupted: false, finished: true });
+                    msg._repliesCount = msg._allReplies.length;
+                    msg._replyIndex = newReplyIdx;
+                    
+                    var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                    msg.content = '';
+                    msg.reasoning = '';
+                    msg.finished = false;
+                    msg.interrupted = true;
+                    msg._streamWords = fullContent.split(/(\s+)/);
+                    msg._streamPos = 0;
+                    msg._reasoningInProgress = data.reasoning ? true : false;
+                    
+                    renderMessages();
+                    updateBalance();
+                    
+                    isSending = false;
+                    sendBtnArrow();
+                    continueMessage(msgIndex);
+                }
+            } catch (e) {
+                isSending = false; sendBtnArrow();
+            }
         }
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
         function setupFloatingCopyButtons() {
