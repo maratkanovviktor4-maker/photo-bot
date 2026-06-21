@@ -489,23 +489,40 @@
                             var cid = chats[i].id;
                             if (data.branches[cid] && data.branches[cid].length > 0) {
                                 var msgs = chats[i].messages;
-                                var lastUserIdx = -1;
-                                for (var j = msgs.length - 1; j >= 0; j--) {
-                                    if (msgs[j].role === 'user') { lastUserIdx = j; break; }
+                                var branchesByUser = {};
+                                for (var k = 0; k < data.branches[cid].length; k++) {
+                                    var branchItem = data.branches[cid][k];
+                                    var ui = branchItem.user_index || 0;
+                                    if (!branchesByUser[ui]) branchesByUser[ui] = [];
+                                    branchesByUser[ui].push(branchItem.msg);
                                 }
-                                if (lastUserIdx >= 0 && lastUserIdx + 1 < msgs.length && msgs[lastUserIdx + 1].role === 'assistant') {
-                                    var userMsg = msgs[lastUserIdx];
-                                    var originalReply = msgs[lastUserIdx + 1];
-                                    userMsg.replies = [originalReply];
-                                    for (var k = 0; k < data.branches[cid].length; k++) {
-                                        userMsg.replies.push(data.branches[cid][k]);
-                                    }
-                                    userMsg._activeReply = 0;
-                                    msgs.splice(lastUserIdx + 1, 1);
-                                    if (lastUserIdx + 1 < msgs.length && msgs[lastUserIdx + 1].role === 'assistant') {
-                                        msgs.splice(lastUserIdx + 1, 1);
+                                for (var uiKey in branchesByUser) {
+                                    var uIdx = parseInt(uiKey);
+                                    if (uIdx >= 0 && uIdx < msgs.length && msgs[uIdx].role === 'user') {
+                                        var userMsg = msgs[uIdx];
+                                        if (uIdx + 1 < msgs.length && msgs[uIdx + 1].role === 'assistant') {
+                                            userMsg.replies = [msgs[uIdx + 1]];
+                                            msgs.splice(uIdx + 1, 1);
+                                        } else {
+                                            userMsg.replies = [];
+                                        }
+                                        for (var bi = 0; bi < branchesByUser[uiKey].length; bi++) {
+                                            userMsg.replies.push(branchesByUser[uiKey][bi]);
+                                        }
+                                        userMsg._activeReply = 0;
                                     }
                                 }
+                                var newMsgs = [];
+                                for (var mi = 0; mi < msgs.length; mi++) {
+                                    newMsgs.push(msgs[mi]);
+                                    if (msgs[mi].role === 'user' && msgs[mi].replies && msgs[mi].replies.length > 0) {
+                                        var activeIdx = msgs[mi]._activeReply || 0;
+                                        if (activeIdx < msgs[mi].replies.length) {
+                                            newMsgs.push(msgs[mi].replies[activeIdx]);
+                                        }
+                                    }
+                                }
+                                chats[i].messages = newMsgs;
                             }
                         }
                     }
@@ -773,7 +790,7 @@
                 var resp = await fetch(SERVER_URL + '/regenerate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: currentMode, chat_id: currentChatId, messages: messagesBefore })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: currentMode, chat_id: currentChatId, messages: messagesBefore, user_msg_index: parentUserIdx })
                 });
                 if (!resp.ok) {
                     newReply.content = 'Ошибка сервера. Попробуйте позже.';
