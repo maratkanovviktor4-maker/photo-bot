@@ -390,7 +390,6 @@
                         const title = data.titles && data.titles[chatId] ? data.titles[chatId] : ('Чат ' + chatId);
                         // Восстанавливаем _allReplies для ассистентов
                         for (var m of messages) {
-                            // Не перезаписываем id — берём с сервера
                             if (m.role === 'assistant') {
                                 if (!m._allReplies || m._allReplies.length === 0) {
                                     m._allReplies = [{ content: m.content || '', reasoning: m.reasoning || '', interrupted: m.interrupted || false, finished: m.finished !== false }];
@@ -866,8 +865,7 @@
             }
 
             let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
-            let userMsgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-            chat.messages.push({ id: userMsgId, role: 'user', content: displayText });
+            chat.messages.push({ role: 'user', content: displayText });
             renderChatList();
             renderMessages();
 
@@ -910,22 +908,9 @@
                     return;
                 }
                 const data = await resp.json();
-                // Обновляем id user-сообщения на серверный
-                if (data.user_msg_id && chat.messages.length > 0) {
-                    var lastUser = null;
-                    for (var ui = chat.messages.length - 1; ui >= 0; ui--) {
-                        if (chat.messages[ui].role === 'user') {
-                            lastUser = chat.messages[ui];
-                            break;
-                        }
-                    }
-                    if (lastUser) {
-                        lastUser.id = data.user_msg_id;
-                    }
-                }
                 if (data.reply) {
                     const fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    chat.messages.push({ id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6), role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, _allReplies: [], _repliesCount: 1, _replyIndex: 0 });
+                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, _allReplies: [], _repliesCount: 1, _replyIndex: 0 });
                     const msgIndex = chat.messages.length - 1;
                     const streamId = 'stream_' + msgIndex;
                     activeStreamId = streamId;
@@ -1354,32 +1339,19 @@
             var streamId = activeStreamId;
             
             // Находим текст запроса пользователя
-            console.log('messages for branch:', chat.messages.map(function(m, i) { return i + ':' + m.role + ' id=' + (m.id || 'none'); }));
             var userText = '';
-            var parentMsgId = '';
-            // Ищем текст запроса пользователя (для отправки в API)
             for (var k = msgIndex - 1; k >= 0; k--) {
                 if (chat.messages[k].role === 'user') {
                     userText = chat.messages[k].content;
                     break;
                 }
             }
-            // parent_msg_id = ID сообщения прямо перед регенерируемым
-            if (msgIndex > 0) {
-                parentMsgId = chat.messages[msgIndex - 1].id || '';
-            }
-            // Если перед ассистентом user — берём его родителя (предыдущего ассистента)
-            // чтобы новый user привязался к старому ассистенту, а не к старому user
-            if (msgIndex >= 2 && chat.messages[msgIndex - 1].role === 'user') {
-                parentMsgId = chat.messages[msgIndex - 2].id || '';
-            }
             
-            console.log('sending branch request, parent_msg_id:', parentMsgId, 'message:', userText);
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, message: userText, mode: currentMode, action: 'branch', parent_msg_id: parentMsgId, prompt_mod: style || '' })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, message: userText, mode: currentMode, action: 'regenerate', reply_to_index: msgIndex, prompt_mod: style || '' })
                 });
                 
                 if (!resp.ok) {
@@ -1388,31 +1360,34 @@
                 
                 const data = await resp.json();
                 if (data.reply && activeStreamId === streamId) {
-                    // Добавляем новый user_msg в чат
-                    chat.messages.push({ id: data.new_user_msg_id, role: 'user', content: userText });
+                    if (!msg._allReplies) {
+                        msg._allReplies = [{ content: msg.content, reasoning: msg.reasoning, interrupted: msg.interrupted !== false, finished: msg.finished !== false }];
+                    }
                     
-                    // Добавляем ответ ассистента
+                    var newReplyIdx = msg._allReplies.length;
+                    msg._allReplies.push({ content: data.reply, reasoning: data.reasoning || '', interrupted: false, finished: true });
+                    msg._repliesCount = msg._allReplies.length;
+                    msg._replyIndex = newReplyIdx;
+                    
                     var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    var newAssistantId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-                    var newReplyId = newAssistantId + '_r0';
-                    chat.messages.push({ 
-                        id: newAssistantId,
-                        role: 'assistant', 
-                        content: data.reply, 
-                        reasoning: data.reasoning || '', 
-                        finished: true, 
-                        interrupted: false, 
-                        _allReplies: [{ id: newReplyId, content: data.reply, reasoning: data.reasoning || '', finished: true, interrupted: false }], 
-                        _repliesCount: 1, 
-                        _replyIndex: 0 
-                    });
+                    msg.content = '';
+                    msg.reasoning = '';
+                    msg.finished = false;
+                    msg.interrupted = true;
+                    msg._streamWords = fullContent.split(/(\s+)/);
+                    msg._streamPos = 0;
+                    msg._reasoningInProgress = false;
+                    if (data.reasoning) {
+                        msg._reasoningInProgress = true;
+                    }
                     
-                    renderChatList();
                     renderMessages();
                     updateBalance();
+                    
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
+                    continueMessage(msgIndex);
                 }
             } catch (e) {
                 isSending = false; sendBtnArrow(); activeStreamId = null;
