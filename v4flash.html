@@ -484,6 +484,17 @@
                             }
                         }
                     }
+                    if (data.trees) {
+                        for (var i = 0; i < chats.length; i++) {
+                            var cid = chats[i].id;
+                            if (data.trees[cid]) {
+                                try {
+                                    var treeData = JSON.parse(data.trees[cid]);
+                                    chats[i].messages = treeData;
+                                } catch(e) {}
+                            }
+                        }
+                    }
                     if (data.branches) {
                         for (var i = 0; i < chats.length; i++) {
                             var cid = chats[i].id;
@@ -1240,6 +1251,7 @@
                 for (var hi = 0; hi < activeHistory.length; hi++) {
                     historyForServer.push({ role: activeHistory[hi].role, content: activeHistory[hi].content });
                 }
+                var treeForServer = JSON.stringify(chat.messages);
             var activeReplyVal = null;
             var userMsgIdx = null;
             if (targetParent) {
@@ -1255,7 +1267,7 @@
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, personality: (chat && chat.messages.length === 0 ? currentPersonality : 'default'), file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '', active_reply: activeReplyVal, user_msg_index: userMsgIdx })
+                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, personality: (chat && chat.messages.length === 0 ? currentPersonality : 'default'), file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '', active_reply: activeReplyVal, user_msg_index: userMsgIdx, tree: treeForServer })
                 });
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (resp.status === 403) {
