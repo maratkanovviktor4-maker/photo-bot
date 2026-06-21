@@ -496,9 +496,14 @@
                                     if (!branchesByUser[ui]) branchesByUser[ui] = [];
                                     branchesByUser[ui].push(branchItem.msg);
                                 }
+                                var userPositions = [];
+                                for (var mi2 = 0; mi2 < msgs.length; mi2++) {
+                                    if (msgs[mi2].role === 'user') userPositions.push(mi2);
+                                }
                                 for (var uiKey in branchesByUser) {
-                                    var uIdx = parseInt(uiKey);
-                                    if (uIdx >= 0 && uIdx < msgs.length && msgs[uIdx].role === 'user') {
+                                    var userCountIdx = parseInt(uiKey);
+                                    var uIdx = userPositions[userCountIdx];
+                                    if (uIdx !== undefined && uIdx >= 0 && uIdx < msgs.length && msgs[uIdx].role === 'user') {
                                         var userMsg = msgs[uIdx];
                                         if (uIdx + 1 < msgs.length && msgs[uIdx + 1].role === 'assistant') {
                                             userMsg.replies = [msgs[uIdx + 1]];
