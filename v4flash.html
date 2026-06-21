@@ -742,30 +742,31 @@
                 }
                 var data = await resp.json();
                 if (data.reply) {
-                    var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    var words = fullContent.split(/(\s+)/);
-                    newReply._streamWords = words;
-                    var pos = 0;
-                    function streamNext() {
-                        if (!newReply._streamWords) return;
-                        var chunk = '';
-                        var wordCount = 0;
-                        while (pos < words.length && wordCount < 2) { chunk += words[pos]; wordCount++; pos++; }
-                        newReply._streamPos = pos;
-                        if (chunk) {
-                            newReply.content = words.slice(0, pos).join('');
-                            renderMessages();
-                            if (autoScroll) { var main = document.querySelector('.main'); if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; } }
-                            typingInterval = setTimeout(streamNext, 20);
-                        } else {
-                            newReply.finished = true;
-                            typingInterval = null;
-                            renderMessages();
-                            if (autoScroll) { var main = document.querySelector('.main'); if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; } }
-                            isSending = false; sendBtnArrow();
+                    var parentUser = chat.messages[chat.messages.length - 1];
+                    if (!parentUser.replies) parentUser.replies = [];
+                    var assistantMsg = { role: 'assistant', content: data.reply, reasoning: data.reasoning || '', finished: true };
+                    parentUser.replies.push(assistantMsg);
+                    parentUser._activeReply = parentUser.replies.length - 1;
+                    var saveTree = JSON.stringify(chat.messages);
+                    fetch(SERVER_URL + '/save_tree', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, tree: saveTree })
+                    }).catch(function(e) { console.error(e); });
+                    renderChatList();
+                    renderMessages();
+                    autoNameChat(chat);
+                    if (autoScroll) {
+                        var main = document.querySelector('.main');
+                        if (main) {
+                            main.style.scrollBehavior = 'auto';
+                            main.scrollTop = main.scrollHeight;
+                            main.style.scrollBehavior = 'smooth';
                         }
                     }
-                    streamNext();
+                    isSending = false;
+                    sendBtnArrow();
+                    activeStreamId = null;
                 } else {
                     newReply.content = 'Ошибка.';
                     newReply.finished = true;
