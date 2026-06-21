@@ -636,52 +636,35 @@
             if (!chat || chat.messages.length === 0) {
                 area.innerHTML = `<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display='none'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>`;
             } else {
-                var flatHtml = '';
-                for (var mi = 0; mi < chat.messages.length; mi++) {
-                    var m = chat.messages[mi];
+                area.innerHTML = chat.messages.map((m, i) => {
+                    let actionsHtml = '<div class="message-actions">';
                     if (m.role === 'user') {
-                        flatHtml += renderUserMsg(m, mi);
-                        if (m.replies && m.replies.length > 0) {
-                            var activeIdx = (m._activeReply !== undefined ? m._activeReply : 0);
-                            var reply = m.replies[activeIdx];
-                            flatHtml += renderAssistantMsg(reply, mi, m.replies.length, activeIdx);
-                        }
-                    } else if (mi === 0 || !chat.messages[mi - 1].replies) {
-                        flatHtml += renderAssistantMsg(m, mi, 0, 0);
+                        actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+                        actionsHtml += `<button onclick="editMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
+                    } else {
+                        actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+                        actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
+                        if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
                     }
-                }
-                area.innerHTML = flatHtml;
-            }
-            function renderUserMsg(m, idx) {
-                var actionsHtml = '<div class="message-actions">';
-                actionsHtml += '<button onclick="copyMessage(' + idx + ')" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
-                actionsHtml += '<button onclick="editMessage(' + idx + ')" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>';
-                actionsHtml += '</div>';
-                return '<div class="message-row user" data-msg-index="' + idx + '"><div><div class="message-content">' + formatMessage(m.content) + '</div>' + actionsHtml + '</div></div>';
-            }
-            function renderAssistantMsg(m, idx, branchCount, activeBranch) {
-                var actionsHtml = '<div class="message-actions">';
-                actionsHtml += '<button onclick="copyMessage(' + idx + ')" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
-                actionsHtml += '<button onclick="downloadMessage(' + idx + ')" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
-                actionsHtml += '<button onclick="regenerateMessage(' + idx + ')" title="Обновить ответ"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>';
-                if (m.interrupted) actionsHtml += '<button onclick="continueMessage(' + idx + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
-                actionsHtml += '</div>';
-                var branchNav = '';
-                if (branchCount > 1) {
-                    branchNav = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12px;color:#888;">';
-                    branchNav += '<button onclick="switchBranch(' + idx + ', -1)" style="background:transparent;border:none;color:#00CBF5;cursor:pointer;font-size:16px;padding:0 4px;">◄</button>';
-                    branchNav += '<span>' + (activeBranch + 1) + '/' + branchCount + '</span>';
-                    branchNav += '<button onclick="switchBranch(' + idx + ', 1)" style="background:transparent;border:none;color:#00CBF5;cursor:pointer;font-size:16px;padding:0 4px;">►</button>';
-                    branchNav += '</div>';
-                }
-                var reasoningHtml = '';
-                var contentToShow = m.content || '';
-                if (m.reasoning) {
-                    reasoningHtml = '<div class="reasoning-block">' + formatMessage(m.reasoning) + '</div>';
-                    var endIdx = m.content.indexOf('\n\nОтвет:\n');
-                    if (endIdx !== -1) contentToShow = m.content.substring(endIdx + '\n\nОтвет:\n'.length);
-                }
-                return '<div class="message-row assistant" data-msg-index="' + idx + '"><div>' + branchNav + '<div class="message-content">' + reasoningHtml + formatMessage(contentToShow) + '</div>' + actionsHtml + '</div></div>';
+                    actionsHtml += '</div>';
+                    var dataAttr = ' data-msg-index="' + i + '"';
+                    var reasoningHtml = '';
+                    var contentToShow = m.content;
+                    if (m.reasoning) {
+                        reasoningHtml = '<div class="reasoning-block">' + formatMessage(m.reasoning) + '</div>';
+                        var endIdx = m.content.indexOf('\n\nОтвет:\n');
+                        if (endIdx !== -1) {
+                            contentToShow = m.content.substring(endIdx + '\n\nОтвет:\n'.length);
+                        }
+                    } else if (m._reasoningInProgress && m.content) {
+                        var startIdx = m.content.indexOf('Размышление:\n');
+                        if (startIdx !== -1) {
+                            reasoningHtml = '<div class="reasoning-block">' + escapeHtml(m.content.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
+                            contentToShow = '';
+                        }
+                    }
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + reasoningHtml + formatMessage(contentToShow) + '</div>' + actionsHtml + '</div></div>';
+                }).join('');
             }
             hljs.highlightAll();
             setupFloatingCopyButtons();
@@ -692,104 +675,6 @@
                 main.scrollTop = main.scrollHeight;
                 main.style.scrollBehavior = 'smooth';
             }
-        }
-        async function regenerateMessage(index) {
-            if (isSending) return;
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var msg = chat.messages[index];
-            if (!msg) return;
-            var parentUserIdx;
-            if (msg.role === 'assistant') {
-                parentUserIdx = index - 1;
-                if (parentUserIdx < 0 || chat.messages[parentUserIdx].role !== 'user') return;
-            } else if (msg.role === 'user' && msg.replies && msg.replies.length > 0) {
-                parentUserIdx = index;
-                msg = msg.replies[msg._activeReply || 0];
-                if (!msg) return;
-            } else {
-                return;
-            }
-            var parentMsg = chat.messages[parentUserIdx];
-            if (!parentMsg.replies) {
-                parentMsg.replies = [msg];
-            }
-            if (parentMsg.replies.length >= 5) { alert('Максимум 5 веток'); return; }
-            msg.finished = true;
-            isSending = true;
-            sendBtnStop();
-            var newReply = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false };
-            parentMsg.replies.push(newReply);
-            parentMsg._activeReply = parentMsg.replies.length - 1;
-            renderMessages();
-            try {
-                var messagesBefore = [];
-                for (var j = 0; j <= parentUserIdx; j++) {
-                    var m = chat.messages[j];
-                    messagesBefore.push({ role: m.role, content: m.content });
-                }
-                var resp = await fetch(SERVER_URL + '/regenerate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: currentMode, chat_id: currentChatId, messages: messagesBefore, tree: JSON.stringify(chat.messages), user_msg_index: parentUserIdx })
-                });
-                if (!resp.ok) {
-                    newReply.content = 'Ошибка сервера.';
-                    newReply.finished = true;
-                    renderMessages();
-                    isSending = false; sendBtnArrow();
-                    return;
-                }
-                var data = await resp.json();
-                if (data.reply) {
-                    var parentUser = chat.messages[chat.messages.length - 1];
-                    if (!parentUser.replies) parentUser.replies = [];
-                    var assistantMsg = { role: 'assistant', content: data.reply, reasoning: data.reasoning || '', finished: true };
-                    parentUser.replies.push(assistantMsg);
-                    parentUser._activeReply = parentUser.replies.length - 1;
-                    var saveTree = JSON.stringify(chat.messages);
-                    fetch(SERVER_URL + '/save_tree', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                        body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, tree: saveTree })
-                    }).catch(function(e) { console.error(e); });
-                    renderChatList();
-                    renderMessages();
-                    autoNameChat(chat);
-                    if (autoScroll) {
-                        var main = document.querySelector('.main');
-                        if (main) {
-                            main.style.scrollBehavior = 'auto';
-                            main.scrollTop = main.scrollHeight;
-                            main.style.scrollBehavior = 'smooth';
-                        }
-                    }
-                    isSending = false;
-                    sendBtnArrow();
-                    activeStreamId = null;
-                } else {
-                    newReply.content = 'Ошибка.';
-                    newReply.finished = true;
-                    renderMessages();
-                    isSending = false; sendBtnArrow();
-                }
-            } catch(e) {
-                newReply.content = 'Ошибка соединения.';
-                newReply.finished = true;
-                renderMessages();
-                isSending = false; sendBtnArrow();
-            }
-        }
-        function switchBranch(userMsgIndex, direction) {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var msg = chat.messages[userMsgIndex];
-            if (!msg || !msg.replies) return;
-            var newIdx = (msg._activeReply || 0) + direction;
-            if (newIdx < 0) newIdx = msg.replies.length - 1;
-            if (newIdx >= msg.replies.length) newIdx = 0;
-            msg._activeReply = newIdx;
-            renderMessages();
         }
         function copyMessage(index) {
             const chat = chats.find(c => c.id === currentChatId);
@@ -1064,11 +949,10 @@
                 main.style.scrollBehavior = 'smooth';
             }
 
-            var treeClone = JSON.parse(JSON.stringify(chat.messages));
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, personality: (chat && chat.messages.length === 0 ? currentPersonality : 'default'), file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '', tree: JSON.stringify(treeClone) })
+                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, personality: (chat && chat.messages.length === 0 ? currentPersonality : 'default'), file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '' })
                 });
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (resp.status === 403) {
@@ -1093,11 +977,7 @@
                 const data = await resp.json();
                 if (data.reply) {
                     const fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    var parentUser = chat.messages[chat.messages.length - 1];
-                    if (!parentUser.replies) parentUser.replies = [];
-                    var newAssistant = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false };
-                    parentUser.replies.push(newAssistant);
-                    parentUser._activeReply = parentUser.replies.length - 1;
+                    chat.messages.push({ role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false });
                     const msgIndex = chat.messages.length - 1;
                     const streamId = 'stream_' + msgIndex;
                     activeStreamId = streamId;
@@ -1123,10 +1003,10 @@
                             wordCount++;
                             pos++;
                         }
-                        newAssistant._streamPos = pos;
+                        chat.messages[msgIndex]._streamPos = pos;
                         if (chunk) {
                             var fullText = words.slice(0, pos).join('');
-                            newAssistant.content = fullText;
+                            chat.messages[msgIndex].content = fullText;
                             var displayText = fullText;
                             if (!reasoningStarted && fullText.indexOf('Размышление:\n') !== -1) {
                                 reasoningStarted = true;
@@ -1168,15 +1048,8 @@
                             chat.messages[msgIndex].interrupted = false;
                             typingInterval = null;
                             streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + msgIndex + ')" id="download-btn-' + msgIndex + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
-                            var saveTree = JSON.stringify(chat.messages);
-                            fetch(SERVER_URL + '/save_tree', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, tree: saveTree })
-                            }).catch(function(e) { console.error(e); });
                             autoNameChat(chat);
                             renderChatList();
-                            renderMessages();
                             if (autoScroll) {
                                 var main = document.querySelector('.main');
                                 if (main) {
