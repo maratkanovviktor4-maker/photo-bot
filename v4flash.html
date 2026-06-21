@@ -698,9 +698,18 @@
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             var msg = chat.messages[index];
-            if (!msg || msg.role !== 'assistant') return;
-            var parentUserIdx = index - 1;
-            if (parentUserIdx < 0 || chat.messages[parentUserIdx].role !== 'user') return;
+            if (!msg) return;
+            var parentUserIdx;
+            if (msg.role === 'assistant') {
+                parentUserIdx = index - 1;
+                if (parentUserIdx < 0 || chat.messages[parentUserIdx].role !== 'user') return;
+            } else if (msg.role === 'user' && msg.replies && msg.replies.length > 0) {
+                parentUserIdx = index;
+                msg = msg.replies[msg._activeReply || 0];
+                if (!msg) return;
+            } else {
+                return;
+            }
             var parentMsg = chat.messages[parentUserIdx];
             if (!parentMsg.replies) {
                 parentMsg.replies = [msg];
