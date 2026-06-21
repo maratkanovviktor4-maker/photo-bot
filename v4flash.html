@@ -1194,6 +1194,38 @@
                 main.style.scrollBehavior = 'smooth';
             }
 
+                function buildActiveHistory(msgs) {
+                    var result = [];
+                    for (var i = 0; i < msgs.length; i++) {
+                        var m = msgs[i];
+                        if (m.role === 'user') {
+                            result.push({ role: 'user', content: m.content });
+                            if (m.replies && m.replies.length > 0) {
+                                var activeIdx = (m._activeReply !== undefined ? m._activeReply : 0);
+                                var activeReply = m.replies[activeIdx];
+                                if (activeReply) {
+                                    result.push({ role: 'assistant', content: activeReply.content });
+                                    if (activeReply.children && activeReply.children.length > 0) {
+                                        var childResult = buildActiveHistory(activeReply.children);
+                                        for (var ci = 0; ci < childResult.length; ci++) {
+                                            result.push(childResult[ci]);
+                                        }
+                                    }
+                                }
+                            }
+                        } else if (m.role === 'assistant') {
+                            if (i === 0 || msgs[i - 1].role !== 'user' || !msgs[i - 1].replies) {
+                                result.push({ role: 'assistant', content: m.content });
+                            }
+                        }
+                    }
+                    return result;
+                }
+                var activeHistory = buildActiveHistory(chat.messages);
+                var historyForServer = [];
+                for (var hi = 0; hi < activeHistory.length; hi++) {
+                    historyForServer.push({ role: activeHistory[hi].role, content: activeHistory[hi].content });
+                }
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
