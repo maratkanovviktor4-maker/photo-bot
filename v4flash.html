@@ -805,21 +805,13 @@
                     
                     if (resp.ok) {
                         var data = await resp.json();
-                        // Обновляем чат
-                        await loadChatsFromServer();
                         currentBranchId = data.branch_id;
+                        await loadChatsFromServer();
                         var updatedChat = chats.find(function(c) { return c.id === currentChatId; });
                         if (updatedChat) {
                             updatedChat.activeBranch = data.branch_id;
-                            if (data.reply) {
-                                // Добавляем сообщения в кеш если их нет
-                                if (!updatedChat.allBranches[data.branch_id]) {
-                                    updatedChat.allBranches[data.branch_id] = { name: data.branch_name, messages: [], msg_ids: data.msg_ids || [] };
-                                }
-                                var branchMsgs = updatedChat.allBranches[data.branch_id].messages;
-                                branchMsgs.push({ role: 'user', content: prompt, msg_id: data.user_msg_id });
-                                branchMsgs.push({ role: 'assistant', content: data.reply, reasoning: data.reasoning, msg_id: data.assistant_msg_id });
-                                updatedChat.messages = branchMsgs;
+                            if (!updatedChat.allBranches[data.branch_id]) {
+                                updatedChat.allBranches[data.branch_id] = { name: data.branch_name, messages: [], msg_ids: [] };
                             }
                         }
                         openChat(currentChatId);
