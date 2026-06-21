@@ -484,6 +484,26 @@
                             }
                         }
                     }
+                    if (data.branches) {
+                        for (var i = 0; i < chats.length; i++) {
+                            var cid = chats[i].id;
+                            if (data.branches[cid]) {
+                                var lastUserIdx = -1;
+                                for (var j = chats[i].messages.length - 1; j >= 0; j--) {
+                                    if (chats[i].messages[j].role === 'user') { lastUserIdx = j; break; }
+                                }
+                                if (lastUserIdx >= 0) {
+                                    var userMsg = chats[i].messages[lastUserIdx];
+                                    userMsg.replies = [chats[i].messages[lastUserIdx + 1]];
+                                    for (var k = 0; k < data.branches[cid].length; k++) {
+                                        userMsg.replies.push(data.branches[cid][k]);
+                                    }
+                                    userMsg._activeReply = 0;
+                                    chats[i].messages = chats[i].messages.slice(0, lastUserIdx + 1);
+                                }
+                            }
+                        }
+                    }
                     chats.sort((a, b) => a.id.localeCompare(b.id));
                 }
             } catch (e) {
@@ -758,6 +778,9 @@
                     return;
                 }
                 var data = await resp.json();
+                if (data.branch_key) {
+                    newReply._branchKey = data.branch_key;
+                }
                 if (data.reply) {
                     var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
                     var words = fullContent.split(/(\s+)/);
@@ -1194,6 +1217,13 @@
                             chat.messages[msgIndex].finished = true;
                             chat.messages[msgIndex].interrupted = false;
                             typingInterval = null;
+                            var parentUserIdx2 = msgIndex - 1;
+                            if (parentUserIdx2 >= 0 && chat.messages[parentUserIdx2].role === 'user') {
+                                if (!chat.messages[parentUserIdx2].replies) chat.messages[parentUserIdx2].replies = [];
+                                chat.messages[parentUserIdx2].replies.push(chat.messages[msgIndex]);
+                                chat.messages[parentUserIdx2]._activeReply = chat.messages[parentUserIdx2].replies.length - 1;
+                                chat.messages.splice(msgIndex, 1);
+                            }
                             streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + msgIndex + ')" id="download-btn-' + msgIndex + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
                             autoNameChat(chat);
                             renderChatList();
