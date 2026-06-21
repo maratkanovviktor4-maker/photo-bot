@@ -484,17 +484,6 @@
                             }
                         }
                     }
-                    if (data.trees) {
-                        for (var i = 0; i < chats.length; i++) {
-                            var cid = chats[i].id;
-                            if (data.trees[cid]) {
-                                try {
-                                    var treeData = JSON.parse(data.trees[cid]);
-                                    chats[i].messages = treeData;
-                                } catch(e) {}
-                            }
-                        }
-                    }
                     if (data.branches) {
                         for (var i = 0; i < chats.length; i++) {
                             var cid = chats[i].id;
@@ -527,10 +516,8 @@
                                         for (var bi = 0; bi < branchesByUser[uiKey].length; bi++) {
                                             userMsg.replies.push(branchesByUser[uiKey][bi]);
                                         }
-                                        var activeReplies = data.active_replies && data.active_replies[cid] ? data.active_replies[cid] : {};
-                                        var serverActive = activeReplies[String(userCountIdx)];
                                         var savedBranch = localStorage.getItem(cid + '_activeBranch_' + userCountIdx);
-                                        userMsg._activeReply = serverActive !== undefined ? parseInt(serverActive) : (savedBranch !== null ? parseInt(savedBranch) : 0);
+                                        userMsg._activeReply = savedBranch !== null ? parseInt(savedBranch) : 0;
                                     }
                                 }
                                 var newMsgs = [];
@@ -919,20 +906,8 @@
             if (newIdx < 0) newIdx = msg.replies.length - 1;
             if (newIdx >= msg.replies.length) newIdx = 0;
             msg._activeReply = newIdx;
-            var userCountIdx = 0;
-            for (var i = 0; i < chat.messages.length; i++) {
-                if (chat.messages[i].role === 'user') {
-                    if (i === userMsgIndex) break;
-                    userCountIdx++;
-                }
-            }
-            var branchKey = chat.id + '_activeBranch_' + userCountIdx;
+            var branchKey = chat.id + '_activeBranch_' + userMsgIndex;
             localStorage.setItem(branchKey, newIdx);
-            fetch(SERVER_URL + '/save_active_reply', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: chat.id, user_msg_index: userCountIdx, active_reply: newIdx })
-            }).catch(function(e) { console.error(e); });
             renderMessages();
         }
         function copyMessage(index) {
@@ -1251,23 +1226,10 @@
                 for (var hi = 0; hi < activeHistory.length; hi++) {
                     historyForServer.push({ role: activeHistory[hi].role, content: activeHistory[hi].content });
                 }
-                var treeForServer = JSON.stringify(chat.messages);
-            var activeReplyVal = null;
-            var userMsgIdx = null;
-            if (targetParent) {
-                activeReplyVal = targetParent._activeReply || 0;
-                var userCount = 0;
-                for (var ui = 0; ui < chat.messages.length; ui++) {
-                    if (chat.messages[ui].role === 'user') {
-                        if (chat.messages[ui] === targetParent) { userMsgIdx = userCount; break; }
-                        userCount++;
-                    }
-                }
-            }
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, personality: (chat && chat.messages.length === 0 ? currentPersonality : 'default'), file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '', active_reply: activeReplyVal, user_msg_index: userMsgIdx, tree: treeForServer })
+                    body: JSON.stringify({ user_id: currentUserId, message: text, model: 'flash', mode: currentMode, chat_id: currentChatId, personality: (chat && chat.messages.length === 0 ? currentPersonality : 'default'), file_data: pendingFile ? pendingFile.data : '', file_name: pendingFile ? pendingFile.name : '', file_mime: pendingFile ? pendingFile.mime : '' })
                 });
                 const el = document.getElementById(placeholderId); if (el) el.remove();
                 if (resp.status === 403) {
