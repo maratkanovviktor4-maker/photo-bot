@@ -301,7 +301,23 @@
                         }
                     }
                 }
+                updatePersonalityIndicator();
             } catch(e) { console.error('loadPersonalities:', e); }
+        }
+        function updatePersonalityIndicator() {
+            var ind = document.getElementById('personalityIndicator');
+            if (!ind) return;
+            if (currentPersonality === 'default') {
+                ind.style.display = 'none';
+            } else if (currentPersonality === 'custom') {
+                ind.style.display = 'inline';
+                ind.textContent = '🎭 Кастом';
+                ind.style.color = '#00CBF5';
+            } else if (personalities[currentPersonality]) {
+                ind.style.display = 'inline';
+                ind.textContent = personalities[currentPersonality].name;
+                ind.style.color = '#00CBF5';
+            }
         }
         function changePersonality() {
             var val = document.getElementById('personalitySelect').value;
@@ -312,6 +328,7 @@
             currentPersonality = val;
             localStorage.setItem('photobot_personality', val);
             document.getElementById('personalitySelect').value = val;
+            updatePersonalityIndicator();
         }
         function closeCustomPersonality() {
             document.getElementById('customPersonalityModal').style.display = 'none';
