@@ -722,7 +722,7 @@
                 var resp = await fetch(SERVER_URL + '/regenerate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: currentMode, chat_id: currentChatId, messages: messagesBefore })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: currentMode, chat_id: currentChatId, messages: messagesBefore, tree: JSON.stringify(chat.messages), user_msg_index: parentUserIdx })
                 });
                 if (!resp.ok) {
                     newReply.content = 'Ошибка сервера.';
