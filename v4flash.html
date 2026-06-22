@@ -1512,8 +1512,24 @@
                 if (existingArrows) existingArrows.remove();
                 var siblingData = await loadSiblingBranches(msgIndex);
                 if (!siblingData || siblingData.total_siblings <= 1) continue;
-                var pos = siblingData.current_index + 1;
                 var total = siblingData.total_siblings;
+                var storageKey = 'branch_pos_' + currentChatId + '_' + msg.msg_id;
+                var saved = localStorage.getItem(storageKey);
+                var pos;
+                if (saved) {
+                    try {
+                        var parsed = JSON.parse(saved);
+                        if (parsed.total === total) {
+                            pos = parsed.pos;
+                        } else {
+                            pos = siblingData.current_index + 1;
+                        }
+                    } catch(e) {
+                        pos = siblingData.current_index + 1;
+                    }
+                } else {
+                    pos = siblingData.current_index + 1;
+                }
                 // Сохраняем позицию в localStorage
                 var storageKey = 'branch_pos_' + currentChatId + '_' + msg.msg_id;
                 localStorage.setItem(storageKey, JSON.stringify({ pos: pos, total: total }));
