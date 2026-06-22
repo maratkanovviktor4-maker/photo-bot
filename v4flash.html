@@ -955,7 +955,7 @@
                     if (forkIndex >= 0) {
                         for (var k = 0; k < forkIndex; k++) { chat.messages.push(oldMessages[k]); }
                     }
-                    chat.messages.push({ role: 'user', content: text, msg_id: data.user_msg_id });
+                    chat.messages.push({ role: 'user', content: text, msg_id: data.user_msg_id, _isForkPoint: true });
                     
                     if (data.reply) {
                         var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
@@ -1314,7 +1314,11 @@
                             contentToShow = '';
                         }
                     }
-                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
+                    var extraClass = '';
+                    if (m.role === 'user' && m._isForkPoint) {
+                        extraClass = ' fork-point';
+                    }
+                    return '<div class="message-row ' + m.role + extraClass + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
             var allRows = area.querySelectorAll('.message-row');
