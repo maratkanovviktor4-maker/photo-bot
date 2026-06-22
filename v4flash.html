@@ -74,7 +74,9 @@
         body.light .branch-item:hover { background: rgba(0,0,0,0.04); color: #111; }
         .branch-item.active { background: rgba(0,203,245,0.15); color: #00CBF5; font-weight: 600; }
         body.light .branch-item.active { background: rgba(0,0,0,0.06); }
-        .branch-item .branch-dot { width: 6px; height: 6px; border-radius: 50%; background: #00CBF5; flex-shrink: 0; opacity: 0.6; }
+        body.light .branch-item .branch-icon svg path { fill: #00CBF5; }
+        .branch-item .branch-icon { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.6; }
+        .branch-item.active .branch-icon { opacity: 1; }
         .branch-item.active .branch-dot { opacity: 1; }
         .branch-item .branch-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .main { flex: 1; display: flex; flex-direction: column; background: #201F28; min-width: 0; overflow-y: auto; scroll-behavior: smooth; margin-left: 0; transition: margin-left 0.3s ease; padding-bottom: 0; }
@@ -702,7 +704,7 @@
             list.innerHTML = Object.keys(branches).map(function(bid) {
                 var b = branches[bid];
                 return '<div class="branch-item' + (bid === currentBranchId ? ' active' : '') + '" onclick="switchBranch(\'' + bid + '\')">' +
-                    '<div class="branch-dot"></div>' +
+                    '<svg class="branch-icon" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#00CBF5"/></svg>' +
                     '<span class="branch-name">' + escapeHtml(b.name || bid) + '</span>' +
                     '<span style="font-size:10px;color:#666;">' + (b.msg_ids ? b.msg_ids.length : 0) + '</span>' +
                     '</div>';
