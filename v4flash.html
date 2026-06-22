@@ -805,17 +805,211 @@
             if (!chat) return;
             var msg = chat.messages[msgIndex];
             if (!msg) return;
-            var input = document.getElementById('userInput');
-            input.value = msg.content;
-            input.focus();
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-            input.style.height = 'auto';
-            input.style.height = Math.min(input.scrollHeight, 300) + 'px';
-            var oldSend = document.getElementById('sendBtn').onclick;
-            document.getElementById('sendBtn').onclick = function() {
-                document.getElementById('sendBtn').onclick = oldSend;
-                sendBranchFromEdit(msgIndex);
+            
+            var msgRow = document.querySelector('.message-row[data-msg-index="' + msgIndex + '"]');
+            if (!msgRow) return;
+            
+            var contentDiv = msgRow.querySelector('.message-content');
+            if (!contentDiv) return;
+            
+            var actionsDiv = msgRow.querySelector('.message-actions');
+            var originalContent = msg.content;
+            var originalHTML = contentDiv.innerHTML;
+            
+            var textarea = document.createElement('textarea');
+            textarea.value = originalContent;
+            textarea.style.cssText = 'width:100%;min-height:60px;background:rgba(0,203,245,0.08);color:#e0e0e0;border:1px solid #00CBF5;border-radius:12px;padding:10px 14px;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;resize:vertical;outline:none;line-height:1.5;';
+            if (document.body.classList.contains('light')) {
+                textarea.style.background = '#EDF3FE';
+                textarea.style.color = '#111';
+            }
+            
+            contentDiv.innerHTML = '';
+            contentDiv.appendChild(textarea);
+            textarea.focus();
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.max(60, textarea.scrollHeight) + 'px';
+            textarea.oninput = function() {
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.max(60, textarea.scrollHeight) + 'px';
             };
+            
+            if (actionsDiv) {
+                var oldActionsHTML = actionsDiv.innerHTML;
+                actionsDiv.innerHTML = '<button id="branchSendBtn_' + msgIndex + '" style="background:#00CBF5;color:#201F28;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;">Отправить</button><button id="branchCancelBtn_' + msgIndex + '" style="background:transparent;border:1px solid #666;color:#aaa;padding:6px 14px;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;cursor:pointer;margin-left:6px;">Отмена</button>';
+                
+                document.getElementById('branchSendBtn_' + msgIndex).onclick = function() {
+                    var newText = textarea.value.trim();
+                    if (!newText) newText = originalContent;
+                    contentDiv.innerHTML = originalHTML;
+                    actionsDiv.innerHTML = oldActionsHTML;
+                    sendBranchFromEditWithText(msgIndex, newText, msg.msg_id);
+                };
+                
+                document.getElementById('branchCancelBtn_' + msgIndex).onclick = function() {
+                    contentDiv.innerHTML = originalHTML;
+                    actionsDiv.innerHTML = oldActionsHTML;
+                    hljs.highlightAll();
+                    setupFloatingCopyButtons();
+                };
+                
+                textarea.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        document.getElementById('branchSendBtn_' + msgIndex).click();
+                    }
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        document.getElementById('branchCancelBtn_' + msgIndex).click();
+                    }
+                });
+            }
+        }
+        
+        async function sendBranchFromEditWithText(msgIndex, text, sourceMsgId) {
+            if (isSending) return;
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[msgIndex];
+            if (!msg) return;
+            
+            isSending = true;
+            if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
+            sendBtnStop();
+            
+            var placeholderId = 'branch_loading_' + Date.now();
+            var area = document.getElementById('chatArea');
+            var loadingRow = document.createElement('div');
+            loadingRow.className = 'message-row assistant';
+            loadingRow.id = placeholderId;
+            loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
+            area.appendChild(loadingRow);
+            var main = document.querySelector('.main');
+            if (main) { main.scrollTop = main.scrollHeight; }
+            
+            try {
+                var resp = await fetch(SERVER_URL + '/create_branch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        model: 'flash',
+                        chat_id: currentChatId,
+                        source_msg_id: sourceMsgId,
+                        branch_name: '',
+                        prompt: text
+                    })
+                });
+                
+                var el = document.getElementById(placeholderId);
+                if (el) el.remove();
+                
+                if (resp.ok) {
+                    var data = await resp.json();
+                    
+                    if (!chat.allBranches) chat.allBranches = {};
+                    if (!chat.allBranches[data.branch_id]) {
+                        chat.allBranches[data.branch_id] = { name: data.branch_name || 'Ветка', messages: [], msg_ids: data.msg_ids || [] };
+                    }
+                    
+                    var oldMessages = chat.messages.slice();
+                    var forkIndex = -1;
+                    for (var k = 0; k < oldMessages.length; k++) {
+                        if (oldMessages[k].msg_id === sourceMsgId) { forkIndex = k; break; }
+                    }
+                    currentBranchId = data.branch_id;
+                    chat.messages = [];
+                    if (forkIndex >= 0) {
+                        for (var k = 0; k < forkIndex; k++) { chat.messages.push(oldMessages[k]); }
+                    }
+                    chat.messages.push({ role: 'user', content: text, msg_id: data.user_msg_id });
+                    
+                    if (data.reply) {
+                        var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                        var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
+                        chat.messages.push(assistantMsg);
+                        var msgIndex2 = chat.messages.length - 1;
+                        var streamId = 'branch_stream_' + msgIndex2;
+                        activeStreamId = streamId;
+                        renderMessages();
+                        
+                        var streamDiv = document.getElementById('stream-' + msgIndex2);
+                        var streamAction = document.getElementById('actions-' + msgIndex2);
+                        if (!streamDiv) { var allAD = document.querySelectorAll('.message-row.assistant .message-content'); streamDiv = allAD[allAD.length - 1]; }
+                        if (!streamAction) { var allA = document.querySelectorAll('.message-row.assistant .message-actions'); streamAction = allA[allA.length - 1]; }
+                        
+                        var words = fullContent.split(/(\s+)/);
+                        assistantMsg._streamWords = words;
+                        var pos = 0;
+                        var reasoningStarted = false;
+                        var reasoningEnded = false;
+                        
+                        function streamNext() {
+                            if (activeStreamId !== streamId) return;
+                            var chunk = '';
+                            var wc = 0;
+                            while (pos < words.length && wc < 2) { chunk += words[pos]; wc++; pos++; }
+                            assistantMsg._streamPos = pos;
+                            if (chunk) {
+                                var ft = words.slice(0, pos).join('');
+                                assistantMsg.content = ft;
+                                if (!reasoningStarted && ft.indexOf('Размышление:\n') !== -1) { reasoningStarted = true; assistantMsg._reasoningInProgress = true; }
+                                if (reasoningStarted && !reasoningEnded) {
+                                    var ei = ft.indexOf('\n\nОтвет:\n');
+                                    if (ei !== -1) {
+                                        reasoningEnded = true; assistantMsg._reasoningInProgress = false;
+                                        assistantMsg.reasoning = ft.substring('Размышление:\n'.length, ei);
+                                        if (streamDiv) streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(assistantMsg.reasoning) + '</div>' + formatMessage(ft.substring(ei + '\n\nОтвет:\n'.length));
+                                    } else {
+                                        var rt = ft.substring(ft.indexOf('Размышление:\n') + 'Размышление:\n'.length);
+                                        if (streamDiv) streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(rt) + '</div>';
+                                    }
+                                } else if (reasoningEnded) {
+                                    var rs = ft.indexOf('\n\nОтвет:\n') + '\n\nОтвет:\n'.length;
+                                    if (streamDiv) streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(assistantMsg.reasoning) + '</div>' + formatMessage(ft.substring(rs));
+                                } else { if (streamDiv) streamDiv.innerHTML = formatMessage(ft); }
+                                if (streamDiv) { streamDiv.querySelectorAll('pre code').forEach(function(b) { hljs.highlightElement(b); }); }
+                                setupFloatingCopyButtons();
+                                if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.style.scrollBehavior = 'auto'; m3.scrollTop = m3.scrollHeight; m3.style.scrollBehavior = 'smooth'; } }
+                                typingInterval = setTimeout(streamNext, 20);
+                            } else {
+                                assistantMsg.finished = true; assistantMsg.interrupted = false; typingInterval = null;
+                                if (streamAction) { streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex2 + ')" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + msgIndex2 + ')" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>'; }
+                                chat.activeBranch = data.branch_id;
+                                chat.allBranches[data.branch_id].messages = chat.messages.slice();
+                                chat.allBranches[data.branch_id].msg_ids = chat.messages.map(function(m) { return m.msg_id || ''; });
+                                autoNameChat(chat);
+                                updateBranchesFromServer();
+                                renderChatList();
+                                updateBalance();
+                                if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.scrollTop = m3.scrollHeight; } }
+                                if (activeStreamId === streamId) { isSending = false; activeStreamId = null; sendBtnArrow(); }
+                            }
+                        }
+                        streamNext();
+                    } else {
+                        chat.activeBranch = data.branch_id;
+                        updateBranchesFromServer();
+                        renderChatList();
+                        renderMessages();
+                        isSending = false;
+                        sendBtnArrow();
+                    }
+                    updateBalance();
+                } else {
+                    var errData = await resp.json();
+                    alert('Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
+                    isSending = false;
+                    sendBtnArrow();
+                }
+            } catch(e) {
+                var el2 = document.getElementById(placeholderId);
+                if (el2) el2.remove();
+                console.error('sendBranchFromEditWithText error:', e);
+                alert('Ошибка соединения.');
+                isSending = false;
+                sendBtnArrow();
+            }
         }
         
         async function sendBranchFromEdit(msgIndex) {
