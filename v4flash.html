@@ -893,11 +893,11 @@
             }
             
             // Удаляем все сообщения после текущего user-сообщения
-            var allRows = document.querySelectorAll('.message-row');
-            var found = false;
-            for (var r = 0; r < allRows.length; r++) {
-                if (allRows[r] === msgRow) { found = true; continue; }
-                if (found) { allRows[r].remove(); }
+            var nextRow = msgRow.nextSibling;
+            while (nextRow) {
+                var toRemove = nextRow;
+                nextRow = nextRow.nextSibling;
+                toRemove.remove();
             }
             loadingRow.className = 'message-row assistant';
             loadingRow.id = 'branch_loading_' + Date.now();
