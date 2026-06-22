@@ -892,8 +892,13 @@
                 }
             }
             
-            // Точки загрузки сразу под сообщением user
-            var loadingRow = document.createElement('div');
+            // Удаляем все сообщения после текущего user-сообщения
+            var allRows = document.querySelectorAll('.message-row');
+            var found = false;
+            for (var r = 0; r < allRows.length; r++) {
+                if (allRows[r] === msgRow) { found = true; continue; }
+                if (found) { allRows[r].remove(); }
+            }
             loadingRow.className = 'message-row assistant';
             loadingRow.id = 'branch_loading_' + Date.now();
             loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
