@@ -198,56 +198,6 @@
         .message-content th { background: rgba(0,203,245,0.1); font-weight: 600; }
         body.light .message-content th { background: rgba(0,0,0,0.05); }
         body.light .message-content th, body.light .message-content td { border-color: rgba(0,0,0,0.1); }
-        .branch-nav-arrows {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            margin-left: 8px;
-            vertical-align: middle;
-        }
-        .branch-nav-arrows button {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            border: 1px solid rgba(0,203,245,0.4);
-            background: rgba(0,203,245,0.1);
-            color: #00CBF5;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            padding: 0;
-            transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
-            line-height: 1;
-        }
-        .branch-nav-arrows button:hover {
-            background: rgba(0,203,245,0.25);
-            border-color: #00CBF5;
-            transform: scale(1.1);
-        }
-        .branch-nav-arrows button:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .branch-nav-arrows button:disabled:hover {
-            background: rgba(0,203,245,0.1);
-            border-color: rgba(0,203,245,0.2);
-        }
-        .branch-nav-label {
-            font-size: 10px;
-            color: #888;
-            min-width: 24px;
-            text-align: center;
-            font-family: 'Inter', sans-serif;
-        }
-        .message-row.user .branch-nav-arrows {
-            order: -1;
-            margin-left: 0;
-            margin-right: 8px;
-        }
         .branch-indicator { font-size: 11px; color: #00CBF5; padding: 4px 8px; background: rgba(0,203,245,0.1); border-radius: 12px; display: inline-block; margin-bottom: 8px; font-family: 'Inter', sans-serif; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -813,7 +763,7 @@
                 var b = branches[bid];
                 return '<div class="branch-item' + (bid === currentBranchId ? ' active' : '') + '" onclick="switchBranch(\'' + bid + '\')">' +
                     '<svg class="branch-icon" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#00CBF5"/></svg>' +
-                    '<span class="branch-name">' + escapeHtml(b.name || b.branch_name || bid) + '</span>' +
+                    '<span class="branch-name">' + escapeHtml(b.name || bid) + '</span>' +
                     '<span style="font-size:10px;color:#666;">' + (b.msg_ids ? b.msg_ids.length : 0) + '</span>' +
                     '</div>';
             }).join('');
@@ -848,7 +798,8 @@
             } catch(e) {
                 console.error('switchBranch error:', e);
             }
-        }        
+        }
+        
         function createBranchFromMessage(msgIndex) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
@@ -1003,7 +954,6 @@
             hljs.highlightAll();
             setupFloatingCopyButtons();
             buildNavContainer();
-            updateAllBranchArrows();
             var main = document.querySelector('.main');
             if (main) {
                 main.style.scrollBehavior = 'auto';
@@ -1470,89 +1420,6 @@
                     }
                 }
             } catch(e) { console.error('updateBranchesFromServer error:', e); }
-        }
-        async function loadSiblingBranches(msgIndex) {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return null;
-            var msg = chat.messages[msgIndex];
-            if (!msg || !msg.msg_id) return null;
-            try {
-                var resp = await fetch(SERVER_URL + '/get_sibling_branches?user_id=' + currentUserId + 
-                    '&model=flash&chat_id=' + currentChatId + '&msg_id=' + msg.msg_id + 
-                    '&session_token=' + sessionToken);
-                if (resp.ok) {
-                    return await resp.json();
-                }
-            } catch(e) {
-                console.error('loadSiblingBranches error:', e);
-            }
-            return null;
-        }
-        
-        async function switchToSibling(msgIndex, direction) {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var msg = chat.messages[msgIndex];
-            if (!msg || !msg.msg_id) return;
-            var storageKey = 'branch_pos_' + currentChatId + '_' + msg.msg_id;
-            var saved = localStorage.getItem(storageKey);
-            if (!saved) return;
-            var parsed = JSON.parse(saved);
-            var newPos = parsed.pos + direction;
-            if (newPos < 1 || newPos > parsed.total) return;
-            var data = await loadSiblingBranches(msgIndex);
-            if (!data || data.total_siblings <= 1) return;
-            var target = data.siblings[newPos - 1];
-            await switchBranch(target.branch_id);
-            parsed.pos = newPos;
-            localStorage.setItem(storageKey, JSON.stringify(parsed));
-        }
-        
-        async function updateAllBranchArrows() {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var rows = document.querySelectorAll('.message-row[data-msg-index]');
-            for (var r = 0; r < rows.length; r++) {
-                var row = rows[r];
-                var msgIndex = parseInt(row.getAttribute('data-msg-index'));
-                if (isNaN(msgIndex)) continue;
-                var msg = chat.messages[msgIndex];
-                if (!msg || !msg.msg_id) continue;
-                var existingArrows = row.querySelector('.branch-nav-arrows');
-                if (existingArrows) existingArrows.remove();
-                var siblingData = await loadSiblingBranches(msgIndex);
-                if (!siblingData || siblingData.total_siblings <= 1) continue;
-                var total = siblingData.total_siblings;
-                var storageKey = 'branch_pos_' + currentChatId + '_' + msg.msg_id;
-                var saved = localStorage.getItem(storageKey);
-                var pos;
-                if (saved) {
-                    try {
-                        var parsed = JSON.parse(saved);
-                        if (parsed.total === total) {
-                            pos = parsed.pos;
-                        } else {
-                            pos = siblingData.total_siblings - siblingData.current_index;
-                        }
-                    } catch(e) {
-                        pos = siblingData.total_siblings - siblingData.current_index;
-                    }
-                } else {
-                    pos = siblingData.total_siblings - siblingData.current_index;
-                }
-                localStorage.setItem(storageKey, JSON.stringify({ pos: pos, total: total }));
-                var arrowsHtml = '<div class="branch-nav-arrows">' +
-                    '<button ' + (pos > 1 ? '' : 'disabled') + 
-                    ' onclick="switchToSibling(' + msgIndex + ', -1)" title="Предыдущая ветка">◀</button>' +
-                    '<span class="branch-nav-label">' + pos + '/' + total + '</span>' +
-                    '<button ' + (pos < total ? '' : 'disabled') + 
-                    ' onclick="switchToSibling(' + msgIndex + ', 1)" title="Следующая ветка">▶</button>' +
-                    '</div>';
-                var actionsDiv = row.querySelector('.message-actions');
-                if (actionsDiv) {
-                    actionsDiv.insertAdjacentHTML('afterbegin', arrowsHtml);
-                }
-            }
         }
         
         function formatMessage(text) {
