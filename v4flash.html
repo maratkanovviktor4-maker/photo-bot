@@ -672,6 +672,7 @@
                     main.style.scrollBehavior = 'auto';
                     main.scrollTop = main.scrollHeight;
                     main.style.scrollBehavior = 'smooth';
+                updateAllBranchArrows();
                 }
             }, 150);
         }
@@ -1411,6 +1412,9 @@
                             autoNameChat(chat);
                             renderChatList();
                             updateBranchesFromServer();
+                            setTimeout(function() {
+                                updateAllBranchArrows();
+                            }, 300);
                             if (autoScroll) {
                                 var main = document.querySelector('.main');
                                 if (main) {
@@ -1502,7 +1506,33 @@
                 total: data.total_siblings,
                 targetMsgId: target.msg_id
             };
-            await switchBranch(target.branch_id);
+            window._branchSwitchTargetBranchId = target.branch_id;
+            
+            var resp = await fetch(SERVER_URL + '/switch_branch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: target.branch_id })
+            });
+            if (!resp.ok) return;
+            var respData = await resp.json();
+            
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            currentBranchId = target.branch_id;
+            chat.activeBranch = target.branch_id;
+            chat.messages = respData.messages || [];
+            
+            renderBranchesPanel();
+            renderMessages();
+            setTimeout(function() {
+                var main = document.querySelector('.main');
+                if (main) {
+                    main.style.scrollBehavior = 'auto';
+                    main.scrollTop = main.scrollHeight;
+                    main.style.scrollBehavior = 'smooth';
+                }
+                updateAllBranchArrows();
+            }, 100);
         }
         
         async function updateAllBranchArrows() {
