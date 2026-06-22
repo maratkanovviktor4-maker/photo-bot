@@ -935,7 +935,9 @@
                     
                     if (!chat.allBranches) chat.allBranches = {};
                     if (!chat.allBranches[data.branch_id]) {
-                        chat.allBranches[data.branch_id] = { name: data.branch_name || 'Ветка', messages: [], msg_ids: data.msg_ids || [] };
+                        chat.allBranches[data.branch_id] = { name: data.branch_name || text.substring(0, 30), messages: [], msg_ids: data.msg_ids || [] };
+                    } else {
+                        chat.allBranches[data.branch_id].name = data.branch_name || text.substring(0, 30);
                     }
                     
                     var oldMessages = chat.messages.slice();
@@ -1005,6 +1007,7 @@
                                 chat.allBranches[data.branch_id].messages = chat.messages.slice();
                                 chat.allBranches[data.branch_id].msg_ids = chat.messages.map(function(m) { return m.msg_id || ''; });
                                 autoNameChat(chat);
+                                renderBranchesPanel();
                                 updateBranchesFromServer();
                                 renderChatList();
                                 updateBalance();
