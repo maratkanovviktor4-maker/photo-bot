@@ -673,7 +673,6 @@
                     main.scrollTop = main.scrollHeight;
                     main.style.scrollBehavior = 'smooth';
                 }
-                updateAllBranchArrows();
             }, 150);
         }
         
@@ -844,7 +843,6 @@
                             main.scrollTop = main.scrollHeight;
                             main.style.scrollBehavior = 'smooth';
                         }
-                        updateAllBranchArrows();
                     }, 100);
                 }
             } catch(e) {
@@ -1005,6 +1003,7 @@
             hljs.highlightAll();
             setupFloatingCopyButtons();
             buildNavContainer();
+            updateAllBranchArrows();
             var main = document.querySelector('.main');
             if (main) {
                 main.style.scrollBehavior = 'auto';
@@ -1515,6 +1514,9 @@
                 if (!siblingData || siblingData.total_siblings <= 1) continue;
                 var pos = siblingData.current_index + 1;
                 var total = siblingData.total_siblings;
+                // Сохраняем позицию в localStorage
+                var storageKey = 'branch_pos_' + currentChatId + '_' + msg.msg_id;
+                localStorage.setItem(storageKey, JSON.stringify({ pos: pos, total: total }));
                 var arrowsHtml = '<div class="branch-nav-arrows">' +
                     '<button ' + (pos > 1 ? '' : 'disabled') + 
                     ' onclick="switchToSibling(' + msgIndex + ', -1)" title="Предыдущая ветка">◀</button>' +
