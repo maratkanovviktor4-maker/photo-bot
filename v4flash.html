@@ -249,7 +249,6 @@
             margin-right: 8px;
         }
         .branch-indicator { font-size: 11px; color: #00CBF5; padding: 4px 8px; background: rgba(0,203,245,0.1); border-radius: 12px; display: inline-block; margin-bottom: 8px; font-family: 'Inter', sans-serif; }
-        .branch-indicator { font-size: 11px; color: #00CBF5; padding: 4px 8px; background: rgba(0,203,245,0.1); border-radius: 12px; display: inline-block; margin-bottom: 8px; font-family: 'Inter', sans-serif; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -820,8 +819,6 @@
             }).join('');
         }
         
-        var pendingBranchPosition = null;
-        var pendingBranchTotal = null;
         
         async function switchBranch(branchId) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
@@ -841,19 +838,13 @@
                     renderBranchesPanel();
                     renderMessages();
                     setTimeout(function() {
-                        if (pendingBranchPosition !== null && pendingBranchTotal !== null) {
-                            updateAllBranchArrowsWithPosition(pendingBranchPosition, pendingBranchTotal);
-                            pendingBranchPosition = null;
-                            pendingBranchTotal = null;
-                        } else {
-                            updateAllBranchArrows();
-                        }
                         var main = document.querySelector('.main');
                         if (main) {
                             main.style.scrollBehavior = 'auto';
                             main.scrollTop = main.scrollHeight;
                             main.style.scrollBehavior = 'smooth';
                         }
+                        updateAllBranchArrows();
                     }, 100);
                 }
             } catch(e) {
@@ -1506,65 +1497,18 @@
             var newIndex = data.current_index + direction;
             if (newIndex < 0 || newIndex >= data.siblings.length) return;
             var target = data.siblings[newIndex];
-            var expectedPosition = newIndex + 1;
-            var expectedTotal = data.total_siblings;
-            pendingBranchPosition = expectedPosition;
-            pendingBranchTotal = expectedTotal;
+            window._branchSwitchExpected = {
+                position: newIndex + 1,
+                total: data.total_siblings,
+                targetMsgId: target.msg_id
+            };
             await switchBranch(target.branch_id);
-            setTimeout(function() {
-                var chat = chats.find(function(c) { return c.id === currentChatId; });
-                if (!chat) return;
-                var newMsgIndex = -1;
-                for (var i = 0; i < chat.messages.length; i++) {
-                    if (chat.messages[i].msg_id === target.msg_id) {
-                        newMsgIndex = i;
-                        break;
-                    }
-                }
-                if (newMsgIndex >= 0) {
-                    var targetRow = document.querySelector('.message-row[data-msg-index="' + newMsgIndex + '"]');
-                    if (targetRow) {
-                        targetRow.style.transition = 'background 0.3s';
-                        targetRow.style.background = 'rgba(0,203,245,0.2)';
-                        setTimeout(function() {
-                            targetRow.style.background = '';
-                        }, 1500);
-                        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }
-            }, 300);
-        }
-        async function updateAllBranchArrowsWithPosition(position, total) {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var rows = document.querySelectorAll('.message-row[data-msg-index]');
-            for (var r = 0; r < rows.length; r++) {
-                var row = rows[r];
-                var msgIndex = parseInt(row.getAttribute('data-msg-index'));
-                if (isNaN(msgIndex)) continue;
-                var msg = chat.messages[msgIndex];
-                if (!msg || !msg.msg_id) continue;
-                var existingArrows = row.querySelector('.branch-nav-arrows');
-                if (existingArrows) existingArrows.remove();
-                if (total > 1) {
-                    var arrowsHtml = '<div class="branch-nav-arrows">' +
-                        '<button ' + (position > 1 ? '' : 'disabled') + 
-                        ' onclick="switchToSibling(' + msgIndex + ', -1)" title="Предыдущая ветка">◀</button>' +
-                        '<span class="branch-nav-label">' + position + '/' + total + '</span>' +
-                        '<button ' + (position < total ? '' : 'disabled') + 
-                        ' onclick="switchToSibling(' + msgIndex + ', 1)" title="Следующая ветка">▶</button>' +
-                        '</div>';
-                    var actionsDiv = row.querySelector('.message-actions');
-                    if (actionsDiv) {
-                        actionsDiv.insertAdjacentHTML('afterbegin', arrowsHtml);
-                    }
-                }
-            }
         }
         
         async function updateAllBranchArrows() {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
+            var expected = window._branchSwitchExpected;
             var rows = document.querySelectorAll('.message-row[data-msg-index]');
             for (var r = 0; r < rows.length; r++) {
                 var row = rows[r];
@@ -1572,15 +1516,27 @@
                 if (isNaN(msgIndex)) continue;
                 var msg = chat.messages[msgIndex];
                 if (!msg || !msg.msg_id) continue;
-                var siblingData = await loadSiblingBranches(msgIndex);
                 var existingArrows = row.querySelector('.branch-nav-arrows');
                 if (existingArrows) existingArrows.remove();
-                if (siblingData && siblingData.total_siblings > 1) {
+                var usePosition = null;
+                var useTotal = null;
+                if (expected && msg.msg_id === expected.targetMsgId) {
+                    usePosition = expected.position;
+                    useTotal = expected.total;
+                }
+                if (usePosition === null) {
+                    var siblingData = await loadSiblingBranches(msgIndex);
+                    if (siblingData && siblingData.total_siblings > 1) {
+                        usePosition = siblingData.current_index + 1;
+                        useTotal = siblingData.total_siblings;
+                    }
+                }
+                if (usePosition !== null && useTotal > 1) {
                     var arrowsHtml = '<div class="branch-nav-arrows">' +
-                        '<button ' + (siblingData.has_prev ? '' : 'disabled') + 
+                        '<button ' + (usePosition > 1 ? '' : 'disabled') + 
                         ' onclick="switchToSibling(' + msgIndex + ', -1)" title="Предыдущая ветка">◀</button>' +
-                        '<span class="branch-nav-label">' + (siblingData.current_index + 1) + '/' + siblingData.total_siblings + '</span>' +
-                        '<button ' + (siblingData.has_next ? '' : 'disabled') + 
+                        '<span class="branch-nav-label">' + usePosition + '/' + useTotal + '</span>' +
+                        '<button ' + (usePosition < useTotal ? '' : 'disabled') + 
                         ' onclick="switchToSibling(' + msgIndex + ', 1)" title="Следующая ветка">▶</button>' +
                         '</div>';
                     var actionsDiv = row.querySelector('.message-actions');
@@ -1589,6 +1545,7 @@
                     }
                 }
             }
+            window._branchSwitchExpected = null;
         }
         
         function formatMessage(text) {
