@@ -877,13 +877,31 @@
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
             
-            var placeholderId = 'branch_loading_' + Date.now();
-            var area = document.getElementById('chatArea');
+            // Сразу обновляем текст в сообщении user
+            var msgRow = document.querySelector('.message-row[data-msg-index="' + msgIndex + '"]');
+            if (msgRow) {
+                var contentDiv = msgRow.querySelector('.message-content');
+                if (contentDiv) {
+                    contentDiv.innerHTML = formatMessage(text);
+                    hljs.highlightAll();
+                    setupFloatingCopyButtons();
+                }
+                var actionsDiv = msgRow.querySelector('.message-actions');
+                if (actionsDiv) {
+                    actionsDiv.innerHTML = '';
+                }
+            }
+            
+            // Точки загрузки сразу под сообщением user
             var loadingRow = document.createElement('div');
             loadingRow.className = 'message-row assistant';
-            loadingRow.id = placeholderId;
+            loadingRow.id = 'branch_loading_' + Date.now();
             loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
-            area.appendChild(loadingRow);
+            if (msgRow && msgRow.parentNode) {
+                msgRow.parentNode.insertBefore(loadingRow, msgRow.nextSibling);
+            } else {
+                document.getElementById('chatArea').appendChild(loadingRow);
+            }
             var main = document.querySelector('.main');
             if (main) { main.scrollTop = main.scrollHeight; }
             
@@ -901,7 +919,7 @@
                     })
                 });
                 
-                var el = document.getElementById(placeholderId);
+                var el = document.getElementById(loadingRow.id);
                 if (el) el.remove();
                 
                 if (resp.ok) {
@@ -1003,7 +1021,7 @@
                     sendBtnArrow();
                 }
             } catch(e) {
-                var el2 = document.getElementById(placeholderId);
+                var el2 = document.getElementById(loadingRow.id);
                 if (el2) el2.remove();
                 console.error('sendBranchFromEditWithText error:', e);
                 alert('Ошибка соединения.');
