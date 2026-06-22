@@ -1490,11 +1490,21 @@
         }
         
         async function switchToSibling(msgIndex, direction) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[msgIndex];
+            if (!msg || !msg.msg_id) return;
+            var storageKey = 'branch_pos_' + currentChatId + '_' + msg.msg_id;
+            var saved = localStorage.getItem(storageKey);
+            if (!saved) return;
+            var parsed = JSON.parse(saved);
+            var newPos = parsed.pos + direction;
+            if (newPos < 1 || newPos > parsed.total) return;
             var data = await loadSiblingBranches(msgIndex);
             if (!data || data.total_siblings <= 1) return;
-            var newIndex = data.current_index + direction;
-            if (newIndex < 0 || newIndex >= data.siblings.length) return;
-            var target = data.siblings[newIndex];
+            var target = data.siblings[newPos - 1];
+            parsed.pos = newPos;
+            localStorage.setItem(storageKey, JSON.stringify(parsed));
             await switchBranch(target.branch_id);
         }
         
