@@ -884,7 +884,6 @@
                 
                 if (resp.ok) {
                     var data = await resp.json();
-                    currentBranchId = data.branch_id;
                     
                     if (!chat.allBranches) chat.allBranches = {};
                     if (!chat.allBranches[data.branch_id]) {
@@ -895,17 +894,17 @@
                         };
                     }
                     
-                    chat.messages = [];
-                    if (data.msg_ids && data.msg_ids.length > 0) {
-                        for (var k = 0; k < data.msg_ids.length; k++) {
-                            var existingMsg = chat.allBranches[data.branch_id] && chat.allBranches[data.branch_id].messages ? chat.allBranches[data.branch_id].messages.find(function(em) { return em.msg_id === data.msg_ids[k]; }) : null;
-                            if (existingMsg) {
-                                chat.messages.push(existingMsg);
-                            }
-                        }
+                    var oldBranchMessages = {};
+                    if (data.branch_id !== currentBranchId) {
+                        oldBranchMessages[currentBranchId] = chat.messages.slice();
                     }
-                    if (chat.messages.length === 0) {
-                        chat.messages.push({ role: 'user', content: text, msg_id: data.user_msg_id });
+                    currentBranchId = data.branch_id;
+                    
+                    var branchExists = chat.allBranches[data.branch_id] && chat.allBranches[data.branch_id].messages && chat.allBranches[data.branch_id].messages.length > 0;
+                    if (branchExists) {
+                        chat.messages = chat.allBranches[data.branch_id].messages.slice();
+                    } else {
+                        chat.messages = [{ role: 'user', content: text, msg_id: data.user_msg_id }];
                     }
                     
                     if (data.reply) {
