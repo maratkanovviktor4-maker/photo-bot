@@ -470,7 +470,29 @@
                 }
             }, true);
         }
-
+        // Проверяем, есть ли токен для импорта
+        var urlParams = new URLSearchParams(window.location.search);
+        var shareToken = urlParams.get('token');
+        if (shareToken && savedAuth) {
+            // Пользователь авторизован, импортируем чат
+            (async function() {
+                try {
+                    var auth = JSON.parse(localStorage.getItem('photobot_auth'));
+                    var resp = await fetch(SERVER_URL + '/import_shared_chat?token=' + shareToken + '&user_id=' + auth.user_id + '&session_token=' + (auth.session_token || ''));
+                    if (resp.ok) {
+                        var data = await resp.json();
+                        // Очищаем URL от токена
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        // Открываем импортированный чат
+                        currentUserId = auth.user_id;
+                        sessionToken = auth.session_token;
+                        await loadChatsFromServer();
+                        currentChatId = data.chat_id;
+                        openChat(currentChatId);
+                    }
+                } catch(e) {}
+            })();
+        }
         const savedAuth = localStorage.getItem('photobot_auth');
         if (savedAuth) {
             const auth = JSON.parse(savedAuth);
@@ -615,7 +637,31 @@
                 } catch (e) {}
             }
         }
-        
+        async function shareChat(id) {
+            var chat = chats.find(function(c) { return c.id === id; });
+            if (!chat) return;
+            
+            try {
+                var resp = await fetch(SERVER_URL + '/share_chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: String(id) })
+                });
+                if (resp.ok) {
+                    var data = await resp.json();
+                    var shareUrl = window.location.origin + data.share_url;
+                    
+                    // Копируем в буфер
+                    await navigator.clipboard.writeText(shareUrl);
+                    alert('Ссылка скопирована в буфер обмена:\n' + shareUrl);
+                } else {
+                    alert('Ошибка при создании ссылки');
+                }
+            } catch(e) {
+                console.error('shareChat error:', e);
+                alert('Ошибка соединения');
+            }
+        }        
         async function deleteChat(id) {
             if (!confirm('Удалить чат?')) return;
             try {
@@ -645,6 +691,7 @@
                     <button class="chat-menu-btn" onclick="toggleChatMenu(event, '${c.id}')">...</button>
                     <div class="chat-menu-dropdown" id="menu_${c.id}">
                         <button onclick="renameChat('${c.id}')">Переименовать</button>
+                        <button onclick="shareChat('${c.id}')">Поделиться</button>
                         <button class="delete" onclick="deleteChat('${c.id}')">Удалить</button>
                     </div>
                 </div>
