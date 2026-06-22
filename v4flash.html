@@ -1315,15 +1315,14 @@
                 }).join('');
             }
             var allRows = area.querySelectorAll('.message-row');
+            for (var r = 0; r < allRows.length; r++) {
+                allRows[r].classList.remove('last-message');
+            }
             var lastUser = null;
             var lastAssistant = null;
             for (var r = allRows.length - 1; r >= 0; r--) {
-                if (!lastAssistant && allRows[r].classList.contains('assistant')) {
-                    lastAssistant = allRows[r];
-                }
-                if (!lastUser && allRows[r].classList.contains('user')) {
-                    lastUser = allRows[r];
-                }
+                if (!lastAssistant && allRows[r].classList.contains('assistant')) lastAssistant = allRows[r];
+                if (!lastUser && allRows[r].classList.contains('user')) lastUser = allRows[r];
                 if (lastUser && lastAssistant) break;
             }
             if (lastUser) lastUser.classList.add('last-message');
