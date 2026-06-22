@@ -820,6 +820,9 @@
             }).join('');
         }
         
+        var pendingBranchPosition = null;
+        var pendingBranchTotal = null;
+        
         async function switchBranch(branchId) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
@@ -837,9 +840,15 @@
                     chat.messages = data.messages || [];
                     renderBranchesPanel();
                     renderMessages();
-            setTimeout(function() {
-                updateAllBranchArrows();
-                var main = document.querySelector('.main');
+                    setTimeout(function() {
+                        if (pendingBranchPosition !== null && pendingBranchTotal !== null) {
+                            updateAllBranchArrowsWithPosition(pendingBranchPosition, pendingBranchTotal);
+                            pendingBranchPosition = null;
+                            pendingBranchTotal = null;
+                        } else {
+                            updateAllBranchArrows();
+                        }
+                        var main = document.querySelector('.main');
                         if (main) {
                             main.style.scrollBehavior = 'auto';
                             main.scrollTop = main.scrollHeight;
@@ -1006,9 +1015,6 @@
             hljs.highlightAll();
             setupFloatingCopyButtons();
             buildNavContainer();
-            setTimeout(function() {
-                updateAllBranchArrows();
-            }, 200);
             var main = document.querySelector('.main');
             if (main) {
                 main.style.scrollBehavior = 'auto';
@@ -1502,6 +1508,8 @@
             var target = data.siblings[newIndex];
             var expectedPosition = newIndex + 1;
             var expectedTotal = data.total_siblings;
+            pendingBranchPosition = expectedPosition;
+            pendingBranchTotal = expectedTotal;
             await switchBranch(target.branch_id);
             setTimeout(function() {
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
@@ -1524,7 +1532,6 @@
                         targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 }
-                updateAllBranchArrowsWithPosition(expectedPosition, expectedTotal);
             }, 300);
         }
         async function updateAllBranchArrowsWithPosition(position, total) {
