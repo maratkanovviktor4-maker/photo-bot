@@ -1865,15 +1865,19 @@
                 clearTimeout(typingInterval);
                 typingInterval = null;
             }
-            const chat = chats.find(c => c.id === currentChatId);
-            if (chat && chat.messages.length > 0) {
-                const lastMsg = chat.messages[chat.messages.length - 1];
-                if (lastMsg.role === 'assistant' && !lastMsg.finished) {
-                    lastMsg.interrupted = true;
+            if (activeStreamId) {
+                var oldStreamId = activeStreamId;
+                activeStreamId = null;
+                var chat = chats.find(function(c) { return c.id === currentChatId; });
+                if (chat && chat.messages.length > 0) {
+                    var lastMsg = chat.messages[chat.messages.length - 1];
+                    if (lastMsg.role === 'assistant' && !lastMsg.finished) {
+                        lastMsg.interrupted = true;
+                        lastMsg.finished = true;
+                    }
                 }
+                renderMessages();
             }
-            activeStreamId = null;
-            renderMessages();
             isSending = false;
             sendBtnArrow();
         }
