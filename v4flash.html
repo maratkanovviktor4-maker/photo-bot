@@ -198,6 +198,57 @@
         .message-content th { background: rgba(0,203,245,0.1); font-weight: 600; }
         body.light .message-content th { background: rgba(0,0,0,0.05); }
         body.light .message-content th, body.light .message-content td { border-color: rgba(0,0,0,0.1); }
+        .branch-nav-arrows {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .branch-nav-arrows button {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid rgba(0,203,245,0.4);
+            background: rgba(0,203,245,0.1);
+            color: #00CBF5;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            padding: 0;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            line-height: 1;
+        }
+        .branch-nav-arrows button:hover {
+            background: rgba(0,203,245,0.25);
+            border-color: #00CBF5;
+            transform: scale(1.1);
+        }
+        .branch-nav-arrows button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .branch-nav-arrows button:disabled:hover {
+            background: rgba(0,203,245,0.1);
+            border-color: rgba(0,203,245,0.2);
+        }
+        .branch-nav-label {
+            font-size: 10px;
+            color: #888;
+            min-width: 24px;
+            text-align: center;
+            font-family: 'Inter', sans-serif;
+        }
+        .message-row.user .branch-nav-arrows {
+            order: -1;
+            margin-left: 0;
+            margin-right: 8px;
+        }
+        .branch-indicator { font-size: 11px; color: #00CBF5; padding: 4px 8px; background: rgba(0,203,245,0.1); border-radius: 12px; display: inline-block; margin-bottom: 8px; font-family: 'Inter', sans-serif; }
         .branch-indicator { font-size: 11px; color: #00CBF5; padding: 4px 8px; background: rgba(0,203,245,0.1); border-radius: 12px; display: inline-block; margin-bottom: 8px; font-family: 'Inter', sans-serif; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -786,8 +837,9 @@
                     chat.messages = data.messages || [];
                     renderBranchesPanel();
                     renderMessages();
-                    setTimeout(function() {
-                        var main = document.querySelector('.main');
+            setTimeout(function() {
+                updateAllBranchArrows();
+                var main = document.querySelector('.main');
                         if (main) {
                             main.style.scrollBehavior = 'auto';
                             main.scrollTop = main.scrollHeight;
@@ -954,6 +1006,9 @@
             hljs.highlightAll();
             setupFloatingCopyButtons();
             buildNavContainer();
+            setTimeout(function() {
+                updateAllBranchArrows();
+            }, 200);
             var main = document.querySelector('.main');
             if (main) {
                 main.style.scrollBehavior = 'auto';
@@ -1420,6 +1475,84 @@
                     }
                 }
             } catch(e) { console.error('updateBranchesFromServer error:', e); }
+        }
+        async function loadSiblingBranches(msgIndex) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return null;
+            var msg = chat.messages[msgIndex];
+            if (!msg || !msg.msg_id) return null;
+            try {
+                var resp = await fetch(SERVER_URL + '/get_sibling_branches?user_id=' + currentUserId + 
+                    '&model=flash&chat_id=' + currentChatId + '&msg_id=' + msg.msg_id + 
+                    '&session_token=' + sessionToken);
+                if (resp.ok) {
+                    return await resp.json();
+                }
+            } catch(e) {
+                console.error('loadSiblingBranches error:', e);
+            }
+            return null;
+        }
+        
+        async function switchToSibling(msgIndex, direction) {
+            var data = await loadSiblingBranches(msgIndex);
+            if (!data || data.total_siblings <= 1) return;
+            var newIndex = data.current_index + direction;
+            if (newIndex < 0 || newIndex >= data.siblings.length) return;
+            var target = data.siblings[newIndex];
+            await switchBranch(target.branch_id);
+            setTimeout(function() {
+                var chat = chats.find(function(c) { return c.id === currentChatId; });
+                if (!chat) return;
+                var newMsgIndex = -1;
+                for (var i = 0; i < chat.messages.length; i++) {
+                    if (chat.messages[i].msg_id === target.msg_id) {
+                        newMsgIndex = i;
+                        break;
+                    }
+                }
+                if (newMsgIndex >= 0) {
+                    var targetRow = document.querySelector('.message-row[data-msg-index="' + newMsgIndex + '"]');
+                    if (targetRow) {
+                        targetRow.style.transition = 'background 0.3s';
+                        targetRow.style.background = 'rgba(0,203,245,0.2)';
+                        setTimeout(function() {
+                            targetRow.style.background = '';
+                        }, 1500);
+                        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+                updateAllBranchArrows();
+            }, 300);
+        }
+        
+        async function updateAllBranchArrows() {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var rows = document.querySelectorAll('.message-row[data-msg-index]');
+            for (var r = 0; r < rows.length; r++) {
+                var row = rows[r];
+                var msgIndex = parseInt(row.getAttribute('data-msg-index'));
+                if (isNaN(msgIndex)) continue;
+                var msg = chat.messages[msgIndex];
+                if (!msg || !msg.msg_id) continue;
+                var siblingData = await loadSiblingBranches(msgIndex);
+                var existingArrows = row.querySelector('.branch-nav-arrows');
+                if (existingArrows) existingArrows.remove();
+                if (siblingData && siblingData.total_siblings > 1) {
+                    var arrowsHtml = '<div class="branch-nav-arrows">' +
+                        '<button ' + (siblingData.has_prev ? '' : 'disabled') + 
+                        ' onclick="switchToSibling(' + msgIndex + ', -1)" title="Предыдущая ветка">◀</button>' +
+                        '<span class="branch-nav-label">' + (siblingData.current_index + 1) + '/' + siblingData.total_siblings + '</span>' +
+                        '<button ' + (siblingData.has_next ? '' : 'disabled') + 
+                        ' onclick="switchToSibling(' + msgIndex + ', 1)" title="Следующая ветка">▶</button>' +
+                        '</div>';
+                    var actionsDiv = row.querySelector('.message-actions');
+                    if (actionsDiv) {
+                        actionsDiv.insertAdjacentHTML('afterbegin', arrowsHtml);
+                    }
+                }
+            }
         }
         
         function formatMessage(text) {
