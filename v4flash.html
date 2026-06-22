@@ -115,8 +115,7 @@
         body.light .message-content code { background: #f5f5f5; color: #111; }
         .floating-code-header { position: absolute; top: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; z-index: 5; display: flex; align-items: center; justify-content: space-between; line-height: 1; }
         body.light .floating-code-header { background: #f8f8f8; color: #555; }
-        .message-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; opacity: 0; transition: opacity 0.2s ease; }
-        .message-row:hover .message-actions { opacity: 1; }
+        .message-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
         .message-row.user .message-actions { justify-content: flex-end; }
         .message-row.assistant .message-actions { justify-content: flex-start; }
         .message-actions button { background: transparent; border: none; color: #888; cursor: pointer; padding: 6px 8px; border-radius: 8px; font-family: 'Inter', sans-serif; transition: background 0.15s; line-height: 1; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
@@ -840,7 +839,6 @@
                 actionsDiv.innerHTML = '<button id="branchSendBtn_' + msgIndex + '" style="background:#00CBF5;color:#201F28;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;">Отправить</button><button id="branchCancelBtn_' + msgIndex + '" style="background:transparent;border:1px solid #666;color:#aaa;padding:6px 14px;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;cursor:pointer;margin-left:6px;">Отмена</button>';
                 
                 document.getElementById('branchSendBtn_' + msgIndex).onclick = function() {
-                    document.getElementById('sendBtn').disabled = false;
                     var newText = textarea.value.trim();
                     if (!newText) newText = originalContent;
                     contentDiv.innerHTML = originalHTML;
@@ -936,9 +934,7 @@
                     
                     if (!chat.allBranches) chat.allBranches = {};
                     if (!chat.allBranches[data.branch_id]) {
-                        chat.allBranches[data.branch_id] = { name: data.branch_name || text.substring(0, 30), messages: [], msg_ids: data.msg_ids || [] };
-                    } else {
-                        chat.allBranches[data.branch_id].name = data.branch_name || text.substring(0, 30);
+                        chat.allBranches[data.branch_id] = { name: data.branch_name || 'Ветка', messages: [], msg_ids: data.msg_ids || [] };
                     }
                     
                     var oldMessages = chat.messages.slice();
@@ -1008,7 +1004,6 @@
                                 chat.allBranches[data.branch_id].messages = chat.messages.slice();
                                 chat.allBranches[data.branch_id].msg_ids = chat.messages.map(function(m) { return m.msg_id || ''; });
                                 autoNameChat(chat);
-                                renderBranchesPanel();
                                 updateBranchesFromServer();
                                 renderChatList();
                                 updateBalance();
