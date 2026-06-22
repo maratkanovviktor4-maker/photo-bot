@@ -1314,8 +1314,18 @@
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
-            var lastUser = area.querySelector('.message-row.user:last-of-type');
-            var lastAssistant = area.querySelector('.message-row.assistant:last-of-type');
+            var allRows = area.querySelectorAll('.message-row');
+            var lastUser = null;
+            var lastAssistant = null;
+            for (var r = allRows.length - 1; r >= 0; r--) {
+                if (!lastAssistant && allRows[r].classList.contains('assistant')) {
+                    lastAssistant = allRows[r];
+                }
+                if (!lastUser && allRows[r].classList.contains('user')) {
+                    lastUser = allRows[r];
+                }
+                if (lastUser && lastAssistant) break;
+            }
             if (lastUser) lastUser.classList.add('last-message');
             if (lastAssistant) lastAssistant.classList.add('last-message');
             var main = document.querySelector('.main');
