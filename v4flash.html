@@ -539,16 +539,25 @@
                         const allBranches = data.all_branches && data.all_branches[chatId] ? data.all_branches[chatId] : {};
                         const personality = data.personalities && data.personalities[chatId] ? data.personalities[chatId] : 'default';
                         
+                        var lastTime = 0;
+                        if (messages && messages.length > 0) {
+                            var lastMsg = messages[messages.length - 1];
+                            if (lastMsg && lastMsg.timestamp) {
+                                lastTime = new Date(lastMsg.timestamp).getTime();
+                            }
+                        }
+                        if (!lastTime) lastTime = parseInt(chatId) || 0;
                         chats.push({
                             id: chatId,
                             title: title,
                             messages: messages,
                             activeBranch: activeBranch,
                             allBranches: allBranches,
-                            _personality: personality
+                            _personality: personality,
+                            lastMessageTime: lastTime
                         });
                     }
-                    chats.sort((a, b) => a.id.localeCompare(b.id));
+                    chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                 }
             } catch (e) {
                 console.error('loadChatsFromServer error:', e);
@@ -589,8 +598,9 @@
         }
         
         function newChat() {
-            const chat = { id: Date.now().toString(), title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: { 'main': { name: 'Основная', messages: [], msg_ids: [] } } };
+            const chat = { id: Date.now().toString(), title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: { 'main': { name: 'Основная', messages: [], msg_ids: [] } }, lastMessageTime: Date.now() };
             chats.push(chat);
+            chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             currentChatId = chat.id;
             currentBranchId = 'main';
             renderChatList();
