@@ -807,7 +807,6 @@
             var msg = chat.messages[msgIndex];
             if (!msg) return;
             
-            // Показываем модалку с полем ввода промта
             var existing = document.getElementById('branchModal');
             if (existing) existing.remove();
             
@@ -838,14 +837,18 @@
                 var branchName = nameInput.value.trim();
                 modal.remove();
                 
-                // Показываем индикатор загрузки
                 var area = document.getElementById('chatArea');
+                var placeholderId = 'branch_loading_' + Date.now();
                 var loadingRow = document.createElement('div');
                 loadingRow.className = 'message-row assistant';
+                loadingRow.id = placeholderId;
                 loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
                 area.appendChild(loadingRow);
                 var main = document.querySelector('.main');
                 if (main) { main.scrollTop = main.scrollHeight; }
+                
+                isSending = true;
+                sendBtnStop();
                 
                 try {
                     var resp = await fetch(SERVER_URL + '/create_branch', {
@@ -861,43 +864,178 @@
                         })
                     });
                     
-                    loadingRow.remove();
+                    var el = document.getElementById(placeholderId);
+                    if (el) el.remove();
                     
                     if (resp.ok) {
                         var data = await resp.json();
                         currentBranchId = data.branch_id;
-                        await loadChatsFromServer();
-                        var updatedChat = chats.find(function(c) { return c.id === currentChatId; });
-                        if (updatedChat) {
-                            updatedChat.activeBranch = data.branch_id;
-                            if (!updatedChat.allBranches[data.branch_id]) {
-                                updatedChat.allBranches[data.branch_id] = { name: data.branch_name, messages: [], msg_ids: [] };
-                            }
+                        
+                        if (!chat.allBranches) chat.allBranches = {};
+                        if (!chat.allBranches[data.branch_id]) {
+                            chat.allBranches[data.branch_id] = {
+                                name: data.branch_name || branchName || 'Ветка',
+                                messages: [],
+                                msg_ids: data.msg_ids || []
+                            };
                         }
-                        openChat(currentChatId);
+                        
+                        var userMsg = { role: 'user', content: prompt, msg_id: data.user_msg_id };
+                        chat.messages.push(userMsg);
+                        
+                        if (data.reply) {
+                            var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                            var assistantMsg = { 
+                                role: 'assistant', 
+                                content: '', 
+                                finished: false, 
+                                _streamWords: null, 
+                                _streamPos: 0, 
+                                _reasoningInProgress: false, 
+                                msg_id: data.assistant_msg_id || null 
+                            };
+                            chat.messages.push(assistantMsg);
+                            
+                            var msgIndex2 = chat.messages.length - 1;
+                            var streamId = 'branch_stream_' + msgIndex2;
+                            activeStreamId = streamId;
+                            
+                            renderMessages();
+                            
+                            var streamDiv = document.getElementById('stream-' + msgIndex2);
+                            var streamAction = document.getElementById('actions-' + msgIndex2);
+                            
+                            if (!streamDiv) {
+                                var allAssistantDivs = document.querySelectorAll('.message-row.assistant .message-content');
+                                streamDiv = allAssistantDivs[allAssistantDivs.length - 1];
+                            }
+                            if (!streamAction) {
+                                var allActions = document.querySelectorAll('.message-row.assistant .message-actions');
+                                streamAction = allActions[allActions.length - 1];
+                            }
+                            
+                            var words = fullContent.split(/(\s+)/);
+                            assistantMsg._streamWords = words;
+                            var pos = 0;
+                            var reasoningStarted = false;
+                            var reasoningEnded = false;
+                            
+                            function streamNext() {
+                                if (activeStreamId !== streamId) return;
+                                var chunk = '';
+                                var wordCount = 0;
+                                while (pos < words.length && wordCount < 2) {
+                                    chunk += words[pos];
+                                    wordCount++;
+                                    pos++;
+                                }
+                                assistantMsg._streamPos = pos;
+                                if (chunk) {
+                                    var fullText = words.slice(0, pos).join('');
+                                    assistantMsg.content = fullText;
+                                    
+                                    if (!reasoningStarted && fullText.indexOf('Размышление:\n') !== -1) {
+                                        reasoningStarted = true;
+                                        assistantMsg._reasoningInProgress = true;
+                                    }
+                                    if (reasoningStarted && !reasoningEnded) {
+                                        var endIdx = fullText.indexOf('\n\nОтвет:\n');
+                                        if (endIdx !== -1) {
+                                            reasoningEnded = true;
+                                            assistantMsg._reasoningInProgress = false;
+                                            assistantMsg.reasoning = fullText.substring('Размышление:\n'.length, endIdx);
+                                            var replyText = fullText.substring(endIdx + '\n\nОтвет:\n'.length);
+                                            if (streamDiv) streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(assistantMsg.reasoning) + '</div>' + formatMessage(replyText);
+                                        } else {
+                                            var reasoningText2 = fullText.substring(fullText.indexOf('Размышление:\n') + 'Размышление:\n'.length);
+                                            if (streamDiv) streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(reasoningText2) + '</div>';
+                                        }
+                                    } else if (reasoningEnded) {
+                                        var replyStart = fullText.indexOf('\n\nОтвет:\n') + '\n\nОтвет:\n'.length;
+                                        if (streamDiv) streamDiv.innerHTML = '<div class="reasoning-block">' + formatMessage(assistantMsg.reasoning) + '</div>' + formatMessage(fullText.substring(replyStart));
+                                    } else {
+                                        if (streamDiv) streamDiv.innerHTML = formatMessage(fullText);
+                                    }
+                                    
+                                    if (streamDiv) {
+                                        streamDiv.querySelectorAll('pre code').forEach(function(block) { hljs.highlightElement(block); });
+                                    }
+                                    setupFloatingCopyButtons();
+                                    
+                                    if (autoScroll) {
+                                        var mainEl3 = document.querySelector('.main');
+                                        if (mainEl3) {
+                                            mainEl3.style.scrollBehavior = 'auto';
+                                            mainEl3.scrollTop = mainEl3.scrollHeight;
+                                            mainEl3.style.scrollBehavior = 'smooth';
+                                        }
+                                    }
+                                    typingInterval = setTimeout(streamNext, 20);
+                                } else {
+                                    assistantMsg.finished = true;
+                                    assistantMsg.interrupted = false;
+                                    typingInterval = null;
+                                    
+                                    if (streamAction) {
+                                        streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex2 + ')" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + msgIndex2 + ')" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
+                                    }
+                                    
+                                    chat.activeBranch = data.branch_id;
+                                    autoNameChat(chat);
+                                    updateBranchesFromServer();
+                                    renderChatList();
+                                    
+                                    if (autoScroll) {
+                                        var mainEl3 = document.querySelector('.main');
+                                        if (mainEl3) {
+                                            mainEl3.scrollTop = mainEl3.scrollHeight;
+                                        }
+                                    }
+                                    
+                                    if (activeStreamId === streamId) {
+                                        isSending = false;
+                                        activeStreamId = null;
+                                        sendBtnArrow();
+                                    }
+                                }
+                            }
+                            streamNext();
+                        } else {
+                            chat.activeBranch = data.branch_id;
+                            updateBranchesFromServer();
+                            renderChatList();
+                            renderMessages();
+                            isSending = false;
+                            sendBtnArrow();
+                        }
+                        
                         updateBalance();
                     } else {
                         var errData = await resp.json();
                         alert('Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
+                        isSending = false;
+                        sendBtnArrow();
                     }
                 } catch(e) {
-                    loadingRow.remove();
+                    var el2 = document.getElementById(placeholderId);
+                    if (el2) el2.remove();
                     console.error('createBranchFromMessage error:', e);
                     alert('Ошибка соединения.');
+                    isSending = false;
+                    sendBtnArrow();
                 }
             };
             
-            // Фокус на поле ввода
             setTimeout(function() { promptInput.focus(); }, 100);
             
-            // Enter = отправить, Shift+Enter = новая строка
             promptInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     document.getElementById('branchCreateBtn').click();
                 }
             });
-        }        
+        }
+        
         function getMsgIdByIndex(chat, index) {
             if (!chat || !chat.messages || index >= chat.messages.length) return null;
             return chat.messages[index].msg_id || null;
@@ -921,7 +1059,7 @@
                 }
                 
                 area.innerHTML = branchIndicator + chat.messages.map((m, i) => {
-                    let actionsHtml = '<div class="message-actions">';
+                    var actionsHtml = '';
                     if (m.role === 'user') {
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="editMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
@@ -931,7 +1069,6 @@
                         actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
                         if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
                     }
-                    actionsHtml += '</div>';
                     var dataAttr = ' data-msg-index="' + i + '"';
                     var reasoningHtml = '';
                     var contentToShow = m.content;
@@ -948,7 +1085,7 @@
                             contentToShow = '';
                         }
                     }
-                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content">' + reasoningHtml + formatMessage(contentToShow) + '</div>' + actionsHtml + '</div></div>';
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
             hljs.highlightAll();
