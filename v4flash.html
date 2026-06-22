@@ -894,18 +894,22 @@
                         };
                     }
                     
-                    var oldBranchMessages = {};
-                    if (data.branch_id !== currentBranchId) {
-                        oldBranchMessages[currentBranchId] = chat.messages.slice();
+                    var oldMessages = chat.messages.slice();
+                    var forkIndex = -1;
+                    for (var k = 0; k < oldMessages.length; k++) {
+                        if (oldMessages[k].msg_id === msg.msg_id) {
+                            forkIndex = k;
+                            break;
+                        }
                     }
                     currentBranchId = data.branch_id;
-                    
-                    var branchExists = chat.allBranches[data.branch_id] && chat.allBranches[data.branch_id].messages && chat.allBranches[data.branch_id].messages.length > 0;
-                    if (branchExists) {
-                        chat.messages = chat.allBranches[data.branch_id].messages.slice();
-                    } else {
-                        chat.messages = [{ role: 'user', content: text, msg_id: data.user_msg_id }];
+                    chat.messages = [];
+                    if (forkIndex >= 0) {
+                        for (var k = 0; k <= forkIndex; k++) {
+                            chat.messages.push(oldMessages[k]);
+                        }
                     }
+                    chat.messages.push({ role: 'user', content: text, msg_id: data.user_msg_id });
                     
                     if (data.reply) {
                         var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
