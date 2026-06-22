@@ -981,9 +981,12 @@
                                     }
                                     
                                     chat.activeBranch = data.branch_id;
+                                    chat.allBranches[data.branch_id].messages = chat.messages.slice();
+                                    chat.allBranches[data.branch_id].msg_ids = chat.messages.map(function(m) { return m.msg_id || ''; });
                                     autoNameChat(chat);
                                     updateBranchesFromServer();
                                     renderChatList();
+                                    updateBalance();
                                     
                                     if (autoScroll) {
                                         var mainEl3 = document.querySelector('.main');
