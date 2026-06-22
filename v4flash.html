@@ -803,38 +803,18 @@
         function createBranchFromMessage(msgIndex) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
-            
             var msg = chat.messages[msgIndex];
             if (!msg) return;
-            
             var input = document.getElementById('userInput');
             input.value = msg.content;
             input.focus();
             input.dispatchEvent(new Event('input', { bubbles: true }));
-            input._branchFromMsgId = msg.msg_id || null;
-            input._branchFromMsgIndex = msgIndex;
             input.style.height = 'auto';
             input.style.height = Math.min(input.scrollHeight, 300) + 'px';
-            
-            var placeholder = input.placeholder;
-            input.placeholder = '✏️ Редактируйте сообщение и отправьте — создастся новая ветка...';
-            
             var oldSend = document.getElementById('sendBtn').onclick;
             document.getElementById('sendBtn').onclick = function() {
-                input.placeholder = placeholder;
                 document.getElementById('sendBtn').onclick = oldSend;
                 sendBranchFromEdit(msgIndex);
-            };
-            
-            var oldKeydown = input.onkeydown;
-            input.onkeydown = function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    input.placeholder = placeholder;
-                    input.onkeydown = oldKeydown;
-                    document.getElementById('sendBtn').onclick = oldSend;
-                    sendBranchFromEdit(msgIndex);
-                }
             };
         }
         
