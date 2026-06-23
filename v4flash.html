@@ -1120,18 +1120,24 @@
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'assistant') return;
             
+            // Находим родительского user для этого assistant
+            var parentUserIndex = msgIndex - 1;
+            while (parentUserIndex >= 0 && chat.messages[parentUserIndex].role !== 'user') {
+                parentUserIndex--;
+            }
+            if (parentUserIndex < 0) return;
+            var parentUser = chat.messages[parentUserIndex];
+            
             if (!confirm('Сгенерировать новый ответ?')) return;
             
             isSending = true;
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
             
-            var removeFrom = msgIndex;
-            while (chat.messages.length > removeFrom) {
-                chat.messages.pop();
-            }
-            
+            // Обрезаем до родительского user (как в createBranchFromMessage)
+            chat.messages = chat.messages.slice(0, parentUserIndex + 1);
             renderMessages();
+            
             var placeholderId = 'regen_assistant_' + Date.now();
             var area = document.getElementById('chatArea');
             var loadingRow = document.createElement('div');
@@ -1143,7 +1149,8 @@
             if (main) { main.scrollTop = main.scrollHeight; }
             
             try {
-                var resp = await fetch(SERVER_URL + '/regenerate_assistant', {
+                // Используем create_branch от родительского user (тот же механизм что и синяя иконка)
+                var resp = await fetch(SERVER_URL + '/create_branch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
                     body: JSON.stringify({
@@ -1151,8 +1158,9 @@
                         model: 'flash',
                         mode: currentMode,
                         chat_id: currentChatId,
-                        branch_id: currentBranchId,
-                        edit_msg_id: msg.msg_id
+                        source_msg_id: parentUser.msg_id,
+                        branch_name: '',
+                        prompt: parentUser.content
                     })
                 });
                 
@@ -1162,28 +1170,51 @@
                 if (resp.ok) {
                     var data = await resp.json();
                     
-                    var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
-                    chat.messages.push(assistantMsg);
-                    var newMsgIndex = chat.messages.length - 1;
-                    var streamId = 'regen_assistant_stream_' + newMsgIndex;
-                    activeStreamId = streamId;
+                    currentBranchId = data.branch_id;
+                    chat.activeBranch = data.branch_id;
                     
-                    renderMessages();
-                    streamReplyIntoChat(chat, newMsgIndex, fullContent, streamId, function() {
-                        chat.lastMessageTime = Date.now();
-                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                        autoNameChat(chat);
-                        updateBranchesFromServer().then(function() {
-                            renderMessages();
-                            renderBranchesPanel();
+                    await updateBranchesFromServer();
+                    
+                    if (chat.allBranches && chat.allBranches[data.branch_id]) {
+                        chat.messages = chat.allBranches[data.branch_id].messages || [];
+                    } else {
+                        chat.messages = [];
+                    }
+                    
+                    renderChatList();
+                    renderBranchesPanel();
+                    
+                    if (data.reply) {
+                        while (chat.messages.length > 0 && chat.messages[chat.messages.length - 1].role === 'assistant') {
+                            chat.messages.pop();
+                        }
+                        var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                        var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
+                        chat.messages.push(assistantMsg);
+                        var newMsgIndex = chat.messages.length - 1;
+                        var streamId = 'regen_assistant_stream_' + newMsgIndex;
+                        activeStreamId = streamId;
+                        
+                        renderMessages();
+                        streamReplyIntoChat(chat, newMsgIndex, fullContent, streamId, function() {
+                            chat.lastMessageTime = Date.now();
+                            chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                            autoNameChat(chat);
+                            updateBranchesFromServer().then(function() {
+                                renderChatList();
+                                renderBranchesPanel();
+                            });
+                            updateBalance();
+                            isSending = false;
+                            activeStreamId = null;
+                            sendBtnArrow();
                         });
-                        renderChatList();
+                    } else {
+                        renderMessages();
                         updateBalance();
                         isSending = false;
-                        activeStreamId = null;
                         sendBtnArrow();
-                    });
+                    }
                 } else {
                     var errData = await resp.json();
                     alert('Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
