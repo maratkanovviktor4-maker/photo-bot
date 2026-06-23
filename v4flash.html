@@ -125,6 +125,10 @@
         .branch-btn:hover { background: rgba(0,203,245,0.15) !important; }
         .roll-btn { color: #f0a500 !important; font-weight: 500; }
         .roll-btn:hover { background: rgba(240,165,0,0.15) !important; }
+        .branch-nav { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; color: #00CBF5; margin-right: 6px; background: rgba(0,203,245,0.1); border-radius: 6px; padding: 2px 4px; }
+        .branch-nav button { background: transparent !important; border: none !important; color: #00CBF5 !important; cursor: pointer !important; font-size: 14px !important; padding: 0 3px !important; line-height: 1 !important; }
+        .branch-nav button:hover { color: #14E9FC !important; background: rgba(0,203,245,0.2) !important; border-radius: 4px !important; }
+        .branch-nav span { min-width: 28px; text-align: center; }
         .input-area { padding: 0; border-top: none; display: flex; gap: 0; align-items: flex-end; background: #201F28; flex-shrink: 0; overflow: visible; position: relative; flex-wrap: wrap; margin-bottom: 25px; }
         body.light .input-area { background: #ffffff; border-top: none; }
         .input-area textarea { flex: 1; padding: 0; border-radius: 0; border: none; background: transparent; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; outline: none; resize: none; min-height: 48px; max-height: 300px; overflow-y: auto; min-width: 0; width: 100%; }
@@ -289,10 +293,28 @@
         let pendingFile = null;
         let activeStreamId = null;
         let allBranchesCache = {};
-        let branchSiblingsMap = {};
+
+        // ГЛОБАЛЬНАЯ карта: msg_id -> [branch_id1, branch_id2, ...]
+        var branchSiblingsMap = {};
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
         window.addEventListener('drop', function(e) { e.preventDefault(); e.stopPropagation(); });
+
+        function buildBranchSiblingsMap() {
+            branchSiblingsMap = {};
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat || !chat.allBranches) return;
+            for (var bid in chat.allBranches) {
+                var bMsgs = chat.allBranches[bid].messages || [];
+                for (var bi = 0; bi < bMsgs.length; bi++) {
+                    var bMid = bMsgs[bi].msg_id;
+                    if (!branchSiblingsMap[bMid]) branchSiblingsMap[bMid] = [];
+                    if (branchSiblingsMap[bMid].indexOf(bid) < 0) {
+                        branchSiblingsMap[bMid].push(bid);
+                    }
+                }
+            }
+        }
         
         async function loadPersonalities() {
             try {
@@ -605,6 +627,7 @@
             currentChatId = chat.id;
             localStorage.setItem('photobot_active_chat', currentChatId);
             currentBranchId = 'main';
+            branchSiblingsMap = {};
             renderChatList();
             renderMessages();
             renderBranchesPanel();
@@ -625,6 +648,7 @@
                 currentBranchId = chat.activeBranch || 'main';
                 allBranchesCache = chat.allBranches || {};
             }
+            buildBranchSiblingsMap();
             renderChatList();
             renderBranchesPanel();
             renderMessages();
@@ -703,6 +727,7 @@
                     if (chat) currentBranchId = chat.activeBranch || 'main';
                 }
             }
+            branchSiblingsMap = {};
             renderChatList();
             renderBranchesPanel();
             renderMessages();
@@ -814,6 +839,7 @@
                     currentBranchId = branchId;
                     chat.activeBranch = branchId;
                     chat.messages = data.messages || [];
+                    buildBranchSiblingsMap();
                     renderBranchesPanel();
                     renderMessages();
                     setTimeout(function() {
@@ -876,6 +902,7 @@
                                 updatedChat.messages = updatedChat.allBranches[currentBranchId].messages || [];
                             }
                         }
+                        buildBranchSiblingsMap();
                         renderBranchesPanel();
                         renderMessages();
                     });
@@ -939,6 +966,7 @@
                     chat.activeBranch = data.branch_id;
                     
                     await updateBranchesFromServer();
+                    buildBranchSiblingsMap();
                     
                     if (chat.allBranches && chat.allBranches[data.branch_id]) {
                         chat.messages = chat.allBranches[data.branch_id].messages || [];
@@ -966,6 +994,7 @@
                             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                             autoNameChat(chat);
                             updateBranchesFromServer().then(function() {
+                                buildBranchSiblingsMap();
                                 renderChatList();
                                 renderBranchesPanel();
                             });
@@ -1050,6 +1079,7 @@
                     chat.activeBranch = data.branch_id;
                     
                     await updateBranchesFromServer();
+                    buildBranchSiblingsMap();
                     
                     if (chat.allBranches && chat.allBranches[data.branch_id]) {
                         chat.messages = chat.allBranches[data.branch_id].messages || [];
@@ -1077,6 +1107,7 @@
                             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                             autoNameChat(chat);
                             updateBranchesFromServer().then(function() {
+                                buildBranchSiblingsMap();
                                 renderChatList();
                                 renderBranchesPanel();
                             });
@@ -1165,6 +1196,7 @@
                     chat.activeBranch = data.branch_id;
                     
                     await updateBranchesFromServer();
+                    buildBranchSiblingsMap();
                     
                     if (chat.allBranches && chat.allBranches[data.branch_id]) {
                         chat.messages = chat.allBranches[data.branch_id].messages || [];
@@ -1192,6 +1224,7 @@
                             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                             autoNameChat(chat);
                             updateBranchesFromServer().then(function() {
+                                buildBranchSiblingsMap();
                                 renderChatList();
                                 renderBranchesPanel();
                             });
@@ -1246,18 +1279,51 @@
                             chat.messages[msgIndex].reasoning = ft.substring('Размышление:\n'.length, ei);
                         }
                     }
-                    renderMessages();
+                    updateMessageDOM(msgIndex);
                     if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.scrollTop = m3.scrollHeight; } }
                     typingInterval = setTimeout(streamNext, 20);
                 } else {
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex].interrupted = false;
                     typingInterval = null;
-                    renderMessages();
+                    updateMessageDOM(msgIndex);
                     if (onComplete) onComplete();
                 }
             }
             streamNext();
+        }
+
+        function updateMessageDOM(msgIndex) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[msgIndex];
+            if (!msg) return;
+            
+            var contentEl = document.getElementById('stream-' + msgIndex);
+            if (!contentEl) return;
+            
+            var reasoningHtml = '';
+            var contentToShow = msg.content || '';
+            if (msg.reasoning) {
+                reasoningHtml = '<div class="reasoning-block">' + formatMessage(msg.reasoning) + '</div>';
+                var endIdx = msg.content.indexOf('\n\nОтвет:\n');
+                if (endIdx !== -1) {
+                    contentToShow = msg.content.substring(endIdx + '\n\nОтвет:\n'.length);
+                }
+            } else if (msg._reasoningInProgress && msg.content) {
+                var startIdx = msg.content.indexOf('Размышление:\n');
+                if (startIdx !== -1) {
+                    reasoningHtml = '<div class="reasoning-block">' + escapeHtml(msg.content.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
+                    contentToShow = '';
+                }
+            }
+            
+            contentEl.innerHTML = reasoningHtml + formatMessage(contentToShow);
+            
+            if (typeof hljs !== 'undefined' && hljs.highlightElement) {
+                contentEl.querySelectorAll('pre code').forEach(function(el) { hljs.highlightElement(el); });
+            }
+            setupFloatingCopyButtons();
         }
         
         function getMsgIdByIndex(chat, index) {
@@ -1265,28 +1331,66 @@
             return chat.messages[index].msg_id || null;
         }
         
+        // НОВАЯ ФУНКЦИЯ: навигация по соседним веткам через msg_id
+        function navigateBranchSibling(msgId, direction) {
+            var branches = branchSiblingsMap[msgId];
+            if (!branches || branches.length <= 1) return;
+            branches.sort();
+            var curIdx = branches.indexOf(currentBranchId);
+            if (curIdx < 0) curIdx = branches.length - 1;
+            var newIdx = curIdx + direction;
+            if (newIdx < 0) newIdx = branches.length - 1;
+            if (newIdx >= branches.length) newIdx = 0;
+            
+            var newBranchId = branches[newIdx];
+            if (newBranchId === currentBranchId) return;
+            
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat || !chat.allBranches) return;
+            
+            var oldBranchMsgs = chat.allBranches[currentBranchId] ? (chat.allBranches[currentBranchId].messages || []) : [];
+            var newBranchMsgs = chat.allBranches[newBranchId] ? (chat.allBranches[newBranchId].messages || []) : [];
+            
+            // Находим индекс msgId в старой и новой ветке
+            var oldIdx = -1;
+            var newIdxMsg = -1;
+            for (var i = 0; i < oldBranchMsgs.length; i++) {
+                if (oldBranchMsgs[i].msg_id === msgId) { oldIdx = i; break; }
+            }
+            for (var j = 0; j < newBranchMsgs.length; j++) {
+                if (newBranchMsgs[j].msg_id === msgId) { newIdxMsg = j; break; }
+            }
+            if (oldIdx < 0 || newIdxMsg < 0) return;
+            
+            // Меняем всё начиная с этого сообщения
+            // chat.messages = префикс до oldIdx + хвост из newBranchMsgs начиная с newIdxMsg
+            var prefix = chat.messages.slice(0, oldIdx);
+            var suffix = [];
+            for (var k = newIdxMsg; k < newBranchMsgs.length; k++) {
+                suffix.push(JSON.parse(JSON.stringify(newBranchMsgs[k])));
+            }
+            chat.messages = prefix.concat(suffix);
+            
+            // Не переключаем ветку глобально, только сообщения
+            // Обновляем DOM только изменённые сообщения
+            renderMessages();
+            
+            setTimeout(function() {
+                var main = document.querySelector('.main');
+                if (main) {
+                    main.style.scrollBehavior = 'auto';
+                    main.scrollTop = main.scrollHeight;
+                    main.style.scrollBehavior = 'smooth';
+                }
+            }, 50);
+        }
+        
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
             
-            branchSiblingsMap = {};
-            if (chat && chat.allBranches) {
-                for (var bid in chat.allBranches) {
-                    if (bid === 'main') continue;
-                    var bMsgs = chat.allBranches[bid].messages || [];
-                    for (var bi = 0; bi < bMsgs.length; bi++) {
-                        var bMid = bMsgs[bi].msg_id;
-                        if (!bMid) continue;
-                        if (bi < bMsgs.length - 1) {
-                            if (!branchSiblingsMap[bMid]) branchSiblingsMap[bMid] = [];
-                            if (branchSiblingsMap[bMid].indexOf(bid) < 0) {
-                                branchSiblingsMap[bMid].push(bid);
-                            }
-                        }
-                    }
-                }
-            }
+            buildBranchSiblingsMap();
             
             if (!chat || chat.messages.length === 0) {
                 area.innerHTML = `<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display='none'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>`;
@@ -1309,12 +1413,13 @@
                         if (userBranches.length > 1) {
                             var userBrIdx = userBranches.indexOf(currentBranchId);
                             if (userBrIdx < 0) userBrIdx = userBranches.length - 1;
-                            userNavHtml = '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#00CBF5;margin-right:6px;">' +
-                                '<button onclick="event.stopPropagation();navigateBranchSibling(\'' + m.msg_id + '\',-1)" style="background:transparent;border:none;color:#00CBF5;cursor:pointer;font-size:14px;padding:0 2px;">◂</button>' +
+                            userNavHtml = '<span class="branch-nav">' +
+                                '<button onclick="event.stopPropagation();navigateBranchSibling(\'' + m.msg_id + '\',-1)">◂</button>' +
                                 '<span>' + (userBrIdx + 1) + '/' + userBranches.length + '</span>' +
-                                '<button onclick="event.stopPropagation();navigateBranchSibling(\'' + m.msg_id + '\',1)" style="background:transparent;border:none;color:#00CBF5;cursor:pointer;font-size:14px;padding:0 2px;">▸</button>' +
+                                '<button onclick="event.stopPropagation();navigateBranchSibling(\'' + m.msg_id + '\',1)">▸</button>' +
                                 '</span>';
                         }
+                        actionsHtml += userNavHtml;
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="regenerateUserMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
                         actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>`;
@@ -1325,12 +1430,13 @@
                         if (assistantBranches.length > 1) {
                             var assistantBrIdx = assistantBranches.indexOf(currentBranchId);
                             if (assistantBrIdx < 0) assistantBrIdx = assistantBranches.length - 1;
-                            assistantNavHtml = '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#00CBF5;margin-right:6px;">' +
-                                '<button onclick="event.stopPropagation();navigateBranchSibling(\'' + m.msg_id + '\',-1)" style="background:transparent;border:none;color:#00CBF5;cursor:pointer;font-size:14px;padding:0 2px;">◂</button>' +
+                            assistantNavHtml = '<span class="branch-nav">' +
+                                '<button onclick="event.stopPropagation();navigateBranchSibling(\'' + m.msg_id + '\',-1)">◂</button>' +
                                 '<span>' + (assistantBrIdx + 1) + '/' + assistantBranches.length + '</span>' +
-                                '<button onclick="event.stopPropagation();navigateBranchSibling(\'' + m.msg_id + '\',1)" style="background:transparent;border:none;color:#00CBF5;cursor:pointer;font-size:14px;padding:0 2px;">▸</button>' +
+                                '<button onclick="event.stopPropagation();navigateBranchSibling(\'' + m.msg_id + '\',1)">▸</button>' +
                                 '</span>';
                         }
+                        actionsHtml += assistantNavHtml;
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
                         actionsHtml += `<button class="roll-btn" onclick="regenerateAssistantMessage(${i})" title="Регенерировать ответ">↻</button>`;
@@ -1353,7 +1459,7 @@
                             contentToShow = '';
                         }
                     }
-                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + (m.role === 'user' ? userNavHtml : assistantNavHtml) + actionsHtml + '</div></div></div>';
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
             hljs.highlightAll();
@@ -1367,18 +1473,66 @@
             }
         }
 
-        function navigateBranchSibling(msgId, direction) {
-            var branches = window.branchSiblingsMap[msgId];
-            if (!branches || branches.length <= 1) return;
-            branches.sort();
-            var curIdx = branches.indexOf(currentBranchId);
-            if (curIdx < 0) curIdx = branches.length - 1;
-            var newIdx = curIdx + direction;
-            if (newIdx < 0) newIdx = branches.length - 1;
-            if (newIdx >= branches.length) newIdx = 0;
-            switchBranch(branches[newIdx]);
-        }        
-        
+        function navigateSibling(msgIndex, direction) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat || !chat.allBranches || !chat.allBranches[currentBranchId]) return;
+            
+            var msg = chat.messages[msgIndex];
+            if (!msg) return;
+            
+            var allMsgs = chat.allBranches[currentBranchId].messages || [];
+            var parentId = msg.parent_msg_id || 'root';
+            var siblings = [];
+            for (var i = 0; i < allMsgs.length; i++) {
+                if ((allMsgs[i].parent_msg_id || 'root') === parentId && allMsgs[i].role === msg.role) {
+                    siblings.push(allMsgs[i]);
+                }
+            }
+            
+            if (siblings.length <= 1) return;
+            
+            var currentIdx = -1;
+            for (var j = 0; j < siblings.length; j++) {
+                if (siblings[j].msg_id === msg.msg_id) { currentIdx = j; break; }
+            }
+            if (currentIdx < 0) return;
+            
+            var newIdx = currentIdx + direction;
+            if (newIdx < 0) newIdx = siblings.length - 1;
+            if (newIdx >= siblings.length) newIdx = 0;
+            
+            var newMsg = siblings[newIdx];
+            chat.messages[msgIndex] = JSON.parse(JSON.stringify(newMsg));
+            
+            var rowEl = document.querySelector('.message-row[data-msg-index="' + msgIndex + '"]');
+            if (rowEl) {
+                var contentEl = rowEl.querySelector('.message-content');
+                var actionsEl = rowEl.querySelector('.message-actions');
+                if (contentEl) {
+                    var reasoningHtml = '';
+                    var contentToShow = newMsg.content || '';
+                    if (newMsg.reasoning) {
+                        reasoningHtml = '<div class="reasoning-block">' + formatMessage(newMsg.reasoning) + '</div>';
+                    }
+                    contentEl.innerHTML = reasoningHtml + formatMessage(contentToShow);
+                }
+                if (actionsEl) {
+                    var navSpan = actionsEl.querySelector('span[style]');
+                    if (navSpan) {
+                        var counterSpan = navSpan.querySelector('span:not([onclick])');
+                        if (counterSpan) {
+                            counterSpan.textContent = (newIdx + 1) + '/' + siblings.length;
+                        }
+                    }
+                }
+            }
+            
+            if (typeof hljs !== 'undefined' && hljs.highlightElement) {
+                document.querySelectorAll('.message-content pre code').forEach(function(el) { hljs.highlightElement(el); });
+            }
+            setupFloatingCopyButtons();
+        }
+
         function copyMessage(index) {
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
@@ -1749,6 +1903,7 @@
                             }
                         }
                         chat.allBranches = branches;
+                        buildBranchSiblingsMap();
                         renderBranchesPanel();
                     }
                 }
