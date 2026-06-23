@@ -1187,11 +1187,15 @@
             var reasoningStarted = false;
             var reasoningEnded = false;
             
+            var isLong = fullContent.length > 1000;
+            var wordsPerChunk = isLong ? 8 : 2;
+            var delayMs = isLong ? 15 : 20;
+            
             function streamNext() {
                 if (activeStreamId !== streamId) return;
                 var chunk = '';
                 var wc = 0;
-                while (pos < words.length && wc < 2) { chunk += words[pos]; wc++; pos++; }
+                while (pos < words.length && wc < wordsPerChunk) { chunk += words[pos]; wc++; pos++; }
                 chat.messages[msgIndex]._streamPos = pos;
                 if (chunk) {
                     var ft = words.slice(0, pos).join('');
@@ -1206,7 +1210,7 @@
                     }
                     renderMessages();
                     if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.scrollTop = m3.scrollHeight; } }
-                    typingInterval = setTimeout(streamNext, 20);
+                    typingInterval = setTimeout(streamNext, delayMs);
                 } else {
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex].interrupted = false;
