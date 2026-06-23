@@ -1636,7 +1636,12 @@
                         var branches = {};
                         if (data.branches) {
                             for (var bid in data.branches) {
-                                var msgIds = data.branches[bid];
+                                var branchData = data.branches[bid];
+                                var msgIds = branchData.msg_ids || branchData;
+                                // Поддержка старого формата (массив) и нового (объект)
+                                if (Array.isArray(branchData)) {
+                                    msgIds = branchData;
+                                }
                                 var msgs = [];
                                 for (var i = 0; i < msgIds.length; i++) {
                                     if (data.messages[msgIds[i]]) {
@@ -1644,9 +1649,10 @@
                                     }
                                 }
                                 branches[bid] = {
-                                    name: (chat.allBranches && chat.allBranches[bid] ? chat.allBranches[bid].name : 'Ветка'),
+                                    name: (branchData.name) || (chat.allBranches && chat.allBranches[bid] ? chat.allBranches[bid].name : 'Ветка'),
                                     messages: msgs,
-                                    msg_ids: msgIds
+                                    msg_ids: msgIds,
+                                    source_role: branchData.source_role || 'user'
                                 };
                             }
                         }
