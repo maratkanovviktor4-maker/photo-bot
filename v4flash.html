@@ -1595,45 +1595,56 @@
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat || !chat.allBranches) return;
             
-            chat.messages.forEach(function(msg, i) {
-                if (msg.role !== 'user') return;
+            const branches = chat.allBranches;
+            const branchIds = Object.keys(branches);
+            if (branchIds.length <= 1) return;
+            
+            const currentMsgs = chat.messages;
+            const currentMsgIds = currentMsgs.filter(function(m) { return m.role === 'user'; }).map(function(m) { return m.msg_id; });
+            
+            for (let i = 0; i < currentMsgs.length; i++) {
+                const msg = currentMsgs[i];
+                if (msg.role !== 'user') continue;
                 
-                let branchCount = 0;
-                const branchIds = [];
-                for (const bid in chat.allBranches) {
-                    const b = chat.allBranches[bid];
-                    if (b.msg_ids && b.msg_ids.indexOf(msg.msg_id) !== -1) {
-                        branchCount++;
-                        branchIds.push(bid);
+                let versionsCount = 0;
+                const versionBranchIds = [];
+                
+                for (const bid of branchIds) {
+                    const b = branches[bid];
+                    if (!b.msg_ids) continue;
+                    if (b.msg_ids.indexOf(msg.msg_id) !== -1) {
+                        versionsCount++;
+                        versionBranchIds.push(bid);
                     }
                 }
                 
-                if (branchCount <= 1) return;
+                if (versionsCount <= 1) continue;
                 
                 const msgRow = document.querySelector('.message-row[data-msg-index="' + i + '"]');
-                if (!msgRow) return;
-                if (msgRow.querySelector('.version-arrows')) return;
+                if (!msgRow) continue;
+                if (msgRow.querySelector('.version-arrows')) continue;
                 
-                const currentIdx = branchIds.indexOf(currentBranchId);
+                const currentIdx = versionBranchIds.indexOf(currentBranchId);
                 const displayIdx = currentIdx >= 0 ? currentIdx + 1 : 1;
                 
                 const arrowsDiv = document.createElement('div');
                 arrowsDiv.className = 'version-arrows';
                 arrowsDiv.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:6px;justify-content:flex-end;';
                 arrowsDiv.innerHTML = 
-                    '<button class="version-arrow-btn" style="background:transparent;border:none;color:#888;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;" ' +
-                    (currentIdx > 0 ? '' : 'disabled') + '>◀</button>' +
-                    '<span style="font-size:11px;color:#888;font-family:Inter,sans-serif;">' + displayIdx + '/' + branchCount + '</span>' +
-                    '<button class="version-arrow-btn" style="background:transparent;border:none;color:#888;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;" ' +
-                    (currentIdx < branchIds.length - 1 ? '' : 'disabled') + '>▶</button>';
+                    '<button class="version-arrow-btn" style="background:transparent;border:none;color:#888;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;"' +
+                    (currentIdx > 0 ? '' : ' disabled') + '>◀</button>' +
+                    '<span style="font-size:11px;color:#888;font-family:Inter,sans-serif;">' + displayIdx + '/' + versionsCount + '</span>' +
+                    '<button class="version-arrow-btn" style="background:transparent;border:none;color:#888;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;"' +
+                    (currentIdx < versionBranchIds.length - 1 ? '' : ' disabled') + '>▶</button>';
                 
                 const contentWrapper = msgRow.querySelector('div');
                 if (contentWrapper) {
                     contentWrapper.appendChild(arrowsDiv);
                 }
                 
-                const prevBtn = arrowsDiv.querySelectorAll('.version-arrow-btn')[0];
-                const nextBtn = arrowsDiv.querySelectorAll('.version-arrow-btn')[1];
+                const buttons = arrowsDiv.querySelectorAll('.version-arrow-btn');
+                const prevBtn = buttons[0];
+                const nextBtn = buttons[1];
                 
                 prevBtn.onmouseenter = function() { if (!prevBtn.disabled) prevBtn.style.background = 'rgba(255,255,255,0.08)'; };
                 prevBtn.onmouseleave = function() { prevBtn.style.background = 'transparent'; };
@@ -1642,15 +1653,15 @@
                 
                 prevBtn.onclick = function() {
                     if (currentIdx > 0) {
-                        switchBranch(branchIds[currentIdx - 1]);
+                        switchBranch(versionBranchIds[currentIdx - 1]);
                     }
                 };
                 nextBtn.onclick = function() {
-                    if (currentIdx < branchIds.length - 1) {
-                        switchBranch(branchIds[currentIdx + 1]);
+                    if (currentIdx < versionBranchIds.length - 1) {
+                        switchBranch(versionBranchIds[currentIdx + 1]);
                     }
                 };
-            });
+            }
         }
         
         function copyMessage(index) {
