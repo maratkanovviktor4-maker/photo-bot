@@ -199,54 +199,6 @@
         body.light .message-content th { background: rgba(0,0,0,0.05); }
         body.light .message-content th, body.light .message-content td { border-color: rgba(0,0,0,0.1); }
         .branch-indicator { font-size: 11px; color: #00CBF5; padding: 4px 8px; background: rgba(0,203,245,0.1); border-radius: 12px; display: inline-block; margin-bottom: 8px; font-family: 'Inter', sans-serif; }
-        
-        /* Portal navigation styles */
-        .portal-nav {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            margin-top: 4px;
-            font-size: 11px;
-            flex-wrap: wrap;
-        }
-        .portal-nav .portal-btn {
-            background: rgba(0,203,245,0.1);
-            border: 1px solid rgba(0,203,245,0.25);
-            color: #00CBF5;
-            padding: 2px 8px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 10px;
-            font-family: 'Inter', sans-serif;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            transition: background 0.15s;
-            white-space: nowrap;
-        }
-        .portal-nav .portal-btn:hover {
-            background: rgba(0,203,245,0.2);
-        }
-        .portal-nav .portal-btn.from {
-            border-color: rgba(255,255,255,0.15);
-            color: #aaa;
-            background: rgba(255,255,255,0.05);
-        }
-        .portal-nav .portal-btn.from:hover {
-            background: rgba(255,255,255,0.1);
-        }
-        body.light .portal-nav .portal-btn {
-            background: rgba(0,0,0,0.04);
-            border-color: rgba(0,0,0,0.1);
-            color: #005f73;
-        }
-        body.light .portal-nav .portal-btn:hover {
-            background: rgba(0,0,0,0.08);
-        }
-        body.light .portal-nav .portal-btn.from {
-            color: #555;
-            background: rgba(0,0,0,0.02);
-        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -835,7 +787,7 @@
             list.innerHTML = sortedIds.map(function(bid) {
                 var b = branches[bid];
                 return '<div class="branch-item' + (bid === currentBranchId ? ' active' : '') + '" onclick="switchBranch(\'' + bid + '\')">' +
-                    '<svg class="branch-icon" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="' + (b.fromAssistant ? '#4caf50' : '#00CBF5') + '"/></svg>' +
+                    '<svg class="branch-icon" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#00CBF5"/></svg>' +
                     '<span class="branch-name">' + escapeHtml(b.name || bid) + '</span>' +
                     '<span style="font-size:10px;color:#666;">' + ((b.msg_ids && b.msg_ids.length) || 0) + '</span>' +
                     (bid !== 'main' ? '<button class="branch-delete-btn" onclick="event.stopPropagation();deleteBranch(\'' + bid + '\')" title="Удалить ветку" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:12px;padding:0 4px;">✕</button>' : '') +
@@ -1401,74 +1353,6 @@
             return chat.messages[index].msg_id || null;
         }
         
-        // Portal navigation: fetches and renders branch portals for a single message
-        async function renderBranchPortals(msgIndex) {
-            const chat = chats.find(c => c.id === currentChatId);
-            if (!chat || !chat.messages[msgIndex]) return;
-            
-            const msg = chat.messages[msgIndex];
-            const msgId = msg.msg_id;
-            if (!msgId) return;
-            
-            const msgRow = document.querySelector(`.message-row[data-msg-index="${msgIndex}"]`);
-            if (!msgRow) return;
-            
-            // Remove old portal nav if exists
-            const oldNav = msgRow.querySelector('.portal-nav');
-            if (oldNav) oldNav.remove();
-            
-            try {
-                const resp = await fetch(`${SERVER_URL}/get_branch_portals?user_id=${currentUserId}&model=flash&chat_id=${currentChatId}&msg_id=${msgId}&session_token=${sessionToken}`);
-                if (!resp.ok) return;
-                const portalData = await resp.json();
-                
-                const fromBranch = portalData.from_branch;
-                const toBranches = portalData.to_branches || [];
-                
-                // Only render if there are portals
-                if (!fromBranch && toBranches.length === 0) return;
-                
-                const nav = document.createElement('div');
-                nav.className = 'portal-nav';
-                
-                // "Back" button — from which branch we came
-                if (fromBranch) {
-                    const fromName = (chat.allBranches && chat.allBranches[fromBranch] && chat.allBranches[fromBranch].name) ?? 'Основная';
-                    const backBtn = document.createElement('button');
-                    backBtn.className = 'portal-btn from';
-                    backBtn.innerHTML = `← ${escapeHtml(fromName)}`;
-                    backBtn.title = `Перейти в ветку «${escapeHtml(fromName)}»`;
-                    backBtn.onclick = function() { switchBranch(fromBranch); };
-                    nav.appendChild(backBtn);
-                }
-                
-                // "Forward" buttons — branches we can go to
-                toBranches.forEach(function(b) {
-                    const btn = document.createElement('button');
-                    btn.className = 'portal-btn';
-                    btn.innerHTML = `${escapeHtml(b.name || 'Ветка')} →`;
-                    btn.title = `Перейти в ветку «${escapeHtml(b.name || 'Ветка')}»`;
-                    btn.onclick = function() { switchBranch(b.branch_id); };
-                    nav.appendChild(btn);
-                });
-                
-                // Insert before message-actions
-                const msgActions = msgRow.querySelector('.message-actions');
-                if (msgActions) {
-                    msgActions.parentNode.insertBefore(nav, msgActions);
-                } else {
-                    const msgContent = msgRow.querySelector('.message-content');
-                    if (msgContent) {
-                        msgContent.parentNode.appendChild(nav);
-                    } else {
-                        msgRow.querySelector('div')?.appendChild(nav);
-                    }
-                }
-            } catch(e) {
-                console.error('renderBranchPortals error:', e);
-            }
-        }
-        
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId);
@@ -1517,20 +1401,9 @@
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
-            
             hljs.highlightAll();
             setupFloatingCopyButtons();
             buildNavContainer();
-            
-            // Render portals for each message asynchronously
-            if (chat && chat.messages) {
-                chat.messages.forEach(function(m, idx) {
-                    if (m.msg_id) {
-                        setTimeout(function() { renderBranchPortals(idx); }, idx * 50);
-                    }
-                });
-            }
-            
             var main = document.querySelector('.main');
             if (main) {
                 main.style.scrollBehavior = 'auto';
@@ -1805,8 +1678,7 @@
             }
 
             let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
-            var tempUserMsgId = 'tmp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-            chat.messages.push({ role: 'user', content: displayText, msg_id: tempUserMsgId });
+            chat.messages.push({ role: 'user', content: displayText });
             chat.lastMessageTime = Date.now();
             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             renderChatList();
