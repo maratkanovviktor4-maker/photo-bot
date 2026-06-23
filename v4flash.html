@@ -538,6 +538,7 @@
                         const activeBranch = data.active_branches && data.active_branches[chatId] ? data.active_branches[chatId] : 'main';
                         const allBranches = data.all_branches && data.all_branches[chatId] ? data.all_branches[chatId] : {};
                         const personality = data.personalities && data.personalities[chatId] ? data.personalities[chatId] : 'default';
+                        const hasRollback = data.has_rollback && data.has_rollback[chatId] ? data.has_rollback[chatId] : false;
                         
                         var lastTime = 0;
                         if (messages && messages.length > 0) {
@@ -554,7 +555,8 @@
                             activeBranch: activeBranch,
                             allBranches: allBranches,
                             _personality: personality,
-                            lastMessageTime: lastTime
+                            lastMessageTime: lastTime,
+                            _hasRollback: hasRollback
                         });
                     }
                     chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
@@ -563,7 +565,7 @@
                 console.error('loadChatsFromServer error:', e);
             }
             if (chats.length === 0) {
-                const chat = { id: String(Date.now()), title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: { 'main': { name: 'Основная', messages: [], msg_ids: [] } } };
+                const chat = { id: String(Date.now()), title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: { 'main': { name: 'Основная', messages: [], msg_ids: [] } }, _hasRollback: false };
                 chats.push(chat);
             }
             renderChatList();
@@ -598,7 +600,7 @@
         }
         
         function newChat() {
-            const chat = { id: Date.now().toString(), title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: { 'main': { name: 'Основная', messages: [], msg_ids: [] } }, lastMessageTime: Date.now() };
+            const chat = { id: Date.now().toString(), title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: { 'main': { name: 'Основная', messages: [], msg_ids: [] } }, lastMessageTime: Date.now(), _hasRollback: false };
             chats.push(chat);
             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             currentChatId = chat.id;
@@ -894,7 +896,6 @@
             isSending = true;
             sendBtnStop();
             
-            // Затираем только сообщения ПОСЛЕ msgIndex
             chat.messages = chat.messages.slice(0, msgIndex + 1);
             renderMessages();
             
@@ -935,14 +936,11 @@
                 if (resp.ok) {
                     var data = await resp.json();
                     
-                    // Переключаемся в новую ветку
                     currentBranchId = data.branch_id;
                     chat.activeBranch = data.branch_id;
                     
-                    // Загружаем полное дерево с сервера (НЕ перезаписываем chat.messages)
                     await updateBranchesFromServer();
                     
-                    // Восстанавливаем историю ДО из загруженной ветки, но без assistant-ответа
                     if (chat.allBranches && chat.allBranches[data.branch_id]) {
                         chat.messages = chat.allBranches[data.branch_id].messages || [];
                     } else {
@@ -952,9 +950,7 @@
                     renderChatList();
                     renderBranchesPanel();
                     
-                    // Если есть reply — стримим ответ ассистента
                     if (data.reply) {
-                        // Убираем последний assistant из messages (сервер уже сохранил его в ветку)
                         while (chat.messages.length > 0 && chat.messages[chat.messages.length - 1].role === 'assistant') {
                             chat.messages.pop();
                         }
@@ -1019,7 +1015,6 @@
             
             msg.content = newText;
             
-            // Затираем все сообщения ПОСЛЕ редактируемого
             chat.messages = chat.messages.slice(0, msgIndex + 1);
             
             renderMessages();
@@ -1243,9 +1238,8 @@
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
                         actionsHtml += `<button class="roll-btn" onclick="regenerateAssistantMessage(${i})" title="Регенерировать ответ">↻</button>`;
-                        if (i === chat.messages.length - 1) {
-                            actionsHtml += `<button onclick="navigateRoll('&lt;')" title="Назад по истории роллов" style="color:#f0a500;background:transparent;border:none;cursor:pointer;padding:6px 8px;border-radius:8px;font-family:Inter,sans-serif;font-size:14px;line-height:1;">&lt;</button>`;
-                            actionsHtml += `<button onclick="navigateRoll('&gt;')" title="Вперёд по истории роллов" style="color:#f0a500;background:transparent;border:none;cursor:pointer;padding:6px 8px;border-radius:8px;font-family:Inter,sans-serif;font-size:14px;line-height:1;">&gt;</button>`;
+                        if (chat._hasRollback && i === chat.messages.length - 1) {
+                            actionsHtml += `<button onclick="rollback()" title="Вернуть ответ" style="color:#f0a500;background:transparent;border:none;cursor:pointer;padding:6px 8px;border-radius:8px;font-family:Inter,sans-serif;font-size:14px;line-height:1;">&lt;</button>`;
                         }
                         actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения" style="color:#4caf50;"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#4caf50"/></svg></button>`;
                         if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
@@ -1650,6 +1644,9 @@
                             }
                         }
                         chat.allBranches = branches;
+                        if (data.has_rollback !== undefined) {
+                            chat._hasRollback = data.has_rollback;
+                        }
                         renderBranchesPanel();
                     }
                 }
@@ -1775,61 +1772,33 @@
             });
         }
         
-        document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
-        async function navigateRoll(direction) {
+        async function rollback() {
             if (isSending) return;
-            
+            if (!confirm('Вернуть ответ?')) return;
             isSending = true;
             sendBtnStop();
-            
             try {
-                var resp = await fetch(SERVER_URL + '/navigate_roll', {
+                var resp = await fetch(SERVER_URL + '/rollback', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({
-                        user_id: currentUserId,
-                        model: 'flash',
-                        chat_id: currentChatId,
-                        branch_id: currentBranchId,
-                        direction: direction
-                    })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId })
                 });
-                
                 if (resp.ok) {
-                    var data = await resp.json();
-                    var chat = chats.find(function(c) { return c.id === currentChatId; });
-                    if (chat && data.messages) {
-                        chat.messages = data.messages;
-                    }
+                    await loadChatsFromServer();
+                    renderBranchesPanel();
                     renderMessages();
-                    
-                    // Обновляем состояние кнопок
-                    setTimeout(function() {
-                        var backBtn = document.getElementById('roll-back-btn');
-                        var fwdBtn = document.getElementById('roll-fwd-btn');
-                        if (backBtn) backBtn.style.display = data.can_go_back ? 'inline-flex' : 'none';
-                        if (fwdBtn) fwdBtn.style.display = data.can_go_forward ? 'inline-flex' : 'none';
-                    }, 50);
-                    
-                    setTimeout(function() {
-                        var main = document.querySelector('.main');
-                        if (main) {
-                            main.style.scrollBehavior = 'auto';
-                            main.scrollTop = main.scrollHeight;
-                            main.style.scrollBehavior = 'smooth';
-                        }
-                    }, 100);
+                    updateBalance();
                 } else {
                     var err = await resp.json();
-                    console.log('navigateRoll:', err.error);
+                    alert(err.error || 'Ошибка');
                 }
-            } catch(e) {
-                console.error('navigateRoll error:', e);
-            }
-            
+            } catch(e) { console.error(e); }
             isSending = false;
             sendBtnArrow();
-        }        
+        }
+        
+        document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
+        
         function setupFloatingCopyButtons() {
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 if (pre.querySelector('.floating-code-header')) return;
