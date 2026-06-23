@@ -1805,7 +1805,8 @@
             }
 
             let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
-            chat.messages.push({ role: 'user', content: displayText });
+            var tempUserMsgId = 'tmp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+            chat.messages.push({ role: 'user', content: displayText, msg_id: tempUserMsgId });
             chat.lastMessageTime = Date.now();
             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             renderChatList();
