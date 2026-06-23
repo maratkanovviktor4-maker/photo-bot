@@ -1134,8 +1134,8 @@
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
             
-            // Обрезаем до родительского user (как в createBranchFromMessage)
-            chat.messages = chat.messages.slice(0, parentUserIndex + 1);
+            // Обрезаем до assistant (как в createBranchFromMessage)
+            chat.messages = chat.messages.slice(0, msgIndex + 1);
             renderMessages();
             
             var placeholderId = 'regen_assistant_' + Date.now();
@@ -1158,7 +1158,7 @@
                         model: 'flash',
                         mode: currentMode,
                         chat_id: currentChatId,
-                        source_msg_id: parentUser.msg_id,
+                        source_msg_id: msg.msg_id,
                         branch_name: '',
                         prompt: parentUser.content
                     })
