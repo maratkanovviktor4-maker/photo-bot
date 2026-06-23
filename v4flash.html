@@ -898,21 +898,11 @@
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             
-            // Сначала скрываем все навигации
             document.querySelectorAll('.branch-nav').forEach(function(nav) {
                 nav.style.display = 'none';
                 nav.innerHTML = '';
             });
             
-            // Собираем все msg_id текущей ветки
-            var branchMsgIds = new Set();
-            for (var i = 0; i < chat.messages.length; i++) {
-                if (chat.messages[i].msg_id) {
-                    branchMsgIds.add(chat.messages[i].msg_id);
-                }
-            }
-            
-            // Для каждого сообщения в ветке проверяем, является ли оно точкой ветвления
             for (var i = 0; i < chat.messages.length; i++) {
                 var m = chat.messages[i];
                 if (!m.msg_id) continue;
@@ -920,32 +910,30 @@
                 var nav = document.getElementById('branchnav-' + i);
                 if (!nav) continue;
                 
-                var branches = await getMsgBranches(m.msg_id);
+                var data = await getMsgBranches(m.msg_id);
+                if (!data || data.length === 0) continue;
                 
-                // Показываем стрелки только если >1 ветки и текущая ветка одна из них
-                if (branches.length > 1) {
-                    var currentIdx = -1;
-                    for (var b = 0; b < branches.length; b++) {
-                        if (branches[b].branch_id === currentBranchId) { currentIdx = b; break; }
-                    }
-                    
-                    // Если текущая ветка не найдена в списке — не показываем
-                    if (currentIdx === -1) {
-                        nav.style.display = 'none';
-                        continue;
-                    }
-                    
-                    var html = '';
-                    if (currentIdx > 0) {
-                        html += '<button class="branch-nav-btn" onclick="event.stopPropagation();switchBranchNav(\'' + i + '\',\'' + branches[currentIdx - 1].branch_id + '\')">◂</button>';
-                    }
-                    html += '<span class="branch-nav-count">' + (currentIdx + 1) + '/' + branches.length + '</span>';
-                    if (currentIdx < branches.length - 1) {
-                        html += '<button class="branch-nav-btn" onclick="event.stopPropagation();switchBranchNav(\'' + i + '\',\'' + branches[currentIdx + 1].branch_id + '\')">▸</button>';
-                    }
-                    nav.innerHTML = html;
-                    nav.style.display = 'inline-flex';
+                var currentIdx = -1;
+                for (var b = 0; b < data.length; b++) {
+                    if (data[b].branch_id === currentBranchId) { currentIdx = b; break; }
                 }
+                
+                if (currentIdx === -1 && data.length > 0) {
+                    nav.style.display = 'inline-flex';
+                    nav.innerHTML = '<span class="branch-nav-count" style="font-size:10px;color:#888;">' + data.length + ' ветки</span>';
+                    continue;
+                }
+                
+                var html = '';
+                if (currentIdx > 0) {
+                    html += '<button class="branch-nav-btn" onclick="event.stopPropagation();switchBranchNav(\'' + i + '\',\'' + data[currentIdx - 1].branch_id + '\')">◂</button>';
+                }
+                html += '<span class="branch-nav-count">' + (currentIdx + 1) + '/' + data.length + '</span>';
+                if (currentIdx < data.length - 1) {
+                    html += '<button class="branch-nav-btn" onclick="event.stopPropagation();switchBranchNav(\'' + i + '\',\'' + data[currentIdx + 1].branch_id + '\')">▸</button>';
+                }
+                nav.innerHTML = html;
+                nav.style.display = 'inline-flex';
             }
         }
         
