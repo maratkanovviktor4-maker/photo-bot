@@ -199,6 +199,61 @@
         body.light .message-content th { background: rgba(0,0,0,0.05); }
         body.light .message-content th, body.light .message-content td { border-color: rgba(0,0,0,0.1); }
         .branch-indicator { font-size: 11px; color: #00CBF5; padding: 4px 8px; background: rgba(0,203,245,0.1); border-radius: 12px; display: inline-block; margin-bottom: 8px; font-family: 'Inter', sans-serif; }
+        .branch-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 6px 14px;
+            margin: 0 auto 8px auto;
+            background: rgba(0,203,245,0.08);
+            border: 1px solid rgba(0,203,245,0.15);
+            border-radius: 20px;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            max-width: 220px;
+            user-select: none;
+        }
+        body.light .branch-pagination {
+            background: rgba(0,203,245,0.04);
+            border-color: rgba(0,203,245,0.2);
+        }
+        .branch-pagination .nav-arrow {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0,203,245,0.1);
+            color: #00CBF5;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            transition: all 0.15s;
+            flex-shrink: 0;
+            padding: 0;
+            line-height: 1;
+        }
+        .branch-pagination .nav-arrow:hover:not(:disabled) {
+            background: rgba(0,203,245,0.25);
+        }
+        .branch-pagination .nav-arrow:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+        }
+        .branch-pagination .page-indicator {
+            font-size: 12px;
+            color: #aaa;
+            font-weight: 500;
+            min-width: 40px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        body.light .branch-pagination .page-indicator {
+            color: #666;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -235,6 +290,7 @@
         </div>
         <div class="chat-wrapper">
             <div class="chat-area" id="chatArea">
+                <div id="branchPagination" class="branch-pagination" style="display:none;"></div>
                 <div class="empty-state">
                     <img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek Flash" onerror="this.style.display='none'">
                     <div class="title">DeepSeek V4 Flash</div>
@@ -470,7 +526,6 @@
                 }
             }, true);
         }
-        // Проверяем, есть ли токен шаринга в URL
         (async function checkShareToken() {
             var params = new URLSearchParams(window.location.search);
             var token = params.get('token');
@@ -787,7 +842,7 @@
             list.innerHTML = sortedIds.map(function(bid) {
                 var b = branches[bid];
                 return '<div class="branch-item' + (bid === currentBranchId ? ' active' : '') + '" onclick="switchBranch(\'' + bid + '\')">' +
-                    '<svg class="branch-icon" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#00CBF5"/></svg>' +
+                    '<svg class="branch-icon" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="' + (b.fromAssistant ? '#4caf50' : '#00CBF5') + '"/></svg>' +
                     '<span class="branch-name">' + escapeHtml(b.name || bid) + '</span>' +
                     '<span style="font-size:10px;color:#666;">' + ((b.msg_ids && b.msg_ids.length) || 0) + '</span>' +
                     (bid !== 'main' ? '<button class="branch-delete-btn" onclick="event.stopPropagation();deleteBranch(\'' + bid + '\')" title="Удалить ветку" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:12px;padding:0 4px;">✕</button>' : '') +
@@ -813,6 +868,7 @@
                     chat.messages = data.messages || [];
                     renderBranchesPanel();
                     renderMessages();
+                    renderBranchPagination();
                     setTimeout(function() {
                         var main = document.querySelector('.main');
                         if (main) {
@@ -826,6 +882,58 @@
                 console.error('switchBranch error:', e);
             }
         }
+        
+        async function renderBranchPagination() {
+            var container = document.getElementById('branchPagination');
+            if (!container) return;
+
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat || !chat.allBranches || Object.keys(chat.allBranches).length <= 1) {
+                container.style.display = 'none';
+                container.innerHTML = '';
+                return;
+            }
+
+            try {
+                var resp = await fetch(SERVER_URL + '/get_branch_nav?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + currentBranchId + '&session_token=' + sessionToken);
+                if (!resp.ok) { container.style.display = 'none'; return; }
+
+                var data = await resp.json();
+                if (!data || data.total <= 1) {
+                    container.style.display = 'none';
+                    container.innerHTML = '';
+                    return;
+                }
+
+                container.style.display = 'flex';
+                container.innerHTML =
+                    '<button class="nav-arrow" id="branchPrevBtn" onclick="navigateBranch(-1)" ' + (data.has_prev ? '' : 'disabled') + '>◀</button>' +
+                    '<span class="page-indicator">' + (data.current_index + 1) + '/' + data.total + '</span>' +
+                    '<button class="nav-arrow" id="branchNextBtn" onclick="navigateBranch(1)" ' + (data.has_next ? '' : 'disabled') + '>▶</button>';
+            } catch(e) {
+                container.style.display = 'none';
+            }
+        }
+
+        async function navigateBranch(direction) {
+            try {
+                var resp = await fetch(SERVER_URL + '/get_branch_nav?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + currentBranchId + '&session_token=' + sessionToken);
+                if (!resp.ok) return;
+
+                var data = await resp.json();
+                var targetIndex = data.current_index + direction;
+                if (targetIndex < 0 || targetIndex >= data.total) return;
+
+                var targetBranch = data.branches[targetIndex];
+                if (!targetBranch) return;
+
+                await switchBranch(targetBranch.id);
+                await renderBranchPagination();
+            } catch(e) {
+                console.error('navigateBranch error:', e);
+            }
+        }
+
         async function renameBranch(branchId) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat || !chat.allBranches || !chat.allBranches[branchId]) return;
@@ -873,6 +981,7 @@
                         }
                         renderBranchesPanel();
                         renderMessages();
+                        renderBranchPagination();
                     });
                 }
             } catch(e) {
@@ -1096,6 +1205,7 @@
                                 autoNameChat(chat);
                                 updateBranchesFromServer();
                                 renderChatList();
+                                renderBranchPagination();
                                 updateBalance();
                                 if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.scrollTop = m3.scrollHeight; } }
                                 if (activeStreamId === streamId) { isSending = false; activeStreamId = null; sendBtnArrow(); }
@@ -1107,6 +1217,7 @@
                         updateBranchesFromServer();
                         renderChatList();
                         renderMessages();
+                        renderBranchPagination();
                         isSending = false;
                         sendBtnArrow();
                     }
@@ -1305,6 +1416,7 @@
                                 autoNameChat(chat);
                                 updateBranchesFromServer();
                                 renderChatList();
+                                renderBranchPagination();
                                 updateBalance();
                                 
                                 if (autoScroll) {
@@ -1327,6 +1439,7 @@
                         updateBranchesFromServer();
                         renderChatList();
                         renderMessages();
+                        renderBranchPagination();
                         isSending = false;
                         sendBtnArrow();
                     }
@@ -1359,7 +1472,7 @@
             const area = document.getElementById('chatArea');
             
             if (!chat || chat.messages.length === 0) {
-                area.innerHTML = `<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display='none'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>`;
+                area.innerHTML = `<div id="branchPagination" class="branch-pagination" style="display:none;"></div><div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display='none'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>`;
             } else {
                 var branchName = '';
                 if (chat.allBranches && chat.allBranches[currentBranchId]) {
@@ -1370,7 +1483,7 @@
                     branchIndicator = '<div class="branch-indicator"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1); vertical-align: middle; margin-right: 4px;"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#00CBF5"/></svg> ' + escapeHtml(branchName) + '</div>';
                 }
                 
-                area.innerHTML = branchIndicator + chat.messages.map((m, i) => {
+                area.innerHTML = '<div id="branchPagination" class="branch-pagination" style="display:none;"></div>' + branchIndicator + chat.messages.map((m, i) => {
                     var actionsHtml = '';
                     if (m.role === 'user') {
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
@@ -1404,6 +1517,7 @@
             hljs.highlightAll();
             setupFloatingCopyButtons();
             buildNavContainer();
+            renderBranchPagination();
             var main = document.querySelector('.main');
             if (main) {
                 main.style.scrollBehavior = 'auto';
@@ -1813,6 +1927,7 @@
                             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                             autoNameChat(chat);
                             renderChatList();
+                            renderBranchPagination();
                             updateBranchesFromServer();
                             if (autoScroll) {
                                 var main = document.querySelector('.main');
