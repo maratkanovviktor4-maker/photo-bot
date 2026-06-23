@@ -199,6 +199,52 @@
         body.light .message-content th { background: rgba(0,0,0,0.05); }
         body.light .message-content th, body.light .message-content td { border-color: rgba(0,0,0,0.1); }
         .branch-indicator { font-size: 11px; color: #00CBF5; padding: 4px 8px; background: rgba(0,203,245,0.1); border-radius: 12px; display: inline-block; margin-bottom: 8px; font-family: 'Inter', sans-serif; }
+        .portal-nav {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            margin-top: 4px;
+            font-size: 11px;
+            flex-wrap: wrap;
+        }
+        .portal-nav .portal-btn {
+            background: rgba(0,203,245,0.1);
+            border: 1px solid rgba(0,203,245,0.25);
+            color: #00CBF5;
+            padding: 2px 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 10px;
+            font-family: 'Inter', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .portal-nav .portal-btn:hover {
+            background: rgba(0,203,245,0.2);
+        }
+        .portal-nav .portal-btn.from {
+            border-color: rgba(255,255,255,0.15);
+            color: #aaa;
+            background: rgba(255,255,255,0.05);
+        }
+        .portal-nav .portal-btn.from:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        body.light .portal-nav .portal-btn {
+            background: rgba(0,0,0,0.04);
+            border-color: rgba(0,0,0,0.1);
+            color: #005f73;
+        }
+        body.light .portal-nav .portal-btn:hover {
+            background: rgba(0,0,0,0.08);
+        }
+        body.light .portal-nav .portal-btn.from {
+            color: #555;
+            background: rgba(0,0,0,0.02);
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -470,7 +516,6 @@
                 }
             }, true);
         }
-        // Проверяем, есть ли токен шаринга в URL
         (async function checkShareToken() {
             var params = new URLSearchParams(window.location.search);
             var token = params.get('token');
@@ -811,10 +856,8 @@
                     currentBranchId = branchId;
                     chat.activeBranch = branchId;
                     chat.messages = data.messages || [];
-                    updatePortalLabels();
                     renderBranchesPanel();
                     renderMessages();
-
                     setTimeout(function() {
                         var main = document.querySelector('.main');
                         if (main) {
@@ -1355,6 +1398,62 @@
             return chat.messages[index].msg_id || null;
         }
         
+        async function renderBranchPortals(msgIndex) {
+            const chat = chats.find(c => c.id === currentChatId);
+            if (!chat || !chat.messages[msgIndex]) return;
+            
+            const msg = chat.messages[msgIndex];
+            const msgId = msg.msg_id;
+            const msgRow = document.querySelector(`.message-row[data-msg-index="${msgIndex}"]`);
+            if (!msgRow) return;
+            
+            const oldNav = msgRow.querySelector('.portal-nav');
+            if (oldNav) oldNav.remove();
+            
+            try {
+                const resp = await fetch(`${SERVER_URL}/get_branch_portals?user_id=${currentUserId}&model=flash&chat_id=${currentChatId}&msg_id=${msgId}&session_token=${sessionToken}`);
+                if (!resp.ok) return;
+                const portalData = await resp.json();
+                
+                const fromBranch = portalData.from_branch;
+                const toBranches = portalData.to_branches || [];
+                
+                if (!fromBranch && toBranches.length === 0) return;
+                
+                const nav = document.createElement('div');
+                nav.className = 'portal-nav';
+                
+                if (fromBranch) {
+                    const fromName = (chat.allBranches && chat.allBranches[fromBranch] && chat.allBranches[fromBranch].name) ?? 'Основная';
+                    const backBtn = document.createElement('button');
+                    backBtn.className = 'portal-btn from';
+                    backBtn.innerHTML = `← ${escapeHtml(fromName)}`;
+                    backBtn.title = `Перейти в ветку «${escapeHtml(fromName)}»`;
+                    backBtn.onclick = function() { switchBranch(fromBranch); };
+                    nav.appendChild(backBtn);
+                }
+                
+                toBranches.forEach(function(b) {
+                    const btn = document.createElement('button');
+                    btn.className = 'portal-btn';
+                    btn.innerHTML = `${escapeHtml(b.name || 'Ветка')} →`;
+                    btn.title = `Перейти в ветку «${escapeHtml(b.name || 'Ветка')}»`;
+                    btn.onclick = function() { switchBranch(b.branch_id); };
+                    nav.appendChild(btn);
+                });
+                
+                const msgActions = msgRow.querySelector('.message-actions');
+                if (msgActions) {
+                    msgActions.parentNode.insertBefore(nav, msgActions);
+                } else {
+                    const msgContent = msgRow.querySelector('.message-content');
+                    if (msgContent) msgContent.parentNode.appendChild(nav);
+                }
+            } catch(e) {
+                console.error('renderBranchPortals error:', e);
+            }
+        }
+
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId);
@@ -1406,7 +1505,16 @@
             hljs.highlightAll();
             setupFloatingCopyButtons();
             buildNavContainer();
-            setupPortalNavigation();
+            
+            // Рендерим порталы для каждого сообщения
+            if (chat && chat.messages) {
+                chat.messages.forEach(function(m, idx) {
+                    if (m.msg_id) {
+                        setTimeout(function() { renderBranchPortals(idx); }, idx * 50);
+                    }
+                });
+            }
+            
             var main = document.querySelector('.main');
             if (main) {
                 main.style.scrollBehavior = 'auto';
@@ -2255,114 +2363,6 @@
                 updateFloatingButtons();
             });
         }
-        function setupPortalNavigation() {
-            var chat = chats.find(c => c.id === currentChatId);
-            if (!chat || !chat.allBranches) return;
-
-            // Собираем map: msg_id -> массив дочерних branch_id (sourceMsgId === msg_id)
-            var childBranchesMap = {};
-            for (var bid in chat.allBranches) {
-                var branch = chat.allBranches[bid];
-                var sourceMsgId = branch.sourceMsgId;
-                if (sourceMsgId && sourceMsgId !== 'root') {
-                    if (!childBranchesMap[sourceMsgId]) childBranchesMap[sourceMsgId] = [];
-                    childBranchesMap[sourceMsgId].push(bid);
-                }
-            }
-
-            // Для каждого сообщения, у которого есть дочерние ветки
-            for (var i = 0; i < chat.messages.length; i++) {
-                var msg = chat.messages[i];
-                if (!msg.msg_id) continue;
-                var children = childBranchesMap[msg.msg_id];
-                if (!children || children.length <= 1) continue; // только порталы с >1 веток
-
-                // Упорядочиваем ветки (можно по имени или по индексу в allBranches)
-                var sortedChildren = children.sort(); // простой сортировки достаточно
-
-                var msgRow = document.querySelector('.message-row[data-msg-index="' + i + '"]');
-                if (!msgRow) continue;
-
-                // Если уже есть блок навигации – удаляем старый
-                var existingNav = msgRow.querySelector('.portal-nav');
-                if (existingNav) existingNav.remove();
-
-                var navDiv = document.createElement('div');
-                navDiv.className = 'portal-nav';
-                navDiv.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;font-family:Inter,sans-serif;color:#888;';
-
-                var leftBtn = document.createElement('button');
-                leftBtn.innerHTML = '‹';
-                leftBtn.style.cssText = 'background:transparent;border:none;color:#888;cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px;line-height:1;';
-                leftBtn.onmouseenter = function() { this.style.background = 'rgba(255,255,255,0.1)'; };
-                leftBtn.onmouseleave = function() { this.style.background = 'transparent'; };
-                leftBtn.onclick = function() {
-                    navigatePortal(msg.msg_id, sortedChildren, -1);
-                };
-
-                var rightBtn = document.createElement('button');
-                rightBtn.innerHTML = '›';
-                rightBtn.style.cssText = leftBtn.style.cssText;
-                rightBtn.onmouseenter = leftBtn.onmouseenter;
-                rightBtn.onmouseleave = leftBtn.onmouseleave;
-                rightBtn.onclick = function() {
-                    navigatePortal(msg.msg_id, sortedChildren, 1);
-                };
-
-                var labelSpan = document.createElement('span');
-                labelSpan.id = 'portal-label-' + msg.msg_id;
-                // Определяем текущую позицию
-                var currentIdx = sortedChildren.indexOf(currentBranchId);
-                if (currentIdx === -1) {
-                    labelSpan.textContent = '0/' + sortedChildren.length;
-                } else {
-                    labelSpan.textContent = (currentIdx + 1) + '/' + sortedChildren.length;
-                }
-
-                navDiv.appendChild(leftBtn);
-                navDiv.appendChild(labelSpan);
-                navDiv.appendChild(rightBtn);
-
-                // Вставляем после message-actions или в конец контента
-                var actions = msgRow.querySelector('.message-actions');
-                if (actions) {
-                    actions.parentNode.insertBefore(navDiv, actions.nextSibling);
-                } else {
-                    msgRow.querySelector('div:first-child').appendChild(navDiv);
-                }
-            }
-        }
-        function updatePortalLabels() {
-            document.querySelectorAll('.portal-nav span[id^="portal-label-"]').forEach(function(span) {
-                var msgId = span.id.replace('portal-label-', '');
-                var chat = chats.find(c => c.id === currentChatId);
-                if (!chat || !chat.allBranches) return;
-                var children = [];
-                for (var bid in chat.allBranches) {
-                    if (chat.allBranches[bid].sourceMsgId === msgId) children.push(bid);
-                }
-                children.sort();
-                var idx = children.indexOf(currentBranchId);
-                span.textContent = (idx === -1 ? '0' : (idx + 1)) + '/' + children.length;
-            });
-        }
-
-
-        function navigatePortal(sourceMsgId, childrenBranches, direction) {
-            var currentIdx = childrenBranches.indexOf(currentBranchId);
-            var newIdx;
-            if (currentIdx === -1) {
-                // Если текущая ветка не среди дочерних – переходим на первую/последнюю
-                newIdx = direction === 1 ? 0 : childrenBranches.length - 1;
-            } else {
-                newIdx = (currentIdx + direction + childrenBranches.length) % childrenBranches.length;
-            }
-            var newBranchId = childrenBranches[newIdx];
-            if (newBranchId !== currentBranchId) {
-                switchBranch(newBranchId);
-            }
-        }
-
 
         function toggleCodeEditor(pre) {
             var codeEl = pre.querySelector('code');
