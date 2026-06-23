@@ -894,6 +894,11 @@
             isSending = true;
             sendBtnStop();
             
+            // Затираем историю ПОСЛЕ мгновенно
+            var oldMessages = chat.messages.slice();
+            chat.messages = [];
+            renderMessages();
+            
             var placeholderId = 'branch_create_' + Date.now();
             var area = document.getElementById('chatArea');
             var loadingRow = document.createElement('div');
