@@ -1018,6 +1018,8 @@
                                 renderChatList();
                                 updateBalance();
                                 if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.scrollTop = m3.scrollHeight; } }
+                                chat.lastMessageTime = Date.now();
+                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                                 if (activeStreamId === streamId) { isSending = false; activeStreamId = null; sendBtnArrow(); }
                             }
                         }
@@ -1231,6 +1233,9 @@
                                         mainEl3.scrollTop = mainEl3.scrollHeight;
                                     }
                                 }
+                                
+                                chat.lastMessageTime = Date.now();
+                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                                 
                                 if (activeStreamId === streamId) {
                                     isSending = false;
@@ -1596,6 +1601,7 @@
 
             let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
             chat.messages.push({ role: 'user', content: displayText });
+            chat.lastMessageTime = Date.now();
             renderChatList();
             renderMessages();
 
@@ -1735,6 +1741,8 @@
                                     main.style.scrollBehavior = 'smooth';
                                 }
                             }
+                            chat.lastMessageTime = Date.now();
+                            chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                             if (activeStreamId === streamId) {
                                 isSending = false;
                                 activeStreamId = null;
@@ -1993,6 +2001,8 @@
                             main.style.scrollBehavior = 'smooth';
                         }
                     }
+                    chat.lastMessageTime = Date.now();
+                    chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                     if (activeStreamId === streamId) {
                         isSending = false;
                         activeStreamId = null;
