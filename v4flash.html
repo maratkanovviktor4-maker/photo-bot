@@ -301,20 +301,48 @@
         window.addEventListener('drop', function(e) { e.preventDefault(); e.stopPropagation(); });
 
         function buildBranchSiblingsMap() {
-            branchSiblingsMap = {};
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat || !chat.allBranches) return;
-            for (var bid in chat.allBranches) {
-                var bMsgs = chat.allBranches[bid].messages || [];
-                for (var bi = 0; bi < bMsgs.length; bi++) {
-                    var bMid = bMsgs[bi].msg_id;
-                    if (!branchSiblingsMap[bMid]) branchSiblingsMap[bMid] = [];
-                    if (branchSiblingsMap[bMid].indexOf(bid) < 0) {
-                        branchSiblingsMap[bMid].push(bid);
-                    }
+    branchSiblingsMap = {};
+    var chat = chats.find(function(c) { return c.id === currentChatId; });
+    if (!chat || !chat.allBranches) return;
+    
+    var branchIds = Object.keys(chat.allBranches);
+    if (branchIds.length <= 1) return;
+    
+    // Для каждой пары веток находим точку расхождения
+    for (var i = 0; i < branchIds.length; i++) {
+        for (var j = i + 1; j < branchIds.length; j++) {
+            var bidA = branchIds[i];
+            var bidB = branchIds[j];
+            var msgsA = chat.allBranches[bidA].messages || [];
+            var msgsB = chat.allBranches[bidB].messages || [];
+            
+            // Идём от начала, пока msg_id совпадают
+            var lastCommonIdx = -1;
+            var minLen = Math.min(msgsA.length, msgsB.length);
+            for (var k = 0; k < minLen; k++) {
+                if (msgsA[k].msg_id === msgsB[k].msg_id) {
+                    lastCommonIdx = k;
+                } else {
+                    break;
+                }
+            }
+            
+            // Точка расхождения — последнее общее сообщение
+            if (lastCommonIdx >= 0) {
+                var commonMsgId = msgsA[lastCommonIdx].msg_id;
+                if (!branchSiblingsMap[commonMsgId]) {
+                    branchSiblingsMap[commonMsgId] = [];
+                }
+                if (branchSiblingsMap[commonMsgId].indexOf(bidA) < 0) {
+                    branchSiblingsMap[commonMsgId].push(bidA);
+                }
+                if (branchSiblingsMap[commonMsgId].indexOf(bidB) < 0) {
+                    branchSiblingsMap[commonMsgId].push(bidB);
                 }
             }
         }
+    }
+}
         
         async function loadPersonalities() {
             try {
