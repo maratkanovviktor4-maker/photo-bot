@@ -929,7 +929,7 @@
                     if (!chat.allBranches[data.branch_id]) {
                         chat.allBranches[data.branch_id] = {
                             name: data.branch_name || 'Ветка',
-                            messages: data.msg_ids ? data.msg_ids.map(function(mid) { return { msg_id: mid }; }) : [],
+                            messages: [],
                             msg_ids: data.msg_ids || []
                         };
                     }
@@ -937,13 +937,50 @@
                     currentBranchId = data.branch_id;
                     chat.activeBranch = data.branch_id;
                     
-                    updateBranchesFromServer().then(function() {
-                        renderChatList();
-                        renderBranchesPanel();
+                    // Очищаем экран сразу
+                    chat.messages = [];
+                    if (data.msg_ids) {
+                        for (var k = 0; k < data.msg_ids.length; k++) {
+                            chat.messages.push({ role: 'placeholder', content: '', msg_id: data.msg_ids[k] });
+                        }
+                    }
+                    
+                    renderChatList();
+                    renderBranchesPanel();
+                    renderMessages();
+                    
+                    // Если есть reply — стримим ответ
+                    if (data.reply) {
+                        var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                        var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
+                        chat.messages.push(assistantMsg);
+                        var newMsgIndex = chat.messages.length - 1;
+                        var streamId = 'branch_stream_' + newMsgIndex;
+                        activeStreamId = streamId;
+                        
                         renderMessages();
+                        streamReplyIntoChat(chat, newMsgIndex, fullContent, streamId, function() {
+                            chat.lastMessageTime = Date.now();
+                            chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                            autoNameChat(chat);
+                            updateBranchesFromServer().then(function() {
+                                renderChatList();
+                                renderBranchesPanel();
+                            });
+                            updateBalance();
+                            isSending = false;
+                            activeStreamId = null;
+                            sendBtnArrow();
+                        });
+                    } else {
+                        updateBranchesFromServer().then(function() {
+                            renderChatList();
+                            renderBranchesPanel();
+                            renderMessages();
+                        });
                         isSending = false;
                         sendBtnArrow();
-                    });
+                    }
                 } else {
                     var errData = await resp.json();
                     alert('Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
