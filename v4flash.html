@@ -957,22 +957,9 @@
                 if (resp.ok) {
                     var data = await resp.json();
                     
-                    // Автонейм ветки от ассистента
-                    if (isAssistant && !data.branch_name) {
-                        var assistantContent = msg.content || '';
-                        var autoName = assistantContent.replace(/[#*`>\n]/g, ' ').split(' ').slice(0, 5).join(' ') || 'Ветка';
-                        if (autoName.length > 30) autoName = autoName.substring(0, 30) + '...';
-                        data.branch_name = autoName;
-                    }
-                    
                     // Переключаемся в новую ветку
                     currentBranchId = data.branch_id;
                     chat.activeBranch = data.branch_id;
-                    
-                    // Сохраняем автонейм локально
-                    if (data.branch_name && chat.allBranches && chat.allBranches[data.branch_id]) {
-                        chat.allBranches[data.branch_id].name = data.branch_name;
-                    }
                     
                     // Загружаем полное дерево с сервера (НЕ перезаписываем chat.messages)
                     await updateBranchesFromServer();
