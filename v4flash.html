@@ -898,18 +898,41 @@
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             
+            // Сначала скрываем все навигации
+            document.querySelectorAll('.branch-nav').forEach(function(nav) {
+                nav.style.display = 'none';
+                nav.innerHTML = '';
+            });
+            
+            // Собираем все msg_id текущей ветки
+            var branchMsgIds = new Set();
+            for (var i = 0; i < chat.messages.length; i++) {
+                if (chat.messages[i].msg_id) {
+                    branchMsgIds.add(chat.messages[i].msg_id);
+                }
+            }
+            
+            // Для каждого сообщения в ветке проверяем, является ли оно точкой ветвления
             for (var i = 0; i < chat.messages.length; i++) {
                 var m = chat.messages[i];
                 if (!m.msg_id) continue;
                 
-                var branches = await getMsgBranches(m.msg_id);
                 var nav = document.getElementById('branchnav-' + i);
                 if (!nav) continue;
                 
+                var branches = await getMsgBranches(m.msg_id);
+                
+                // Показываем стрелки только если >1 ветки и текущая ветка одна из них
                 if (branches.length > 1) {
                     var currentIdx = -1;
                     for (var b = 0; b < branches.length; b++) {
                         if (branches[b].branch_id === currentBranchId) { currentIdx = b; break; }
+                    }
+                    
+                    // Если текущая ветка не найдена в списке — не показываем
+                    if (currentIdx === -1) {
+                        nav.style.display = 'none';
+                        continue;
                     }
                     
                     var html = '';
@@ -922,8 +945,6 @@
                     }
                     nav.innerHTML = html;
                     nav.style.display = 'inline-flex';
-                } else {
-                    nav.style.display = 'none';
                 }
             }
         }
