@@ -894,12 +894,13 @@
             isSending = true;
             sendBtnStop();
             
+            var placeholderId = 'branch_create_' + Date.now();
+            
             // Только для ветвления от user — затираем сообщения ПОСЛЕ и показываем спиннер
             if (msg.role === 'user') {
                 chat.messages = chat.messages.slice(0, msgIndex + 1);
                 renderMessages();
                 
-                var placeholderId = 'branch_create_' + Date.now();
                 var area = document.getElementById('chatArea');
                 var loadingRow = document.createElement('div');
                 loadingRow.className = 'message-row assistant';
