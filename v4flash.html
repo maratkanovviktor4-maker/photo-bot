@@ -776,7 +776,12 @@
                 if (b === 'main') return 1;
                 var aCount = (branches[a].msg_ids && branches[a].msg_ids.length) || 0;
                 var bCount = (branches[b].msg_ids && branches[b].msg_ids.length) || 0;
-                return bCount - aCount;
+                if (aCount !== bCount) return bCount - aCount;
+                var aMsgs = branches[a].messages || [];
+                var bMsgs = branches[b].messages || [];
+                var aTime = aMsgs.length > 0 ? (aMsgs[aMsgs.length - 1].timestamp ? new Date(aMsgs[aMsgs.length - 1].timestamp).getTime() : 0) : 0;
+                var bTime = bMsgs.length > 0 ? (bMsgs[bMsgs.length - 1].timestamp ? new Date(bMsgs[bMsgs.length - 1].timestamp).getTime() : 0) : 0;
+                return aTime - bTime;
             });
             
             list.innerHTML = sortedIds.map(function(bid) {
