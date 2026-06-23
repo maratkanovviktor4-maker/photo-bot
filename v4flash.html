@@ -896,8 +896,11 @@
             var originalContent = msg.content;
             var originalHTML = contentDiv.innerHTML;
             
+            var isAssistant = msg.role === 'assistant';
+            
             var textarea = document.createElement('textarea');
-            textarea.value = originalContent;
+            textarea.value = isAssistant ? '' : originalContent;
+            textarea.placeholder = isAssistant ? 'Введите продолжение...' : '';
             textarea.style.cssText = 'width:100%;min-height:60px;background:rgba(0,203,245,0.08);color:#e0e0e0;border:1px solid #00CBF5;border-radius:12px;padding:10px 14px;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;resize:vertical;outline:none;line-height:1.5;';
             if (document.body.classList.contains('light')) {
                 textarea.style.background = '#EDF3FE';
@@ -920,10 +923,11 @@
                 
                 document.getElementById('branchSendBtn_' + msgIndex).onclick = function() {
                     var newText = textarea.value.trim();
-                    if (!newText) newText = originalContent;
+                    if (!newText && !isAssistant) newText = originalContent;
+                    if (!newText && isAssistant) return;
                     contentDiv.innerHTML = originalHTML;
                     actionsDiv.innerHTML = oldActionsHTML;
-                    sendBranchFromEditWithText(msgIndex, newText, msg.msg_id);
+                    sendBranchFromEditWithText(msgIndex, newText, msg.msg_id, isAssistant);
                 };
                 
                 document.getElementById('branchCancelBtn_' + msgIndex).onclick = function() {
@@ -946,7 +950,7 @@
             }
         }
         
-        async function sendBranchFromEditWithText(msgIndex, text, sourceMsgId) {
+        async function sendBranchFromEditWithText(msgIndex, text, sourceMsgId, isAssistant) {
             if (isSending) return;
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
@@ -1025,7 +1029,11 @@
                     currentBranchId = data.branch_id;
                     chat.messages = [];
                     if (forkIndex >= 0) {
-                        for (var k = 0; k < forkIndex; k++) { chat.messages.push(oldMessages[k]); }
+                        if (isAssistant) {
+                            for (var k = 0; k <= forkIndex; k++) { chat.messages.push(oldMessages[k]); }
+                        } else {
+                            for (var k = 0; k < forkIndex; k++) { chat.messages.push(oldMessages[k]); }
+                        }
                     }
                     chat.messages.push({ role: 'user', content: text, msg_id: data.user_msg_id });
                     
