@@ -1248,16 +1248,18 @@
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
             
-            // Собираем братьев по parent_msg_id из дерева ветки
-            var siblingsMap = {};
-            if (chat && chat.allBranches && chat.allBranches[currentBranchId]) {
-                var branchData = chat.allBranches[currentBranchId];
-                var allMsgs = branchData.messages || [];
-                for (var si = 0; si < allMsgs.length; si++) {
-                    var sm = allMsgs[si];
-                    var pid = sm.parent_msg_id || 'root';
-                    if (!siblingsMap[pid]) siblingsMap[pid] = [];
-                    siblingsMap[pid].push(sm);
+            // Собираем ветки, содержащие тот же msg_id (субветки)
+            var branchSiblingsMap = {};
+            if (chat && chat.allBranches) {
+                for (var bid in chat.allBranches) {
+                    var bMsgs = chat.allBranches[bid].messages || [];
+                    for (var bi = 0; bi < bMsgs.length; bi++) {
+                        var bMid = bMsgs[bi].msg_id;
+                        if (!branchSiblingsMap[bMid]) branchSiblingsMap[bMid] = [];
+                        if (branchSiblingsMap[bMid].indexOf(bid) < 0) {
+                            branchSiblingsMap[bMid].push(bid);
+                        }
+                    }
                 }
             }
             
@@ -1276,41 +1278,31 @@
                 area.innerHTML = branchIndicator + chat.messages.map((m, i) => {
                     var actionsHtml = '';
                     if (m.role === 'user') {
-                        var userParentId = m.parent_msg_id || 'root';
-                        var userSiblings = siblingsMap[userParentId] || [];
+                        var userBranches = branchSiblingsMap[m.msg_id] || [];
                         var userNavHtml = '';
-                        if (userSiblings.length > 1) {
-                            var userIdx = -1;
-                            for (var ui = 0; ui < userSiblings.length; ui++) {
-                                if (userSiblings[ui].msg_id === m.msg_id) { userIdx = ui; break; }
-                            }
-                            if (userIdx >= 0) {
-                                userNavHtml = '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#aaa;margin-right:6px;">' +
-                                    '<button onclick="event.stopPropagation();navigateSibling(' + i + ',-1)" style="background:transparent;border:none;color:#aaa;cursor:pointer;font-size:14px;padding:0 2px;">◂</button>' +
-                                    '<span>' + (userIdx + 1) + '/' + userSiblings.length + '</span>' +
-                                    '<button onclick="event.stopPropagation();navigateSibling(' + i + ',1)" style="background:transparent;border:none;color:#aaa;cursor:pointer;font-size:14px;padding:0 2px;">▸</button>' +
-                                    '</span>';
-                            }
+                        if (userBranches.length > 1) {
+                            var userBrIdx = userBranches.indexOf(currentBranchId);
+                            if (userBrIdx < 0) userBrIdx = 0;
+                            userNavHtml = '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#00CBF5;margin-right:6px;">' +
+                                '<button onclick="event.stopPropagation();navigateBranchSibling(\'' + m.msg_id + '\',-1)" style="background:transparent;border:none;color:#00CBF5;cursor:pointer;font-size:14px;padding:0 2px;">◂</button>' +
+                                '<span>' + (userBrIdx + 1) + '/' + userBranches.length + '</span>' +
+                                '<button onclick="event.stopPropagation();navigateBranchSibling(\'' + m.msg_id + '\',1)" style="background:transparent;border:none;color:#00CBF5;cursor:pointer;font-size:14px;padding:0 2px;">▸</button>' +
+                                '</span>';
                         }
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="regenerateUserMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
                         actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>`;
                     } else {
-                        var assistantParentId = m.parent_msg_id || 'root';
-                        var assistantSiblings = siblingsMap[assistantParentId] || [];
+                        var assistantBranches = branchSiblingsMap[m.msg_id] || [];
                         var assistantNavHtml = '';
-                        if (assistantSiblings.length > 1) {
-                            var assistantIdx = -1;
-                            for (var ai = 0; ai < assistantSiblings.length; ai++) {
-                                if (assistantSiblings[ai].msg_id === m.msg_id) { assistantIdx = ai; break; }
-                            }
-                            if (assistantIdx >= 0) {
-                                assistantNavHtml = '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#aaa;margin-right:6px;">' +
-                                    '<button onclick="event.stopPropagation();navigateSibling(' + i + ',-1)" style="background:transparent;border:none;color:#aaa;cursor:pointer;font-size:14px;padding:0 2px;">◂</button>' +
-                                    '<span>' + (assistantIdx + 1) + '/' + assistantSiblings.length + '</span>' +
-                                    '<button onclick="event.stopPropagation();navigateSibling(' + i + ',1)" style="background:transparent;border:none;color:#aaa;cursor:pointer;font-size:14px;padding:0 2px;">▸</button>' +
-                                    '</span>';
-                            }
+                        if (assistantBranches.length > 1) {
+                            var assistantBrIdx = assistantBranches.indexOf(currentBranchId);
+                            if (assistantBrIdx < 0) assistantBrIdx = 0;
+                            assistantNavHtml = '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#00CBF5;margin-right:6px;">' +
+                                '<button onclick="event.stopPropagation();navigateBranchSibling(\'' + m.msg_id + '\',-1)" style="background:transparent;border:none;color:#00CBF5;cursor:pointer;font-size:14px;padding:0 2px;">◂</button>' +
+                                '<span>' + (assistantBrIdx + 1) + '/' + assistantBranches.length + '</span>' +
+                                '<button onclick="event.stopPropagation();navigateBranchSibling(\'' + m.msg_id + '\',1)" style="background:transparent;border:none;color:#00CBF5;cursor:pointer;font-size:14px;padding:0 2px;">▸</button>' +
+                                '</span>';
                         }
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
@@ -1408,6 +1400,16 @@
                 document.querySelectorAll('.message-content pre code').forEach(function(el) { hljs.highlightElement(el); });
             }
             setupFloatingCopyButtons();
+        }
+        function navigateBranchSibling(msgId, direction) {
+            var branches = branchSiblingsMap[msgId];
+            if (!branches || branches.length <= 1) return;
+            var curIdx = branches.indexOf(currentBranchId);
+            if (curIdx < 0) curIdx = 0;
+            var newIdx = curIdx + direction;
+            if (newIdx < 0) newIdx = branches.length - 1;
+            if (newIdx >= branches.length) newIdx = 0;
+            switchBranch(branches[newIdx]);
         }        
         function copyMessage(index) {
             const chat = chats.find(c => c.id === currentChatId);
