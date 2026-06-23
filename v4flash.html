@@ -1017,9 +1017,10 @@
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
             
-            msg.content = newText;
-            
+            // Обрезаем сообщения ПОСЛЕ выбранного user (как в createBranchFromMessage)
+            chat.messages = chat.messages.slice(0, msgIndex + 1);
             renderMessages();
+            
             var placeholderId = 'regen_user_' + Date.now();
             var area = document.getElementById('chatArea');
             var loadingRow = document.createElement('div');
@@ -1031,7 +1032,7 @@
             if (main) { main.scrollTop = main.scrollHeight; }
             
             try {
-                var resp = await fetch(SERVER_URL + '/regenerate_user', {
+                var resp = await fetch(SERVER_URL + '/create_branch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
                     body: JSON.stringify({
@@ -1039,9 +1040,9 @@
                         model: 'flash',
                         mode: currentMode,
                         chat_id: currentChatId,
-                        branch_id: currentBranchId,
-                        edit_msg_id: msg.msg_id,
-                        new_prompt: newText
+                        source_msg_id: msg.msg_id,
+                        branch_name: '',
+                        prompt: newText
                     })
                 });
                 
@@ -1051,28 +1052,51 @@
                 if (resp.ok) {
                     var data = await resp.json();
                     
-                    var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
-                    chat.messages.push(assistantMsg);
-                    var newMsgIndex = chat.messages.length - 1;
-                    var streamId = 'regen_stream_' + newMsgIndex;
-                    activeStreamId = streamId;
+                    currentBranchId = data.branch_id;
+                    chat.activeBranch = data.branch_id;
                     
-                    renderMessages();
-                    streamReplyIntoChat(chat, newMsgIndex, fullContent, streamId, function() {
-                        chat.lastMessageTime = Date.now();
-                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                        autoNameChat(chat);
-                        updateBranchesFromServer().then(function() {
-                            renderMessages();
-                            renderBranchesPanel();
+                    await updateBranchesFromServer();
+                    
+                    if (chat.allBranches && chat.allBranches[data.branch_id]) {
+                        chat.messages = chat.allBranches[data.branch_id].messages || [];
+                    } else {
+                        chat.messages = [];
+                    }
+                    
+                    renderChatList();
+                    renderBranchesPanel();
+                    
+                    if (data.reply) {
+                        while (chat.messages.length > 0 && chat.messages[chat.messages.length - 1].role === 'assistant') {
+                            chat.messages.pop();
+                        }
+                        var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                        var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
+                        chat.messages.push(assistantMsg);
+                        var newMsgIndex = chat.messages.length - 1;
+                        var streamId = 'regen_stream_' + newMsgIndex;
+                        activeStreamId = streamId;
+                        
+                        renderMessages();
+                        streamReplyIntoChat(chat, newMsgIndex, fullContent, streamId, function() {
+                            chat.lastMessageTime = Date.now();
+                            chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                            autoNameChat(chat);
+                            updateBranchesFromServer().then(function() {
+                                renderChatList();
+                                renderBranchesPanel();
+                            });
+                            updateBalance();
+                            isSending = false;
+                            activeStreamId = null;
+                            sendBtnArrow();
                         });
-                        renderChatList();
+                    } else {
+                        renderMessages();
                         updateBalance();
                         isSending = false;
-                        activeStreamId = null;
                         sendBtnArrow();
-                    });
+                    }
                 } else {
                     var errData = await resp.json();
                     alert('Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
