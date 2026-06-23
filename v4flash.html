@@ -131,8 +131,9 @@
         .message-actions button:hover { background: rgba(255,255,255,0.08); }
         body.light .message-actions button { background: transparent; border: none; color: #555; }
         body.light .message-actions button:hover { background: rgba(0,0,0,0.06); }
-        .branch-btn { color: #00CBF5 !important; font-weight: 500; }
-        .branch-btn:hover { background: rgba(0,203,245,0.15) !important; }
+        .branch-btn { font-weight: 500; }
+        .branch-btn:hover { background: rgba(255,255,255,0.08) !important; }
+        body.light .branch-btn:hover { background: rgba(0,0,0,0.06) !important; }
         .roll-btn { color: #888 !important; font-weight: 500; }
         .roll-btn:hover { background: rgba(255,255,255,0.08) !important; }
         body.light .roll-btn { color: #555 !important; }
@@ -577,6 +578,23 @@
                         });
                     }
                     chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                    for (var ci = 0; ci < chats.length; ci++) {
+                        var cht = chats[ci];
+                        if (cht.allBranches && cht.messages) {
+                            var branched = {};
+                            for (var bid in cht.allBranches) {
+                                var br = cht.allBranches[bid];
+                                if (bid !== 'main' && br.msg_ids && br.msg_ids.length > 0) {
+                                    branched[br.msg_ids[0]] = true;
+                                }
+                            }
+                            for (var mi = 0; mi < cht.messages.length; mi++) {
+                                if (branched[cht.messages[mi].msg_id]) {
+                                    cht.messages[mi]._branchCreated = true;
+                                }
+                            }
+                        }
+                    }
                 }
             } catch (e) {
                 console.error('loadChatsFromServer error:', e);
@@ -913,6 +931,7 @@
             var msg = chat.messages[msgIndex];
             if (!msg) return;
             
+            msg._branchCreated = true;
             isSending = true;
             sendBtnStop();
             
@@ -1262,12 +1281,12 @@
                     if (m.role === 'user') {
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="regenerateUserMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
-                        actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>`;
+                        actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения" style="color:${m._branchCreated ? '#00CBF5' : '#888'}"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>`;
                     } else {
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
                         actionsHtml += `<button class="roll-btn" onclick="regenerateAssistantMessage(${i})" title="Регенерировать ответ"><svg width="14" height="14" viewBox="0 -1 16 16" fill="currentColor"><path d="M15.854,6.146a.5.5,0,0,0-.708,0L14,7.293V7a7,7,0,1,0-7,7,.5.5,0,0,0,0-1,6,6,0,1,1,6-6v.293L11.854,6.146a.5.5,0,0,0-.708.708l2,2a.518.518,0,0,0,.163.109.5.5,0,0,0,.382,0,.518.518,0,0,0,.163-.109l2-2A.5.5,0,0,0,15.854,6.146Z"/></svg></button>`;
-                        actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения" style="color:#4caf50;"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#4caf50"/></svg></button>`;
+                        actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения" style="color:${m._branchCreated ? '#4caf50' : '#888'}"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>`;
                         actionsHtml += `<button onclick="shareChat('${currentChatId}')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293ZM14,17.58594V15.5a.99974.99974,0,0,0-1-1c-.25488,0-1.2959.04932-1.56152.085A14.00507,14.00507,0,0,0,4.05176,17.5332,9.01266,9.01266,0,0,1,13,9.5a.99974.99974,0,0,0,1-1V6.41406L19.58594,12Z"/></svg></button>`;
                         if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
                     }
