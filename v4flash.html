@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhotoBot — DeepSeek V4 Flash</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" id="highlightTheme">
+    <style>
+        .hljs { background: #1a1a2e; border-radius: 10px; padding: 14px; font-size: 14px; font-family: 'Courier New', monospace; }
+        body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
+    </style>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+        body.light ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
+        body.light ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+        body { font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; background: #201F28; color: #e0e0e0; height: 100vh; display: flex; overflow: hidden; width: 100vw; }
+        body.light { background: #ffffff; color: #111111; }
+        .sidebar { width: 260px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); display: flex; flex-direction: column; padding: 16px; border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; position: relative; transition: transform 0.3s ease; }
+        body.light .sidebar { background: rgba(240,240,240,0.8); border-right: none; }
+        .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .logo-row img { height: 32px; }
+        .logo-text { font-size: 15px; font-weight: 600; color: #00CBF5; margin-top: 4px; font-family: 'Inter', sans-serif; }
+        .new-chat { width: 100%; padding: 10px; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; border: 2px solid transparent; border-radius: 24px; font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 600; margin-top: 24px; margin-bottom: 12px; transition: 0.3s ease; box-shadow: 0 4px 16px rgba(0,203,245,0.3); }
+        .new-chat:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,203,245,0.4); }
+        .chat-list { flex: 1; overflow-y: auto; }
+        .chat-search { width: 100%; padding: 5px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #e0e0e0; font-size: 12px; font-family: 'Inter', sans-serif; outline: none; margin-bottom: 8px; height: 28px; }
+        body.light .chat-search { background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.1); color: #111; }
+        .chat-search::placeholder { color: #666; }
+        body.light .chat-search::placeholder { color: #999; }
+        .chat-search:focus { border-color: #00CBF5; }
+        .search-row { margin-bottom: 8px; }
+        .search-row .chat-search { width: calc(100% - 36px); margin-bottom: 0; }
+        .sidebar-toggle { position: fixed; top: 64px; left: 222px; width: 28px; height: 28px; background: rgba(34,34,34,0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #888; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: left 0.3s ease, background 0.15s; }
+        .collapsed-sidebar .sidebar-toggle { left: 8px; }
+        .collapsed-sidebar .main { margin-left: -260px; }
+        body.light .sidebar-toggle { background: rgba(240,240,240,0.9); border: 1px solid rgba(0,0,0,0.1); color: #555; }
+        .sidebar-toggle:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
+        body.light .sidebar-toggle:hover { background: rgba(0,0,0,0.06); }
+        .sidebar.collapsed { transform: translateX(-100%); }
+        .chat-item { display: flex; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #a0a0b0; margin-bottom: 2px; transition: 0.15s; position: relative; font-family: 'Inter', sans-serif; }
+        body.light .chat-item { color: #555; }
+        .chat-item:hover { background: rgba(0,203,245,0.1); color: #e0e0e0; }
+        body.light .chat-item:hover { background: rgba(0,0,0,0.05); color: #111; }
+        .chat-item.active { background: rgba(0,203,245,0.15); color: #00CBF5; font-weight: 600; }
+        body.light .chat-item.active { background: rgba(0,0,0,0.08); }
+        .chat-item .chat-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-item .chat-menu-btn { width: 24px; height: 24px; border-radius: 4px; border: none; background: transparent; color: #666; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: 6px; font-family: 'Inter', sans-serif; }
+        .chat-item .chat-menu-btn:hover { background: rgba(0,203,245,0.2); color: #e0e0e0; }
+        .chat-menu-dropdown { position: absolute; right: 0; top: 100%; background: rgba(34,34,34,0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 4px; z-index: 10; display: none; min-width: 140px; }
+        body.light .chat-menu-dropdown { background: rgba(255,255,255,0.95); border: 1px solid rgba(0,0,0,0.1); }
+        .chat-menu-dropdown.show { display: block; }
+        .chat-menu-dropdown button { display: block; width: 100%; padding: 8px 12px; border: none; background: transparent; color: #e0e0e0; font-size: 12px; cursor: pointer; text-align: left; border-radius: 4px; font-family: 'Inter', sans-serif; }
+        body.light .chat-menu-dropdown button { color: #333; }
+        .chat-menu-dropdown button:hover { background: rgba(0,203,245,0.15); }
+        .chat-menu-dropdown button.delete { color: #e74c3c; }
+        .chat-menu-dropdown button.delete:hover { background: rgba(231,76,60,0.15); }
+        body.light .chat-menu-dropdown button.delete svg { stroke: #c0392b; }
+        .sidebar-footer { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; margin-top: 8px; }
+        body.light .sidebar-footer { border-top: 1px solid rgba(0,0,0,0.08); }
+        .sidebar-footer a { color: #888; text-decoration: none; font-size: 12px; display: block; text-align: center; font-family: 'Inter', sans-serif; transition: 0.2s; }
+        .sidebar-footer a:hover { color: #00CBF5; }
+        .branches-panel { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; margin-top: 8px; max-height: 200px; overflow-y: auto; }
+        body.light .branches-panel { border-top: 1px solid rgba(0,0,0,0.08); }
+        .branches-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-family: 'Inter', sans-serif; }
+        body.light .branches-label { color: #999; }
+        .branch-item { display: flex; align-items: center; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; color: #888; transition: 0.15s; font-family: 'Inter', sans-serif; gap: 6px; }
+        body.light .branch-item { color: #666; }
+        .branch-item:hover { background: rgba(0,203,245,0.1); color: #e0e0e0; }
+        body.light .branch-item:hover { background: rgba(0,0,0,0.04); color: #111; }
+        .branch-item.active { background: rgba(0,203,245,0.15); color: #00CBF5; font-weight: 600; }
+        body.light .branch-item.active { background: rgba(0,0,0,0.06); }
+        .branch-item.branch-from-assistant:not(.active):hover { background: rgba(76,175,80,0.12) !important; color: #81c784 !important; }
+        .branch-item.branch-from-assistant.active:hover { background: rgba(76,175,80,0.18) !important; }
+        body.light .branch-item.branch-from-assistant.active:hover { background: rgba(76,175,80,0.1) !important; }
+        body.light .branch-item.branch-from-assistant:not(.active):hover { background: rgba(76,175,80,0.08) !important; color: #2e7d32 !important; }
+        .branch-item .branch-icon { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.6; }
+        .branch-item.active .branch-icon { opacity: 1; }
+        .branch-item .branch-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .branch-item .branch-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .branch-rename-btn:hover { color: #e0e0e0 !important; background: rgba(255,255,255,0.08); border-radius: 4px; }
+        body.light .branch-rename-btn:hover { color: #111 !important; background: rgba(0,0,0,0.06); }
+        .branch-delete-btn:hover { background: rgba(231,76,60,0.15); border-radius: 4px; }
+        body.light .branch-delete-btn:hover { background: rgba(231,76,60,0.1); }
+        .main { flex: 1; display: flex; flex-direction: column; background: #201F28; min-width: 0; overflow-y: auto; scroll-behavior: smooth; margin-left: 0; transition: margin-left 0.3s ease; padding-bottom: 0; }
+        body.light .main { background: #ffffff; }
+        .top-bar { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); background: #201F28; flex-shrink: 0; position: sticky; top: 0; z-index: 10; }
+        body.light .top-bar { background: rgba(240,240,240,0.8); backdrop-filter: blur(10px); border-bottom: none; }
+        .mode-btn { padding: 6px 16px; border-radius: 16px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid transparent; font-family: 'Inter', sans-serif; transition: 0.3s ease; background: rgba(34,34,34,0.8); color: #a0a0b0; }
+        body.light .mode-btn { background: rgba(0,0,0,0.05); color: #555; }
+        .mode-btn.active { background: linear-gradient(90deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; font-weight: 600; box-shadow: 0 0 16px rgba(0,203,245,0.7); }
+        body.light .mode-btn.active { background: linear-gradient(90deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; font-weight: 600; box-shadow: 0 0 16px rgba(0,203,245,0.7); }
+        .mode-btn:hover:not(.active) { border-color: #00CBF5; color: #e0e0e0; }
+        body.light .mode-btn:hover:not(.active) { color: #111; }
+        #balanceDisplay { font-size: 12px; color: #00CBF5; font-family: 'Inter', sans-serif; white-space: nowrap; margin-right: auto; }
+        .chat-wrapper { width: 100%; max-width: 775px; display: flex; flex-direction: column; margin: 0 auto; position: relative; flex: 1 0 auto; }
+        .chat-area { flex: 1 0 auto; padding: 20px 0 25px 0; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 0; }
+        .scroll-bottom-btn { position: absolute; bottom: calc(100% + 16px); right: 12px; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.1); color: #e0e0e0; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; display: none; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10002; }
+        .scroll-bottom-btn:hover { background: rgba(255,255,255,0.2); }
+        body.light .scroll-bottom-btn { background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.15); }
+        body.light .scroll-bottom-btn:hover { background: #e0e0e0; }
+        .chat-area .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #555; }
+        body.light .chat-area .empty-state { color: #999; }
+        .chat-area .empty-state .logo-lg { height: 60px; opacity: 0.6; }
+        .chat-area .empty-state .title { font-size: 22px; font-weight: 600; color: #777; font-family: 'Inter', sans-serif; }
+        body.light .chat-area .empty-state .title { color: #333; }
+        .message-row { display: flex; gap: 12px; align-items: flex-start; max-width: 100%; position: relative; }
+        .message-row.user { align-self: flex-end; flex-direction: row-reverse; max-width: 75%; }
+        .message-row.assistant { align-self: flex-start; }
+        .message-content { padding: 10px 14px; border-radius: 12px; font-size: 15px !important; line-height: 1.5; white-space: pre-wrap; word-break: break-word; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important; max-width: 100%; overflow-x: hidden; }
+        .message-row.assistant .message-content { background: transparent; backdrop-filter: none; border-radius: 4px; }
+        body.light .message-row.assistant .message-content { background: #ffffff; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
+        .message-row.user .message-content { background: rgba(0,203,245,0.15); border-radius: 18px; }
+        body.light .message-row.user .message-content { background: #EDF3FE; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
+        .message-content pre { background: #1a1a2e; padding: 14px; padding-top: 32px; border-radius: 10px; overflow-x: auto; font-size: 14px; margin: 8px 0; border: none; white-space: pre-wrap; word-break: break-all; position: relative; }
+        body.light .message-content pre { background: #f8f8f8; border: none; color: #111; }
+        .message-content pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; border-radius: 0; display: block; color: inherit; }
+        .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; }
+        body.light .message-content code { background: #f5f5f5; color: #111; }
+        .floating-code-header { position: absolute; top: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; z-index: 5; display: flex; align-items: center; justify-content: space-between; line-height: 1; }
+        body.light .floating-code-header { background: #f8f8f8; color: #555; }
+        .message-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+        .message-row.user .message-actions { justify-content: flex-end; }
+        .message-row.assistant .message-actions { justify-content: flex-start; }
+        .message-actions button { background: transparent; border: none; color: #888; cursor: pointer; padding: 6px 8px; border-radius: 8px; font-family: 'Inter', sans-serif; transition: background 0.15s; line-height: 1; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+        .message-actions button:hover { background: rgba(255,255,255,0.08); }
+        body.light .message-actions button { background: transparent; border: none; color: #555; }
+        body.light .message-actions button:hover { background: rgba(0,0,0,0.06); }
+        .branch-btn { color: #00CBF5 !important; font-weight: 500; }
+        .branch-btn:hover { background: rgba(0,203,245,0.15) !important; }
+        .roll-btn { color: #888 !important; font-weight: 500; }
+        .roll-btn:hover { background: rgba(255,255,255,0.08) !important; }
+        body.light .roll-btn { color: #555 !important; }
+        body.light .roll-btn:hover { background: rgba(0,0,0,0.06) !important; }
+        .input-area { padding: 0; border-top: none; display: flex; gap: 0; align-items: flex-end; background: #201F28; flex-shrink: 0; overflow: visible; position: relative; flex-wrap: wrap; margin-bottom: 25px; }
+        body.light .input-area { background: #ffffff; border-top: none; }
+        .input-area textarea { flex: 1; padding: 0; border-radius: 0; border: none; background: transparent; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; outline: none; resize: none; min-height: 48px; max-height: 300px; overflow-y: auto; min-width: 0; width: 100%; }
+        .input-area textarea:focus { outline: none; border: none; box-shadow: none; }
+        body.light .input-area textarea { background: transparent; border: none; color: #111; }
+        body.light .input-area textarea:focus { outline: none; border: none; box-shadow: none; }
+        #sendBtn { width: 36px; height: 36px; padding: 0; background: linear-gradient(90deg, #00CBF5, #14E9FC); color: #201F28; border: 2px solid transparent; border-radius: 50%; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 16px; transition: 0.3s ease; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,203,245,0.3); display: inline-flex; align-items: center; justify-content: center; }
+        #sendBtn:disabled { background: rgba(0,203,245,0.3); color: rgba(32,31,40,0.4); cursor: not-allowed; box-shadow: none; transform: none; }
+        #sendBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,203,245,0.4); }
+        .attach-btn { padding: 8px; background: transparent; border: none; border-radius: 10px; color: #00CBF5; cursor: pointer; font-family: 'Inter', sans-serif; transition: 0.3s ease; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        body.light .attach-btn { background: transparent; border: none; }
+        body.light .attach-btn:hover { background: rgba(0,0,0,0.06); }
+        .attach-btn:hover { color: #14E9FC; background: rgba(255,255,255,0.1); }
+        .file-name-inline { font-size: 12px; color: #00CBF5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto; margin-right: 0; }
+        .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
+        body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
+        .thinking-dots::after { content: ''; animation: dots 1.5s infinite; }
+        @keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
+        .thinking-dots { display: inline; }
+        .file-list { width: 100%; display: flex; flex-wrap: wrap; gap: 4px; padding: 0; border-radius: 16px; overflow: hidden; }
+        .file-tag { display: inline-flex; align-items: center; background: rgba(0,203,245,0.15); border: 1px solid rgba(0,203,245,0.3); border-radius: 6px; padding: 3px 8px; font-size: 12px; color: #00CBF5; gap: 6px; }
+        body.light .file-tag { background: rgba(0,203,245,0.1); color: #005f73; }
+        .file-tag button { background: transparent; border: none; color: #e74c3c; cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
+        .file-tag button:hover { color: #ff6b6b; }
+        .input-row-wrapper { width: 100%; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; transition: border-color 0.2s, box-shadow 0.2s; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .input-row-wrapper:focus-within { border-color: rgba(255,255,255,0.08); }
+        body.light .input-row-wrapper { background: #ffffff; border: 1px solid rgba(0,0,0,0.15); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        body.light .input-row-wrapper:focus-within { border-color: rgba(0,0,0,0.15); }
+        .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; padding: 8px 12px 0 12px; }
+        .input-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+        .nav-container { position: fixed; right: 0; top: 50%; transform: translateY(-50%); width: 220px; max-height: 300px; overflow-y: auto; z-index: 100; padding: 8px 0; pointer-events: auto; }
+        .nav-container:hover { overflow-y: auto; background: rgba(20,20,30,0.9); backdrop-filter: blur(10px); border: none; border-radius: 12px 0 0 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        body.light .nav-container:hover { background: rgba(255,255,255,0.9); border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+        .nav-strip { display: flex; align-items: center; gap: 8px; padding: 6px 10px 6px 14px; cursor: pointer; flex-direction: row-reverse; }
+        .nav-bar { width: 5px; height: 2px; border-radius: 1px; background: #aaa; flex-shrink: 0; }
+        .nav-text { font-size: 11px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity 0.2s; }
+        .nav-container:hover .nav-text { opacity: 1; }
+        .nav-strip:hover .nav-bar { background: #555; }
+        .nav-strip:hover .nav-text { color: #555; }
+        .nav-strip.active .nav-bar { background: #00CBF5; width: 9px; }
+        .nav-strip.active .nav-text { color: #00CBF5; }
+        .nav-container::-webkit-scrollbar { width: 4px; }
+        .nav-container::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
+        .nav-container:hover::-webkit-scrollbar-thumb { background: rgba(170,170,170,0.4); }
+        .reasoning-block { background: rgba(0,203,245,0.06); border-left: 3px solid #00CBF5; padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; font-size: 14px; color: #aab; }
+        body.light .reasoning-block { background: rgba(0,180,220,0.06); color: #556; }
+        .preview-panel { position: fixed; right: 0; top: 0; width: var(--preview-width, 50%); height: 100vh; background: #ffffff; z-index: 9998; border-left: 1px solid rgba(0,0,0,0.08); display: none; flex-direction: column; }
+        .preview-panel.active { display: flex; }
+        .preview-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f5f5f5; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; }
+        .preview-title { font-size: 12px; color: #555; font-family: 'Inter', sans-serif; }
+        .preview-close { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; padding: 0 4px; line-height: 1; }
+        .preview-close:hover { color: #333; }
+        .preview-iframe { flex: 1; width: 100%; border: none; }
+        .resize-handle { position: fixed; top: 50%; right: var(--preview-width, 50%); width: 12px; height: 23px; cursor: col-resize; z-index: 9999; display: none; background: #00CBF5; border-radius: 6px; transform: translate(50%, -50%); }
+        .resize-handle.active { display: block; }
+        .resize-handle:hover { background: #14E9FC; }
+        .resize-handle.dragging { background: #00CBF5; }
+        .main.preview-open { padding-right: var(--preview-width, 50%); }
+        .bottom-container { position: sticky; bottom: 0; z-index: 10000; background: #201F28; }
+        body.light .bottom-container { background: #ffffff; }
+        .message-content ol, .message-content ul { padding-left: 24px; margin: 6px 0; }
+        .message-content li { margin: 2px 0; }
+        .message-content ul ul, .message-content ol ol, .message-content ul ol, .message-content ol ul { padding-left: 20px; }
+        .message-content blockquote { border-left: 3px solid #00CBF5; padding: 6px 14px; margin: 8px 0; color: #aab; background: rgba(0,203,245,0.05); border-radius: 0 6px 6px 0; }
+        body.light .message-content blockquote { color: #556; background: rgba(0,0,0,0.03); }
+        .message-content del { opacity: 0.6; }
+        .message-content table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 14px; }
+        .message-content th, .message-content td { border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; text-align: left; }
+        .message-content h4 { margin: 10px 0 4px; font-size: 15px; font-weight: 600; }
+        .message-content th { background: rgba(0,203,245,0.1); font-weight: 600; }
+        body.light .message-content th { background: rgba(0,0,0,0.05); }
+        body.light .message-content th, body.light .message-content td { border-color: rgba(0,0,0,0.1); }
+        .branch-indicator { font-size: 11px; color: #00CBF5; padding: 4px 8px; background: rgba(0,203,245,0.1); border-radius: 12px; display: inline-block; margin-bottom: 8px; font-family: 'Inter', sans-serif; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="config.js"></script>
+</head>
+<body>
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Свернуть панель">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="sidebar">
+        <div class="logo-row">
+            <img src="deepseek_logo.png" alt="DeepSeek Flash" onerror="this.style.display='none'">
+            <span class="logo-text"><span style="color:#8B5CF6;">V4 Flash</span></span>
+        </div>
+        <div class="search-row">
+            <input class="chat-search" id="chatSearch" placeholder="Поиск чата..." oninput="filterChats()">
+        </div>
+        <button class="new-chat" onclick="newChat()">Новый чат</button>
+        <div class="chat-list" id="chatList"></div>
+        <div class="branches-panel" id="branchesPanel" style="display:none;">
+            <div class="branches-label">Ветки</div>
+            <div id="branchesList"></div>
+        </div>
+        <div class="sidebar-footer">
+            <a href="index.html">На главную</a>
+        </div>
+    </div>
+    <div class="main">
+        <div class="top-bar">
+            <span id="balanceDisplay"> ...</span>
+            <select id="personalitySelect" onchange="changePersonality()" style="padding:6px 10px;border-radius:16px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;margin-right:8px;">
+                <option value="default">🤖 Ассистент</option>
+            </select>
+            <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
+        </div>
+        <div class="chat-wrapper">
+            <div class="chat-area" id="chatArea">
+                <div class="empty-state">
+                    <img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek Flash" onerror="this.style.display='none'">
+                    <div class="title">DeepSeek V4 Flash</div>
+                    <div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div>
+                </div>
+            </div>
+            <div class="bottom-container">
+                <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="scrollToBottom()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+                <div class="input-area" id="inputArea">
+                    <div id="dropZone" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none;align-items:center;justify-content:center;background:rgba(0,203,245,0.1);border:2px dashed #00CBF5;border-radius:16px;font-size:14px;color:#00CBF5;">Отпустите файл для загрузки</div>
+                    <div class="file-list" id="fileList"></div>
+                    <div class="input-row-wrapper">
+                        <div class="input-row">
+                            <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
+                            <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(isSending){stopTyping();}else{sendMessage();}}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,300)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,300)+'px';this._init=true;}"></textarea>
+                        </div>
+                        <div class="input-toolbar">
+                            <button class="mode-btn" id="reasonerToggle" onclick="toggleReasoner()" style="font-size:11px;padding:4px 10px;">Reasoner</button>
+                            <span class="file-name-inline" id="fileNameInline"></span>
+                            <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" transform="rotate(-45 12 12)"/></svg></button>
+                            <button id="sendBtn" onclick="sendMessage()" title="Отправить"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="nav-container" id="navContainer"></div>
+    <div id="customPersonalityModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10001;align-items:center;justify-content:center;">
+        <div style="background:#1a1a2e;border-radius:16px;padding:20px;width:90%;max-width:500px;border:1px solid rgba(255,255,255,0.08);">
+            <div style="font-size:16px;font-weight:600;margin-bottom:12px;color:#e0e0e0;">🎭 Кастомная личность</div>
+            <textarea id="customPersonalityInput" placeholder="Опиши, как должен отвечать ассистент..." style="width:100%;min-height:120px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;font-family:Inter,sans-serif;font-size:13px;resize:vertical;outline:none;"></textarea>
+            <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
+                <button onclick="closeCustomPersonality()" style="padding:8px 16px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#aaa;border-radius:8px;cursor:pointer;font-family:Inter,sans-serif;">Отмена</button>
+                <button onclick="saveCustomPersonality()" style="padding:8px 16px;background:linear-gradient(90deg,#00CBF5,#14E9FC);border:none;color:#201F28;border-radius:8px;cursor:pointer;font-family:Inter,sans-serif;font-weight:600;">Сохранить</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        var autoScroll = true;
+
+        const SERVER_URL = CONFIG.SERVER_URL;
+        let currentMode = 'chat';
+        let currentPersonality = localStorage.getItem('photobot_personality') || 'default';
+        let personalities = {};
+        let chats = [];
+        let currentChatId = null;
+        let currentBranchId = 'main';
+        let sessionToken = '';
+        let currentUserId = null;
+        let isSending = false;
+        let typingInterval = null;
+        let pendingFile = null;
+        let activeStreamId = null;
+        let allBranchesCache = {};
+
+        window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
+        window.addEventListener('drop', function(e) { e.preventDefault(); e.stopPropagation(); });
+        
+        async function loadPersonalities() {
+            try {
+                var resp = await fetch(SERVER_URL + '/get_personalities?session_token=' + sessionToken);
+                if (resp.ok) {
+                    var data = await resp.json();
+                    personalities = data.personalities;
+                    var select = document.getElementById('personalitySelect');
+                    select.innerHTML = '';
+                    for (var key in personalities) {
+                        var opt = document.createElement('option');
+                        opt.value = key;
+                        opt.textContent = personalities[key].name;
+                        if (key === currentPersonality) opt.selected = true;
+                        select.appendChild(opt);
+                    }
+                    var customOpt = document.createElement('option');
+                    customOpt.value = 'custom';
+                    customOpt.textContent = '🎭 Кастомная...';
+                    if (currentPersonality === 'custom') customOpt.selected = true;
+                    select.appendChild(customOpt);
+                    if (currentPersonality === 'custom') {
+                        var customResp = await fetch(SERVER_URL + '/get_custom_personality?user_id=' + currentUserId + '&session_token=' + sessionToken);
+                        if (customResp.ok) {
+                            var customData = await customResp.json();
+                            document.getElementById('customPersonalityInput').value = customData.custom_prompt || '';
+                        }
+                    }
+                }
+            } catch(e) { console.error('loadPersonalities:', e); }
+        }
+        
+        function changePersonality() {
+            var val = document.getElementById('personalitySelect').value;
+            if (val === 'custom') {
+                document.getElementById('customPersonalityModal').style.display = 'flex';
+                return;
+            }
+            var oldPersonality = currentPersonality;
+            currentPersonality = val;
+            localStorage.setItem('photobot_personality', val);
+            document.getElementById('personalitySelect').value = val;
+            var currentChat = chats.find(function(c) { return c.id === currentChatId; });
+            if (currentChat && currentChat.messages.length > 0 && oldPersonality !== val) {
+                newChat();
+                var newChatObj = chats[chats.length - 1];
+                if (newChatObj) {
+                    newChatObj._personality = val;
+                }
+                renderChatList();
+                renderMessages();
+                var select = document.getElementById('personalitySelect');
+                if (select) select.value = val;
+                var tempMsg = document.createElement('div');
+                tempMsg.style.cssText = 'text-align:center;padding:12px;color:#00CBF5;font-size:13px;font-family:Inter,sans-serif;';
+                tempMsg.textContent = '🔄 Новый чат с личностью «' + (personalities[val] ? personalities[val].name : val) + '»';
+                document.getElementById('chatArea').appendChild(tempMsg);
+                setTimeout(function() { if (tempMsg.parentNode) tempMsg.remove(); }, 3000);
+            }
+        }
+        
+        function closeCustomPersonality() {
+            document.getElementById('customPersonalityModal').style.display = 'none';
+            document.getElementById('personalitySelect').value = currentPersonality;
+        }
+        
+        async function saveCustomPersonality() {
+            var prompt = document.getElementById('customPersonalityInput').value.trim();
+            if (!prompt) {
+                closeCustomPersonality();
+                return;
+            }
+            try {
+                await fetch(SERVER_URL + '/save_custom_personality', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ user_id: currentUserId, prompt: prompt })
+                });
+                currentPersonality = 'custom';
+                localStorage.setItem('photobot_personality', 'custom');
+                document.getElementById('personalitySelect').value = 'custom';
+                document.getElementById('customPersonalityModal').style.display = 'none';
+            } catch(e) { console.error(e); }
+        }
+        
+        function toggleTheme() {
+            document.body.classList.toggle('light');
+            var isLight = document.body.classList.contains('light');
+            localStorage.setItem('photobot_theme', isLight ? 'light' : 'dark');
+            document.getElementById('themeToggle').textContent = isLight ? '🌙' : '☀️';
+            var hlTheme = document.getElementById('highlightTheme');
+            if (hlTheme) {
+                hlTheme.href = isLight 
+                    ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css'
+                    : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
+            }
+            document.querySelectorAll('.floating-code-header').forEach(function(h) {
+                h.style.background = isLight ? '#f8f8f8' : '#1a1a2e';
+                h.style.color = isLight ? '#555' : '#aaa';
+                h.querySelectorAll('button').forEach(function(b) {
+                    b.style.color = isLight ? '#555' : '#aaa';
+                });
+            });
+            document.querySelectorAll('.message-content pre').forEach(function(pre) {
+                if (pre._textarea) {
+                    pre._textarea.style.background = isLight ? '#ffffff' : '#0d0d1a';
+                    pre._textarea.style.color = isLight ? '#111' : '#e0e0e0';
+                    pre._textarea.style.border = isLight ? '1px solid rgba(0,0,0,0.15)' : '1px solid rgba(255,255,255,0.1)';
+                }
+            });
+        }
+        
+        (function() {
+            var saved = localStorage.getItem('photobot_theme');
+            var isLight = saved === 'light';
+            if (isLight) {
+                document.body.classList.add('light');
+                document.getElementById('themeToggle').textContent = '🌙';
+            }
+            var hlTheme = document.getElementById('highlightTheme');
+            if (hlTheme) {
+                hlTheme.href = isLight 
+                    ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css'
+                    : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
+            }
+            var savedMode = localStorage.getItem('photobot_mode');
+            if (savedMode === 'reasoner') {
+                currentMode = 'reasoner';
+                var btn = document.getElementById('reasonerToggle');
+                if (btn) btn.classList.add('active');
+            }
+            var savedSidebar = localStorage.getItem('photobot_sidebar');
+            if (savedSidebar === 'collapsed') {
+                var main = document.querySelector('.main');
+                var sidebar = document.querySelector('.sidebar');
+                var toggle = document.getElementById('sidebarToggle');
+                if (main) {
+                    main.style.transition = 'none';
+                }
+                if (sidebar) sidebar.classList.add('collapsed');
+                if (toggle) {
+                    toggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+                    toggle.title = 'Развернуть панель';
+                }
+                document.body.classList.add('collapsed-sidebar');
+                if (main) {
+                    main.offsetHeight;
+                    main.style.transition = '';
+                }
+            }
+        })();
+
+        function scrollToBottom() {
+            var main = document.querySelector('.main');
+            if (!main) return;
+            main.style.scrollBehavior = 'auto';
+            main.scrollTop = main.scrollHeight;
+            main.style.scrollBehavior = 'smooth';
+            autoScroll = true;
+        }
+
+        var mainEl = document.querySelector('.main');
+        if (mainEl) {
+            mainEl.addEventListener('scroll', function(e) {
+                if (e.target !== mainEl) return;
+                var btn = document.getElementById('scrollBottomBtn');
+                if (!mainEl) return;
+                var atBottom = mainEl.scrollHeight - mainEl.scrollTop - mainEl.clientHeight < 5;
+                if (atBottom) {
+                    btn.style.display = 'none';
+                    autoScroll = true;
+                } else {
+                    btn.style.display = 'flex';
+                    autoScroll = false;
+                }
+            }, true);
+            mainEl.addEventListener('wheel', function(e) {
+                if (e.deltaY < 0) {
+                    autoScroll = false;
+                    var btn = document.getElementById('scrollBottomBtn');
+                    if (btn) btn.style.display = 'flex';
+                }
+            }, true);
+        }
+        
+        (async function checkShareToken() {
+            var params = new URLSearchParams(window.location.search);
+            var token = params.get('token');
+            if (!token) return;
+            
+            var savedAuth = localStorage.getItem('photobot_auth');
+            if (!savedAuth) {
+                alert('Авторизуйтесь сначала, затем откройте ссылку снова.');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            var auth = JSON.parse(savedAuth);
+            if (!auth.session_token) {
+                alert('Сессия устарела. Авторизуйтесь заново.');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            try {
+                var resp = await fetch(SERVER_URL + '/import_shared_chat?token=' + token + '&session_token=' + auth.session_token);
+                if (resp.ok) {
+                    var data = await resp.json();
+                    window.location.href = 'v4flash.html?chat_id=' + data.chat_id;
+                } else {
+                    var err = await resp.json();
+                    alert('Ошибка импорта: ' + (err.error || 'Неизвестная ошибка'));
+                }
+            } catch(e) {
+                console.error('import error:', e);
+                alert('Ошибка соединения при импорте.');
+            }
+        })();
+        
+        const savedAuth = localStorage.getItem('photobot_auth');
+        if (savedAuth) {
+            const auth = JSON.parse(savedAuth);
+            currentUserId = auth.user_id;
+            sessionToken = auth.session_token || '';
+            if (!sessionToken || !currentUserId) {
+                alert('Сессия устарела. Авторизуйтесь заново на главной странице.');
+                window.location.href = 'index.html';
+            } else {
+                loadChatsFromServer();
+                updateBalance();
+                loadPersonalities();
+            }
+        } else {
+            alert('Авторизуйтесь на главной странице');
+            window.location.href = 'index.html';
+        }
+
+        async function loadChatsFromServer() {
+            try {
+                const resp = await fetch(`${SERVER_URL}/get_chat_history?user_id=${currentUserId}&model=flash&session_token=${sessionToken}`);
+                if (resp.status === 403) {
+                    alert('Сессия устарела. Авторизуйтесь заново.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                const data = await resp.json();
+                if (data.history) {
+                    chats = [];
+                    for (const [chatId, messages] of Object.entries(data.history)) {
+                        const title = data.titles && data.titles[chatId] ? data.titles[chatId] : ('Чат ' + chatId);
+                        const activeBranch = data.active_branches && data.active_branches[chatId] ? data.active_branches[chatId] : 'main';
+                        const allBranches = data.all_branches && data.all_branches[chatId] ? data.all_branches[chatId] : {};
+                        const personality = data.personalities && data.personalities[chatId] ? data.personalities[chatId] : 'default';
+                        
+                        var lastTime = 0;
+                        if (messages && messages.length > 0) {
+                            var lastMsg = messages[messages.length - 1];
+                            if (lastMsg && lastMsg.timestamp) {
+                                lastTime = new Date(lastMsg.timestamp).getTime();
+                            }
+                        }
+                        if (!lastTime) lastTime = parseInt(chatId) || 0;
+                        chats.push({
+                            id: chatId,
+                            title: title,
+                            messages: messages,
+                            activeBranch: activeBranch,
+                            allBranches: allBranches,
+                            _personality: personality,
+                            lastMessageTime: lastTime
+                        });
+                    }
+                    chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                }
+            } catch (e) {
+                console.error('loadChatsFromServer error:', e);
+            }
+            if (chats.length === 0) {
+                const chat = { id: String(Date.now()), title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: { 'main': { name: 'Основная', messages: [], msg_ids: [] } } };
+                chats.push(chat);
+            }
+            renderChatList();
+            var savedId = localStorage.getItem('photobot_active_chat');
+            var found = savedId ? chats.find(function(c) { return c.id === savedId; }) : null;
+            currentChatId = found ? found.id : (chats.length > 0 ? chats[chats.length - 1].id : null);
+            if (currentChatId) {
+                var chat = chats.find(function(c) { return c.id === currentChatId; });
+                if (chat) {
+                    currentBranchId = chat.activeBranch || 'main';
+                }
+                openChat(currentChatId);
+            } else {
+                renderMessages();
+            }
+        }
+        
+        async function updateBalance() {
+            try {
+                const resp = await fetch(`${SERVER_URL}/get_balance?user_id=${currentUserId}&session_token=${sessionToken}`);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    document.getElementById('balanceDisplay').textContent = `${data.flash.toFixed(1)} Stars`;
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        function escapeHtml(text) {
+            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        
+        function newChat() {
+            const chat = { id: Date.now().toString(), title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: { 'main': { name: 'Основная', messages: [], msg_ids: [] } }, lastMessageTime: Date.now() };
+            chats.push(chat);
+            chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+            currentChatId = chat.id;
+            localStorage.setItem('photobot_active_chat', currentChatId);
+            currentBranchId = 'main';
+            renderChatList();
+            renderMessages();
+            renderBranchesPanel();
+        }
+        
+        function openChat(id) {
+            closePreview();
+            currentChatId = id;
+            localStorage.setItem('photobot_active_chat', id);
+            var chat = chats.find(function(c) { return c.id === id; });
+            if (chat) {
+                if (chat._personality) {
+                    currentPersonality = chat._personality;
+                    localStorage.setItem('photobot_personality', currentPersonality);
+                    var select = document.getElementById('personalitySelect');
+                    if (select) select.value = currentPersonality;
+                }
+                currentBranchId = chat.activeBranch || 'main';
+                allBranchesCache = chat.allBranches || {};
+            }
+            renderChatList();
+            renderBranchesPanel();
+            renderMessages();
+            setTimeout(function() {
+                var main = document.querySelector('.main');
+                if (main) {
+                    main.style.scrollBehavior = 'auto';
+                    main.scrollTop = main.scrollHeight;
+                    main.style.scrollBehavior = 'smooth';
+                }
+            }, 150);
+        }
+        
+        function toggleChatMenu(e, id) {
+            e.stopPropagation();
+            document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
+            const dropdown = document.getElementById('menu_' + id);
+            if (dropdown) dropdown.classList.toggle('show');
+        }
+        
+        async function renameChat(id) {
+            const chat = chats.find(c => c.id === id);
+            const newName = prompt('Новое название:', chat?.title || '');
+            if (newName && chat) {
+                chat.title = newName;
+                renderChatList();
+                try {
+                    await fetch(`${SERVER_URL}/rename_chat`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: String(id), title: newName })
+                    });
+                } catch (e) {}
+            }
+        }
+        
+        async function shareChat(id) {
+            var chat = chats.find(function(c) { return c.id === id; });
+            if (!chat) return;
+            
+            try {
+                var resp = await fetch(SERVER_URL + '/share_chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        model: 'flash',
+                        chat_id: id,
+                        branch_id: chat.activeBranch || 'main'
+                    })
+                });
+                if (resp.ok) {
+                    var data = await resp.json();
+                    await navigator.clipboard.writeText(data.share_url);
+                    alert('Ссылка скопирована:\n' + data.share_url);
+                } else {
+                    alert('Ошибка при создании ссылки');
+                }
+            } catch(e) {
+                console.error('shareChat error:', e);
+            }
+        }
+        
+        async function deleteChat(id) {
+            if (!confirm('Удалить чат?')) return;
+            try {
+                await fetch(`${SERVER_URL}/delete_chat?user_id=${currentUserId}&model=flash&chat_id=${id}&session_token=${sessionToken}`, {
+                    method: 'DELETE'
+                });
+            } catch (e) {}
+            chats = chats.filter(c => c.id !== id);
+            if (currentChatId === id) {
+                currentChatId = chats.length > 0 ? chats[chats.length - 1].id : null;
+                if (currentChatId) {
+                    var chat = chats.find(function(c) { return c.id === currentChatId; });
+                    if (chat) currentBranchId = chat.activeBranch || 'main';
+                }
+            }
+            renderChatList();
+            renderBranchesPanel();
+            renderMessages();
+            document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
+        }
+        
+        function renderChatList() {
+            const list = document.getElementById('chatList');
+            list.innerHTML = chats.map(c => `
+                <div class="chat-item${c.id === currentChatId ? ' active' : ''}" onclick="openChat('${c.id}')">
+                    <span class="chat-name">${c.title}</span>
+                    <button class="chat-menu-btn" onclick="toggleChatMenu(event, '${c.id}')">...</button>
+                    <div class="chat-menu-dropdown" id="menu_${c.id}">
+                        <button onclick="renameChat('${c.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle;"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>Переименовать</button>
+                        <button onclick="shareChat('${c.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle;"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293ZM14,17.58594V15.5a.99974.99974,0,0,0-1-1c-.25488,0-1.2959.04932-1.56152.085A14.00507,14.00507,0,0,0,4.05176,17.5332,9.01266,9.01266,0,0,1,13,9.5a.99974.99974,0,0,0,1-1V6.41406L19.58594,12Z"/></svg>Поделиться</button>
+                        <button class="delete" onclick="deleteChat('${c.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle;"><path d="M7 4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2h4a1 1 0 1 1 0 2h-1.069l-.867 12.142A2 2 0 0 1 17.069 22H6.93a2 2 0 0 1-1.995-1.858L4.07 8H3a1 1 0 0 1 0-2h4V4zm2 2h6V4H9v2zM6.074 8l.857 12H17.07l.857-12H6.074zM10 10a1 1 0 0 1 1 1v6a1 1 0 1 1-2 0v-6a1 1 0 0 1 1-1zm4 0a1 1 0 0 1 1 1v6a1 1 0 1 1-2 0v-6a1 1 0 0 1 1-1z"/></svg>Удалить</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function filterChats() {
+            var query = document.getElementById('chatSearch').value.toLowerCase();
+            document.querySelectorAll('.chat-item').forEach(function(item) {
+                var name = item.querySelector('.chat-name').textContent.toLowerCase();
+                item.style.display = name.includes(query) ? 'flex' : 'none';
+            });
+        }
+        
+        function toggleSidebar() {
+            var sidebar = document.querySelector('.sidebar');
+            var toggle = document.getElementById('sidebarToggle');
+            sidebar.classList.toggle('collapsed');
+            document.body.classList.toggle('collapsed-sidebar');
+            if (sidebar.classList.contains('collapsed')) {
+                toggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+                toggle.title = 'Развернуть панель';
+                localStorage.setItem('photobot_sidebar', 'collapsed');
+            } else {
+                toggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+                toggle.title = 'Свернуть панель';
+                localStorage.setItem('photobot_sidebar', 'expanded');
+            }
+            var main = document.querySelector('.main');
+            if (main) {
+                var rafId;
+                var tick = function() {
+                    updateFloatingButtons();
+                    rafId = requestAnimationFrame(tick);
+                };
+                rafId = requestAnimationFrame(tick);
+                main.addEventListener('transitionend', function() {
+                    cancelAnimationFrame(rafId);
+                    updateFloatingButtons();
+                }, { once: true });
+            }
+        }
+        
+        function renderBranchesPanel() {
+            var panel = document.getElementById('branchesPanel');
+            var list = document.getElementById('branchesList');
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            
+            if (!chat || !chat.allBranches || Object.keys(chat.allBranches).length <= 1) {
+                panel.style.display = 'none';
+                return;
+            }
+            
+            panel.style.display = 'block';
+            var branches = chat.allBranches;
+            
+            var sortedIds = Object.keys(branches).sort(function(a, b) {
+                if (a === 'main') return -1;
+                if (b === 'main') return 1;
+                var aCount = (branches[a].msg_ids && branches[a].msg_ids.length) || 0;
+                var bCount = (branches[b].msg_ids && branches[b].msg_ids.length) || 0;
+                if (aCount !== bCount) return bCount - aCount;
+                var aMsgs = branches[a].messages || [];
+                var bMsgs = branches[b].messages || [];
+                var aTime = aMsgs.length > 0 ? (aMsgs[aMsgs.length - 1].timestamp ? new Date(aMsgs[aMsgs.length - 1].timestamp).getTime() : 0) : 0;
+                var bTime = bMsgs.length > 0 ? (bMsgs[bMsgs.length - 1].timestamp ? new Date(bMsgs[bMsgs.length - 1].timestamp).getTime() : 0) : 0;
+                return aTime - bTime;
+            });
+            
+            list.innerHTML = sortedIds.map(function(bid) {
+                var b = branches[bid];
+                var isFromAssistant = (b.source_role === 'assistant');
+                var iconColor = isFromAssistant ? '#4caf50' : '#00CBF5';
+                var rowClass = 'branch-item' + (bid === currentBranchId ? ' active' : '') + (isFromAssistant ? ' branch-from-assistant' : '');
+                return '<div class="' + rowClass + '" onclick="switchBranch(\'' + bid + '\')" style="' + (isFromAssistant && bid !== currentBranchId ? '--branch-hover-bg: rgba(76,175,80,0.12);' : '') + '">' +
+                    '<svg class="branch-icon" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="' + iconColor + '"/></svg>' +
+                    '<span class="branch-name">' + escapeHtml(b.name || bid) + '</span>' +
+                    '<span style="font-size:10px;color:#666;">' + ((b.msg_ids && b.msg_ids.length) || 0) + '</span>' +
+                    (bid !== 'main' ? '<button class="branch-delete-btn" onclick="event.stopPropagation();deleteBranch(\'' + bid + '\')" title="Удалить ветку" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:12px;padding:0 4px;">✕</button>' : '') +
+                    '<button class="branch-rename-btn" onclick="event.stopPropagation();renameBranch(\'' + bid + '\')" title="Переименовать" style="background:transparent;border:none;color:#888;cursor:pointer;font-size:12px;padding:0 4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
+                    '</div>';
+            }).join('');
+        }
+        
+        async function switchBranch(branchId) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            
+            try {
+                var resp = await fetch(SERVER_URL + '/switch_branch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: branchId })
+                });
+                if (resp.ok) {
+                    var data = await resp.json();
+                    currentBranchId = branchId;
+                    chat.activeBranch = branchId;
+                    chat.messages = data.messages || [];
+                    renderBranchesPanel();
+                    renderMessages();
+                    setTimeout(function() {
+                        var main = document.querySelector('.main');
+                        if (main) {
+                            main.style.scrollBehavior = 'auto';
+                            main.scrollTop = main.scrollHeight;
+                            main.style.scrollBehavior = 'smooth';
+                        }
+                    }, 100);
+                }
+            } catch(e) {
+                console.error('switchBranch error:', e);
+            }
+        }
+        
+        async function renameBranch(branchId) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat || !chat.allBranches || !chat.allBranches[branchId]) return;
+            var currentName = chat.allBranches[branchId].name || '';
+            var newName = prompt('Новое название ветки:', currentName);
+            if (!newName || newName === currentName) return;
+            
+            chat.allBranches[branchId].name = newName;
+            renderBranchesPanel();
+            
+            try {
+                await fetch(SERVER_URL + '/rename_branch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        model: 'flash',
+                        chat_id: currentChatId,
+                        branch_id: branchId,
+                        name: newName
+                    })
+                });
+            } catch(e) {}
+        }
+        
+        async function deleteBranch(branchId) {
+            if (branchId === 'main') return;
+            if (!confirm('Удалить ветку и все ответвления от неё? Сообщения будут потеряны.')) return;
+            
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            
+            try {
+                var resp = await fetch(SERVER_URL + '/delete_branch?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + branchId + '&session_token=' + sessionToken, {
+                    method: 'DELETE'
+                });
+                if (resp.ok) {
+                    var data = await resp.json();
+                    loadChatsFromServer().then(function() {
+                        var updatedChat = chats.find(function(c) { return c.id === currentChatId; });
+                        if (updatedChat) {
+                            currentBranchId = updatedChat.activeBranch || 'main';
+                            if (updatedChat.allBranches && updatedChat.allBranches[currentBranchId]) {
+                                updatedChat.messages = updatedChat.allBranches[currentBranchId].messages || [];
+                            }
+                        }
+                        renderBranchesPanel();
+                        renderMessages();
+                    });
+                }
+            } catch(e) {
+                console.error('deleteBranch error:', e);
+            }
+        }
+        
+        async function createBranchFromMessage(msgIndex) {
+            if (isSending) return;
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[msgIndex];
+            if (!msg) return;
+            
+            isSending = true;
+            sendBtnStop();
+            
+            // Затираем только сообщения ПОСЛЕ msgIndex
+            chat.messages = chat.messages.slice(0, msgIndex + 1);
+            renderMessages();
+            
+            var placeholderId = null;
+            var isAssistant = (msg.role === 'assistant');
+            if (!isAssistant) {
+                placeholderId = 'branch_create_' + Date.now();
+                var area = document.getElementById('chatArea');
+                var loadingRow = document.createElement('div');
+                loadingRow.className = 'message-row assistant';
+                loadingRow.id = placeholderId;
+                loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
+                area.appendChild(loadingRow);
+                var main = document.querySelector('.main');
+                if (main) { main.scrollTop = main.scrollHeight; }
+            }
+            
+            try {
+                var resp = await fetch(SERVER_URL + '/create_branch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        model: 'flash',
+                        mode: currentMode,
+                        chat_id: currentChatId,
+                        source_msg_id: msg.msg_id,
+                        branch_name: '',
+                        prompt: msg.role === 'user' ? (msg.content || '') : ''
+                    })
+                });
+                
+                if (placeholderId) {
+                    var el = document.getElementById(placeholderId);
+                    if (el) el.remove();
+                }
+                
+                if (resp.ok) {
+                    var data = await resp.json();
+                    
+                    // Переключаемся в новую ветку
+                    currentBranchId = data.branch_id;
+                    chat.activeBranch = data.branch_id;
+                    
+                    // Загружаем полное дерево с сервера (НЕ перезаписываем chat.messages)
+                    await updateBranchesFromServer();
+                    
+                    // Восстанавливаем историю ДО из загруженной ветки, но без assistant-ответа
+                    if (chat.allBranches && chat.allBranches[data.branch_id]) {
+                        chat.messages = chat.allBranches[data.branch_id].messages || [];
+                    } else {
+                        chat.messages = [];
+                    }
+                    
+                    renderChatList();
+                    renderBranchesPanel();
+                    
+                    // Если есть reply — стримим ответ ассистента
+                    if (data.reply) {
+                        // Убираем последний assistant из messages (сервер уже сохранил его в ветку)
+                        while (chat.messages.length > 0 && chat.messages[chat.messages.length - 1].role === 'assistant') {
+                            chat.messages.pop();
+                        }
+                        var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                        var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
+                        chat.messages.push(assistantMsg);
+                        var newMsgIndex = chat.messages.length - 1;
+                        var streamId = 'branch_stream_' + newMsgIndex;
+                        activeStreamId = streamId;
+                        
+                        renderMessages();
+                        streamReplyIntoChat(chat, newMsgIndex, fullContent, streamId, function() {
+                            chat.lastMessageTime = Date.now();
+                            chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                            autoNameChat(chat);
+                            updateBranchesFromServer().then(function() {
+                                renderChatList();
+                                renderBranchesPanel();
+                            });
+                            updateBalance();
+                            isSending = false;
+                            activeStreamId = null;
+                            sendBtnArrow();
+                        });
+                    } else {
+                        renderMessages();
+                        updateBalance();
+                        isSending = false;
+                        sendBtnArrow();
+                    }
+                } else {
+                    var errData = await resp.json();
+                    alert('Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
+                    isSending = false;
+                    sendBtnArrow();
+                }
+            } catch(e) {
+                if (placeholderId) {
+                    var el2 = document.getElementById(placeholderId);
+                    if (el2) el2.remove();
+                }
+                console.error('createBranchFromMessage error:', e);
+                alert('Ошибка соединения.');
+                isSending = false;
+                sendBtnArrow();
+            }
+        }
+        
+        async function regenerateUserMessage(msgIndex) {
+            if (isSending) return;
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[msgIndex];
+            if (!msg || msg.role !== 'user') return;
+            
+            var newText = prompt('Отредактируйте сообщение:', msg.content);
+            if (!newText || newText === msg.content) return;
+            
+            isSending = true;
+            if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
+            sendBtnStop();
+            
+            msg.content = newText;
+            
+            // Затираем все сообщения ПОСЛЕ редактируемого
+            chat.messages = chat.messages.slice(0, msgIndex + 1);
+            
+            renderMessages();
+            var placeholderId = 'regen_user_' + Date.now();
+            var area = document.getElementById('chatArea');
+            var loadingRow = document.createElement('div');
+            loadingRow.className = 'message-row assistant';
+            loadingRow.id = placeholderId;
+            loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
+            area.appendChild(loadingRow);
+            var main = document.querySelector('.main');
+            if (main) { main.scrollTop = main.scrollHeight; }
+            
+            try {
+                var resp = await fetch(SERVER_URL + '/regenerate_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        model: 'flash',
+                        mode: currentMode,
+                        chat_id: currentChatId,
+                        branch_id: currentBranchId,
+                        edit_msg_id: msg.msg_id,
+                        new_prompt: newText
+                    })
+                });
+                
+                var el = document.getElementById(placeholderId);
+                if (el) el.remove();
+                
+                if (resp.ok) {
+                    var data = await resp.json();
+                    
+                    var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                    var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
+                    chat.messages.push(assistantMsg);
+                    var newMsgIndex = chat.messages.length - 1;
+                    var streamId = 'regen_stream_' + newMsgIndex;
+                    activeStreamId = streamId;
+                    
+                    renderMessages();
+                    streamReplyIntoChat(chat, newMsgIndex, fullContent, streamId, function() {
+                        chat.lastMessageTime = Date.now();
+                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                        autoNameChat(chat);
+                        updateBranchesFromServer();
+                        renderChatList();
+                        updateBalance();
+                        isSending = false;
+                        activeStreamId = null;
+                        sendBtnArrow();
+                    });
+                } else {
+                    var errData = await resp.json();
+                    alert('Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
+                    isSending = false;
+                    sendBtnArrow();
+                }
+            } catch(e) {
+                var el2 = document.getElementById(placeholderId);
+                if (el2) el2.remove();
+                console.error('regenerateUserMessage error:', e);
+                alert('Ошибка соединения.');
+                isSending = false;
+                sendBtnArrow();
+            }
+        }
+        
+        async function regenerateAssistantMessage(msgIndex) {
+            if (isSending) return;
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[msgIndex];
+            if (!msg || msg.role !== 'assistant') return;
+            
+            isSending = true;
+            if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
+            sendBtnStop();
+            
+            var removeFrom = msgIndex;
+            while (chat.messages.length > removeFrom) {
+                chat.messages.pop();
+            }
+            
+            renderMessages();
+            var placeholderId = 'regen_assistant_' + Date.now();
+            var area = document.getElementById('chatArea');
+            var loadingRow = document.createElement('div');
+            loadingRow.className = 'message-row assistant';
+            loadingRow.id = placeholderId;
+            loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
+            area.appendChild(loadingRow);
+            var main = document.querySelector('.main');
+            if (main) { main.scrollTop = main.scrollHeight; }
+            
+            try {
+                var resp = await fetch(SERVER_URL + '/regenerate_assistant', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        model: 'flash',
+                        mode: currentMode,
+                        chat_id: currentChatId,
+                        branch_id: currentBranchId,
+                        edit_msg_id: msg.msg_id
+                    })
+                });
+                
+                var el = document.getElementById(placeholderId);
+                if (el) el.remove();
+                
+                if (resp.ok) {
+                    var data = await resp.json();
+                    
+                    var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                    var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
+                    chat.messages.push(assistantMsg);
+                    var newMsgIndex = chat.messages.length - 1;
+                    var streamId = 'regen_assistant_stream_' + newMsgIndex;
+                    activeStreamId = streamId;
+                    
+                    renderMessages();
+                    streamReplyIntoChat(chat, newMsgIndex, fullContent, streamId, function() {
+                        chat.lastMessageTime = Date.now();
+                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                        autoNameChat(chat);
+                        updateBranchesFromServer();
+                        renderChatList();
+                        updateBalance();
+                        isSending = false;
+                        activeStreamId = null;
+                        sendBtnArrow();
+                    });
+                } else {
+                    var errData = await resp.json();
+                    alert('Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
+                    isSending = false;
+                    sendBtnArrow();
+                }
+            } catch(e) {
+                var el2 = document.getElementById(placeholderId);
+                if (el2) el2.remove();
+                console.error('regenerateAssistantMessage error:', e);
+                alert('Ошибка соединения.');
+                isSending = false;
+                sendBtnArrow();
+            }
+        }
+        
+        function streamReplyIntoChat(chat, msgIndex, fullContent, streamId, onComplete) {
+            var words = fullContent.split(/(\s+)/);
+            chat.messages[msgIndex]._streamWords = words;
+            var pos = 0;
+            var reasoningStarted = false;
+            var reasoningEnded = false;
+            
+            var isLong = fullContent.length > 1000;
+            var wordsPerChunk = isLong ? 8 : 2;
+            var delayMs = isLong ? 15 : 20;
+            
+            function streamNext() {
+                if (activeStreamId !== streamId) return;
+                var chunk = '';
+                var wc = 0;
+                while (pos < words.length && wc < wordsPerChunk) { chunk += words[pos]; wc++; pos++; }
+                chat.messages[msgIndex]._streamPos = pos;
+                if (chunk) {
+                    var ft = words.slice(0, pos).join('');
+                    chat.messages[msgIndex].content = ft;
+                    if (!reasoningStarted && ft.indexOf('Размышление:\n') !== -1) { reasoningStarted = true; chat.messages[msgIndex]._reasoningInProgress = true; }
+                    if (reasoningStarted && !reasoningEnded) {
+                        var ei = ft.indexOf('\n\nОтвет:\n');
+                        if (ei !== -1) {
+                            reasoningEnded = true; chat.messages[msgIndex]._reasoningInProgress = false;
+                            chat.messages[msgIndex].reasoning = ft.substring('Размышление:\n'.length, ei);
+                        }
+                    }
+                    renderMessages();
+                    if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.scrollTop = m3.scrollHeight; } }
+                    typingInterval = setTimeout(streamNext, delayMs);
+                } else {
+                    chat.messages[msgIndex].finished = true;
+                    chat.messages[msgIndex].interrupted = false;
+                    typingInterval = null;
+                    renderMessages();
+                    if (onComplete) onComplete();
+                }
+            }
+            streamNext();
+        }
+        
+        function getMsgIdByIndex(chat, index) {
+            if (!chat || !chat.messages || index >= chat.messages.length) return null;
+            return chat.messages[index].msg_id || null;
+        }
+        
+        function renderMessages() {
+            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
+            const chat = chats.find(c => c.id === currentChatId);
+            const area = document.getElementById('chatArea');
+            
+            if (!chat || chat.messages.length === 0) {
+                area.innerHTML = `<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display='none'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>`;
+            } else {
+                var branchName = '';
+                if (chat.allBranches && chat.allBranches[currentBranchId]) {
+                    branchName = chat.allBranches[currentBranchId].name || '';
+                }
+                var branchIndicator = '';
+                if (currentBranchId && currentBranchId !== 'main' && branchName && branchName !== 'Основная') {
+                    branchIndicator = '<div class="branch-indicator"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1); vertical-align: middle; margin-right: 4px;"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#00CBF5"/></svg> ' + escapeHtml(branchName) + '</div>';
+                }
+                
+                area.innerHTML = branchIndicator + chat.messages.map((m, i) => {
+                    var actionsHtml = '';
+                    if (m.role === 'user') {
+                        actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+                        actionsHtml += `<button onclick="regenerateUserMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
+                        actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>`;
+                    } else {
+                        actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+                        actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
+                        actionsHtml += `<button class="roll-btn" onclick="regenerateAssistantMessage(${i})" title="Регенерировать ответ"><svg width="14" height="14" viewBox="0 -1 16 16" fill="currentColor"><path d="M15.854,6.146a.5.5,0,0,0-.708,0L14,7.293V7a7,7,0,1,0-7,7,.5.5,0,0,0,0-1,6,6,0,1,1,6-6v.293L11.854,6.146a.5.5,0,0,0-.708.708l2,2a.518.518,0,0,0,.163.109.5.5,0,0,0,.382,0,.518.518,0,0,0,.163-.109l2-2A.5.5,0,0,0,15.854,6.146Z"/></svg></button>`;
+                        actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения" style="color:#4caf50;"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#4caf50"/></svg></button>`;
+                        actionsHtml += `<button onclick="shareChat('${currentChatId}')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293ZM14,17.58594V15.5a.99974.99974,0,0,0-1-1c-.25488,0-1.2959.04932-1.56152.085A14.00507,14.00507,0,0,0,4.05176,17.5332,9.01266,9.01266,0,0,1,13,9.5a.99974.99974,0,0,0,1-1V6.41406L19.58594,12Z"/></svg></button>`;
+                        if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
+                    }
+                    var dataAttr = ' data-msg-index="' + i + '"';
+                    var reasoningHtml = '';
+                    var contentToShow = m.content;
+                    if (m.reasoning) {
+                        reasoningHtml = '<div class="reasoning-block">' + formatMessage(m.reasoning) + '</div>';
+                        var endIdx = m.content.indexOf('\n\nОтвет:\n');
+                        if (endIdx !== -1) {
+                            contentToShow = m.content.substring(endIdx + '\n\nОтвет:\n'.length);
+                        }
+                    } else if (m._reasoningInProgress && m.content) {
+                        var startIdx = m.content.indexOf('Размышление:\n');
+                        if (startIdx !== -1) {
+                            reasoningHtml = '<div class="reasoning-block">' + escapeHtml(m.content.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
+                            contentToShow = '';
+                        }
+                    }
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
+                }).join('');
+            }
+            hljs.highlightAll();
+            setupFloatingCopyButtons();
+            buildNavContainer();
+            var main = document.querySelector('.main');
+            if (main) {
+                main.style.scrollBehavior = 'auto';
+                main.scrollTop = main.scrollHeight;
+                main.style.scrollBehavior = 'smooth';
+            }
+        }
+        
+        function copyMessage(index) {
+            const chat = chats.find(c => c.id === currentChatId);
+            if (!chat) return;
+            navigator.clipboard.writeText(chat.messages[index].content);
+            const btn = document.getElementById('copy-btn-' + index);
+            if (btn) {
+                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+                setTimeout(function() { btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 2000);
+            }
+        }
+        
+        function downloadMessage(index) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[index];
+            if (!msg) return;
+            var content = msg.content || '';
+            var reasoning = msg.reasoning || '';
+            var fullText = reasoning ? 'Размышление:\n' + reasoning + '\n\nОтвет:\n' + content : content;
+            
+            var existing = document.getElementById('download-dropdown-' + index);
+            if (existing) { existing.remove(); return; }
+            
+            var dropdown = document.createElement('div');
+            dropdown.id = 'download-dropdown-' + index;
+            dropdown.style.cssText = 'position:fixed;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px;z-index:20;min-width:140px;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+            if (document.body.classList.contains('light')) {
+                dropdown.style.background = '#ffffff';
+                dropdown.style.border = '1px solid rgba(0,0,0,0.1)';
+                dropdown.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
+            }
+            
+            var formats = [
+                { label: '📄 Текст (.txt)', ext: 'txt', mime: 'text/plain;charset=utf-8' },
+                { label: '📝 Word (.doc)', ext: 'doc', mime: 'application/msword' }
+            ];
+            
+            formats.forEach(function(f) {
+                var btn = document.createElement('button');
+                btn.textContent = f.label;
+                btn.style.cssText = 'display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:#e0e0e0;font-size:12px;cursor:pointer;text-align:left;border-radius:4px;font-family:Inter,sans-serif;white-space:nowrap;';
+                if (document.body.classList.contains('light')) {
+                    btn.style.color = '#333';
+                }
+                btn.onmouseenter = function() { btn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
+                btn.onmouseleave = function() { btn.style.background = 'transparent'; };
+                btn.onclick = function() {
+                    var output = fullText;
+                    if (f.ext === 'doc') {
+                        var allAssistant = document.querySelectorAll('.message-row.assistant .message-content');
+                        var assistantIdx = 0;
+                        for (var k = 0; k <= index; k++) {
+                            if (chat.messages[k].role === 'assistant' && k === index) break;
+                            if (chat.messages[k].role === 'assistant') assistantIdx++;
+                        }
+                        var msgEl = allAssistant[assistantIdx];
+                        if (msgEl) {
+                            output = '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:14px;line-height:1.6;padding:20px;color:#000;}h1,h2,h3{margin:12px 0 6px;}table{border-collapse:collapse;width:100%;margin:8px 0;}th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;}th{background:#f0f0f0;}pre{background:#f5f5f5;padding:10px;border-radius:6px;font-family:monospace;}code{background:#f5f5f5;padding:2px 5px;border-radius:4px;font-family:monospace;}ul,ol{padding-left:24px;}</style></head><body>' + msgEl.innerHTML + '</body></html>';
+                        } else {
+                            output = '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:14px;line-height:1.6;white-space:pre-wrap;padding:20px;}</style></head><body>' + output.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</body></html>';
+                        }
+                    }
+                    var blob = new Blob([output], { type: f.mime });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'response.' + f.ext;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    dropdown.remove();
+                };
+                dropdown.appendChild(btn);
+            });
+            
+            var downloadBtn = document.getElementById('download-btn-' + index);
+            if (downloadBtn) {
+                var rect = downloadBtn.getBoundingClientRect();
+                dropdown.style.left = rect.left + 'px';
+                document.body.appendChild(dropdown);
+                dropdown.style.top = (rect.bottom + 4) + 'px';
+                setTimeout(function() {
+                    function closeDrop(e) {
+                        if (!dropdown.contains(e.target) && e.target !== downloadBtn) {
+                            dropdown.remove();
+                            document.removeEventListener('click', closeDrop);
+                            document.removeEventListener('wheel', closeDrop);
+                            document.removeEventListener('touchmove', closeDrop);
+                        }
+                    }
+                    document.addEventListener('click', closeDrop);
+                    document.addEventListener('wheel', closeDrop);
+                    document.addEventListener('touchmove', closeDrop);
+                }, 10);
+            }
+        }
+        
+        function setMode(mode) { currentMode = mode; }
+        
+        function toggleReasoner() {
+            if (currentMode === 'reasoner') {
+                currentMode = 'chat';
+                document.getElementById('reasonerToggle').classList.remove('active');
+            } else {
+                currentMode = 'reasoner';
+                document.getElementById('reasonerToggle').classList.add('active');
+            }
+            localStorage.setItem('photobot_mode', currentMode);
+        }
+        
+        function autoNameChat(chat) {
+            const lastAssistant = [...chat.messages].reverse().find(m => m.role === 'assistant');
+            if (lastAssistant && !lastAssistant.interrupted && (chat.title.startsWith('Чат ') || chat.title === 'Новый чат')) {
+                chat.title = lastAssistant.content.replace(/[#*`>\n]/g, ' ').split(' ').slice(0, 6).join(' ') || 'Новый чат';
+                if (chat.title.length > 40) chat.title = chat.title.substring(0, 40) + '...';
+                renderChatList();
+            }
+        }
+
+        function updateFileList() {
+            const inline = document.getElementById('fileNameInline');
+            if (!pendingFile) { 
+                if (inline) inline.innerHTML = ''; 
+                return; 
+            }
+            if (inline) inline.innerHTML = '📎 ' + escapeHtml(pendingFile.name) + ' <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+        }
+
+        async function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const base64 = ev.target.result.split(',')[1];
+                pendingFile = { name: file.name, mime: file.type, data: base64 };
+                updateFileList();
+            };
+            reader.readAsDataURL(file);
+            document.getElementById('fileInput').value = '';
+        }
+        
+        function setupDragDrop() {
+            const inputArea = document.getElementById('inputArea');
+            const dropZone = document.getElementById('dropZone');
+            
+            if (!inputArea || !dropZone) return;
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                inputArea.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+            });
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                inputArea.addEventListener(eventName, function() {
+                    dropZone.style.display = 'flex';
+                });
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                inputArea.addEventListener(eventName, function() {
+                    dropZone.style.display = 'none';
+                });
+            });
+            
+            inputArea.addEventListener('drop', function(e) {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        const base64 = ev.target.result.split(',')[1];
+                        pendingFile = { name: file.name, mime: file.type, data: base64 };
+                        updateFileList();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        function setupPaste() {
+            const userInput = document.getElementById('userInput');
+            if (!userInput) return;
+            
+            userInput.addEventListener('paste', function(e) {
+                const items = e.clipboardData.items;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        e.preventDefault();
+                        const blob = items[i].getAsFile();
+                        const reader = new FileReader();
+                        reader.onload = function(ev) {
+                            const base64 = ev.target.result.split(',')[1];
+                            pendingFile = { name: 'screenshot.png', mime: blob.type, data: base64 };
+                            updateFileList();
+                        };
+                        reader.readAsDataURL(blob);
+                        break;
+                    }
+                }
+            });
+        }
+
+        setupDragDrop();
+        setupPaste();
+        var input = document.getElementById('userInput');
+        var btn = document.getElementById('sendBtn');
+        function updateSendBtn() {
+            var hasText = input.value.trim().length > 0;
+            var hasFile = pendingFile !== null;
+            btn.disabled = !(hasText || hasFile);
+        }
+        input.addEventListener('input', updateSendBtn);
+        updateSendBtn();
+
+        function sendBtnArrow() {
+            var btn = document.getElementById('sendBtn');
+            btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
+            btn.onclick = sendMessage;
+        }
+        
+        function sendBtnStop() {
+            var btn = document.getElementById('sendBtn');
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
+            btn.onclick = function() { stopTyping(); };
+        }
+        
+        async function sendMessage() {
+            if (isSending) return;
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            if (!text && !pendingFile) return;
+            if (!currentUserId) { alert('Авторизуйтесь на главной странице'); return; }
+            if (!currentChatId) { newChat(); }
+            input.value = ''; input.style.height = 'auto'; input._init = false;
+            isSending = true;
+            if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
+            sendBtnStop();
+
+            const chat = chats.find(c => c.id === currentChatId);
+            if (!chat) return;
+
+            var lastMsg = chat.messages[chat.messages.length - 1];
+            if (lastMsg && lastMsg.role === 'assistant' && lastMsg.interrupted) {
+                lastMsg.interrupted = false;
+                lastMsg.finished = true;
+                lastMsg._streamWords = undefined;
+                lastMsg._streamPos = undefined;
+            }
+
+            let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
+            chat.messages.push({ role: 'user', content: displayText });
+            chat.lastMessageTime = Date.now();
+            chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+            renderChatList();
+            renderMessages();
+
+            const placeholderId = 'msg_' + Date.now();
+            const area = document.getElementById('chatArea');
+            const typingRow = document.createElement('div');
+            typingRow.className = 'message-row assistant'; typingRow.id = placeholderId;
+            typingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
+            area.appendChild(typingRow);
+            var main = document.querySelector('.main');
+            if (main) {
+                main.style.scrollBehavior = 'auto';
+                main.scrollTop = main.scrollHeight;
+                main.style.scrollBehavior = 'smooth';
+            }
+
+            try {
+                const resp = await fetch(`${SERVER_URL}/chat`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        message: text,
+                        model: 'flash',
+                        mode: currentMode,
+                        chat_id: currentChatId,
+                        branch_id: currentBranchId,
+                        personality: (chat && chat.messages.length === 0 ? currentPersonality : 'default'),
+                        file_data: pendingFile ? pendingFile.data : '',
+                        file_name: pendingFile ? pendingFile.name : '',
+                        file_mime: pendingFile ? pendingFile.mime : ''
+                    })
+                });
+                const el = document.getElementById(placeholderId); if (el) el.remove();
+                if (resp.status === 403) {
+                    chat.messages.push({ role: 'assistant', content: 'Сессия устарела. Авторизуйтесь заново на главной странице.' });
+                    renderMessages();
+                    isSending = false; sendBtnArrow(); activeStreamId = null;
+                    return;
+                }
+                if (resp.status === 402) {
+                    const data = await resp.json();
+                    chat.messages.push({ role: 'assistant', content: 'Недостаточно средств.' });
+                    renderMessages(); updateBalance();
+                    isSending = false; sendBtnArrow(); activeStreamId = null;
+                    return;
+                }
+                if (!resp.ok) {
+                    chat.messages.push({ role: 'assistant', content: 'Ошибка сервера. Попробуйте позже.' });
+                    renderMessages();
+                    isSending = false; sendBtnArrow(); activeStreamId = null;
+                    return;
+                }
+                const data = await resp.json();
+                if (data.reply) {
+                    const fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                    var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
+                    chat.messages[chat.messages.length - 1].msg_id = data.user_msg_id || null;
+                    chat.messages.push(assistantMsg);
+                    const msgIndex = chat.messages.length - 1;
+                    const streamId = 'stream_' + msgIndex;
+                    activeStreamId = streamId;
+                    renderMessages();
+                    streamReplyIntoChat(chat, msgIndex, fullContent, streamId, function() {
+                        chat.lastMessageTime = Date.now();
+                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                        autoNameChat(chat);
+                        renderChatList();
+                        updateBranchesFromServer();
+                        updateBalance();
+                        if (activeStreamId === streamId) {
+                            isSending = false;
+                            activeStreamId = null;
+                            sendBtnArrow();
+                        }
+                    });
+                } else {
+                    chat.messages.push({ role: 'assistant', content: 'Ошибка. Попробуйте позже.' });
+                    renderMessages();
+                    isSending = false; sendBtnArrow(); activeStreamId = null;
+                }
+            } catch (e) {
+                const el = document.getElementById(placeholderId); if (el) el.remove();
+                chat.messages.push({ role: 'assistant', content: 'Ошибка соединения.' });
+                renderMessages();
+                isSending = false; sendBtnArrow(); activeStreamId = null;
+            }
+            pendingFile = null;
+            updateFileList();
+            updateBalance();
+        }
+        
+        async function updateBranchesFromServer() {
+            try {
+                var resp = await fetch(SERVER_URL + '/get_chat_tree?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&session_token=' + sessionToken);
+                if (resp.ok) {
+                    var data = await resp.json();
+                    var chat = chats.find(function(c) { return c.id === currentChatId; });
+                    if (chat) {
+                        var branches = {};
+                        if (data.branches) {
+                            for (var bid in data.branches) {
+                                var branchData = data.branches[bid];
+                                var msgIds = branchData.msg_ids || branchData;
+                                // Поддержка старого формата (массив) и нового (объект)
+                                if (Array.isArray(branchData)) {
+                                    msgIds = branchData;
+                                }
+                                var msgs = [];
+                                for (var i = 0; i < msgIds.length; i++) {
+                                    if (data.messages[msgIds[i]]) {
+                                        msgs.push(data.messages[msgIds[i]]);
+                                    }
+                                }
+                                branches[bid] = {
+                                    name: (branchData.name) || (chat.allBranches && chat.allBranches[bid] ? chat.allBranches[bid].name : 'Ветка'),
+                                    messages: msgs,
+                                    msg_ids: msgIds,
+                                    source_role: branchData.source_role || 'user'
+                                };
+                            }
+                        }
+                        chat.allBranches = branches;
+                        renderBranchesPanel();
+                    }
+                }
+            } catch(e) { console.error('updateBranchesFromServer error:', e); }
+        }
+        
+        function formatMessage(text) {
+            var B = String.fromCharCode(96);
+            if (/^\s*<(!DOCTYPE|html)/i.test(text)) {
+                text = B + B + B + 'html\n' + text + '\n' + B + B + B;
+            }
+            let parts = [];
+            let lastIndex = 0;
+            const regex = new RegExp(B + B + B + '(\\w*)\\r?\\n([\\s\\S]*?)' + B + B + B, 'g');
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                if (match.index > lastIndex) {
+                    parts.push({type: 'text', content: text.substring(lastIndex, match.index)});
+                }
+                parts.push({type: 'code', lang: match[1], content: match[2]});
+                lastIndex = regex.lastIndex;
+            }
+            if (lastIndex < text.length) {
+                var remaining = text.substring(lastIndex);
+                var openCode = remaining.match(new RegExp('^([\\s\\S]*?)' + B + B + B + '(\\w*)\\r?\\n([\\s\\S]*)'));
+                if (openCode) {
+                    if (openCode[1]) {
+                        parts.push({type: 'text', content: openCode[1]});
+                    }
+                    parts.push({type: 'code', lang: openCode[2], content: openCode[3]});
+                } else {
+                    parts.push({type: 'text', content: remaining});
+                }
+            }
+            let result = '';
+            for (const part of parts) {
+                if (part.type === 'code') {
+                    var lang = part.lang || '';
+                    result += '<pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre>';
+                } else {
+                    var text2 = escapeHtml(part.content);
+                    text2 = text2.replace(/`([^`]+)`/g, '<code>$1</code>');
+                    text2 = text2.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                    text2 = text2.replace(/\*(.+?)\*/g, '<em>$1</em>');
+                    text2 = text2.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>');
+                    text2 = text2.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+                    text2 = text2.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+                    text2 = text2.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+                    text2 = text2.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+                    text2 = text2.replace(/^---$/gm, '<hr>');
+                    text2 = text2.replace(/^[-*]\s(.+)$/gm, '<li>$1</li>');
+                    text2 = text2.replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>');
+                    text2 = text2.replace(/^\d+\.\s(.+)$/gm, '<li>$1</li>');
+                    text2 = text2.replace(/((?:<li>.*<\/li>\s*)+)/g, '<ol>$1</ol>');
+                    text2 = text2.replace(/~~(.+?)~~/g, '<del>$1</del>');
+                    text2 = text2.replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">');
+                    text2 = text2.replace(/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>');
+                    text2 = text2.replace(/\n/g, '<br>');
+                    result += text2;
+                }
+            }
+            return result;
+        }
+        
+        function stopTyping() {
+            if (typingInterval) {
+                clearTimeout(typingInterval);
+                typingInterval = null;
+            }
+            if (activeStreamId) {
+                var oldStreamId = activeStreamId;
+                activeStreamId = null;
+                var chat = chats.find(function(c) { return c.id === currentChatId; });
+                if (chat && chat.messages.length > 0) {
+                    var lastMsg = chat.messages[chat.messages.length - 1];
+                    if (lastMsg.role === 'assistant' && !lastMsg.finished) {
+                        lastMsg.interrupted = true;
+                        lastMsg.finished = true;
+                    }
+                }
+                renderMessages();
+            }
+            isSending = false;
+            sendBtnArrow();
+        }
+        
+        async function continueMessage(index) {
+            if (isSending) return;
+            const chat = chats.find(c => c.id === currentChatId);
+            if (!chat) return;
+            const msg = chat.messages[index];
+            if (!msg || msg.role !== 'assistant' || !msg.interrupted) return;
+            isSending = true;
+            sendBtnStop();
+            const words = msg._streamWords;
+            let pos = msg._streamPos || 0;
+            if (!words || pos >= words.length) {
+                msg.interrupted = false;
+                msg.finished = true;
+                renderMessages();
+                isSending = false;
+                sendBtnArrow();
+                return;
+            }
+            msg.interrupted = false;
+            msg.finished = false;
+            const streamId = 'stream_' + index;
+            activeStreamId = streamId;
+            renderMessages();
+            var input = document.getElementById('userInput');
+            if (input) input.focus();
+            await new Promise(r => setTimeout(r, 50));
+            streamReplyIntoChat(chat, index, words.slice(pos).join(''), streamId, function() {
+                chat.messages[index].finished = true;
+                chat.messages[index].interrupted = false;
+                autoNameChat(chat);
+                renderChatList();
+                chat.lastMessageTime = Date.now();
+                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                isSending = false;
+                activeStreamId = null;
+                sendBtnArrow();
+            });
+        }
+        
+        document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
+        
+        function setupFloatingCopyButtons() {
+            document.querySelectorAll('.message-content pre').forEach(function(pre) {
+                if (pre.querySelector('.floating-code-header')) return;
+                
+                var codeBlock = pre.querySelector('code');
+                var lang = '';
+                if (codeBlock) {
+                    var cls = codeBlock.className;
+                    var m = cls.match(/language-(\w+)/);
+                    if (m) lang = m[1];
+                }
+
+                var header = document.createElement('div');
+                header.className = 'floating-code-header';
+                header.style.cssText = 'position:fixed; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1; pointer-events:none;';
+                if (document.body.classList.contains('light')) {
+                    header.style.background = '#f8f8f8';
+                    header.style.color = '#555';
+                }
+                header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
+                pre.insertBefore(header, pre.firstChild);
+                pre._floatHeader = header;
+                var actions = header.querySelector('span:last-child');
+
+                var editBtn = document.createElement('button');
+                editBtn.className = 'floating-edit-btn';
+                editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+                editBtn.title = 'Редактировать код';
+                editBtn.style.cssText = 'background:transparent; border:none; color:#aaa; cursor:pointer; padding:4px 6px; border-radius:4px; font-family:Inter,sans-serif; font-size:12px; pointer-events:auto; line-height:1;';
+                editBtn.onmouseenter = function() { editBtn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
+                editBtn.onmouseleave = function() { editBtn.style.background = 'transparent'; };
+                editBtn.onclick = function() { toggleCodeEditor(pre); };
+                actions.appendChild(editBtn);
+
+                var copyBtn = document.createElement('button');
+                copyBtn.className = 'floating-copy-btn';
+                copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+                copyBtn.style.cssText = 'background:transparent; border:none; color:#aaa; cursor:pointer; padding:4px 6px; border-radius:4px; font-family:Inter,sans-serif; font-size:11px; pointer-events:auto;';
+                copyBtn.onmouseenter = function() { copyBtn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
+                copyBtn.onmouseleave = function() { copyBtn.style.background = 'transparent'; };
+                copyBtn.onclick = function() {
+                    var code = pre._editorActive && pre._textarea ? pre._textarea.value : (pre.querySelector('code') ? pre.querySelector('code').textContent : '');
+                    navigator.clipboard.writeText(code);
+                    copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copy';
+                    setTimeout(function() { copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy'; }, 2000);
+                };
+                actions.appendChild(copyBtn);
+
+                var downloadBtn = document.createElement('button');
+                downloadBtn.className = 'floating-download-btn';
+                downloadBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download';
+                downloadBtn.style.cssText = 'background:transparent; border:none; color:#aaa; cursor:pointer; padding:4px 6px; border-radius:4px; font-family:Inter,sans-serif; font-size:11px; pointer-events:auto;';
+                downloadBtn.onmouseenter = function() { downloadBtn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
+                downloadBtn.onmouseleave = function() { downloadBtn.style.background = 'transparent'; };
+                downloadBtn.onclick = function() {
+                    var code = pre._editorActive && pre._textarea ? pre._textarea.value : (pre.querySelector('code') ? pre.querySelector('code').textContent : '');
+                    var blob = new Blob([code], {type: 'text/plain'});
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'code.txt';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                };
+                actions.appendChild(downloadBtn);
+
+                var isHtml = lang === 'html' || lang === 'htm' || (pre.textContent.trim().match(/^<(!DOCTYPE|html)/i));
+                if (isHtml) {
+                    var previewBtn = document.createElement('button');
+                    previewBtn.className = 'floating-preview-btn';
+                    previewBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Предпросмотр';
+                    previewBtn.style.cssText = 'background:transparent; border:none; color:#aaa; cursor:pointer; padding:4px 6px; border-radius:4px; font-family:Inter,sans-serif; font-size:11px; pointer-events:auto;';
+                    previewBtn.onmouseenter = function() { previewBtn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
+                    previewBtn.onmouseleave = function() { previewBtn.style.background = 'transparent'; };
+                    previewBtn.onclick = function() {
+                        var code = pre._editorActive && pre._textarea ? pre._textarea.value : (pre.querySelector('code') ? pre.querySelector('code').textContent : '');
+                        var panel = document.getElementById('previewPanel');
+                        var iframe = document.getElementById('previewIframe');
+                        var handle = document.getElementById('resizeHandle');
+                        if (!panel) {
+                            panel = document.createElement('div');
+                            panel.id = 'previewPanel';
+                            panel.className = 'preview-panel';
+                            panel.innerHTML = '<div class="preview-header"><span class="preview-title">Предпросмотр</span><button class="preview-close" onclick="closePreview()">✕</button></div><iframe id="previewIframe" class="preview-iframe" sandbox="allow-scripts allow-same-origin"></iframe>';
+                            document.body.appendChild(panel);
+                            iframe = document.getElementById('previewIframe');
+                        }
+                        if (!handle) {
+                            handle = document.createElement('div');
+                            handle.id = 'resizeHandle';
+                            handle.className = 'resize-handle';
+                            document.body.appendChild(handle);
+                            handle._startX = 0;
+                            handle._startWidth = 50;
+                            handle.addEventListener('pointerdown', function(e) {
+                                e.preventDefault();
+                                handle.setPointerCapture(e.pointerId);
+                                handle._startX = e.clientX;
+                                handle._startWidth = parseInt(getComputedStyle(document.body).getPropertyValue('--preview-width')) || 50;
+                                handle.classList.add('dragging');
+                                document.body.style.userSelect = 'none';
+                            });
+                            handle.addEventListener('pointermove', function(e) {
+                                if (!handle.classList.contains('dragging')) return;
+                                var dx = handle._startX - e.clientX;
+                                var mainWidth = document.querySelector('.main').clientWidth;
+                                var minChat = 400;
+                                var maxPw = ((mainWidth - minChat) / window.innerWidth) * 100;
+                                if (maxPw < 20) maxPw = 20;
+                                if (maxPw > 80) maxPw = 80;
+                                var newWidth = Math.max(20, Math.min(maxPw, handle._startWidth + (dx / window.innerWidth) * 100));
+                                document.body.style.setProperty('--preview-width', newWidth + '%');
+                                handle.style.right = newWidth + '%';
+                                updateFloatingButtons();
+                            });
+                            handle.addEventListener('pointerup', function(e) {
+                                handle.classList.remove('dragging');
+                                document.body.style.userSelect = '';
+                                handle.releasePointerCapture(e.pointerId);
+                            });
+                            handle.addEventListener('pointercancel', function(e) {
+                                handle.classList.remove('dragging');
+                                document.body.style.userSelect = '';
+                                handle.releasePointerCapture(e.pointerId);
+                            });
+                        }
+                        document.body.style.setProperty('--preview-width', '50%');
+                        panel.classList.add('active');
+                        handle.classList.add('active');
+                        handle.style.right = '50%';
+                        document.querySelector('.main').classList.add('preview-open');
+                        updateFloatingButtons();
+                        var main = document.querySelector('.main');
+                        if (main) {
+                            var rafId;
+                            var tick = function() {
+                                updateFloatingButtons();
+                                rafId = requestAnimationFrame(tick);
+                            };
+                            rafId = requestAnimationFrame(tick);
+                            main.addEventListener('transitionend', function() {
+                                cancelAnimationFrame(rafId);
+                                updateFloatingButtons();
+                            }, { once: true });
+                        }
+                        iframe.srcdoc = code;
+                    };
+                    actions.appendChild(previewBtn);
+                }
+                if (document.body.classList.contains('light')) {
+                    editBtn.style.color = '#555';
+                    copyBtn.style.color = '#555';
+                    downloadBtn.style.color = '#555';
+                    if (typeof previewBtn !== 'undefined') previewBtn.style.color = '#555';
+                }
+                updateFloatingButtons();
+            });
+        }
+
+        function toggleCodeEditor(pre) {
+            var codeEl = pre.querySelector('code');
+            if (!codeEl) return;
+
+            if (pre._editorActive) {
+                var textarea = pre._textarea;
+                var newCode = textarea ? textarea.value : '';
+                codeEl.textContent = newCode;
+                if (textarea) textarea.remove();
+                if (pre._editorToolbar) pre._editorToolbar.remove();
+                codeEl.style.display = '';
+                pre._editorActive = false;
+                pre._textarea = null;
+                pre._editorToolbar = null;
+                if (typeof hljs !== 'undefined' && hljs.highlightElement) {
+                    hljs.highlightElement(codeEl);
+                }
+            } else {
+                var originalCode = codeEl.textContent;
+                pre._originalCode = originalCode;
+                codeEl.style.display = 'none';
+
+                var toolbar = document.createElement('div');
+                toolbar.style.cssText = 'display:flex;gap:6px;padding:6px 0;align-items:center;';
+                toolbar.innerHTML = '<span style="font-size:11px;color:#aaa;font-family:Inter,sans-serif;">Редактор</span>' +
+                    '<button class="editor-apply-btn" style="background:#00CBF5;border:none;color:#201F28;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-family:Inter,sans-serif;font-weight:600;">✅ Применить</button>' +
+                    '<button class="editor-cancel-btn" style="background:transparent;border:1px solid #666;color:#aaa;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-family:Inter,sans-serif;">↩ Отмена</button>';
+                pre.appendChild(toolbar);
+                pre._editorToolbar = toolbar;
+
+                var textarea = document.createElement('textarea');
+                textarea.value = originalCode;
+                textarea.style.cssText = 'width:100%;min-height:200px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:10px;font-family:\'Courier New\',monospace;font-size:13px;resize:vertical;outline:none;';
+                if (document.body.classList.contains('light')) {
+                    textarea.style.background = '#ffffff';
+                    textarea.style.color = '#111';
+                    textarea.style.border = '1px solid rgba(0,0,0,0.15)';
+                }
+                pre.appendChild(textarea);
+                pre._textarea = textarea;
+                pre._editorActive = true;
+
+                toolbar.querySelector('.editor-apply-btn').onclick = function() {
+                    toggleCodeEditor(pre);
+                };
+                toolbar.querySelector('.editor-cancel-btn').onclick = function() {
+                    var orig = pre._originalCode || '';
+                    codeEl.textContent = orig;
+                    toggleCodeEditor(pre);
+                };
+            }
+        }
+        
+        function updateFloatingButtons() {
+            document.querySelectorAll('.message-content pre').forEach(function(pre) {
+                var header = pre._floatHeader;
+                if (!header) return;
+                var rect = pre.getBoundingClientRect();
+                var topBar = document.querySelector('.top-bar');
+                var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
+                var visibleTop = Math.max(rect.top, topBarBottom);
+                var visibleBottom = Math.min(rect.bottom, window.innerHeight);
+                var visibleHeight = visibleBottom - visibleTop;
+                var visible = visibleHeight >= 28;
+                if (visible) {
+                    header.style.display = 'flex';
+                    var headerHeight = header.offsetHeight || 28;
+                    var top = visibleTop;
+                    var bottomLimit = rect.bottom - headerHeight;
+                    if (top > bottomLimit) {
+                        top = bottomLimit;
+                    }
+                    if (top < topBarBottom) {
+                        top = topBarBottom;
+                    }
+                    header.style.top = top + 'px';
+                    header.style.left = rect.left + 'px';
+                    header.style.right = 'auto';
+                    header.style.width = rect.width + 'px';
+                } else {
+                    header.style.display = 'none';
+                }
+            });
+        }
+
+        function buildNavContainer() {
+            var container = document.getElementById('navContainer');
+            if (!container) return;
+            var chat = chats.find(c => c.id === currentChatId);
+            if (!chat || chat.messages.length === 0) { container.innerHTML = ''; return; }
+            var html = '';
+            for (var i = 0; i < chat.messages.length; i++) {
+                if (chat.messages[i].role === 'user' && chat.messages[i].content) {
+                    var preview = chat.messages[i].content.substring(0, 80);
+                    html += '<div class="nav-strip" data-msg-index="' + i + '" onclick="scrollToMsg(' + i + ')"><div class="nav-bar"></div><span class="nav-text">' + escapeHtml(preview) + '</span></div>';
+                }
+            }
+            container.innerHTML = html;
+        }
+        
+        function updateActiveNavFromScroll() {
+            var main = document.querySelector('.main');
+            if (!main) return;
+            var rows = main.querySelectorAll('.message-row[data-msg-index]');
+            var areaRect = main.getBoundingClientRect();
+            var closestIndex = null;
+            var closestDist = Infinity;
+            for (var r = 0; r < rows.length; r++) {
+                var rect = rows[r].getBoundingClientRect();
+                var mid = rect.top + rect.height / 2;
+                var dist = Math.abs(mid - (areaRect.top + areaRect.height / 2));
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestIndex = rows[r].getAttribute('data-msg-index');
+                }
+            }
+            document.querySelectorAll('.nav-strip').forEach(function(s) { s.classList.remove('active'); });
+            if (closestIndex !== null) {
+                var activeStrip = document.querySelector('.nav-strip[data-msg-index="' + closestIndex + '"]');
+                if (activeStrip) {
+                    activeStrip.classList.add('active');
+                    var container = document.getElementById('navContainer');
+                    if (container) {
+                        var stripTop = activeStrip.offsetTop;
+                        var containerH = container.clientHeight;
+                        container.scrollTo({ top: stripTop - containerH / 2 + activeStrip.offsetHeight / 2, behavior: 'smooth' });
+                    }
+                }
+            }
+        }
+        
+        var mainEl2 = document.querySelector('.main');
+        if (mainEl2) {
+            mainEl2.addEventListener('scroll', updateActiveNavFromScroll);
+        }
+        document.getElementById('navContainer').addEventListener('wheel', function(e) {
+            e.stopPropagation();
+        });
+        
+        function scrollToMsg(index) {
+            var main = document.querySelector('.main');
+            if (!main) return;
+            main.style.scrollBehavior = 'auto';
+            var target = main.querySelector('.message-row[data-msg-index="' + index + '"]');
+            if (target) {
+                target.scrollIntoView({ behavior: 'auto', block: 'center' });
+            }
+            main.style.scrollBehavior = 'smooth';
+            document.querySelectorAll('.nav-strip').forEach(function(s) { s.classList.remove('active'); });
+            var activeStrip = document.querySelector('.nav-strip[data-msg-index="' + index + '"]');
+            if (activeStrip) { activeStrip.classList.add('active'); }
+        }
+
+        function closePreview() {
+            var panel = document.getElementById('previewPanel');
+            var handle = document.getElementById('resizeHandle');
+            if (panel) panel.classList.remove('active');
+            if (handle) handle.classList.remove('active');
+            document.querySelector('.main').classList.remove('preview-open');
+            var main = document.querySelector('.main');
+            if (main) {
+                var rafId;
+                var tick = function() {
+                    updateFloatingButtons();
+                    rafId = requestAnimationFrame(tick);
+                };
+                rafId = requestAnimationFrame(tick);
+                main.addEventListener('transitionend', function() {
+                    cancelAnimationFrame(rafId);
+                    updateFloatingButtons();
+                }, { once: true });
+            }
+        }
+
+        window.addEventListener('load', function() {
+            setupFloatingCopyButtons();
+        });
+        window.addEventListener('scroll', updateFloatingButtons, true);
+        window.addEventListener('resize', updateFloatingButtons);
+    </script>
+</body>
+</html>
