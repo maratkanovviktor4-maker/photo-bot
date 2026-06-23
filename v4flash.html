@@ -852,31 +852,32 @@
         }
         async function deleteBranch(branchId) {
             if (branchId === 'main') return;
-            if (!confirm('Удалить ветку? Сообщения будут потеряны.')) return;
+            if (!confirm('Удалить ветку и все ответвления от неё? Сообщения будут потеряны.')) return;
             
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             
             try {
-                await fetch(SERVER_URL + '/delete_branch?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + branchId + '&session_token=' + sessionToken, {
+                var resp = await fetch(SERVER_URL + '/delete_branch?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + branchId + '&session_token=' + sessionToken, {
                     method: 'DELETE'
                 });
-            } catch(e) {}
-            
-            if (chat.allBranches && chat.allBranches[branchId]) {
-                delete chat.allBranches[branchId];
-            }
-            
-            if (currentBranchId === branchId) {
-                currentBranchId = 'main';
-                chat.activeBranch = 'main';
-                if (chat.allBranches && chat.allBranches['main']) {
-                    chat.messages = chat.allBranches['main'].messages || [];
+                if (resp.ok) {
+                    var data = await resp.json();
+                    loadChatsFromServer().then(function() {
+                        var updatedChat = chats.find(function(c) { return c.id === currentChatId; });
+                        if (updatedChat) {
+                            currentBranchId = updatedChat.activeBranch || 'main';
+                            if (updatedChat.allBranches && updatedChat.allBranches[currentBranchId]) {
+                                updatedChat.messages = updatedChat.allBranches[currentBranchId].messages || [];
+                            }
+                        }
+                        renderBranchesPanel();
+                        renderMessages();
+                    });
                 }
+            } catch(e) {
+                console.error('deleteBranch error:', e);
             }
-            
-            renderBranchesPanel();
-            renderMessages();
         }
         
         function createBranchFromMessage(msgIndex) {
