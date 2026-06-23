@@ -1443,11 +1443,24 @@
                 
                 var targetIndex = -1;
                 for (var i = 0; i < chat.messages.length; i++) {
-                    if (chat.messages[i].msg_id === parentMsgId) {
+                    var m = chat.messages[i];
+                    if (m._parent_msg_id === parentMsgId) {
                         targetIndex = i;
                         break;
                     }
                 }
+                
+                if (targetIndex === -1) {
+                    for (var i = 0; i < chat.messages.length; i++) {
+                        var m = chat.messages[i];
+                        if (i === 0) continue;
+                        if (chat.messages[i-1] && chat.messages[i-1].msg_id === parentMsgId) {
+                            targetIndex = i - 1;
+                            break;
+                        }
+                    }
+                }
+                
                 if (targetIndex === -1) return;
                 
                 var navEl = document.getElementById('branch-nav-' + targetIndex);
