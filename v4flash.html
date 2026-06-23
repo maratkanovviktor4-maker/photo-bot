@@ -1602,6 +1602,7 @@
             let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
             chat.messages.push({ role: 'user', content: displayText });
             chat.lastMessageTime = Date.now();
+            chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             renderChatList();
             renderMessages();
 
@@ -1663,7 +1664,6 @@
                     const msgIndex = chat.messages.length - 1;
                     const streamId = 'stream_' + msgIndex;
                     activeStreamId = streamId;
-                    renderChatList();
                     const area2 = document.getElementById('chatArea');
                     const newRow = document.createElement('div');
                     newRow.className = 'message-row assistant';
@@ -1730,6 +1730,8 @@
                             chat.messages[msgIndex].interrupted = false;
                             typingInterval = null;
                             streamAction.innerHTML = '<button onclick="copyMessage(' + msgIndex + ')" id="copy-btn-' + msgIndex + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button onclick="downloadMessage(' + msgIndex + ')" id="download-btn-' + msgIndex + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
+                            chat.lastMessageTime = Date.now();
+                            chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                             autoNameChat(chat);
                             renderChatList();
                             updateBranchesFromServer();
@@ -1741,8 +1743,6 @@
                                     main.style.scrollBehavior = 'smooth';
                                 }
                             }
-                            chat.lastMessageTime = Date.now();
-                            chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                             if (activeStreamId === streamId) {
                                 isSending = false;
                                 activeStreamId = null;
