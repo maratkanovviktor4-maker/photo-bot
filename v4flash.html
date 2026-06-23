@@ -1438,31 +1438,7 @@
                 var data = await resp.json();
                 if (data.total <= 1) return;
                 
-                var parentMsgId = data.parent_msg_id;
-                if (!parentMsgId) return;
-                
-                var targetIndex = -1;
-                for (var i = 0; i < chat.messages.length; i++) {
-                    var m = chat.messages[i];
-                    if (m._parent_msg_id === parentMsgId) {
-                        targetIndex = i;
-                        break;
-                    }
-                }
-                
-                if (targetIndex === -1) {
-                    for (var i = 0; i < chat.messages.length; i++) {
-                        var m = chat.messages[i];
-                        if (i === 0) continue;
-                        if (chat.messages[i-1] && chat.messages[i-1].msg_id === parentMsgId) {
-                            targetIndex = i - 1;
-                            break;
-                        }
-                    }
-                }
-                
-                if (targetIndex === -1) return;
-                
+                var targetIndex = chat.messages.length > 0 ? chat.messages.length - 1 : 0;
                 var navEl = document.getElementById('branch-nav-' + targetIndex);
                 if (!navEl) return;
                 
