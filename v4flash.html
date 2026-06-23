@@ -1436,43 +1436,42 @@
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             
-            for (var i = 0; i < chat.messages.length; i++) {
-                var m = chat.messages[i];
-                if (!m.msg_id) continue;
+            try {
+                var resp = await fetch(SERVER_URL + '/get_sibling_branches?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + currentBranchId + '&session_token=' + sessionToken);
+                if (!resp.ok) return;
+                var data = await resp.json();
+                if (data.total <= 1) return;
                 
-                var navEl = document.getElementById('branch-nav-' + i);
-                if (!navEl) continue;
+                var parentMsgId = data.parent_msg_id;
+                if (!parentMsgId) return;
                 
-                try {
-                    var resp = await fetch(SERVER_URL + '/get_sibling_branches?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&msg_id=' + m.msg_id + '&session_token=' + sessionToken);
-                    if (resp.ok) {
-                        var data = await resp.json();
-                        if (data.total > 1) {
-                            var prevIdx = data.current_index - 1;
-                            var nextIdx = data.current_index + 1;
-                            var html = '';
-                            if (prevIdx >= 0) {
-                                html += '<button onclick="navigateSibling(\'' + i + '\', ' + prevIdx + ')" style="background:transparent;border:none;color:#aaa;cursor:pointer;font-size:12px;padding:0 4px;" title="' + escapeHtml(data.siblings[prevIdx].name) + '">←</button>';
-                            }
-                            html += '<span style="padding:0 4px;font-size:11px;">' + (data.current_index + 1) + '/' + data.total + '</span>';
-                            if (nextIdx < data.total) {
-                                html += '<button onclick="navigateSibling(\'' + i + '\', ' + nextIdx + ')" style="background:transparent;border:none;color:#aaa;cursor:pointer;font-size:12px;padding:0 4px;" title="' + escapeHtml(data.siblings[nextIdx].name) + '">→</button>';
-                            }
-                            navEl.innerHTML = html;
-                            navEl._siblings = data.siblings;
-                        }
+                var targetIndex = -1;
+                for (var i = 0; i < chat.messages.length; i++) {
+                    if (chat.messages[i].msg_id === parentMsgId) {
+                        targetIndex = i;
+                        break;
                     }
-                } catch(e) {}
-            }
+                }
+                if (targetIndex === -1) return;
+                
+                var navEl = document.getElementById('branch-nav-' + targetIndex);
+                if (!navEl) return;
+                
+                var prevIdx = data.current_index - 1;
+                var nextIdx = data.current_index + 1;
+                var html = '';
+                if (prevIdx >= 0) {
+                    html += '<button onclick="navigateSiblingDirect(\'' + data.siblings[prevIdx].branch_id + '\')" style="background:transparent;border:none;color:#aaa;cursor:pointer;font-size:12px;padding:0 4px;" title="' + escapeHtml(data.siblings[prevIdx].name) + '">←</button>';
+                }
+                html += '<span style="padding:0 4px;font-size:11px;">' + (data.current_index + 1) + '/' + data.total + '</span>';
+                if (nextIdx < data.total) {
+                    html += '<button onclick="navigateSiblingDirect(\'' + data.siblings[nextIdx].branch_id + '\')" style="background:transparent;border:none;color:#aaa;cursor:pointer;font-size:12px;padding:0 4px;" title="' + escapeHtml(data.siblings[nextIdx].name) + '">→</button>';
+                }
+                navEl.innerHTML = html;
+            } catch(e) {}
         }
-        async function navigateSibling(msgIndex, siblingIndex) {
-            var navEl = document.getElementById('branch-nav-' + msgIndex);
-            if (!navEl || !navEl._siblings) return;
-            
-            var sibling = navEl._siblings[siblingIndex];
-            if (!sibling) return;
-            
-            await switchBranch(sibling.branch_id);
+        async function navigateSiblingDirect(branchId) {
+            await switchBranch(branchId);
         }
         
         function copyMessage(index) {
