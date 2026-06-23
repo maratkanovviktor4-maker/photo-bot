@@ -895,7 +895,6 @@
             isSending = true;
             sendBtnStop();
             
-            // Затираем только сообщения ПОСЛЕ msgIndex
             chat.messages = chat.messages.slice(0, msgIndex + 1);
             renderMessages();
             
@@ -936,14 +935,11 @@
                 if (resp.ok) {
                     var data = await resp.json();
                     
-                    // Переключаемся в новую ветку
                     currentBranchId = data.branch_id;
                     chat.activeBranch = data.branch_id;
                     
-                    // Загружаем полное дерево с сервера (НЕ перезаписываем chat.messages)
                     await updateBranchesFromServer();
                     
-                    // Восстанавливаем историю ДО из загруженной ветки, но без assistant-ответа
                     if (chat.allBranches && chat.allBranches[data.branch_id]) {
                         chat.messages = chat.allBranches[data.branch_id].messages || [];
                     } else {
@@ -953,9 +949,7 @@
                     renderChatList();
                     renderBranchesPanel();
                     
-                    // Если есть reply — стримим ответ ассистента
                     if (data.reply) {
-                        // Убираем последний assistant из messages (сервер уже сохранил его в ветку)
                         while (chat.messages.length > 0 && chat.messages[chat.messages.length - 1].role === 'assistant') {
                             chat.messages.pop();
                         }
@@ -1018,7 +1012,6 @@
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
             
-            // Обрезаем сообщения ПОСЛЕ выбранного user (как в createBranchFromMessage)
             chat.messages = chat.messages.slice(0, msgIndex + 1);
             renderMessages();
             
@@ -1121,7 +1114,6 @@
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'assistant') return;
             
-            // Находим родительского user для этого assistant
             var parentUserIndex = msgIndex - 1;
             while (parentUserIndex >= 0 && chat.messages[parentUserIndex].role !== 'user') {
                 parentUserIndex--;
@@ -1135,7 +1127,6 @@
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
             
-            // Обрезаем до assistant (как в createBranchFromMessage)
             chat.messages = chat.messages.slice(0, msgIndex + 1);
             renderMessages();
             
@@ -1150,7 +1141,6 @@
             if (main) { main.scrollTop = main.scrollHeight; }
             
             try {
-                // Используем create_branch от родительского user (тот же механизм что и синяя иконка)
                 var resp = await fetch(SERVER_URL + '/create_branch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
@@ -1280,16 +1270,19 @@
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
             
-            // Собираем ветки, содержащие тот же msg_id (субветки)
             branchSiblingsMap = {};
             if (chat && chat.allBranches) {
                 for (var bid in chat.allBranches) {
+                    if (bid === 'main') continue;
                     var bMsgs = chat.allBranches[bid].messages || [];
                     for (var bi = 0; bi < bMsgs.length; bi++) {
                         var bMid = bMsgs[bi].msg_id;
-                        if (!branchSiblingsMap[bMid]) branchSiblingsMap[bMid] = [];
-                        if (branchSiblingsMap[bMid].indexOf(bid) < 0) {
-                            branchSiblingsMap[bMid].push(bid);
+                        if (!bMid) continue;
+                        if (bi < bMsgs.length - 1) {
+                            if (!branchSiblingsMap[bMid]) branchSiblingsMap[bMid] = [];
+                            if (branchSiblingsMap[bMid].indexOf(bid) < 0) {
+                                branchSiblingsMap[bMid].push(bid);
+                            }
                         }
                     }
                 }
@@ -1373,8 +1366,6 @@
                 main.style.scrollBehavior = 'smooth';
             }
         }
-        
-        // navigateSibling удалён — навигация теперь только через navigateBranchSibling (переключение веток)
 
         function navigateBranchSibling(msgId, direction) {
             var branches = window.branchSiblingsMap[msgId];
