@@ -124,9 +124,6 @@
         body.light .message-actions button:hover { background: rgba(0,0,0,0.06); }
         .branch-btn { color: #00CBF5 !important; font-weight: 500; }
         .branch-btn:hover { background: rgba(0,203,245,0.15) !important; }
-        .branch-nav-btn { background: transparent; border: 1px solid rgba(0,203,245,0.5); color: #00CBF5; border-radius: 4px; cursor: pointer; font-size: 11px; padding: 2px 6px; font-family: 'Inter', sans-serif; }
-        .branch-nav-btn:hover { background: rgba(0,203,245,0.2); }
-        .branch-nav-count { font-size: 10px; color: #888; font-family: 'Inter', sans-serif; }
         .input-area { padding: 0; border-top: none; display: flex; gap: 0; align-items: flex-end; background: #201F28; flex-shrink: 0; overflow: visible; position: relative; flex-wrap: wrap; margin-bottom: 25px; }
         body.light .input-area { background: #ffffff; border-top: none; }
         .input-area textarea { flex: 1; padding: 0; border-radius: 0; border: none; background: transparent; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; outline: none; resize: none; min-height: 48px; max-height: 300px; overflow-y: auto; min-width: 0; width: 100%; }
@@ -883,89 +880,6 @@
             }
         }
         
-        async function getMsgBranches(msgId) {
-            try {
-                var resp = await fetch(SERVER_URL + '/get_msg_branches?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&msg_id=' + msgId + '&session_token=' + sessionToken);
-                if (resp.ok) {
-                    var data = await resp.json();
-                    return data.branches || [];
-                }
-            } catch(e) { console.error('getMsgBranches:', e); }
-            return [];
-        }
-        
-        async function loadBranchNavs() {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            
-            document.querySelectorAll('.branch-nav').forEach(function(nav) {
-                nav.style.display = 'none';
-                nav.innerHTML = '';
-            });
-            
-            for (var i = 0; i < chat.messages.length; i++) {
-                var m = chat.messages[i];
-                if (!m.msg_id) continue;
-                
-                var nav = document.getElementById('branchnav-' + i);
-                if (!nav) continue;
-                
-                var data = await getMsgBranches(m.msg_id);
-                if (!data || data.length === 0) continue;
-                
-                var currentIdx = -1;
-                for (var b = 0; b < data.length; b++) {
-                    if (data[b].branch_id === currentBranchId) { currentIdx = b; break; }
-                }
-                
-                if (currentIdx === -1 && data.length > 0) {
-                    nav.style.display = 'inline-flex';
-                    nav.innerHTML = '<span class="branch-nav-count" style="font-size:10px;color:#888;">' + data.length + ' ветки</span>';
-                    continue;
-                }
-                
-                var html = '';
-                if (currentIdx > 0) {
-                    html += '<button class="branch-nav-btn" onclick="event.stopPropagation();switchBranchNav(\'' + i + '\',\'' + data[currentIdx - 1].branch_id + '\')">◂</button>';
-                }
-                html += '<span class="branch-nav-count">' + (currentIdx + 1) + '/' + data.length + '</span>';
-                if (currentIdx < data.length - 1) {
-                    html += '<button class="branch-nav-btn" onclick="event.stopPropagation();switchBranchNav(\'' + i + '\',\'' + data[currentIdx + 1].branch_id + '\')">▸</button>';
-                }
-                nav.innerHTML = html;
-                nav.style.display = 'inline-flex';
-            }
-        }
-        
-        async function switchBranchNav(msgIndex, branchId) {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            
-            try {
-                var resp = await fetch(SERVER_URL + '/switch_branch', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: branchId })
-                });
-                if (resp.ok) {
-                    var data = await resp.json();
-                    currentBranchId = branchId;
-                    chat.activeBranch = branchId;
-                    chat.messages = data.messages || [];
-                    renderBranchesPanel();
-                    renderMessages();
-                    setTimeout(function() {
-                        var main = document.querySelector('.main');
-                        if (main) {
-                            main.style.scrollBehavior = 'auto';
-                            main.scrollTop = main.scrollHeight;
-                            main.style.scrollBehavior = 'smooth';
-                        }
-                    }, 100);
-                }
-            } catch(e) { console.error('switchBranchNav:', e); }
-        }
-        
         function createBranchFromMessage(msgIndex) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
@@ -1462,13 +1376,11 @@
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="editMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
                         actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>`;
-                        actionsHtml += `<span class="branch-nav" id="branchnav-${i}" style="display:none;align-items:center;gap:4px;margin-left:8px;"></span>`;
                     } else {
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
                         actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения" style="color:#4caf50;"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#4caf50"/></svg></button>`;
                         if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
-                        actionsHtml += `<span class="branch-nav" id="branchnav-${i}" style="display:none;align-items:center;gap:4px;margin-left:8px;"></span>`;
                     }
                     var dataAttr = ' data-msg-index="' + i + '"';
                     var reasoningHtml = '';
@@ -1492,7 +1404,6 @@
             hljs.highlightAll();
             setupFloatingCopyButtons();
             buildNavContainer();
-            loadBranchNavs();
             var main = document.querySelector('.main');
             if (main) {
                 main.style.scrollBehavior = 'auto';
