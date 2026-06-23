@@ -933,10 +933,10 @@
                     currentBranchId = data.branch_id;
                     chat.activeBranch = data.branch_id;
                     
-                    // Загружаем полное дерево с сервера
+                    // Загружаем полное дерево с сервера (НЕ перезаписываем chat.messages)
                     await updateBranchesFromServer();
                     
-                    // Берём реальные сообщения из загруженной ветки
+                    // Восстанавливаем историю ДО из загруженной ветки, но без assistant-ответа
                     if (chat.allBranches && chat.allBranches[data.branch_id]) {
                         chat.messages = chat.allBranches[data.branch_id].messages || [];
                     } else {
@@ -948,6 +948,10 @@
                     
                     // Если есть reply — стримим ответ ассистента
                     if (data.reply) {
+                        // Убираем последний assistant из messages (сервер уже сохранил его в ветку)
+                        while (chat.messages.length > 0 && chat.messages[chat.messages.length - 1].role === 'assistant') {
+                            chat.messages.pop();
+                        }
                         var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
                         var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
                         chat.messages.push(assistantMsg);
@@ -955,6 +959,7 @@
                         var streamId = 'branch_stream_' + newMsgIndex;
                         activeStreamId = streamId;
                         
+                        renderMessages();
                         streamReplyIntoChat(chat, newMsgIndex, fullContent, streamId, function() {
                             chat.lastMessageTime = Date.now();
                             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
