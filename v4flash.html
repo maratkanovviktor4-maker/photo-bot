@@ -894,19 +894,21 @@
             isSending = true;
             sendBtnStop();
             
-            // Затираем только сообщения ПОСЛЕ msgIndex
-            chat.messages = chat.messages.slice(0, msgIndex + 1);
-            renderMessages();
-            
-            var placeholderId = 'branch_create_' + Date.now();
-            var area = document.getElementById('chatArea');
-            var loadingRow = document.createElement('div');
-            loadingRow.className = 'message-row assistant';
-            loadingRow.id = placeholderId;
-            loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
-            area.appendChild(loadingRow);
-            var main = document.querySelector('.main');
-            if (main) { main.scrollTop = main.scrollHeight; }
+            // Только для ветвления от user — затираем сообщения ПОСЛЕ и показываем спиннер
+            if (msg.role === 'user') {
+                chat.messages = chat.messages.slice(0, msgIndex + 1);
+                renderMessages();
+                
+                var placeholderId = 'branch_create_' + Date.now();
+                var area = document.getElementById('chatArea');
+                var loadingRow = document.createElement('div');
+                loadingRow.className = 'message-row assistant';
+                loadingRow.id = placeholderId;
+                loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
+                area.appendChild(loadingRow);
+                var main = document.querySelector('.main');
+                if (main) { main.scrollTop = main.scrollHeight; }
+            }
             
             try {
                 var resp = await fetch(SERVER_URL + '/create_branch', {
@@ -951,6 +953,7 @@
                         // Убираем последний assistant из messages (сервер уже сохранил его в ветку)
                         while (chat.messages.length > 0 && chat.messages[chat.messages.length - 1].role === 'assistant') {
                             chat.messages.pop();
+                        }
                         }
                         var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
                         var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
