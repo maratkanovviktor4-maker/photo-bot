@@ -289,6 +289,7 @@
         let pendingFile = null;
         let activeStreamId = null;
         let allBranchesCache = {};
+        let branchSiblingsMap = {};
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
         window.addEventListener('drop', function(e) { e.preventDefault(); e.stopPropagation(); });
@@ -1280,7 +1281,7 @@
             const area = document.getElementById('chatArea');
             
             // Собираем ветки, содержащие тот же msg_id (субветки)
-            var branchSiblingsMap = {};
+            branchSiblingsMap = {};
             if (chat && chat.allBranches) {
                 for (var bid in chat.allBranches) {
                     var bMsgs = chat.allBranches[bid].messages || [];
@@ -1372,70 +1373,11 @@
                 main.style.scrollBehavior = 'smooth';
             }
         }
-        function navigateSibling(msgIndex, direction) {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat || !chat.allBranches || !chat.allBranches[currentBranchId]) return;
-            
-            var msg = chat.messages[msgIndex];
-            if (!msg) return;
-            
-            var allMsgs = chat.allBranches[currentBranchId].messages || [];
-            var parentId = msg.parent_msg_id || 'root';
-            var siblings = [];
-            for (var i = 0; i < allMsgs.length; i++) {
-                if ((allMsgs[i].parent_msg_id || 'root') === parentId && allMsgs[i].role === msg.role) {
-                    siblings.push(allMsgs[i]);
-                }
-            }
-            
-            if (siblings.length <= 1) return;
-            
-            var currentIdx = -1;
-            for (var j = 0; j < siblings.length; j++) {
-                if (siblings[j].msg_id === msg.msg_id) { currentIdx = j; break; }
-            }
-            if (currentIdx < 0) return;
-            
-            var newIdx = currentIdx + direction;
-            if (newIdx < 0) newIdx = siblings.length - 1;
-            if (newIdx >= siblings.length) newIdx = 0;
-            
-            // Подменяем контент в chat.messages и в DOM
-            var newMsg = siblings[newIdx];
-            chat.messages[msgIndex] = JSON.parse(JSON.stringify(newMsg));
-            
-            // Обновляем только это сообщение в DOM
-            var rowEl = document.querySelector('.message-row[data-msg-index="' + msgIndex + '"]');
-            if (rowEl) {
-                var contentEl = rowEl.querySelector('.message-content');
-                var actionsEl = rowEl.querySelector('.message-actions');
-                if (contentEl) {
-                    var reasoningHtml = '';
-                    var contentToShow = newMsg.content || '';
-                    if (newMsg.reasoning) {
-                        reasoningHtml = '<div class="reasoning-block">' + formatMessage(newMsg.reasoning) + '</div>';
-                    }
-                    contentEl.innerHTML = reasoningHtml + formatMessage(contentToShow);
-                }
-                // Обновляем стрелки
-                if (actionsEl) {
-                    var navSpan = actionsEl.querySelector('span[style]');
-                    if (navSpan) {
-                        var counterSpan = navSpan.querySelector('span:not([onclick])');
-                        if (counterSpan) {
-                            counterSpan.textContent = (newIdx + 1) + '/' + siblings.length;
-                        }
-                    }
-                }
-            }
-            
-            if (typeof hljs !== 'undefined' && hljs.highlightElement) {
-                document.querySelectorAll('.message-content pre code').forEach(function(el) { hljs.highlightElement(el); });
-            }
-            setupFloatingCopyButtons();
-        }
+        
+        // navigateSibling удалён — навигация теперь только через navigateBranchSibling (переключение веток)
+
         function navigateBranchSibling(msgId, direction) {
-            var branches = branchSiblingsMap[msgId];
+            var branches = window.branchSiblingsMap[msgId];
             if (!branches || branches.length <= 1) return;
             branches.sort();
             var curIdx = branches.indexOf(currentBranchId);
@@ -1445,6 +1387,7 @@
             if (newIdx >= branches.length) newIdx = 0;
             switchBranch(branches[newIdx]);
         }        
+        
         function copyMessage(index) {
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
