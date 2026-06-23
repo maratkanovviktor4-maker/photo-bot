@@ -925,31 +925,24 @@
                 if (resp.ok) {
                     var data = await resp.json();
                     
-                    if (!chat.allBranches) chat.allBranches = {};
-                    if (!chat.allBranches[data.branch_id]) {
-                        chat.allBranches[data.branch_id] = {
-                            name: data.branch_name || 'Ветка',
-                            messages: [],
-                            msg_ids: data.msg_ids || []
-                        };
-                    }
-                    
+                    // Переключаемся в новую ветку
                     currentBranchId = data.branch_id;
                     chat.activeBranch = data.branch_id;
                     
-                    // Очищаем экран сразу
-                    chat.messages = [];
-                    if (data.msg_ids) {
-                        for (var k = 0; k < data.msg_ids.length; k++) {
-                            chat.messages.push({ role: 'placeholder', content: '', msg_id: data.msg_ids[k] });
-                        }
+                    // Загружаем полное дерево с сервера
+                    await updateBranchesFromServer();
+                    
+                    // Берём реальные сообщения из загруженной ветки
+                    if (chat.allBranches && chat.allBranches[data.branch_id]) {
+                        chat.messages = chat.allBranches[data.branch_id].messages || [];
+                    } else {
+                        chat.messages = [];
                     }
                     
                     renderChatList();
                     renderBranchesPanel();
-                    renderMessages();
                     
-                    // Если есть reply — стримим ответ
+                    // Если есть reply — стримим ответ ассистента
                     if (data.reply) {
                         var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
                         var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
@@ -973,11 +966,8 @@
                             sendBtnArrow();
                         });
                     } else {
-                        updateBranchesFromServer().then(function() {
-                            renderChatList();
-                            renderBranchesPanel();
-                            renderMessages();
-                        });
+                        renderMessages();
+                        updateBalance();
                         isSending = false;
                         sendBtnArrow();
                     }
