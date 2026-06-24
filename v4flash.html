@@ -1319,7 +1319,8 @@
                             contentToShow = '';
                         }
                     }
-                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + escapeHtml(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
+                    var formattedContent = m.role === 'user' ? escapeHtml(contentToShow) : formatMessage(contentToShow);
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formattedContent + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
             hljs.highlightAll();
