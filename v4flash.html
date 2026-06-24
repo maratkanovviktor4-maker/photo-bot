@@ -1271,7 +1271,26 @@
                             chat.messages[msgIndex].reasoning = ft.substring('Размышление:\n'.length, ei);
                         }
                     }
-                    renderMessages();
+                    // Обновляем только DOM текущего сообщения
+                    var reasoningHtml = '';
+                    var contentToShow = ft;
+                    if (chat.messages[msgIndex].reasoning) {
+                        reasoningHtml = '<div class="reasoning-block">' + formatMessage(chat.messages[msgIndex].reasoning) + '</div>';
+                        var endIdx = ft.indexOf('\n\nОтвет:\n');
+                        if (endIdx !== -1) {
+                            contentToShow = ft.substring(endIdx + '\n\nОтвет:\n'.length);
+                        }
+                    } else if (chat.messages[msgIndex]._reasoningInProgress && ft) {
+                        var startIdx = ft.indexOf('Размышление:\n');
+                        if (startIdx !== -1) {
+                            reasoningHtml = '<div class="reasoning-block">' + escapeHtml(ft.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
+                            contentToShow = '';
+                        }
+                    }
+                    var streamEl = document.getElementById('stream-' + msgIndex);
+                    if (streamEl) {
+                        streamEl.innerHTML = reasoningHtml + formatMessage(contentToShow);
+                    }
                     if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.scrollTop = m3.scrollHeight; } }
                     typingInterval = setTimeout(streamNext, delayMs);
                 } else {
