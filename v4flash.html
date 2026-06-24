@@ -1249,7 +1249,33 @@
                             chat.messages[msgIndex].reasoning = ft.substring('Размышление:\n'.length, ei);
                         }
                     }
-                    var el = document.getElementById('stream-' + msgIndex); if (el) { el.innerHTML = reasoningHtml + formatMessage(ft); }
+                    if (activeStreamId !== streamId) return;
+                    var reasonHtml = '';
+                    if (chat.messages[msgIndex].reasoning) {
+                        reasonHtml = '<div class="reasoning-block">' + formatMessage(chat.messages[msgIndex].reasoning) + '</div>';
+                    } else if (chat.messages[msgIndex]._reasoningInProgress) {
+                        var startIdx = ft.indexOf('Размышление:\n');
+                        if (startIdx !== -1) {
+                            reasonHtml = '<div class="reasoning-block">' + escapeHtml(ft.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
+                        }
+                    }
+                    var displayText = ft;
+                    if (chat.messages[msgIndex].reasoning) {
+                        var endIdx = ft.indexOf('\n\nОтвет:\n');
+                        if (endIdx !== -1) {
+                            displayText = ft.substring(endIdx + '\n\nОтвет:\n'.length);
+                        }
+                    } else if (chat.messages[msgIndex]._reasoningInProgress) {
+                        var startIdx2 = ft.indexOf('Размышление:\n');
+                        if (startIdx2 !== -1) {
+                            displayText = '';
+                        }
+                    }
+                    var el = document.getElementById('stream-' + msgIndex);
+                    if (el) {
+                        el.innerHTML = reasonHtml + formatMessage(displayText);
+                    }
+
                     if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.scrollTop = m3.scrollHeight; } }
                     typingInterval = setTimeout(streamNext, delayMs);
                 } else {
