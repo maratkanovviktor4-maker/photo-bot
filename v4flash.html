@@ -878,6 +878,54 @@
             } catch(e) {}
         }
         
+        async function showMergeDialog(msgIndex) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[msgIndex];
+            if (!msg) return;
+
+            var targetChatId = prompt('Введите ID чата, в который хотите слить эту ветку:\n(текущий чат: ' + currentChatId + ')', currentChatId);
+            if (!targetChatId) return;
+
+            var targetBranchId = prompt('Введите ID ветки для слияния:\n(текущая ветка: ' + currentBranchId + ')', 'main');
+            if (!targetBranchId) return;
+
+            var userPrompt = prompt('Введите дополнительный промт для ассистента (или оставьте пустым):', 'Проанализируй эту историю из другой ветки и учти в своём ответе.');
+            if (userPrompt === null) return;
+
+            try {
+                var resp = await fetch(SERVER_URL + '/merge_branch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        model: 'flash',
+                        source_chat_id: currentChatId,
+                        source_branch_id: currentBranchId,
+                        source_msg_id: msg.msg_id,
+                        target_chat_id: targetChatId,
+                        target_branch_id: targetBranchId,
+                        custom_prompt: userPrompt || ''
+                    })
+                });
+                if (resp.ok) {
+                    var data = await resp.json();
+                    alert('✅ Слияние выполнено. Ответ ассистента в целевой ветке.');
+                    if (targetChatId === currentChatId) {
+                        await loadChatsFromServer();
+                    } else {
+                        alert('Переключитесь на чат ' + targetChatId + ' чтобы увидеть результат.');
+                    }
+                } else {
+                    var errData = await resp.json();
+                    alert('❌ Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
+                }
+            } catch(e) {
+                console.error('showMergeDialog error:', e);
+                alert('❌ Ошибка соединения.');
+            }
+        }
+
         async function deleteBranch(branchId) {
             if (branchId === 'main') return;
             if (!confirm('Удалить ветку и все ответвления от неё? Сообщения будут потеряны.')) return;
@@ -1265,6 +1313,8 @@
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="regenerateUserMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
                         actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>`;
+                    actionsHtml += `<button class="branch-btn" onclick="showMergeDialog(${i})" title="Слить ветку"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L22 12 L12 22 M2 12 L22 12"/></svg></button>`;
+
                     } else {
                         actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
                         actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
