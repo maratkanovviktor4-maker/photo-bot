@@ -492,7 +492,10 @@
             renderMessages();
             main.style.scrollBehavior = 'auto';
             main.scrollTop = main.scrollHeight;
-            main.style.scrollBehavior = 'smooth';
+            requestAnimationFrame(function() {
+                main.scrollTop = main.scrollHeight;
+                main.style.scrollBehavior = 'smooth';
+            });
         }
 
         var mainEl = document.querySelector('.main');
@@ -706,13 +709,16 @@
                     virtRange.end = total - 1;
                 }
                 renderMessages();
+                autoScroll = true;
                 var main = document.querySelector('.main');
                 if (main) {
                     main.style.scrollBehavior = 'auto';
                     main.scrollTop = main.scrollHeight;
-                    main.style.scrollBehavior = 'smooth';
+                    requestAnimationFrame(function() {
+                        main.scrollTop = main.scrollHeight;
+                        main.style.scrollBehavior = 'smooth';
+                    });
                 }
-                autoScroll = true;
             }, 150);
         }
         
