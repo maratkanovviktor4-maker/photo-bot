@@ -705,7 +705,7 @@
                 var chat2 = chats.find(function(c) { return c.id === id; });
                 if (chat2 && chat2.messages.length > 0) {
                     var total = chat2.messages.length;
-                    virtRange.start = Math.max(0, total - VISIBLE_BUFFER * 2);
+                    virtRange.start = 0;
                     virtRange.end = total - 1;
                 }
                 renderMessages();
@@ -713,14 +713,19 @@
                 var main = document.querySelector('.main');
                 if (main) {
                     main.style.scrollBehavior = 'auto';
-                    main.scrollTop = main.scrollHeight;
                     requestAnimationFrame(function() {
                         main.scrollTop = main.scrollHeight;
-                        main.style.scrollBehavior = 'smooth';
+                        requestAnimationFrame(function() {
+                            main.scrollTop = main.scrollHeight;
+                            if (chat2 && chat2.messages.length > VISIBLE_BUFFER * 2) {
+                                updateVirtRange();
+                                renderMessages();
+                            }
+                            main.style.scrollBehavior = 'smooth';
+                        });
                     });
                 }
             }, 150);
-        }
         
         function toggleChatMenu(e, id) {
             e.stopPropagation();
