@@ -288,27 +288,6 @@
     </div>
     <script>
         var autoScroll = true;
-        // === Виртуализация ===
-        const VISIBLE_BUFFER = 10;   // сколько сообщений над/под экраном держать
-        const ITEM_EST_HEIGHT = 120; // примерная высота одного сообщения в px
-        var virtRange = { start: 0, end: 0 };
-        var virtTotalHeight = 0;
-        
-        function updateVirtRange() {
-            var main = document.querySelector('.main');
-            if (!main) return;
-            var scrollTop = main.scrollTop;
-            var viewHeight = main.clientHeight;
-            var totalItems = 0;
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (chat) totalItems = chat.messages.length;
-            if (totalItems === 0) { virtRange = { start: 0, end: 0 }; virtTotalHeight = 0; return; }
-            
-            virtTotalHeight = totalItems * ITEM_EST_HEIGHT;
-            var startIdx = Math.max(0, Math.floor(scrollTop / ITEM_EST_HEIGHT) - VISIBLE_BUFFER);
-            var endIdx = Math.min(totalItems - 1, Math.ceil((scrollTop + viewHeight) / ITEM_EST_HEIGHT) + VISIBLE_BUFFER);
-            virtRange = { start: startIdx, end: endIdx };
-        }
 
         const SERVER_URL = CONFIG.SERVER_URL;
         let currentMode = 'chat';
@@ -482,24 +461,13 @@
         function scrollToBottom() {
             var main = document.querySelector('.main');
             if (!main) return;
-            autoScroll = true;
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (chat && chat.messages.length > 0) {
-                var total = chat.messages.length;
-                virtRange.start = Math.max(0, total - VISIBLE_BUFFER * 2);
-                virtRange.end = total - 1;
-            }
-            renderMessages();
             main.style.scrollBehavior = 'auto';
             main.scrollTop = main.scrollHeight;
-            requestAnimationFrame(function() {
-                main.scrollTop = main.scrollHeight;
-                main.style.scrollBehavior = 'smooth';
-            });
+            main.style.scrollBehavior = 'smooth';
+            autoScroll = true;
         }
 
         var mainEl = document.querySelector('.main');
-        var virtScrollTicking = false;
         if (mainEl) {
             mainEl.addEventListener('scroll', function(e) {
                 if (e.target !== mainEl) return;
@@ -512,27 +480,6 @@
                 } else {
                     btn.style.display = 'flex';
                     autoScroll = false;
-                }
-                if (!virtScrollTicking) {
-                    requestAnimationFrame(function() {
-                        updateVirtRange();
-                        var chat = chats.find(function(c) { return c.id === currentChatId; });
-                        if (chat && chat.messages.length > 0) {
-                            var oldStart = virtRange.start;
-                            var oldEnd = virtRange.end;
-                            renderMessages();
-                            // сохраняем позицию скролла после перерендера
-                            if (oldStart !== virtRange.start && !autoScroll) {
-                                var main2 = document.querySelector('.main');
-                                if (main2) {
-                                    var shift = (virtRange.start - oldStart) * ITEM_EST_HEIGHT;
-                                    main2.scrollTop = main2.scrollTop + shift;
-                                }
-                            }
-                        }
-                        virtScrollTicking = false;
-                    });
-                    virtScrollTicking = true;
                 }
             }, true);
             mainEl.addEventListener('wheel', function(e) {
@@ -702,30 +649,14 @@
             renderBranchesPanel();
             renderMessages();
             setTimeout(function() {
-                var chat2 = chats.find(function(c) { return c.id === id; });
-                if (chat2 && chat2.messages.length > 0) {
-                    var total = chat2.messages.length;
-                    virtRange.start = 0;
-                    virtRange.end = total - 1;
-                }
-                renderMessages();
-                autoScroll = true;
                 var main = document.querySelector('.main');
                 if (main) {
                     main.style.scrollBehavior = 'auto';
-                    requestAnimationFrame(function() {
-                        main.scrollTop = main.scrollHeight;
-                        requestAnimationFrame(function() {
-                            main.scrollTop = main.scrollHeight;
-                            if (chat2 && chat2.messages.length > VISIBLE_BUFFER * 2) {
-                                updateVirtRange();
-                                renderMessages();
-                            }
-                            main.style.scrollBehavior = 'smooth';
-                        });
-                    });
+                    main.scrollTop = main.scrollHeight;
+                    main.style.scrollBehavior = 'smooth';
                 }
             }, 150);
+        }
         
         function toggleChatMenu(e, id) {
             e.stopPropagation();
@@ -947,54 +878,6 @@
             } catch(e) {}
         }
         
-        async function showMergeDialog(msgIndex) {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var msg = chat.messages[msgIndex];
-            if (!msg) return;
-
-            var targetChatId = prompt('Введите ID чата, в который хотите слить эту ветку:\n(текущий чат: ' + currentChatId + ')', currentChatId);
-            if (!targetChatId) return;
-
-            var targetBranchId = prompt('Введите ID ветки для слияния:\n(текущая ветка: ' + currentBranchId + ')', 'main');
-            if (!targetBranchId) return;
-
-            var userPrompt = prompt('Введите дополнительный промт для ассистента (или оставьте пустым):', 'Проанализируй эту историю из другой ветки и учти в своём ответе.');
-            if (userPrompt === null) return;
-
-            try {
-                var resp = await fetch(SERVER_URL + '/merge_branch', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({
-                        user_id: currentUserId,
-                        model: 'flash',
-                        source_chat_id: currentChatId,
-                        source_branch_id: currentBranchId,
-                        source_msg_id: msg.msg_id,
-                        target_chat_id: targetChatId,
-                        target_branch_id: targetBranchId,
-                        custom_prompt: userPrompt || ''
-                    })
-                });
-                if (resp.ok) {
-                    var data = await resp.json();
-                    alert('✅ Слияние выполнено. Ответ ассистента в целевой ветке.');
-                    if (targetChatId === currentChatId) {
-                        await loadChatsFromServer();
-                    } else {
-                        alert('Переключитесь на чат ' + targetChatId + ' чтобы увидеть результат.');
-                    }
-                } else {
-                    var errData = await resp.json();
-                    alert('❌ Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
-                }
-            } catch(e) {
-                console.error('showMergeDialog error:', e);
-                alert('❌ Ошибка соединения.');
-            }
-        }
-
         async function deleteBranch(branchId) {
             if (branchId === 'main') return;
             if (!confirm('Удалить ветку и все ответвления от неё? Сообщения будут потеряны.')) return;
@@ -1340,35 +1223,14 @@
                             chat.messages[msgIndex].reasoning = ft.substring('Размышление:\n'.length, ei);
                         }
                     }
-                    // Точечный DOM — обновляем только если сообщение в видимом диапазоне
-                    if (msgIndex >= virtRange.start && msgIndex <= virtRange.end) {
-                        var reasoningHtml = '';
-                        var contentToShow = ft;
-                        if (chat.messages[msgIndex].reasoning) {
-                            reasoningHtml = '<div class="reasoning-block">' + formatMessage(chat.messages[msgIndex].reasoning) + '</div>';
-                            var endIdx = ft.indexOf('\n\nОтвет:\n');
-                            if (endIdx !== -1) contentToShow = ft.substring(endIdx + '\n\nОтвет:\n'.length);
-                        } else if (chat.messages[msgIndex]._reasoningInProgress && ft) {
-                            var startIdx = ft.indexOf('Размышление:\n');
-                            if (startIdx !== -1) {
-                                reasoningHtml = '<div class="reasoning-block">' + escapeHtml(ft.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
-                                contentToShow = '';
-                            }
-                        }
-                        var streamEl = document.getElementById('stream-' + msgIndex);
-                        if (streamEl) {
-                            streamEl.innerHTML = reasoningHtml + formatMessage(contentToShow);
-                        }
-                    }
+                    renderMessages();
                     if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.scrollTop = m3.scrollHeight; } }
                     typingInterval = setTimeout(streamNext, delayMs);
                 } else {
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex].interrupted = false;
                     typingInterval = null;
-                    updateVirtRange();
                     renderMessages();
-                    if (autoScroll) { var m4 = document.querySelector('.main'); if (m4) { m4.scrollTop = m4.scrollHeight; } }
                     if (onComplete) onComplete();
                 }
             }
@@ -1387,78 +1249,58 @@
             
             if (!chat || chat.messages.length === 0) {
                 area.innerHTML = `<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display='none'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>`;
-                virtRange = { start: 0, end: 0 };
-                virtTotalHeight = 0;
-                hljs.highlightAll();
-                setupFloatingCopyButtons();
-                buildNavContainer();
-                return;
-            }
-            
-            updateVirtRange();
-            var total = chat.messages.length;
-            var startIdx = virtRange.start;
-            var endIdx = virtRange.end;
-            if (endIdx < startIdx) { startIdx = 0; endIdx = total - 1; }
-            if (endIdx >= total) endIdx = total - 1;
-            if (startIdx < 0) startIdx = 0;
-            
-            var branchName = '';
-            if (chat.allBranches && chat.allBranches[currentBranchId]) {
-                branchName = chat.allBranches[currentBranchId].name || '';
-            }
-            var branchIndicator = '';
-            if (currentBranchId && currentBranchId !== 'main' && branchName && branchName !== 'Основная') {
-                branchIndicator = '<div class="branch-indicator"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1); vertical-align: middle; margin-right: 4px;"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#00CBF5"/></svg> ' + escapeHtml(branchName) + '</div>';
-            }
-            
-            var topPad = startIdx * ITEM_EST_HEIGHT;
-            var bottomPad = Math.max(0, (total - 1 - endIdx) * ITEM_EST_HEIGHT);
-            
-            var visibleHtml = branchIndicator;
-            visibleHtml += '<div style="height:' + topPad + 'px;"></div>';
-            
-            for (var i = startIdx; i <= endIdx; i++) {
-                var m = chat.messages[i];
-                if (m.role === 'merge_hidden') continue;
+            } else {
+                var branchName = '';
+                if (chat.allBranches && chat.allBranches[currentBranchId]) {
+                    branchName = chat.allBranches[currentBranchId].name || '';
+                }
+                var branchIndicator = '';
+                if (currentBranchId && currentBranchId !== 'main' && branchName && branchName !== 'Основная') {
+                    branchIndicator = '<div class="branch-indicator"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1); vertical-align: middle; margin-right: 4px;"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#00CBF5"/></svg> ' + escapeHtml(branchName) + '</div>';
+                }
                 
-                var actionsHtml = '';
-                if (m.role === 'user') {
-                    actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
-                    actionsHtml += `<button onclick="regenerateUserMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
-                    actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>`;
-                    actionsHtml += `<button class="branch-btn" onclick="showMergeDialog(${i})" title="Слить ветку"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L22 12 L12 22 M2 12 L22 12"/></svg></button>`;
-                } else {
-                    actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
-                    actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
-                    actionsHtml += `<button class="roll-btn" onclick="regenerateAssistantMessage(${i})" title="Регенерировать ответ"><svg width="14" height="14" viewBox="0 -1 16 16" fill="currentColor"><path d="M15.854,6.146a.5.5,0,0,0-.708,0L14,7.293V7a7,7,0,1,0-7,7,.5.5,0,0,0,0-1,6,6,0,1,1,6-6v.293L11.854,6.146a.5.5,0,0,0-.708.708l2,2a.518.518,0,0,0,.163.109.5.5,0,0,0,.382,0,.518.518,0,0,0,.163-.109l2-2A.5.5,0,0,0,15.854,6.146Z"/></svg></button>`;
-                    actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения" style="color:#4caf50;"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#4caf50"/></svg></button>`;
-                    actionsHtml += `<button onclick="shareChat('${currentChatId}')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg></button>`;
-                    if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
-                }
-                var dataAttr = ' data-msg-index="' + i + '"';
-                var reasoningHtml = '';
-                var contentToShow = m.content;
-                if (m.reasoning) {
-                    reasoningHtml = '<div class="reasoning-block">' + formatMessage(m.reasoning) + '</div>';
-                    var endIdx2 = m.content.indexOf('\n\nОтвет:\n');
-                    if (endIdx2 !== -1) contentToShow = m.content.substring(endIdx2 + '\n\nОтвет:\n'.length);
-                } else if (m._reasoningInProgress && m.content) {
-                    var startIdx2 = m.content.indexOf('Размышление:\n');
-                    if (startIdx2 !== -1) {
-                        reasoningHtml = '<div class="reasoning-block">' + escapeHtml(m.content.substring(startIdx2 + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
-                        contentToShow = '';
+                area.innerHTML = branchIndicator + chat.messages.map((m, i) => {
+                    var actionsHtml = '';
+                    if (m.role === 'user') {
+                        actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+                        actionsHtml += `<button onclick="regenerateUserMessage(${i})" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>`;
+                        actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>`;
+                    } else {
+                        actionsHtml += `<button onclick="copyMessage(${i})" id="copy-btn-${i}" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+                        actionsHtml += `<button onclick="downloadMessage(${i})" id="download-btn-${i}" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
+                        actionsHtml += `<button class="roll-btn" onclick="regenerateAssistantMessage(${i})" title="Регенерировать ответ"><svg width="14" height="14" viewBox="0 -1 16 16" fill="currentColor"><path d="M15.854,6.146a.5.5,0,0,0-.708,0L14,7.293V7a7,7,0,1,0-7,7,.5.5,0,0,0,0-1,6,6,0,1,1,6-6v.293L11.854,6.146a.5.5,0,0,0-.708.708l2,2a.518.518,0,0,0,.163.109.5.5,0,0,0,.382,0,.518.518,0,0,0,.163-.109l2-2A.5.5,0,0,0,15.854,6.146Z"/></svg></button>`;
+                        actionsHtml += `<button class="branch-btn" onclick="createBranchFromMessage(${i})" title="Ответвить от этого сообщения" style="color:#4caf50;"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#4caf50"/></svg></button>`;
+                        actionsHtml += `<button onclick="shareChat('${currentChatId}')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg></button>`;
+                        if (m.interrupted) actionsHtml += `<button onclick="continueMessage(${i})" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`;
                     }
-                }
-                visibleHtml += '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
+                    var dataAttr = ' data-msg-index="' + i + '"';
+                    var reasoningHtml = '';
+                    var contentToShow = m.content;
+                    if (m.reasoning) {
+                        reasoningHtml = '<div class="reasoning-block">' + formatMessage(m.reasoning) + '</div>';
+                        var endIdx = m.content.indexOf('\n\nОтвет:\n');
+                        if (endIdx !== -1) {
+                            contentToShow = m.content.substring(endIdx + '\n\nОтвет:\n'.length);
+                        }
+                    } else if (m._reasoningInProgress && m.content) {
+                        var startIdx = m.content.indexOf('Размышление:\n');
+                        if (startIdx !== -1) {
+                            reasoningHtml = '<div class="reasoning-block">' + escapeHtml(m.content.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
+                            contentToShow = '';
+                        }
+                    }
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
+                }).join('');
             }
-            
-            visibleHtml += '<div style="height:' + bottomPad + 'px;"></div>';
-            area.innerHTML = visibleHtml;
-            
             hljs.highlightAll();
             setupFloatingCopyButtons();
             buildNavContainer();
+            var main = document.querySelector('.main');
+            if (main) {
+                main.style.scrollBehavior = 'auto';
+                main.scrollTop = main.scrollHeight;
+                main.style.scrollBehavior = 'smooth';
+            }
         }
         
         function copyMessage(index) {
@@ -2226,16 +2068,18 @@
         function updateActiveNavFromScroll() {
             var main = document.querySelector('.main');
             if (!main) return;
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat || chat.messages.length === 0) return;
-            // Определяем индекс сообщения по скроллу через ITEM_EST_HEIGHT
-            var midScroll = main.scrollTop + main.clientHeight / 2;
-            var guessedIndex = Math.floor(midScroll / ITEM_EST_HEIGHT);
-            guessedIndex = Math.max(0, Math.min(chat.messages.length - 1, guessedIndex));
-            // Ищем ближайший user
+            var rows = main.querySelectorAll('.message-row[data-msg-index]');
+            var areaRect = main.getBoundingClientRect();
             var closestIndex = null;
-            for (var i = guessedIndex; i >= 0; i--) {
-                if (chat.messages[i] && chat.messages[i].role === 'user') { closestIndex = i; break; }
+            var closestDist = Infinity;
+            for (var r = 0; r < rows.length; r++) {
+                var rect = rows[r].getBoundingClientRect();
+                var mid = rect.top + rect.height / 2;
+                var dist = Math.abs(mid - (areaRect.top + areaRect.height / 2));
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestIndex = rows[r].getAttribute('data-msg-index');
+                }
             }
             document.querySelectorAll('.nav-strip').forEach(function(s) { s.classList.remove('active'); });
             if (closestIndex !== null) {
@@ -2263,18 +2107,11 @@
         function scrollToMsg(index) {
             var main = document.querySelector('.main');
             if (!main) return;
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            // Обновляем диапазон чтобы сообщение точно попало в видимую область
-            var total = chat.messages.length;
-            var half = Math.floor(VISIBLE_BUFFER / 2);
-            virtRange.start = Math.max(0, index - half);
-            virtRange.end = Math.min(total - 1, index + half);
-            renderMessages();
-            // Скроллим к сообщению
             main.style.scrollBehavior = 'auto';
-            var estimatedTop = index * ITEM_EST_HEIGHT;
-            main.scrollTop = estimatedTop - Math.floor(main.clientHeight / 2);
+            var target = main.querySelector('.message-row[data-msg-index="' + index + '"]');
+            if (target) {
+                target.scrollIntoView({ behavior: 'auto', block: 'center' });
+            }
             main.style.scrollBehavior = 'smooth';
             document.querySelectorAll('.nav-strip').forEach(function(s) { s.classList.remove('active'); });
             var activeStrip = document.querySelector('.nav-strip[data-msg-index="' + index + '"]');
