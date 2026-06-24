@@ -483,7 +483,12 @@
             var main = document.querySelector('.main');
             if (!main) return;
             autoScroll = true;
-            updateVirtRange();
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (chat && chat.messages.length > 0) {
+                var total = chat.messages.length;
+                virtRange.start = Math.max(0, total - VISIBLE_BUFFER * 2);
+                virtRange.end = total - 1;
+            }
             renderMessages();
             main.style.scrollBehavior = 'auto';
             main.scrollTop = main.scrollHeight;
@@ -694,7 +699,12 @@
             renderBranchesPanel();
             renderMessages();
             setTimeout(function() {
-                updateVirtRange();
+                var chat2 = chats.find(function(c) { return c.id === id; });
+                if (chat2 && chat2.messages.length > 0) {
+                    var total = chat2.messages.length;
+                    virtRange.start = Math.max(0, total - VISIBLE_BUFFER * 2);
+                    virtRange.end = total - 1;
+                }
                 renderMessages();
                 var main = document.querySelector('.main');
                 if (main) {
@@ -702,6 +712,7 @@
                     main.scrollTop = main.scrollHeight;
                     main.style.scrollBehavior = 'smooth';
                 }
+                autoScroll = true;
             }, 150);
         }
         
