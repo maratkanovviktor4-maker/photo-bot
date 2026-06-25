@@ -925,16 +925,15 @@
                 const chat = { id: String(Date.now()), title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: { 'main': { name: 'Основная', messages: [], msg_ids: [] } } };
                 chats.push(chat);
             }
-            renderChatList();
             var savedId = localStorage.getItem('photobot_active_chat');
             var found = savedId ? chats.find(function(c) { return c.id === savedId; }) : null;
             currentChatId = found ? found.id : (chats.length > 0 ? chats[chats.length - 1].id : null);
             if (currentChatId) {
+                localStorage.setItem('photobot_active_chat', currentChatId);
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (chat) {
                     currentBranchId = chat.activeBranch || 'main';
                 }
-                // Загружаем сообщения только для активного чата
                 await loadChatMessages(currentChatId);
             } else {
                 renderMessages();
