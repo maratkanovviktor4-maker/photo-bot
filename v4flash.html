@@ -1417,6 +1417,13 @@
                         msg_ids: chat.messages.map(m => m.msg_id),
                         source_role: msg.role
                     };
+                    // Очищаем кеш, чтобы новая ветка не пропала
+                    try {
+                        var cache = JSON.parse(localStorage.getItem('chat_cache') || '{}');
+                        delete cache[currentChatId];
+                        localStorage.setItem('chat_cache', JSON.stringify(cache));
+                    } catch(e) {}
+
                     renderBranchesPanel();                    
                     // Восстанавливаем историю ДО из загруженной ветки, но без assistant-ответа
                     if (chat.allBranches && chat.allBranches[data.branch_id]) {
