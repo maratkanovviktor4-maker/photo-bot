@@ -501,10 +501,8 @@
                 if (e.target !== mainEl) return;
                 var btn = document.getElementById('scrollBottomBtn');
                 if (!mainEl) return;
-                var st = Math.max(0, mainEl.scrollTop);
-                var overflowHeight = mainEl.scrollHeight - mainEl.clientHeight;
-                var atBottom = mainEl.scrollHeight - st - mainEl.clientHeight < 80;
-                if (atBottom || overflowHeight < 10) {
+                var atBottom = mainEl.scrollHeight - mainEl.scrollTop - mainEl.clientHeight < 5;
+                if (atBottom) {
                     btn.style.display = 'none';
                     autoScroll = true;
                 } else {
@@ -515,22 +513,16 @@
             mainEl.addEventListener('wheel', function(e) {
                 if (e.deltaY < 0) {
                     autoScroll = false;
-                    var main = document.querySelector('.main');
-                    if (main && main.scrollHeight > main.clientHeight + 5) {
-                        var btn = document.getElementById('scrollBottomBtn');
-                        if (btn) btn.style.display = 'flex';
-                    }
+                    var btn = document.getElementById('scrollBottomBtn');
+                    if (btn) btn.style.display = 'flex';
                 }
             }, true);
         }
         window.addEventListener('wheel', function(e) {
             if (e.deltaY < 0) {
                 autoScroll = false;
-                var main = document.querySelector('.main');
-                if (main && main.scrollHeight > main.clientHeight + 5) {
-                    var btn = document.getElementById('scrollBottomBtn');
-                    if (btn) btn.style.display = 'flex';
-                }
+                var btn = document.getElementById('scrollBottomBtn');
+                if (btn) btn.style.display = 'flex';
             }
         }, true);
         
@@ -1258,10 +1250,6 @@
                 if (chunk) {
                     var ft = words.slice(0, pos).join('');
                     chat.messages[msgIndex].content = ft;
-                    var formatted = formatMessage(ft);
-                    var el = document.getElementById('stream-' + msgIndex);
-                    if (el) el.innerHTML = formatted;
-
                     if (!reasoningStarted && ft.indexOf('Размышление:\n') !== -1) { reasoningStarted = true; chat.messages[msgIndex]._reasoningInProgress = true; }
                     if (reasoningStarted && !reasoningEnded) {
                         var ei = ft.indexOf('\n\nОтвет:\n');
@@ -1270,6 +1258,7 @@
                             chat.messages[msgIndex].reasoning = ft.substring('Размышление:\n'.length, ei);
                         }
                     }
+                    renderMessages();
                     if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.scrollTop = m3.scrollHeight; } }
                     typingInterval = setTimeout(streamNext, delayMs);
                 } else {
@@ -1866,17 +1855,7 @@
                     var lang = part.lang || '';
                     result += '<pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre>';
                 } else {
-                    var text2 = part.content;
-                    
-                    // Сохраняем таблицы перед экранированием
-                    var savedTables = {};
-                    text2 = text2.replace(/\n?\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n?)+)/g, function(match) {
-                        var id = 'T' + Date.now() + Math.random();
-                        savedTables[id] = match;
-                        return '%%' + id + '%%';
-                    });
-                    
-                    text2 = escapeHtml(text2);
+                    var text2 = escapeHtml(part.content);
                     text2 = text2.replace(/`([^`]+)`/g, '<code>$1</code>');
                     text2 = text2.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
                     text2 = text2.replace(/\*(.+?)\*/g, '<em>$1</em>');
@@ -1894,35 +1873,12 @@
                     text2 = text2.replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">');
                     text2 = text2.replace(/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>');
                     text2 = text2.replace(/\n/g, '<br>');
-                    
-                    // Восстанавливаем таблицы
-                    for (var key in savedTables) {
-                        var tbl = savedTables[key];
-                        var lines = tbl.trim().split('\n');
-                        var headers = lines[0].split('|').map(function(h) { return h.trim(); }).filter(Boolean);
-                        var html = '<table style="margin:0"><thead><tr>';
-                        headers.forEach(function(h) { html += '<th>' + h + '</th>'; });
-                        html += '</tr></thead><tbody>';
-                        for (var r = 2; r < lines.length; r++) {
-                            var cells = lines[r].split('|').map(function(c) { return c.trim(); }).filter(Boolean);
-                            if (cells.length) {
-                                html += '<tr>';
-                                cells.forEach(function(c) { html += '<td>' + c + '</td>'; });
-                                html += '</tr>';
-                            }
-                        }
-                        html += '</tbody></table>';
-                        text2 = text2.replace('%%' + key + '%%', html);
-                    }
-                    
                     result += text2;
                 }
             }
             return result;
         }
-
-
-      
+        
         function stopTyping() {
             if (typingInterval) {
                 clearTimeout(typingInterval);
