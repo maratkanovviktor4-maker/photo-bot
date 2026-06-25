@@ -974,7 +974,7 @@
                         chat.allBranches = branches;
                         var activeBid = chat.activeBranch || 'main';
                         if (branches[activeBid]) {
-                            chat.messages = branches[activeBid].messages || [];
+                            chat._totalMessages = data.total_messages || 0;
                         }
                         // Кнопка загрузить ещё
                         var loadMoreBtn = document.getElementById('loadMoreBtn');
@@ -1821,6 +1821,19 @@
                     }
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
+            }
+            // Кнопка загрузить ещё (после перерисовки)
+            var oldLoadBtn = document.getElementById('loadMoreBtn');
+            if (oldLoadBtn) oldLoadBtn.remove();
+            
+            var chat2 = chats.find(c => c.id === currentChatId);
+            if (chat2 && chat2._totalMessages && chat2._totalMessages > chat2.messages.length) {
+                var chatArea = document.getElementById('chatArea');
+                var btnDiv = document.createElement('div');
+                btnDiv.id = 'loadMoreBtn';
+                btnDiv.style.cssText = 'text-align:center;padding:8px;';
+                btnDiv.innerHTML = '<button onclick="loadMoreMessages(\'' + currentChatId + '\', ' + chat2.messages.length + ')" style="padding:8px 20px;background:rgba(0,203,245,0.1);border:1px solid rgba(0,203,245,0.3);color:#00CBF5;border-radius:8px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;">📜 Загрузить ещё ' + (chat2._totalMessages - chat2.messages.length) + ' сообщений</button>';
+                chatArea.insertBefore(btnDiv, chatArea.firstChild);
             }
             hljs.highlightAll();
             setupFloatingCopyButtons();
