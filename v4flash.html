@@ -1236,10 +1236,10 @@
             }
         }
         
-        function streamReplyIntoChat(chat, msgIndex, fullContent, streamId, onComplete) {
+        function streamReplyIntoChat(chat, msgIndex, fullContent, streamId, onComplete, startPos) {
             var words = fullContent.split(/(\s+)/);
             chat.messages[msgIndex]._streamWords = words;
-            var pos = 0;
+            var pos = startPos || 0;
             var reasoningStarted = false;
             var reasoningEnded = false;
             
@@ -2018,7 +2018,7 @@
             var input = document.getElementById('userInput');
             if (input) input.focus();
             await new Promise(r => setTimeout(r, 50));
-            streamReplyIntoChat(chat, index, words.slice(pos).join(''), streamId, function() {
+            streamReplyIntoChat(chat, index, words.join(''), streamId, function() {
                 chat.messages[index].finished = true;
                 chat.messages[index].interrupted = false;
                 autoNameChat(chat);
@@ -2028,7 +2028,7 @@
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
-            });
+            }, pos);
         }
         
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
