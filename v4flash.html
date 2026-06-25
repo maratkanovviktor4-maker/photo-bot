@@ -1029,6 +1029,10 @@
                 currentBranchId = chat.activeBranch || 'main';
                 allBranchesCache = chat.allBranches || {};
             }
+            // Если сообщения не загружены — загружаем
+            if (!chat.messages || chat.messages.length === 0) {
+                loadChatMessages(currentChatId);
+            }
             renderChatList();
             renderBranchesPanel();
             renderMessages();
