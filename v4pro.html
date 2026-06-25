@@ -1462,6 +1462,11 @@
 
         async function selfPlay(msgIndex, promptText) {
                 if (isSending) return;
+                if (!currentChatId) {
+                        currentChatId = Date.now().toString();
+                        var newChatObj = { id: currentChatId, title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: {}, lastMessageTime: Date.now() };
+                        chats.push(newChatObj);
+                }
                 const chat = chats.find(c => c.id === currentChatId);
                 if (!chat) return;
                 const msg = chat.messages[msgIndex];
