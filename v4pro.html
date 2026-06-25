@@ -865,12 +865,13 @@
             var msg = chat.messages[msgIndex];
             if (!msg) return;
             isSending = true;
+            if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
             chat.messages = chat.messages.slice(0, msgIndex + 1);
             renderMessages();
             var placeholderId = null;
-            var isAssistant = (msg.role === 'assistant');
-            if (!isAssistant) {
+            var isAssistantBranch = (msg.role === 'assistant');
+            if (!isAssistantBranch) {
                 placeholderId = 'branch_' + Date.now();
                 var area = document.getElementById('chatArea');
                 var loadingRow = document.createElement('div');
@@ -888,50 +889,119 @@
                     body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: currentMode, chat_id: currentChatId, source_msg_id: msg.msg_id, branch_name: '', prompt: msg.role === 'user' ? (msg.content || '') : '' })
                 });
                 if (placeholderId) { var el = document.getElementById(placeholderId); if (el) el.remove(); }
-                if (resp.ok) {
-                    var data = await resp.json();
-                    currentBranchId = data.branch_id;
-                    chat.activeBranch = data.branch_id;
-                    await updateBranchesFromServer();
-                    if (chat.allBranches && chat.allBranches[data.branch_id]) {
-                        chat.messages = chat.allBranches[data.branch_id].messages || [];
-                    } else {
-                        chat.messages = [];
-                    }
-                    renderChatList();
-                    renderBranchesPanel();
-                    if (data.reply) {
-                        while (chat.messages.length > 0 && chat.messages[chat.messages.length - 1].role === 'assistant') {
-                            chat.messages.pop();
-                        }
-                        var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                        var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
-                        chat.messages.push(assistantMsg);
-                        var newMsgIndex = chat.messages.length - 1;
-                        chat.messages[newMsgIndex].content = fullContent;
-                        chat.messages[newMsgIndex].finished = true;
-                        renderMessages();
-                        chat.lastMessageTime = Date.now();
-                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                        autoNameChat(chat);
-                        updateBranchesFromServer().then(function() { renderChatList(); renderBranchesPanel(); });
-                        updateBalance();
-                        isSending = false;
-                        activeStreamId = null;
-                        sendBtnArrow();
-                    } else {
-                        renderMessages();
-                        updateBalance();
-                        isSending = false;
-                        sendBtnArrow();
-                    }
-                } else {
+                if (!resp.ok) {
                     var errData = await resp.json();
                     showAlertModal('Ошибка', errData.error || 'Неизвестная ошибка', '❌');
                     isSending = false;
                     sendBtnArrow();
+                    return;
                 }
-            } catch(e) {
+                var contentType = resp.headers.get('content-type') || '';
+                if (contentType.includes('text/event-stream')) {
+                    // Стриминговый ответ
+                    var reader = resp.body.getReader();
+                    var decoder = new TextDecoder();
+                    var buffer = '';
+                    var branchMetaReceived = false;
+                    var assistantMsg = null;
+                    var streamMsgIndex = null;
+                    while (true) {
+                        var readResult = await reader.read();
+                        if (readResult.done) break;
+                        buffer += decoder.decode(readResult.value, { stream: true });
+                        var lines = buffer.split('\n');
+                        buffer = lines.pop() || '';
+                        for (var i = 0; i < lines.length; i++) {
+                            var line = lines[i];
+                            if (line.startsWith('data: ')) {
+                                var dataStr = line.slice(6);
+                                if (dataStr === '[DONE]') continue;
+                                try {
+                                    var parsed = JSON.parse(dataStr);
+                                    if (!branchMetaReceived) {
+                                        // Первый чанк — метаданные ветки
+                                        var newBranchId = parsed.branch_id;
+                                        var branchMessages = parsed.messages || [];
+                                        currentBranchId = newBranchId;
+                                        chat.activeBranch = newBranchId;
+                                        chat.messages = branchMessages.slice();
+                                        // Добавляем заглушку ассистента для стриминга
+                                        assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null, _abortController: null };
+                                        chat.messages.push(assistantMsg);
+                                        streamMsgIndex = chat.messages.length - 1;
+                                        var streamId = 'branch_stream_' + streamMsgIndex;
+                                        activeStreamId = streamId;
+                                        renderMessages();
+                                        renderChatList();
+                                        branchMetaReceived = true;
+                                    } else if (parsed.assistant_msg_id) {
+                                        // Финальные метаданные
+                                        if (assistantMsg) {
+                                            assistantMsg.msg_id = parsed.assistant_msg_id;
+                                            assistantMsg.finished = true;
+                                            assistantMsg._streaming = false;
+                                        }
+                                    } else {
+                                        // Контентный чанк
+                                        if (assistantMsg) {
+                                            if (parsed.content) assistantMsg.content += parsed.content;
+                                            if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                            // Обновляем DOM в реальном времени
+                                            var msgEl = document.getElementById('stream-' + streamMsgIndex);
+                                            if (msgEl) {
+                                                var reasoningBlock = assistantMsg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>' : '';
+                                                msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
+                                                msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                                setupFloatingCopyButtonsForMsg(msgEl);
+                                                updateFloatingButtons();
+                                            }
+                                            if (autoScroll) {
+                                                var main = document.querySelector('.main');
+                                                if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+                                            }
+                                        }
+                                    }
+                                } catch (parseErr) {}
+                            }
+                        }
+                    }
+                    if (assistantMsg && !assistantMsg.finished) {
+                        assistantMsg.finished = true;
+                        assistantMsg._streaming = false;
+                    }
+                    chat.lastMessageTime = Date.now();
+                    chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                    autoNameChat(chat);
+                    await updateBranchesFromServer();
+                    renderChatList();
+                    renderBranchesPanel();
+                    updateBalance();
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                } else {
+                    // Обычный JSON (ветка без промпта — от ассистента)
+                    var data = await resp.json();
+                    if (data.success) {
+                        currentBranchId = data.branch_id;
+                        chat.activeBranch = data.branch_id;
+                        await updateBranchesFromServer();
+                        if (chat.allBranches && chat.allBranches[currentBranchId]) {
+                            chat.messages = chat.allBranches[currentBranchId].messages || [];
+                        }
+                        renderChatList();
+                        renderBranchesPanel();
+                        renderMessages();
+                        updateBalance();
+                        isSending = false;
+                        sendBtnArrow();
+                    } else {
+                        showAlertModal('Ошибка', 'Не удалось создать ветку', '❌');
+                        isSending = false;
+                        sendBtnArrow();
+                    }
+                }
+            } catch (e) {
                 if (placeholderId) { var el2 = document.getElementById(placeholderId); if (el2) el2.remove(); }
                 console.error('createBranchFromMessage error:', e);
                 showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
@@ -954,55 +1024,96 @@
                     sendBtnStop();
                     msg.content = newText;
                     chat.messages = chat.messages.slice(0, msgIndex + 1);
+                    // Добавляем заглушку ассистента для стриминга
+                    var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null, _abortController: null };
+                    chat.messages.push(assistantMsg);
+                    var newMsgIndex = chat.messages.length - 1;
+                    var streamId = 'regen_user_stream_' + newMsgIndex;
+                    activeStreamId = streamId;
                     renderMessages();
-                    var placeholderId = 'regen_' + Date.now();
-                    var area = document.getElementById('chatArea');
-                    var loadingRow = document.createElement('div');
-                    loadingRow.className = 'message-row assistant';
-                    loadingRow.id = placeholderId;
-                    loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#F59E0B"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#F59E0B"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#F59E0B"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
-                    area.appendChild(loadingRow);
-                    var main = document.querySelector('.main');
-                    if (main) { main.scrollTop = main.scrollHeight; }
+
+                    var abortController = new AbortController();
+                    assistantMsg._abortController = abortController;
+
                     try {
                         var resp = await fetch(SERVER_URL + '/regenerate_user', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                            body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: currentMode, chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText })
+                            body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: currentMode, chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText }),
+                            signal: abortController.signal
                         });
-                        var el = document.getElementById(placeholderId);
-                        if (el) el.remove();
-                        if (resp.ok) {
-                            var data = await resp.json();
-                            var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                            var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
-                            chat.messages.push(assistantMsg);
-                            var newMsgIndex = chat.messages.length - 1;
-                            chat.messages[newMsgIndex].content = fullContent;
-                            chat.messages[newMsgIndex].finished = true;
-                            renderMessages();
-                            chat.lastMessageTime = Date.now();
-                            chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                            autoNameChat(chat);
-                            updateBranchesFromServer();
-                            renderChatList();
-                            updateBalance();
-                            isSending = false;
-                            activeStreamId = null;
-                            sendBtnArrow();
-                        } else {
+                        if (!resp.ok) {
                             var errData = await resp.json();
                             showAlertModal('Ошибка', errData.error || 'Неизвестная ошибка', '❌');
                             isSending = false;
                             sendBtnArrow();
+                            return;
                         }
-                    } catch(e) {
-                        var el2 = document.getElementById(placeholderId);
-                        if (el2) el2.remove();
-                        console.error('regenerateUserMessage error:', e);
-                        showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
+                        var reader = resp.body.getReader();
+                        var decoder = new TextDecoder();
+                        var buffer = '';
+                        while (true) {
+                            var readResult = await reader.read();
+                            if (readResult.done) break;
+                            buffer += decoder.decode(readResult.value, { stream: true });
+                            var lines = buffer.split('\n');
+                            buffer = lines.pop() || '';
+                            for (var i = 0; i < lines.length; i++) {
+                                var line = lines[i];
+                                if (line.startsWith('data: ')) {
+                                    var dataStr = line.slice(6);
+                                    if (dataStr === '[DONE]') continue;
+                                    try {
+                                        var parsed = JSON.parse(dataStr);
+                                        if (parsed.assistant_msg_id) {
+                                            assistantMsg.msg_id = parsed.assistant_msg_id;
+                                        } else {
+                                            if (parsed.content) assistantMsg.content += parsed.content;
+                                            if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                            var msgEl = document.getElementById('stream-' + newMsgIndex);
+                                            if (msgEl) {
+                                                var reasoningBlock = assistantMsg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>' : '';
+                                                msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
+                                                msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                                setupFloatingCopyButtonsForMsg(msgEl);
+                                                updateFloatingButtons();
+                                            }
+                                            if (autoScroll) {
+                                                var main = document.querySelector('.main');
+                                                if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+                                            }
+                                        }
+                                    } catch (e) {}
+                                }
+                            }
+                        }
+                        assistantMsg.finished = true;
+                        assistantMsg._streaming = false;
+                        chat.lastMessageTime = Date.now();
+                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                        autoNameChat(chat);
+                        await updateBranchesFromServer();
+                        renderChatList();
+                        renderBranchesPanel();
+                        updateBalance();
                         isSending = false;
+                        activeStreamId = null;
                         sendBtnArrow();
+                    } catch (e) {
+                        if (e.name === 'AbortError') {
+                            assistantMsg.interrupted = true;
+                            assistantMsg.finished = true;
+                            assistantMsg._streaming = false;
+                            renderMessages();
+                            isSending = false;
+                            activeStreamId = null;
+                            sendBtnArrow();
+                        } else {
+                            console.error('regenerateUserMessage error:', e);
+                            showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
+                            isSending = false;
+                            sendBtnArrow();
+                        }
                     }
                 })();
             });
@@ -1019,55 +1130,96 @@
             sendBtnStop();
             var removeFrom = msgIndex;
             while (chat.messages.length > removeFrom) { chat.messages.pop(); }
+            // Добавляем заглушку ассистента для стриминга
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null, _abortController: null };
+            chat.messages.push(assistantMsg);
+            var newMsgIndex = chat.messages.length - 1;
+            var streamId = 'regen_stream_' + newMsgIndex;
+            activeStreamId = streamId;
             renderMessages();
-            var placeholderId = 'regen_' + Date.now();
-            var area = document.getElementById('chatArea');
-            var loadingRow = document.createElement('div');
-            loadingRow.className = 'message-row assistant';
-            loadingRow.id = placeholderId;
-            loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#F59E0B"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#F59E0B"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#F59E0B"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
-            area.appendChild(loadingRow);
-            var main = document.querySelector('.main');
-            if (main) { main.scrollTop = main.scrollHeight; }
+
+            var abortController = new AbortController();
+            assistantMsg._abortController = abortController;
+
             try {
                 var resp = await fetch(SERVER_URL + '/regenerate_assistant', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: currentMode, chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: currentMode, chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id }),
+                    signal: abortController.signal
                 });
-                var el = document.getElementById(placeholderId);
-                if (el) el.remove();
-                if (resp.ok) {
-                    var data = await resp.json();
-                    var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
-                    chat.messages.push(assistantMsg);
-                    var newMsgIndex = chat.messages.length - 1;
-                    chat.messages[newMsgIndex].content = fullContent;
-                    chat.messages[newMsgIndex].finished = true;
-                    renderMessages();
-                    chat.lastMessageTime = Date.now();
-                    chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                    autoNameChat(chat);
-                    updateBranchesFromServer();
-                    renderChatList();
-                    updateBalance();
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
-                } else {
+                if (!resp.ok) {
                     var errData = await resp.json();
                     showAlertModal('Ошибка', errData.error || 'Неизвестная ошибка', '❌');
                     isSending = false;
                     sendBtnArrow();
+                    return;
                 }
-            } catch(e) {
-                var el2 = document.getElementById(placeholderId);
-                if (el2) el2.remove();
-                console.error('regenerateAssistantMessage error:', e);
-                showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
+                var reader = resp.body.getReader();
+                var decoder = new TextDecoder();
+                var buffer = '';
+                while (true) {
+                    var readResult = await reader.read();
+                    if (readResult.done) break;
+                    buffer += decoder.decode(readResult.value, { stream: true });
+                    var lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i];
+                        if (line.startsWith('data: ')) {
+                            var dataStr = line.slice(6);
+                            if (dataStr === '[DONE]') continue;
+                            try {
+                                var parsed = JSON.parse(dataStr);
+                                if (parsed.assistant_msg_id) {
+                                    assistantMsg.msg_id = parsed.assistant_msg_id;
+                                } else {
+                                    if (parsed.content) assistantMsg.content += parsed.content;
+                                    if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                    var msgEl = document.getElementById('stream-' + newMsgIndex);
+                                    if (msgEl) {
+                                        var reasoningBlock = assistantMsg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>' : '';
+                                        msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
+                                        msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                        setupFloatingCopyButtonsForMsg(msgEl);
+                                        updateFloatingButtons();
+                                    }
+                                    if (autoScroll) {
+                                        var main = document.querySelector('.main');
+                                        if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+                                    }
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+                assistantMsg.finished = true;
+                assistantMsg._streaming = false;
+                chat.lastMessageTime = Date.now();
+                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                autoNameChat(chat);
+                await updateBranchesFromServer();
+                renderChatList();
+                renderBranchesPanel();
+                updateBalance();
                 isSending = false;
+                activeStreamId = null;
                 sendBtnArrow();
+            } catch (e) {
+                if (e.name === 'AbortError') {
+                    assistantMsg.interrupted = true;
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
+                    renderMessages();
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                } else {
+                    console.error('regenerateAssistantMessage error:', e);
+                    showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
+                    isSending = false;
+                    sendBtnArrow();
+                }
             }
         }
 
