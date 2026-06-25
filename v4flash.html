@@ -935,7 +935,7 @@
                     currentBranchId = chat.activeBranch || 'main';
                 }
                 // Загружаем сообщения только для активного чата
-                // Сообщения загрузит openChat при открытии
+                openChat(currentChatId);
             } else {
                 renderMessages();
             }
@@ -1136,8 +1136,11 @@
                 async function() {
                     try {
                         await fetch(`${SERVER_URL}/delete_chat?user_id=${currentUserId}&model=flash&chat_id=${id}&session_token=${sessionToken}`, {
-                            method: 'DELETE'
-                        });
+                        method: 'DELETE'
+                    });
+                    await fetch(`${SERVER_URL}/delete_chat_sqlite?user_id=${currentUserId}&model=flash&chat_id=${id}&session_token=${sessionToken}`, {
+                        method: 'DELETE'
+                    });
                     } catch (e) {}
                     chats = chats.filter(c => c.id !== id);
                     if (currentChatId === id) {
