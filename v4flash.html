@@ -1822,28 +1822,6 @@
         }
         
         function formatMessage(text) {
-            // Преобразование Markdown-таблиц в HTML
-            text = text.replace(/\n?\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n?)+)/g, function(match, headerRow, bodyRows) {
-              var headers = headerRow.split('|').map(function(h) { return h.trim(); }).filter(Boolean);
-              var rows = bodyRows.trim().split('\n').map(function(row) {
-                return row.split('|').map(function(cell) { return cell.trim(); }).filter(Boolean);
-              });
-              var html = '<table>\n<thead>\n<tr>\n';
-              headers.forEach(function(h) {
-                html += '<th>' + h + '</th>\n';
-              });
-              html += '</tr>\n</thead>\n<tbody>\n';
-              rows.forEach(function(row) {
-                if (row.length === 0) return;
-                html += '<tr>\n';
-                row.forEach(function(cell, idx) {
-                  html += '<td>' + (cell || '') + '</td>\n';
-                });
-                html += '</tr>\n';
-              });
-              html += '</tbody>\n</table>';
-              return '\n' + html + '\n';
-            });
             var B = String.fromCharCode(96);
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) {
                 text = B + B + B + 'html\n' + text + '\n' + B + B + B;
@@ -1877,7 +1855,35 @@
                     var lang = part.lang || '';
                     result += '<pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre>';
                 } else {
-                    var text2 = escapeHtml(part.content);
+                    var text2 = part.content;
+                    
+                    // 1. Сначала преобразуем Markdown-таблицы в HTML
+                    text2 = text2.replace(/\n?\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n?)+)/g, function(match, headerRow, bodyRows) {
+                        var headers = headerRow.split('|').map(function(h) { return h.trim(); }).filter(Boolean);
+                        var rows = bodyRows.trim().split('\n').map(function(row) {
+                            return row.split('|').map(function(cell) { return cell.trim(); }).filter(Boolean);
+                        });
+                        var html = '<table>\n<thead>\n<tr>\n';
+                        headers.forEach(function(h) {
+                            html += '<th>' + h + '</th>\n';
+                        });
+                        html += '</tr>\n</thead>\n<tbody>\n';
+                        rows.forEach(function(row) {
+                            if (row.length === 0) return;
+                            html += '<tr>\n';
+                            row.forEach(function(cell) {
+                                html += '<td>' + (cell || '') + '</td>\n';
+                            });
+                            html += '</tr>\n';
+                        });
+                        html += '</tbody>\n</table>';
+                        return '\n' + html + '\n';
+                    });
+                    
+                    // 2. Теперь экранируем HTML-спецсимволы
+                    text2 = escapeHtml(text2);
+                    
+                    // 3. Применяем Markdown-преобразования
                     text2 = text2.replace(/`([^`]+)`/g, '<code>$1</code>');
                     text2 = text2.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
                     text2 = text2.replace(/\*(.+?)\*/g, '<em>$1</em>');
@@ -1895,11 +1901,13 @@
                     text2 = text2.replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">');
                     text2 = text2.replace(/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>');
                     text2 = text2.replace(/\n/g, '<br>');
+                    
                     result += text2;
                 }
             }
             return result;
         }
+
 
         
         function stopTyping() {
