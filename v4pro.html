@@ -995,6 +995,9 @@
                     chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                     autoNameChat(chat);
                     await updateBranchesFromServer();
+                    if (chat.allBranches && chat.allBranches[currentBranchId]) {
+                        chat.messages = chat.allBranches[currentBranchId].messages || [];
+                    }
                     renderMessages();
                     renderChatList();
                     renderBranchesPanel();
