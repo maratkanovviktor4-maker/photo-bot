@@ -474,7 +474,12 @@
             white-space: normal !important;
             word-break: break-all !important;
         }
-
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        body.light #loadingSpinner {
+            background: rgba(255,255,255,0.8);
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -540,6 +545,10 @@
         </div>
     </div>
     <div class="nav-container" id="navContainer"></div>
+    <div id="loadingSpinner" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(32,31,40,0.8);z-index:99998;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+        <div style="width:48px;height:48px;border:4px solid rgba(0,203,245,0.2);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <div style="color:#00CBF5;font-family:Inter,sans-serif;font-size:14px;font-weight:500;">Загрузка...</div>
+    </div>
     <div id="customPersonalityModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10001;align-items:center;justify-content:center;">
         <div style="background:#1a1a2e;border-radius:16px;padding:20px;width:90%;max-width:500px;border:1px solid rgba(255,255,255,0.08);">
             <div style="font-size:16px;font-weight:600;margin-bottom:12px;color:#e0e0e0;">🎭 Кастомная личность</div>
@@ -872,10 +881,11 @@
         }
 
         async function loadChatsFromServer() {
+            showLoading();
             try {
-                const resp = await fetch(`${SERVER_URL}/get_chat_history?user_id=${currentUserId}&model=flash&session_token=${sessionToken}`);
+                const resp = await fetch(`${SERVER_URL}/get_chat_history?user_id=${currentUserId}&model=flash&session_token=${sessionToken}&meta_only=true`);
                 if (resp.status === 403) {
-                showAlertModal('Сессия истекла', 'Сессия устарела. Авторизуйтесь заново.', '❌');
+                    showAlertModal('Сессия истекла', 'Сессия устарела. Авторизуйтесь заново.', '❌');
                     window.location.href = 'index.html';
                     return;
                 }
@@ -924,11 +934,57 @@
                 if (chat) {
                     currentBranchId = chat.activeBranch || 'main';
                 }
-                openChat(currentChatId);
+                // Загружаем сообщения только для активного чата
+                await loadChatMessages(currentChatId);
             } else {
                 renderMessages();
             }
+            hideLoading();
         }
+        async function loadChatMessages(chatId) {
+            try {
+                const resp = await fetch(`${SERVER_URL}/get_chat_tree?user_id=${currentUserId}&model=flash&chat_id=${chatId}&session_token=${sessionToken}`);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    var chat = chats.find(function(c) { return c.id === chatId; });
+                    if (chat) {
+                        var branches = {};
+                        if (data.branches) {
+                            for (var bid in data.branches) {
+                                var branchData = data.branches[bid];
+                                var msgIds = branchData.msg_ids || branchData;
+                                if (Array.isArray(branchData)) {
+                                    msgIds = branchData;
+                                }
+                                var msgs = [];
+                                for (var i = 0; i < msgIds.length; i++) {
+                                    if (data.messages[msgIds[i]]) {
+                                        msgs.push(data.messages[msgIds[i]]);
+                                    }
+                                }
+                                var bidName = branchData.name || (chat.allBranches && chat.allBranches[bid] ? chat.allBranches[bid].name : 'Ветка');
+                                branches[bid] = {
+                                    name: bidName,
+                                    messages: msgs,
+                                    msg_ids: msgIds,
+                                    source_role: branchData.source_role || 'user'
+                                };
+                            }
+                        }
+                        chat.allBranches = branches;
+                        var activeBid = chat.activeBranch || 'main';
+                        if (branches[activeBid]) {
+                            chat.messages = branches[activeBid].messages || [];
+                        }
+                        renderBranchesPanel();
+                        renderMessages();
+                    }
+                }
+            } catch(e) {
+                console.error('loadChatMessages error:', e);
+            }
+        }
+
         
         async function updateBalance() {
             try {
@@ -3000,6 +3056,13 @@
             } else {
                 el.style.display = 'none';
             }
+        }
+        function showLoading() {
+            document.getElementById('loadingSpinner').style.display = 'flex';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingSpinner').style.display = 'none';
         }
 
     </script>
