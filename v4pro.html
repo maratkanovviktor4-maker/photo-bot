@@ -1268,6 +1268,9 @@
                     assistantMsg.content = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
                 }
                 await updateBranchesFromServer();
+                if (chat.allBranches && chat.allBranches[currentBranchId]) {
+                    chat.messages = chat.allBranches[currentBranchId].messages || [];
+                }
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                 autoNameChat(chat);
