@@ -3010,6 +3010,23 @@
             input.style.height = 'auto';
             input.style.height = Math.min(input.scrollHeight, 300) + 'px';
             
+            // Вешаем обработчик клавиш при каждом открытии (DOM точно готов)
+            if (!input._keydownBound) {
+                input._keydownBound = true;
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && e.shiftKey) {
+                        return;
+                    }
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        confirmEditMessage();
+                    }
+                    if (e.key === 'Escape') {
+                        closeEditMessageModal();
+                    }
+                });
+            }
+            
             setTimeout(function() {
                 input.focus();
                 input.setSelectionRange(input.value.length, input.value.length);
@@ -3039,25 +3056,6 @@
         document.getElementById('editMessageModal').addEventListener('click', function(e) {
             if (e.target === this) closeEditMessageModal();
         });
-        
-        // Enter + Shift+Enter (с задержкой для гарантии загрузки DOM)
-        setTimeout(function() {
-            var editInput = document.getElementById('editMessageInput');
-            if (editInput) {
-                editInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' && e.shiftKey) {
-                        return;
-                    }
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        confirmEditMessage();
-                    }
-                    if (e.key === 'Escape') {
-                        closeEditMessageModal();
-                    }
-                });
-            }
-        }, 100);
         function updateBranchIndicator() {
             var el = document.getElementById('branchIndicatorTop');
             var chat = chats.find(function(c) { return c.id === currentChatId; });
