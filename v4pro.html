@@ -890,7 +890,7 @@
                 });
                 if (placeholderId) { var el = document.getElementById(placeholderId); if (el) el.remove(); }
                 if (!resp.ok) {
-                    var errData = await resp.json();
+                    var errData = await resp.json().catch(() => ({}));
                     showAlertModal('Ошибка', errData.error || 'Неизвестная ошибка', '❌');
                     isSending = false;
                     sendBtnArrow();
@@ -898,7 +898,6 @@
                 }
                 var contentType = resp.headers.get('content-type') || '';
                 if (contentType.includes('text/event-stream')) {
-                    // Стриминговый ответ
                     var reader = resp.body.getReader();
                     var decoder = new TextDecoder();
                     var buffer = '';
@@ -913,56 +912,50 @@
                         buffer = lines.pop() || '';
                         for (var i = 0; i < lines.length; i++) {
                             var line = lines[i];
-                            if (line.startsWith('data: ')) {
-                                var dataStr = line.slice(6);
-                                if (dataStr === '[DONE]') continue;
-                                try {
-                                    var parsed = JSON.parse(dataStr);
-                                    if (!branchMetaReceived) {
-                                        // Первый чанк — метаданные ветки
-                                        var newBranchId = parsed.branch_id;
-                                        var branchMessages = parsed.messages || [];
-                                        currentBranchId = newBranchId;
-                                        chat.activeBranch = newBranchId;
-                                        chat.messages = branchMessages.slice();
-                                        // Добавляем заглушку ассистента для стриминга
-                                        assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null, _abortController: null };
-                                        chat.messages.push(assistantMsg);
-                                        streamMsgIndex = chat.messages.length - 1;
-                                        var streamId = 'branch_stream_' + streamMsgIndex;
-                                        activeStreamId = streamId;
-                                        renderMessages();
-                                        renderChatList();
-                                        branchMetaReceived = true;
-                                    } else if (parsed.assistant_msg_id) {
-                                        // Финальные метаданные
-                                        if (assistantMsg) {
-                                            assistantMsg.msg_id = parsed.assistant_msg_id;
-                                            assistantMsg.finished = true;
-                                            assistantMsg._streaming = false;
+                            if (!line.startsWith('data: ')) continue;
+                            var dataStr = line.slice(6).trim();
+                            if (dataStr === '[DONE]') continue;
+                            try {
+                                var parsed = JSON.parse(dataStr);
+                                if (!branchMetaReceived) {
+                                    var newBranchId = parsed.branch_id;
+                                    var branchMessages = parsed.messages || [];
+                                    currentBranchId = newBranchId;
+                                    chat.activeBranch = newBranchId;
+                                    chat.messages = branchMessages.slice();
+                                    assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null, _abortController: null };
+                                    chat.messages.push(assistantMsg);
+                                    streamMsgIndex = chat.messages.length - 1;
+                                    var streamId = 'branch_stream_' + streamMsgIndex;
+                                    activeStreamId = streamId;
+                                    renderMessages();
+                                    renderChatList();
+                                    branchMetaReceived = true;
+                                } else if (parsed.assistant_msg_id) {
+                                    if (assistantMsg) {
+                                        assistantMsg.msg_id = parsed.assistant_msg_id;
+                                        assistantMsg.finished = true;
+                                        assistantMsg._streaming = false;
+                                    }
+                                } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
+                                    if (assistantMsg) {
+                                        if (parsed.content) assistantMsg.content += parsed.content;
+                                        if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                        var msgEl = document.getElementById('stream-' + streamMsgIndex);
+                                        if (msgEl) {
+                                            var reasoningBlock = assistantMsg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>' : '';
+                                            msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
+                                            msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                            setupFloatingCopyButtonsForMsg(msgEl);
+                                            updateFloatingButtons();
                                         }
-                                    } else {
-                                        // Контентный чанк
-                                        if (assistantMsg) {
-                                            if (parsed.content) assistantMsg.content += parsed.content;
-                                            if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
-                                            // Обновляем DOM в реальном времени
-                                            var msgEl = document.getElementById('stream-' + streamMsgIndex);
-                                            if (msgEl) {
-                                                var reasoningBlock = assistantMsg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>' : '';
-                                                msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
-                                                msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                                                setupFloatingCopyButtonsForMsg(msgEl);
-                                                updateFloatingButtons();
-                                            }
-                                            if (autoScroll) {
-                                                var main = document.querySelector('.main');
-                                                if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
-                                            }
+                                        if (autoScroll) {
+                                            var main = document.querySelector('.main');
+                                            if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
                                         }
                                     }
-                                } catch (parseErr) {}
-                            }
+                                }
+                            } catch (parseErr) {}
                         }
                     }
                     if (assistantMsg && !assistantMsg.finished) {
@@ -980,7 +973,6 @@
                     activeStreamId = null;
                     sendBtnArrow();
                 } else {
-                    // Обычный JSON (ветка без промпта — от ассистента)
                     var data = await resp.json();
                     if (data.success) {
                         currentBranchId = data.branch_id;
@@ -1024,7 +1016,6 @@
                     sendBtnStop();
                     msg.content = newText;
                     chat.messages = chat.messages.slice(0, msgIndex + 1);
-                    // Добавляем заглушку ассистента для стриминга
                     var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null, _abortController: null };
                     chat.messages.push(assistantMsg);
                     var newMsgIndex = chat.messages.length - 1;
@@ -1043,8 +1034,19 @@
                             signal: abortController.signal
                         });
                         if (!resp.ok) {
-                            var errData = await resp.json();
+                            var errData = await resp.json().catch(() => ({}));
                             showAlertModal('Ошибка', errData.error || 'Неизвестная ошибка', '❌');
+                            isSending = false;
+                            sendBtnArrow();
+                            return;
+                        }
+                        var contentType = resp.headers.get('content-type') || '';
+                        if (!contentType.includes('text/event-stream')) {
+                            var errJson = await resp.json().catch(() => ({}));
+                            showAlertModal('Ошибка', errJson.error || 'Неверный ответ сервера', '❌');
+                            assistantMsg.content = 'Ошибка сервера.';
+                            assistantMsg.finished = true;
+                            renderMessages();
                             isSending = false;
                             sendBtnArrow();
                             return;
@@ -1060,31 +1062,30 @@
                             buffer = lines.pop() || '';
                             for (var i = 0; i < lines.length; i++) {
                                 var line = lines[i];
-                                if (line.startsWith('data: ')) {
-                                    var dataStr = line.slice(6);
-                                    if (dataStr === '[DONE]') continue;
-                                    try {
-                                        var parsed = JSON.parse(dataStr);
-                                        if (parsed.assistant_msg_id) {
-                                            assistantMsg.msg_id = parsed.assistant_msg_id;
-                                        } else {
-                                            if (parsed.content) assistantMsg.content += parsed.content;
-                                            if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
-                                            var msgEl = document.getElementById('stream-' + newMsgIndex);
-                                            if (msgEl) {
-                                                var reasoningBlock = assistantMsg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>' : '';
-                                                msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
-                                                msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                                                setupFloatingCopyButtonsForMsg(msgEl);
-                                                updateFloatingButtons();
-                                            }
-                                            if (autoScroll) {
-                                                var main = document.querySelector('.main');
-                                                if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
-                                            }
+                                if (!line.startsWith('data: ')) continue;
+                                var dataStr = line.slice(6).trim();
+                                if (dataStr === '[DONE]') continue;
+                                try {
+                                    var parsed = JSON.parse(dataStr);
+                                    if (parsed.assistant_msg_id) {
+                                        assistantMsg.msg_id = parsed.assistant_msg_id;
+                                    } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
+                                        if (parsed.content) assistantMsg.content += parsed.content;
+                                        if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                        var msgEl = document.getElementById('stream-' + newMsgIndex);
+                                        if (msgEl) {
+                                            var reasoningBlock = assistantMsg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>' : '';
+                                            msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
+                                            msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                            setupFloatingCopyButtonsForMsg(msgEl);
+                                            updateFloatingButtons();
                                         }
-                                    } catch (e) {}
-                                }
+                                        if (autoScroll) {
+                                            var main = document.querySelector('.main');
+                                            if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+                                        }
+                                    }
+                                } catch (e) {}
                             }
                         }
                         assistantMsg.finished = true;
@@ -1130,7 +1131,6 @@
             sendBtnStop();
             var removeFrom = msgIndex;
             while (chat.messages.length > removeFrom) { chat.messages.pop(); }
-            // Добавляем заглушку ассистента для стриминга
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null, _abortController: null };
             chat.messages.push(assistantMsg);
             var newMsgIndex = chat.messages.length - 1;
@@ -1149,8 +1149,19 @@
                     signal: abortController.signal
                 });
                 if (!resp.ok) {
-                    var errData = await resp.json();
+                    var errData = await resp.json().catch(() => ({}));
                     showAlertModal('Ошибка', errData.error || 'Неизвестная ошибка', '❌');
+                    isSending = false;
+                    sendBtnArrow();
+                    return;
+                }
+                var contentType = resp.headers.get('content-type') || '';
+                if (!contentType.includes('text/event-stream')) {
+                    var errJson = await resp.json().catch(() => ({}));
+                    showAlertModal('Ошибка', errJson.error || 'Неверный ответ сервера', '❌');
+                    assistantMsg.content = 'Ошибка сервера.';
+                    assistantMsg.finished = true;
+                    renderMessages();
                     isSending = false;
                     sendBtnArrow();
                     return;
@@ -1166,31 +1177,30 @@
                     buffer = lines.pop() || '';
                     for (var i = 0; i < lines.length; i++) {
                         var line = lines[i];
-                        if (line.startsWith('data: ')) {
-                            var dataStr = line.slice(6);
-                            if (dataStr === '[DONE]') continue;
-                            try {
-                                var parsed = JSON.parse(dataStr);
-                                if (parsed.assistant_msg_id) {
-                                    assistantMsg.msg_id = parsed.assistant_msg_id;
-                                } else {
-                                    if (parsed.content) assistantMsg.content += parsed.content;
-                                    if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
-                                    var msgEl = document.getElementById('stream-' + newMsgIndex);
-                                    if (msgEl) {
-                                        var reasoningBlock = assistantMsg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>' : '';
-                                        msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
-                                        msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                                        setupFloatingCopyButtonsForMsg(msgEl);
-                                        updateFloatingButtons();
-                                    }
-                                    if (autoScroll) {
-                                        var main = document.querySelector('.main');
-                                        if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
-                                    }
+                        if (!line.startsWith('data: ')) continue;
+                        var dataStr = line.slice(6).trim();
+                        if (dataStr === '[DONE]') continue;
+                        try {
+                            var parsed = JSON.parse(dataStr);
+                            if (parsed.assistant_msg_id) {
+                                assistantMsg.msg_id = parsed.assistant_msg_id;
+                            } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
+                                if (parsed.content) assistantMsg.content += parsed.content;
+                                if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                var msgEl = document.getElementById('stream-' + newMsgIndex);
+                                if (msgEl) {
+                                    var reasoningBlock = assistantMsg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>' : '';
+                                    msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
+                                    msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                    setupFloatingCopyButtonsForMsg(msgEl);
+                                    updateFloatingButtons();
                                 }
-                            } catch (e) {}
-                        }
+                                if (autoScroll) {
+                                    var main = document.querySelector('.main');
+                                    if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+                                }
+                            }
+                        } catch (e) {}
                     }
                 }
                 assistantMsg.finished = true;
@@ -1646,7 +1656,6 @@
             sendBtnStop();
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
-            // завершить предыдущее прерванное сообщение
             var lastMsg = chat.messages[chat.messages.length - 1];
             if (lastMsg && lastMsg.role === 'assistant' && lastMsg.interrupted) {
                 lastMsg.interrupted = false; lastMsg.finished = true;
@@ -1657,8 +1666,7 @@
             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             renderChatList();
             renderMessages();
-            // Добавляем сообщение-заглушку ассистента для стриминга
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null };
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null, _abortController: null };
             chat.messages.push(assistantMsg);
             const msgIndex = chat.messages.length - 1;
             const streamId = 'stream_' + msgIndex;
@@ -1711,6 +1719,16 @@
                     return;
                 }
 
+                const contentType = resp.headers.get('content-type') || '';
+                if (!contentType.includes('text/event-stream')) {
+                    const err = await resp.json().catch(() => ({}));
+                    chat.messages[msgIndex].content = err.error || 'Неизвестная ошибка сервера.';
+                    chat.messages[msgIndex].finished = true;
+                    renderMessages();
+                    isSending = false; sendBtnArrow(); activeStreamId = null;
+                    return;
+                }
+
                 const reader = resp.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
@@ -1723,39 +1741,32 @@
                     const lines = buffer.split('\n');
                     buffer = lines.pop() || '';
                     for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const dataStr = line.slice(6);
-                            if (dataStr === '[DONE]') continue;
-                            try {
-                                const parsed = JSON.parse(dataStr);
-                                if (parsed.assistant_msg_id) {
-                                    // финальные метаданные
-                                    finalMeta = parsed;
-                                } else {
-                                    // контент или рассуждение
-                                    if (parsed.content) {
-                                        assistantMsg.content += parsed.content;
-                                    }
-                                    if (parsed.reasoning) {
-                                        assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
-                                    }
+                        if (!line.startsWith('data: ')) continue;
+                        const dataStr = line.slice(6).trim();
+                        if (dataStr === '[DONE]') continue;
+                        try {
+                            const parsed = JSON.parse(dataStr);
+                            if (parsed.assistant_msg_id) {
+                                finalMeta = parsed;
+                            } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
+                                if (parsed.content) assistantMsg.content += parsed.content;
+                                if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                const msgEl = document.getElementById('stream-' + msgIndex);
+                                if (msgEl) {
+                                    const reasoningBlock = assistantMsg._reasoningBuffer
+                                        ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>'
+                                        : '';
+                                    msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
+                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                        if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+                                    });
+                                    setupFloatingCopyButtonsForMsg(msgEl);
+                                    updateFloatingButtons();
                                 }
-                            } catch (e) { /* ignore parse errors for incomplete chunks */ }
+                            }
+                        } catch (e) {
+                            console.warn('SSE parse error:', e, dataStr);
                         }
-                    }
-                    // Обновляем сообщение в реальном времени
-                    var msgEl = document.getElementById('stream-' + msgIndex);
-                    if (msgEl) {
-                        var reasoningBlock = '';
-                        if (assistantMsg._reasoningBuffer) {
-                            reasoningBlock = '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>';
-                        }
-                        msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
-                        msgEl.querySelectorAll('pre code').forEach(function(block) {
-                            if (typeof hljs !== 'undefined') hljs.highlightElement(block);
-                        });
-                        setupFloatingCopyButtonsForMsg(msgEl);
-                        updateFloatingButtons();
                     }
                     if (autoScroll) {
                         var main = document.querySelector('.main');
@@ -1763,7 +1774,6 @@
                     }
                 }
 
-                // Стрим завершён
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 if (finalMeta) {
@@ -1781,12 +1791,12 @@
                 sendBtnArrow();
                 pendingFile = null;
                 updateFileList();
-                var msgEl = document.getElementById('stream-' + msgIndex);
-                if (msgEl) {
-                    msgEl.querySelectorAll('pre code').forEach(function(block) {
+                var msgElFinal = document.getElementById('stream-' + msgIndex);
+                if (msgElFinal) {
+                    msgElFinal.querySelectorAll('pre code').forEach(function(block) {
                         if (typeof hljs !== 'undefined') hljs.highlightElement(block);
                     });
-                    setupFloatingCopyButtonsForMsg(msgEl);
+                    setupFloatingCopyButtonsForMsg(msgElFinal);
                     updateFloatingButtons();
                 }
                 buildNavContainer();
