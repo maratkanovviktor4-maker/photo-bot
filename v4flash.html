@@ -2997,65 +2997,6 @@
             }
         });
 
-        // === Модалка редактирования сообщения ===
-        var editMessageCallback = null;
-        
-        function showEditMessageModal(currentText, callback) {
-            var input = document.getElementById('editMessageInput');
-            input.value = currentText;
-            editMessageCallback = callback;
-            document.getElementById('editMessageModal').classList.add('active');
-            
-            // Авто-растягивание
-            input.style.height = 'auto';
-            input.style.height = Math.min(input.scrollHeight, 300) + 'px';
-            
-            // Вешаем обработчик клавиш при каждом открытии (DOM точно готов)
-            if (!input._keydownBound) {
-                input._keydownBound = true;
-                input.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' && e.shiftKey) {
-                        return;
-                    }
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        confirmEditMessage();
-                    }
-                    if (e.key === 'Escape') {
-                        closeEditMessageModal();
-                    }
-                });
-            }
-            
-            setTimeout(function() {
-                input.focus();
-                input.setSelectionRange(input.value.length, input.value.length);
-            }, 100);
-        }
-        
-        function closeEditMessageModal() {
-            document.getElementById('editMessageModal').classList.remove('active');
-            editMessageCallback = null;
-        }
-        
-        function confirmEditMessage() {
-            var value = document.getElementById('editMessageInput').value.trim();
-            if (value && editMessageCallback) {
-                editMessageCallback(value);
-            }
-            closeEditMessageModal();
-        }
-        
-        // Авто-растягивание
-        document.getElementById('editMessageInput').addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 300) + 'px';
-        });
-        
-        // Закрытие по клику вне модалки
-        document.getElementById('editMessageModal').addEventListener('click', function(e) {
-            if (e.target === this) closeEditMessageModal();
-        });
         function updateBranchIndicator() {
             var el = document.getElementById('branchIndicatorTop');
             var chat = chats.find(function(c) { return c.id === currentChatId; });
@@ -3079,6 +3020,7 @@
         }
 
     </script>
+
         <!-- Единая система модальных окон -->
         <div id="modalOverlay" class="modal-overlay">
             <div class="modal-box">
@@ -3100,5 +3042,29 @@
                 </div>
             </div>
         </div>
+    <script>
+        var editMessageCallback = null;
+        function showEditMessageModal(currentText, callback) {
+            var input = document.getElementById('editMessageInput');
+            input.value = currentText;
+            editMessageCallback = callback;
+            document.getElementById('editMessageModal').classList.add('active');
+            input.style.height = 'auto';
+            var h = Math.min(input.scrollHeight, 300);
+            input.style.height = h + 'px';
+            var wrapper = input.closest('.modal-box');
+            if (wrapper) wrapper.style.maxWidth = '600px';
+            setTimeout(function() { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }, 100);
+        }
+        function closeEditMessageModal() { document.getElementById('editMessageModal').classList.remove('active'); editMessageCallback = null; }
+        function confirmEditMessage() { var value = document.getElementById('editMessageInput').value.trim(); if (value && editMessageCallback) { editMessageCallback(value); } closeEditMessageModal(); }
+        document.getElementById('editMessageInput').addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 300) + 'px'; });
+        document.getElementById('editMessageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.shiftKey) return;
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmEditMessage(); }
+            if (e.key === 'Escape') closeEditMessageModal();
+        });
+        document.getElementById('editMessageModal').addEventListener('click', function(e) { if (e.target === this) closeEditMessageModal(); });
+    </script>
 </body>
 </html>
