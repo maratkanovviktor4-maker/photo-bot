@@ -2087,7 +2087,18 @@
         function closeEditMessageModal() { document.getElementById('editMessageModal').classList.remove('active'); editMessageCallback = null; }
         function confirmEditMessage() { var value = document.getElementById('editMessageInput').value.trim(); if (value && editMessageCallback) { editMessageCallback(value); } closeEditMessageModal(); }
         document.getElementById('editMessageInput').addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 300) + 'px'; });
-        document.getElementById('editMessageInput').addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmEditMessage(); } if (e.key === 'Escape') { closeEditMessageModal(); } });
+        document.getElementById('editMessageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.shiftKey) {
+                return;
+            }
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                confirmEditMessage();
+            }
+            if (e.key === 'Escape') {
+                closeEditMessageModal();
+            }
+        });
         document.getElementById('editMessageModal').addEventListener('click', function(e) { if (e.target === this) closeEditMessageModal(); });
 
         var chatAreaObserver = new MutationObserver(function() { setupFloatingCopyButtons(); updateFloatingButtons(); });
