@@ -3021,6 +3021,59 @@
                 })();
             });
         }
+        // === Модалка редактирования сообщения ===
+        var editMessageCallback = null;
+        
+        function showEditMessageModal(currentText, callback) {
+            var input = document.getElementById('editMessageInput');
+            input.value = currentText;
+            editMessageCallback = callback;
+            document.getElementById('editMessageModal').classList.add('active');
+            
+            // Авто-растягивание
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 300) + 'px';
+            
+            setTimeout(function() {
+                input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
+            }, 100);
+        }
+        
+        function closeEditMessageModal() {
+            document.getElementById('editMessageModal').classList.remove('active');
+            editMessageCallback = null;
+        }
+        
+        function confirmEditMessage() {
+            var value = document.getElementById('editMessageInput').value.trim();
+            if (value && editMessageCallback) {
+                editMessageCallback(value);
+            }
+            closeEditMessageModal();
+        }
+        
+        // Авто-растягивание
+        document.getElementById('editMessageInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 300) + 'px';
+        });
+        
+        // Enter + Shift+Enter
+        document.getElementById('editMessageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                confirmEditMessage();
+            }
+            if (e.key === 'Escape') {
+                closeEditMessageModal();
+            }
+        });
+        
+        // Закрытие по клику вне модалки
+        document.getElementById('editMessageModal').addEventListener('click', function(e) {
+            if (e.target === this) closeEditMessageModal();
+        });
 
     </script>
         <!-- Единая система модальных окон -->
