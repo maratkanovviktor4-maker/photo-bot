@@ -1034,13 +1034,7 @@
             currentChatId = id;
             localStorage.setItem('photobot_active_chat', id);
             var chat = chats.find(function(c) { return c.id === id; });
-            // Проверяем кеш
-            if (chat && (!chat.messages || chat.messages.length === 0)) {
-                var cached = getCachedChatMessages(chat.id);
-                if (cached) {
-                    chat.messages = cached;
-                }
-            }
+
             if (chat) {
                 if (chat._personality) {
                     currentPersonality = chat._personality;
@@ -3116,36 +3110,9 @@
         function hideLoading() {
             document.getElementById('loadingSpinner').style.display = 'none';
         }
-        function cacheChatMessages(chatId, messages) {
-            try {
-                var cache = JSON.parse(localStorage.getItem('chat_cache') || '{}');
-                cache[chatId] = {
-                    messages: messages,
-                    timestamp: Date.now()
-                };
-                // Ограничим кеш 10 чатами
-                var keys = Object.keys(cache);
-                if (keys.length > 10) {
-                    var oldest = keys.sort((a, b) => cache[a].timestamp - cache[b].timestamp)[0];
-                    delete cache[oldest];
-                }
-                localStorage.setItem('chat_cache', JSON.stringify(cache));
-            } catch(e) {}
-        }
+
         
-        function getCachedChatMessages(chatId) {
-            try {
-                var cache = JSON.parse(localStorage.getItem('chat_cache') || '{}');
-                var entry = cache[chatId];
-                if (entry) {
-                    // Кеш живёт 5 минут
-                    if (Date.now() - entry.timestamp < 5 * 60 * 1000) {
-                        return entry.messages;
-                    }
-                }
-            } catch(e) {}
-            return null;
-        }
+
         async function loadMoreMessages(chatId, offset) {
             var chat = chats.find(function(c) { return c.id === chatId; });
             if (!chat) return;
