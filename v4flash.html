@@ -1258,6 +1258,10 @@
                 if (chunk) {
                     var ft = words.slice(0, pos).join('');
                     chat.messages[msgIndex].content = ft;
+                    var formatted = formatMessage(ft);
+                    var el = document.getElementById('stream-' + msgIndex);
+                    if (el) el.innerHTML = formatted;
+
                     if (!reasoningStarted && ft.indexOf('Размышление:\n') !== -1) { reasoningStarted = true; chat.messages[msgIndex]._reasoningInProgress = true; }
                     if (reasoningStarted && !reasoningEnded) {
                         var ei = ft.indexOf('\n\nОтвет:\n');
@@ -1266,7 +1270,6 @@
                             chat.messages[msgIndex].reasoning = ft.substring('Размышление:\n'.length, ei);
                         }
                     }
-                    renderMessages();
                     if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.scrollTop = m3.scrollHeight; } }
                     typingInterval = setTimeout(streamNext, delayMs);
                 } else {
