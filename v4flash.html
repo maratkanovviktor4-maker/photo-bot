@@ -539,14 +539,14 @@
             
             var savedAuth = localStorage.getItem('photobot_auth');
             if (!savedAuth) {
-                alert('Авторизуйтесь сначала, затем откройте ссылку снова.');
+                showAlertModal('Ошибка', 'Авторизуйтесь сначала, затем откройте ссылку снова.', '❌');
                 window.location.href = 'index.html';
                 return;
             }
             
             var auth = JSON.parse(savedAuth);
             if (!auth.session_token) {
-                alert('Сессия устарела. Авторизуйтесь заново.');
+                showAlertModal('Сессия истекла', 'Сессия устарела. Авторизуйтесь заново.', '❌');
                 window.location.href = 'index.html';
                 return;
             }
@@ -558,7 +558,7 @@
                     window.location.href = 'v4flash.html?chat_id=' + data.chat_id;
                 } else {
                     var err = await resp.json();
-                    alert('Ошибка импорта: ' + (err.error || 'Неизвестная ошибка'));
+                    showAlertModal('Ошибка импорта', err.error || 'Неизвестная ошибка', '❌');
                 }
             } catch(e) {
                 console.error('import error:', e);
@@ -572,7 +572,7 @@
             currentUserId = auth.user_id;
             sessionToken = auth.session_token || '';
             if (!sessionToken || !currentUserId) {
-                alert('Сессия устарела. Авторизуйтесь заново на главной странице.');
+                showAlertModal('Сессия истекла', 'Сессия устарела. Авторизуйтесь заново на главной странице.', '❌');
                 window.location.href = 'index.html';
             } else {
                 loadChatsFromServer();
@@ -580,7 +580,7 @@
                 loadPersonalities();
             }
         } else {
-            alert('Авторизуйтесь на главной странице');
+            showAlertModal('Требуется авторизация', 'Авторизуйтесь на главной странице', '❌');
             window.location.href = 'index.html';
         }
 
@@ -588,7 +588,7 @@
             try {
                 const resp = await fetch(`${SERVER_URL}/get_chat_history?user_id=${currentUserId}&model=flash&session_token=${sessionToken}`);
                 if (resp.status === 403) {
-                    alert('Сессия устарела. Авторизуйтесь заново.');
+                showAlertModal('Сессия истекла', 'Сессия устарела. Авторизуйтесь заново.', '❌');
                     window.location.href = 'index.html';
                     return;
                 }
@@ -740,9 +740,9 @@
                 if (resp.ok) {
                     var data = await resp.json();
                     await navigator.clipboard.writeText(data.share_url);
-                    alert('Ссылка скопирована:\n' + data.share_url);
+                    showAlertModal('Ссылка создана', 'Ссылка скопирована в буфер обмена:\n' + data.share_url, '✅');
                 } else {
-                    alert('Ошибка при создании ссылки');
+                    showAlertModal('Ошибка', 'Не удалось создать ссылку для публикации.', '❌');
                 }
             } catch(e) {
                 console.error('shareChat error:', e);
@@ -750,24 +750,33 @@
         }
         
         async function deleteChat(id) {
-            if (!confirm('Удалить чат?')) return;
-            try {
-                await fetch(`${SERVER_URL}/delete_chat?user_id=${currentUserId}&model=flash&chat_id=${id}&session_token=${sessionToken}`, {
-                    method: 'DELETE'
-                });
-            } catch (e) {}
-            chats = chats.filter(c => c.id !== id);
-            if (currentChatId === id) {
-                currentChatId = chats.length > 0 ? chats[chats.length - 1].id : null;
-                if (currentChatId) {
-                    var chat = chats.find(function(c) { return c.id === currentChatId; });
-                    if (chat) currentBranchId = chat.activeBranch || 'main';
+            showConfirmModal(
+                'Удаление чата',
+                'Вы уверены, что хотите удалить этот чат? Все сообщения будут потеряны безвозвратно.',
+                '⚠️',
+                'Удалить',
+                'Отмена',
+                'modal-btn-danger',
+                async function() {
+                    try {
+                        await fetch(`${SERVER_URL}/delete_chat?user_id=${currentUserId}&model=flash&chat_id=${id}&session_token=${sessionToken}`, {
+                            method: 'DELETE'
+                        });
+                    } catch (e) {}
+                    chats = chats.filter(c => c.id !== id);
+                    if (currentChatId === id) {
+                        currentChatId = chats.length > 0 ? chats[chats.length - 1].id : null;
+                        if (currentChatId) {
+                            var chat = chats.find(function(c) { return c.id === currentChatId; });
+                            if (chat) currentBranchId = chat.activeBranch || 'main';
+                        }
+                    }
+                    renderChatList();
+                    renderBranchesPanel();
+                    renderMessages();
+                    document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
                 }
-            }
-            renderChatList();
-            renderBranchesPanel();
-            renderMessages();
-            document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
+            );
         }
         
         function renderChatList() {
@@ -921,32 +930,37 @@
         
         async function deleteBranch(branchId) {
             if (branchId === 'main') return;
-            if (!confirm('Удалить ветку и все ответвления от неё? Сообщения будут потеряны.')) return;
-            
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            
-            try {
-                var resp = await fetch(SERVER_URL + '/delete_branch?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + branchId + '&session_token=' + sessionToken, {
-                    method: 'DELETE'
-                });
-                if (resp.ok) {
-                    var data = await resp.json();
-                    loadChatsFromServer().then(function() {
-                        var updatedChat = chats.find(function(c) { return c.id === currentChatId; });
-                        if (updatedChat) {
-                            currentBranchId = updatedChat.activeBranch || 'main';
-                            if (updatedChat.allBranches && updatedChat.allBranches[currentBranchId]) {
-                                updatedChat.messages = updatedChat.allBranches[currentBranchId].messages || [];
-                            }
+            showConfirmModal(
+                'Удаление ветки',
+                'Удалить ветку и все ответвления от неё? Сообщения будут потеряны безвозвратно.',
+                '⚠️',
+                'Удалить',
+                'Отмена',
+                'modal-btn-danger',
+                async function() {
+                    try {
+                        var resp = await fetch(SERVER_URL + '/delete_branch?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + branchId + '&session_token=' + sessionToken, {
+                            method: 'DELETE'
+                        });
+                        if (resp.ok) {
+                            var data = await resp.json();
+                            loadChatsFromServer().then(function() {
+                                var updatedChat = chats.find(function(c) { return c.id === currentChatId; });
+                                if (updatedChat) {
+                                    currentBranchId = updatedChat.activeBranch || 'main';
+                                    if (updatedChat.allBranches && updatedChat.allBranches[currentBranchId]) {
+                                        updatedChat.messages = updatedChat.allBranches[currentBranchId].messages || [];
+                                    }
+                                }
+                                renderBranchesPanel();
+                                renderMessages();
+                            });
                         }
-                        renderBranchesPanel();
-                        renderMessages();
-                    });
+                    } catch(e) {
+                        console.error('deleteBranch error:', e);
+                    }
                 }
-            } catch(e) {
-                console.error('deleteBranch error:', e);
-            }
+            );
         }
         
         async function createBranchFromMessage(msgIndex) {
@@ -1052,7 +1066,7 @@
                     }
                 } else {
                     var errData = await resp.json();
-                    alert('Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
+                    showAlertModal('Ошибка', errData.error || 'Неизвестная ошибка', '❌');
                     isSending = false;
                     sendBtnArrow();
                 }
@@ -1062,7 +1076,7 @@
                     if (el2) el2.remove();
                 }
                 console.error('createBranchFromMessage error:', e);
-                alert('Ошибка соединения.');
+                showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
                 isSending = false;
                 sendBtnArrow();
             }
@@ -1140,7 +1154,7 @@
                     });
                 } else {
                     var errData = await resp.json();
-                    alert('Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
+                    showAlertModal('Ошибка', errData.error || 'Неизвестная ошибка', '❌');
                     isSending = false;
                     sendBtnArrow();
                 }
@@ -1148,7 +1162,7 @@
                 var el2 = document.getElementById(placeholderId);
                 if (el2) el2.remove();
                 console.error('regenerateUserMessage error:', e);
-                alert('Ошибка соединения.');
+                showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
                 isSending = false;
                 sendBtnArrow();
             }
@@ -1222,7 +1236,7 @@
                     });
                 } else {
                     var errData = await resp.json();
-                    alert('Ошибка: ' + (errData.error || 'Неизвестная ошибка'));
+                    showAlertModal('Ошибка', errData.error || 'Неизвестная ошибка', '❌');
                     isSending = false;
                     sendBtnArrow();
                 }
@@ -1230,7 +1244,7 @@
                 var el2 = document.getElementById(placeholderId);
                 if (el2) el2.remove();
                 console.error('regenerateAssistantMessage error:', e);
-                alert('Ошибка соединения.');
+                showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
                 isSending = false;
                 sendBtnArrow();
             }
@@ -1674,7 +1688,7 @@
                 select.appendChild(opt);
             });
             if (select.options.length === 0) {
-                alert('Нет других веток для переноса.');
+                showAlertModal('Перенос истории', 'Нет других веток для переноса.', 'ℹ️');
                 return;
             }
             document.getElementById('copyHistoryModal').style.display = 'flex';
@@ -1694,7 +1708,7 @@
             var sourceBranchId = currentBranchId;
             var sourceMsgId = chat.messages[copyHistorySourceIndex] ? chat.messages[copyHistorySourceIndex].msg_id : null;
             if (!sourceMsgId) {
-                alert('Не удалось определить сообщение.');
+                showAlertModal('Ошибка', 'Не удалось определить сообщение для переноса.', '❌');
                 return;
             }
             document.getElementById('copyHistoryConfirmBtn').disabled = true;
@@ -1732,12 +1746,12 @@
                         }
                     });
                 } else {
-                    alert('Ошибка переноса: ' + (data.error || 'Неизвестная ошибка'));
+                showAlertModal('Ошибка переноса', data.error || 'Неизвестная ошибка', '❌');
                 }
             })
             .catch(function(e) {
                 console.error('copyHistory error:', e);
-                alert('Ошибка соединения.');
+                showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
             })
             .finally(function() {
                 document.getElementById('copyHistoryConfirmBtn').disabled = false;
