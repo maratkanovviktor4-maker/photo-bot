@@ -923,7 +923,7 @@
                                     currentBranchId = newBranchId;
                                     chat.activeBranch = newBranchId;
                                     chat.messages = branchMessages.slice();
-                                    assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null, _abortController: null };
+                                    assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                                     chat.messages.push(assistantMsg);
                                     streamMsgIndex = chat.messages.length - 1;
                                     var streamId = 'branch_stream_' + streamMsgIndex;
@@ -939,12 +939,21 @@
                                     }
                                 } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
                                     if (assistantMsg) {
-                                        if (parsed.content) assistantMsg.content += parsed.content;
-                                        if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                        if (parsed.reasoning) {
+                                            assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + '🔹' + parsed.reasoning;
+                                        }
+                                        if (parsed.content) {
+                                            assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
+                                        }
+                                        var parts = assistantMsg._fullBuffer.split('🔹');
+                                        var reasoningText = parts.length > 1 ? parts[1] : '';
+                                        var contentText = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
+                                        assistantMsg._reasoningBuffer = reasoningText;
+                                        assistantMsg.content = contentText;
                                         var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                         if (msgEl) {
-                                            var reasoningBlock = assistantMsg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>' : '';
-                                            msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
+                                            var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
+                                            msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
                                             msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                             setupFloatingCopyButtonsForMsg(msgEl);
                                             updateFloatingButtons();
@@ -962,10 +971,16 @@
                         assistantMsg.finished = true;
                         assistantMsg._streaming = false;
                     }
+                    if (assistantMsg && assistantMsg._fullBuffer) {
+                        var parts = assistantMsg._fullBuffer.split('🔹');
+                        assistantMsg._reasoningBuffer = parts.length > 1 ? parts[1] : '';
+                        assistantMsg.content = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
+                    }
                     chat.lastMessageTime = Date.now();
                     chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                     autoNameChat(chat);
                     await updateBranchesFromServer();
+                    renderMessages();
                     renderChatList();
                     renderBranchesPanel();
                     updateBalance();
@@ -981,17 +996,16 @@
                         if (chat.allBranches && chat.allBranches[currentBranchId]) {
                             chat.messages = chat.allBranches[currentBranchId].messages || [];
                         }
+                        renderMessages();
                         renderChatList();
                         renderBranchesPanel();
-                        renderMessages();
                         updateBalance();
-                        isSending = false;
-                        sendBtnArrow();
                     } else {
                         showAlertModal('Ошибка', 'Не удалось создать ветку', '❌');
-                        isSending = false;
-                        sendBtnArrow();
                     }
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
                 }
             } catch (e) {
                 if (placeholderId) { var el2 = document.getElementById(placeholderId); if (el2) el2.remove(); }
@@ -1016,7 +1030,7 @@
                     sendBtnStop();
                     msg.content = newText;
                     chat.messages = chat.messages.slice(0, msgIndex + 1);
-                    var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null, _abortController: null };
+                    var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                     chat.messages.push(assistantMsg);
                     var newMsgIndex = chat.messages.length - 1;
                     var streamId = 'regen_user_stream_' + newMsgIndex;
@@ -1070,12 +1084,21 @@
                                     if (parsed.assistant_msg_id) {
                                         assistantMsg.msg_id = parsed.assistant_msg_id;
                                     } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
-                                        if (parsed.content) assistantMsg.content += parsed.content;
-                                        if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                        if (parsed.reasoning) {
+                                            assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + '🔹' + parsed.reasoning;
+                                        }
+                                        if (parsed.content) {
+                                            assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
+                                        }
+                                        var parts = assistantMsg._fullBuffer.split('🔹');
+                                        var reasoningText = parts.length > 1 ? parts[1] : '';
+                                        var contentText = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
+                                        assistantMsg._reasoningBuffer = reasoningText;
+                                        assistantMsg.content = contentText;
                                         var msgEl = document.getElementById('stream-' + newMsgIndex);
                                         if (msgEl) {
-                                            var reasoningBlock = assistantMsg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>' : '';
-                                            msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
+                                            var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
+                                            msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
                                             msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                             setupFloatingCopyButtonsForMsg(msgEl);
                                             updateFloatingButtons();
@@ -1090,10 +1113,19 @@
                         }
                         assistantMsg.finished = true;
                         assistantMsg._streaming = false;
+                        if (assistantMsg._fullBuffer) {
+                            var parts = assistantMsg._fullBuffer.split('🔹');
+                            assistantMsg._reasoningBuffer = parts.length > 1 ? parts[1] : '';
+                            assistantMsg.content = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
+                        }
+                        await updateBranchesFromServer();
+                        if (chat.allBranches && chat.allBranches[currentBranchId]) {
+                            chat.messages = chat.allBranches[currentBranchId].messages || [];
+                        }
                         chat.lastMessageTime = Date.now();
                         chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                         autoNameChat(chat);
-                        await updateBranchesFromServer();
+                        renderMessages();
                         renderChatList();
                         renderBranchesPanel();
                         updateBalance();
@@ -1131,7 +1163,7 @@
             sendBtnStop();
             var removeFrom = msgIndex;
             while (chat.messages.length > removeFrom) { chat.messages.pop(); }
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null, _abortController: null };
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
             chat.messages.push(assistantMsg);
             var newMsgIndex = chat.messages.length - 1;
             var streamId = 'regen_stream_' + newMsgIndex;
@@ -1185,12 +1217,21 @@
                             if (parsed.assistant_msg_id) {
                                 assistantMsg.msg_id = parsed.assistant_msg_id;
                             } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
-                                if (parsed.content) assistantMsg.content += parsed.content;
-                                if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                if (parsed.reasoning) {
+                                    assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + '🔹' + parsed.reasoning;
+                                }
+                                if (parsed.content) {
+                                    assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
+                                }
+                                var parts = assistantMsg._fullBuffer.split('🔹');
+                                var reasoningText = parts.length > 1 ? parts[1] : '';
+                                var contentText = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
+                                assistantMsg._reasoningBuffer = reasoningText;
+                                assistantMsg.content = contentText;
                                 var msgEl = document.getElementById('stream-' + newMsgIndex);
                                 if (msgEl) {
-                                    var reasoningBlock = assistantMsg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>' : '';
-                                    msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
+                                    var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
+                                    msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
                                     msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                     setupFloatingCopyButtonsForMsg(msgEl);
                                     updateFloatingButtons();
@@ -1205,10 +1246,19 @@
                 }
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
+                if (assistantMsg._fullBuffer) {
+                    var parts = assistantMsg._fullBuffer.split('🔹');
+                    assistantMsg._reasoningBuffer = parts.length > 1 ? parts[1] : '';
+                    assistantMsg.content = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
+                }
+                await updateBranchesFromServer();
+                if (chat.allBranches && chat.allBranches[currentBranchId]) {
+                    chat.messages = chat.allBranches[currentBranchId].messages || [];
+                }
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                 autoNameChat(chat);
-                await updateBranchesFromServer();
+                renderMessages();
                 renderChatList();
                 renderBranchesPanel();
                 updateBalance();
