@@ -1636,34 +1636,23 @@
                         if (resp.ok) {
                                 const data = await resp.json();
                                 if (data.steps && data.steps.length > 0) {
-                                        // Добавляем все шаги кроме последнего ассистента статически
                                         const steps = data.steps;
-                                        for (var i = 0; i < steps.length - 1; i++) {
+                                        for (var i = 0; i < steps.length; i++) {
                                                 const step = steps[i];
                                                 const cleanUser = step.user;
                                                 const cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
                                                 chat.messages.push({ role: 'user', content: cleanUser, msg_id: step.user_msg_id });
                                                 chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id });
                                         }
-                                        // Последний шаг: добавляем user, а assistant будем стримить
-                                        const lastStep = steps[steps.length - 1];
-                                        chat.messages.push({ role: 'user', content: lastStep.user, msg_id: lastStep.user_msg_id });
-                                        var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || lastStep.assistant_msg_id };
-                                        chat.messages.push(assistantMsg);
-                                        const msgIndex = chat.messages.length - 1;
-                                        const streamId = 'stream_' + msgIndex;
-                                        activeStreamId = streamId;
-                                        // Формируем fullContent из reply (последний ответ ассистента)
-                                        var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
                                         renderMessages();
-                                        streamReplyIntoChat(chat, msgIndex, fullContent, streamId, function() {
-                                                chat.lastMessageTime = Date.now();
-                                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                                                autoNameChat(chat);
-                                                updateBranchesFromServer();
-                                                updateBalance();
-                                                if (activeStreamId === streamId) { isSending = false; activeStreamId = null; sendBtnArrow(); }
-                                        });
+                                        chat.lastMessageTime = Date.now();
+                                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                                        autoNameChat(chat);
+                                        updateBranchesFromServer();
+                                        updateBalance();
+                                        isSending = false;
+                                        activeStreamId = null;
+                                        sendBtnArrow();
                                 }
                         } else {
                                 const errData = await resp.json();
@@ -1679,7 +1668,6 @@
                         isSending = false;
                         sendBtnArrow();
                 }
-                // Не сбрасываем isSending здесь, он сбросится в колбэке стрима
         }
 
 
@@ -1999,25 +1987,7 @@
             if (!chat) return;
             const msg = chat.messages[index];
             if (!msg || msg.role !== 'assistant' || !msg.interrupted) return;
-            isSending = true;
-            sendBtnStop();
-            const words = msg._streamWords;
-            let pos = msg._streamPos || 0;
-            if (!words || pos >= words.length) { msg.interrupted = false; msg.finished = true; renderMessages(); isSending = false; sendBtnArrow(); return; }
-            msg.interrupted = false;
-            msg.finished = false;
-            const streamId = 'stream_' + index;
-            activeStreamId = streamId;
-            renderMessages();
-            var input = document.getElementById('userInput');
-            if (input) input.focus();
-            await new Promise(r => setTimeout(r, 50));
-            streamReplyIntoChat(chat, index, words.join(''), streamId, function() {
-                chat.messages[index].finished = true; chat.messages[index].interrupted = false;
-                autoNameChat(chat); renderChatList(); chat.lastMessageTime = Date.now();
-                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                isSending = false; activeStreamId = null; sendBtnArrow();
-            }, pos);
+            showAlertModal('Продолжение', 'Продолжение недоступно для прерванных сообщений. Отправьте новый запрос.', 'ℹ️');
         }
 
         document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
