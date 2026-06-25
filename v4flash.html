@@ -515,16 +515,22 @@
             mainEl.addEventListener('wheel', function(e) {
                 if (e.deltaY < 0) {
                     autoScroll = false;
-                    var btn = document.getElementById('scrollBottomBtn');
-                    if (btn) btn.style.display = 'flex';
+                    var main = document.querySelector('.main');
+                    if (main && main.scrollHeight > main.clientHeight + 5) {
+                        var btn = document.getElementById('scrollBottomBtn');
+                        if (btn) btn.style.display = 'flex';
+                    }
                 }
             }, true);
         }
         window.addEventListener('wheel', function(e) {
             if (e.deltaY < 0) {
                 autoScroll = false;
-                var btn = document.getElementById('scrollBottomBtn');
-                if (btn) btn.style.display = 'flex';
+                var main = document.querySelector('.main');
+                if (main && main.scrollHeight > main.clientHeight + 5) {
+                    var btn = document.getElementById('scrollBottomBtn');
+                    if (btn) btn.style.display = 'flex';
+                }
             }
         }, true);
         
@@ -1859,10 +1865,13 @@
                 } else {
                     var text2 = part.content;
                     
-                    // 1. СНАЧАЛА экранируем HTML
+                    // 1. Экранируем HTML только в тексте (не в таблицах)
                     text2 = escapeHtml(text2);
                     
-                    // 2. ПОТОМ применяем Markdown-преобразования (кроме таблиц)
+                    // 2. Восстанавливаем палочки для таблиц (они превратились в &#124;)
+                    text2 = text2.replace(/&#124;/g, '|');
+                    
+                    // 3. Применяем Markdown-преобразования
                     text2 = text2.replace(/`([^`]+)`/g, '<code>$1</code>');
                     text2 = text2.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
                     text2 = text2.replace(/\*(.+?)\*/g, '<em>$1</em>');
@@ -1880,7 +1889,7 @@
                     text2 = text2.replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">');
                     text2 = text2.replace(/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>');
                     
-                    // 3. ПОТОМ преобразуем таблицы (чтобы их не экранировало)
+                    // 4. Преобразуем Markdown-таблицы в HTML
                     text2 = text2.replace(/\n?\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n?)+)/g, function(match, headerRow, bodyRows) {
                         var headers = headerRow.split('|').map(function(h) { return h.trim(); }).filter(Boolean);
                         var rows = bodyRows.trim().split('\n').map(function(row) {
@@ -1903,6 +1912,10 @@
                         return html;
                     });
                     
+                    // 5. Удаляем множественные переносы строк (оставляем один)
+                    text2 = text2.replace(/\n{2,}/g, '\n');
+                    
+                    // 6. Заменяем переносы строк на <br>
                     text2 = text2.replace(/\n/g, '<br>');
                     
                     result += text2;
@@ -1910,6 +1923,7 @@
             }
             return result;
         }
+
       
         function stopTyping() {
             if (typingInterval) {
