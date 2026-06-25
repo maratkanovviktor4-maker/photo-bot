@@ -1054,13 +1054,14 @@
                 currentBranchId = chat.activeBranch || 'main';
                 allBranchesCache = chat.allBranches || {};
             }
+            renderChatList();
+            renderBranchesPanel();
             // Если сообщения не загружены — загружаем
             if (!chat.messages || chat.messages.length === 0) {
                 loadChatMessages(currentChatId);
+            } else {
+                renderMessages();
             }
-            renderChatList();
-            renderBranchesPanel();
-            loadChatMessages(currentChatId);
             setTimeout(function() {
                 var main = document.querySelector('.main');
                 if (main) {
