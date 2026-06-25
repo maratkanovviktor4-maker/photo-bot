@@ -1264,7 +1264,6 @@
                     var dataAttr = ' data-msg-index="' + i + '"';
                     var reasoningHtml = '';
                     var contentToShow = m.content || '';
-                    // Если есть отдельное поле reasoning (старые сообщения) или _reasoningBuffer (новый стрим)
                     var hasReasoning = false;
                     var reasoningText = '';
                     if (m._reasoningBuffer) {
@@ -1273,6 +1272,14 @@
                     } else if (m.reasoning) {
                         reasoningText = m.reasoning;
                         hasReasoning = true;
+                    } else if (m.content && m.content.includes('Размышление:\n')) {
+                        // fallback: старый формат с reasoning внутри content
+                        var splitIdx = m.content.indexOf('\n\nОтвет:\n');
+                        if (splitIdx !== -1) {
+                            reasoningText = m.content.substring('Размышление:\n'.length, splitIdx);
+                            contentToShow = m.content.substring(splitIdx + '\n\nОтвет:\n'.length);
+                            hasReasoning = true;
+                        }
                     }
                     if (hasReasoning) {
                         reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
