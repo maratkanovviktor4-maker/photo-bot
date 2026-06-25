@@ -1857,7 +1857,7 @@
                 } else {
                     var text2 = part.content;
                     
-                    // 1. Сначала преобразуем Markdown-таблицы в HTML
+                    // Преобразование Markdown-таблиц в HTML
                     text2 = text2.replace(/\n?\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n?)+)/g, function(match, headerRow, bodyRows) {
                         var headers = headerRow.split('|').map(function(h) { return h.trim(); }).filter(Boolean);
                         var rows = bodyRows.trim().split('\n').map(function(row) {
@@ -1880,10 +1880,7 @@
                         return '\n' + html + '\n';
                     });
                     
-                    // 2. Теперь экранируем HTML-спецсимволы
                     text2 = escapeHtml(text2);
-                    
-                    // 3. Применяем Markdown-преобразования
                     text2 = text2.replace(/`([^`]+)`/g, '<code>$1</code>');
                     text2 = text2.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
                     text2 = text2.replace(/\*(.+?)\*/g, '<em>$1</em>');
@@ -1907,8 +1904,6 @@
             }
             return result;
         }
-
-
         
         function stopTyping() {
             if (typingInterval) {
