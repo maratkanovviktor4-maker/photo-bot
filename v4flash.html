@@ -921,10 +921,6 @@
             } catch (e) {
                 console.error('loadChatsFromServer error:', e);
             }
-            if (chats.length === 0) {
-                const chat = { id: String(Date.now()), title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: { 'main': { name: 'Основная', messages: [], msg_ids: [] } } };
-                chats.push(chat);
-            }
             var savedId = localStorage.getItem('photobot_active_chat');
             var found = savedId ? chats.find(function(c) { return c.id === savedId; }) : null;
             currentChatId = found ? found.id : (chats.length > 0 ? chats[chats.length - 1].id : null);
@@ -935,7 +931,11 @@
                     currentBranchId = chat.activeBranch || 'main';
                 }
                 await loadChatMessages(currentChatId);
-            } else {
+            }
+            if (chats.length === 0 || !currentChatId) {
+                currentChatId = null;
+                currentBranchId = 'main';
+                localStorage.removeItem('photobot_active_chat');
                 renderMessages();
             }
             renderChatList();
