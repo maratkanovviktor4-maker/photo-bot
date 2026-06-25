@@ -212,6 +212,171 @@
         body.light .message-content th { background: rgba(0,0,0,0.05); }
         body.light .message-content th, body.light .message-content td { border-color: rgba(0,0,0,0.1); }
         .branch-indicator { font-size: 11px; color: #00CBF5; padding: 4px 8px; background: rgba(0,203,245,0.1); border-radius: 12px; display: inline-block; margin-bottom: 8px; font-family: 'Inter', sans-serif; }
+        /* === Единая система модальных окон === */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: modalFadeIn 0.2s ease;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes modalSlideIn {
+            from { transform: translateY(-20px) scale(0.97); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-box {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 420px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: modalSlideIn 0.25s ease;
+            position: relative;
+        }
+        
+        body.light .modal-box {
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+        
+        .modal-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 24px;
+        }
+        
+        .modal-icon.warning {
+            background: rgba(255, 165, 0, 0.15);
+            color: #FFA500;
+        }
+        
+        .modal-icon.error {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+        }
+        
+        .modal-icon.info {
+            background: rgba(0, 203, 245, 0.15);
+            color: #00CBF5;
+        }
+        
+        .modal-icon.success {
+            background: rgba(76, 175, 80, 0.15);
+            color: #4caf50;
+        }
+        
+        .modal-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #e0e0e0;
+            text-align: center;
+            margin-bottom: 8px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body.light .modal-title {
+            color: #111;
+        }
+        
+        .modal-message {
+            font-size: 14px;
+            color: #a0a0b0;
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body.light .modal-message {
+            color: #666;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .modal-actions button {
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            border: none;
+            min-width: 100px;
+        }
+        
+        .modal-btn-primary {
+            background: linear-gradient(90deg, #00CBF5, #14E9FC);
+            color: #201F28;
+        }
+        
+        .modal-btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0, 203, 245, 0.3);
+        }
+        
+        .modal-btn-danger {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            color: #fff;
+        }
+        
+        .modal-btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(231, 76, 60, 0.3);
+        }
+        
+        .modal-btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: #a0a0b0;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        .modal-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #e0e0e0;
+        }
+        
+        body.light .modal-btn-secondary {
+            background: rgba(0, 0, 0, 0.05);
+            color: #666;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        body.light .modal-btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: #111;
+        }
+
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -2532,6 +2697,83 @@
         });
         window.addEventListener('scroll', updateFloatingButtons, true);
         window.addEventListener('resize', updateFloatingButtons);
+        // === Единая система модальных окон ===
+        function showConfirmModal(title, message, icon, confirmText, cancelText, confirmClass, onConfirm) {
+            var overlay = document.getElementById('modalOverlay');
+            document.getElementById('modalIcon').textContent = icon || '⚠️';
+            document.getElementById('modalIcon').className = 'modal-icon ' + (icon === '❌' ? 'error' : icon === '✅' ? 'success' : icon === 'ℹ️' ? 'info' : 'warning');
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            
+            var actions = document.getElementById('modalActions');
+            actions.innerHTML = '';
+            
+            var cancelBtn = document.createElement('button');
+            cancelBtn.className = 'modal-btn-secondary';
+            cancelBtn.textContent = cancelText || 'Отмена';
+            cancelBtn.onclick = function() { overlay.classList.remove('active'); };
+            actions.appendChild(cancelBtn);
+            
+            var confirmBtn = document.createElement('button');
+            confirmBtn.className = confirmClass || 'modal-btn-primary';
+            confirmBtn.textContent = confirmText || 'Да';
+            confirmBtn.onclick = function() {
+                overlay.classList.remove('active');
+                if (onConfirm) onConfirm();
+            };
+            actions.appendChild(confirmBtn);
+            
+            overlay.classList.add('active');
+        }
+        
+        function showAlertModal(title, message, icon) {
+            document.getElementById('alertModalIcon').textContent = icon || 'ℹ️';
+            document.getElementById('alertModalIcon').className = 'modal-icon ' + (icon === '❌' ? 'error' : icon === '✅' ? 'success' : icon === '⚠️' ? 'warning' : 'info');
+            document.getElementById('alertModalTitle').textContent = title;
+            document.getElementById('alertModalMessage').textContent = message;
+            document.getElementById('alertModalOverlay').classList.add('active');
+        }
+        
+        function closeAlertModal() {
+            document.getElementById('alertModalOverlay').classList.remove('active');
+        }
+        
+        // Закрытие по клику вне модалки
+        document.getElementById('modalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('active');
+        });
+        document.getElementById('alertModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('active');
+        });
+        
+        // Закрытие по Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('modalOverlay').classList.remove('active');
+                document.getElementById('alertModalOverlay').classList.remove('active');
+            }
+        });
     </script>
+        <!-- Единая система модальных окон -->
+        <div id="modalOverlay" class="modal-overlay">
+            <div class="modal-box">
+                <div class="modal-icon" id="modalIcon">⚠️</div>
+                <div class="modal-title" id="modalTitle">Подтверждение</div>
+                <div class="modal-message" id="modalMessage">Вы уверены?</div>
+                <div class="modal-actions" id="modalActions"></div>
+            </div>
+        </div>
+        
+        <!-- Модалка для алертов (только OK) -->
+        <div id="alertModalOverlay" class="modal-overlay">
+            <div class="modal-box">
+                <div class="modal-icon" id="alertModalIcon">ℹ️</div>
+                <div class="modal-title" id="alertModalTitle">Уведомление</div>
+                <div class="modal-message" id="alertModalMessage">Сообщение</div>
+                <div class="modal-actions">
+                    <button class="modal-btn-primary" onclick="closeAlertModal()">OK</button>
+                </div>
+            </div>
+        </div>
 </body>
 </html>
