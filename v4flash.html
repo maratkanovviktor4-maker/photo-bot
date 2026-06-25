@@ -1247,6 +1247,10 @@
             var wordsPerChunk = isLong ? 8 : 2;
             var delayMs = isLong ? 15 : 20;
             
+            // Кешируем ссылку на DOM-элемент сообщения
+            var msgEl = document.getElementById('stream-' + msgIndex);
+            var reasoningEl = null;
+            
             function streamNext() {
                 if (activeStreamId !== streamId) return;
                 var chunk = '';
@@ -1256,24 +1260,96 @@
                 if (chunk) {
                     var ft = words.slice(0, pos).join('');
                     chat.messages[msgIndex].content = ft;
-                    if (!reasoningStarted && ft.indexOf('Размышление:\n') !== -1) { reasoningStarted = true; chat.messages[msgIndex]._reasoningInProgress = true; }
+                    
+                    // Обновляем reasoning
+                    if (!reasoningStarted && ft.indexOf('Размышление:\n') !== -1) { 
+                        reasoningStarted = true; 
+                        chat.messages[msgIndex]._reasoningInProgress = true;
+                        // Вставляем блок reasoning перед контентом
+                        if (msgEl && !reasoningEl) {
+                            reasoningEl = document.createElement('div');
+                            reasoningEl.className = 'reasoning-block';
+                            msgEl.parentNode.insertBefore(reasoningEl, msgEl);
+                        }
+                    }
                     if (reasoningStarted && !reasoningEnded) {
                         var ei = ft.indexOf('\n\nОтвет:\n');
                         if (ei !== -1) {
-                            reasoningEnded = true; chat.messages[msgIndex]._reasoningInProgress = false;
+                            reasoningEnded = true;
+                            chat.messages[msgIndex]._reasoningInProgress = false;
                             chat.messages[msgIndex].reasoning = ft.substring('Размышление:\n'.length, ei);
+                            if (reasoningEl) {
+                                reasoningEl.innerHTML = formatMessage(chat.messages[msgIndex].reasoning);
+                            }
+                        } else if (reasoningEl) {
+                            var reasoningText = ft.substring('Размышление:\n'.length);
+                            reasoningEl.innerHTML = escapeHtml(reasoningText).replace(/\n/g, '<br>');
                         }
                     }
-                    renderMessages();
-                    if (autoScroll) { var m3 = document.querySelector('.main'); if (m3) { m3.scrollTop = m3.scrollHeight; } }
+                    
+                    // Точечно обновляем только контент этого сообщения
+                    var contentToShow = ft;
+                    if (reasoningEnded) {
+                        var endIdx = ft.indexOf('\n\nОтвет:\n');
+                        if (endIdx !== -1) {
+                            contentToShow = ft.substring(endIdx + '\n\nОтвет:\n'.length);
+                        }
+                    } else if (reasoningStarted) {
+                        contentToShow = '';
+                    }
+                    
+                    if (msgEl) {
+                        msgEl.innerHTML = formatMessage(contentToShow);
+                        // Подсветка синтаксиса только для новых блоков кода в этом сообщении
+                        msgEl.querySelectorAll('pre code').forEach(function(block) {
+                            if (typeof hljs !== 'undefined') {
+                                hljs.highlightElement(block);
+                            }
+                        });
+                    }
+                    
+                    if (autoScroll) { 
+                        var main = document.querySelector('.main'); 
+                        if (main) { main.scrollTop = main.scrollHeight; } 
+                    }
                     typingInterval = setTimeout(streamNext, delayMs);
                 } else {
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex].interrupted = false;
                     typingInterval = null;
-                    renderMessages();
+                    // Финальный рендер только этого сообщения + обновление навигации
+                    if (msgEl) {
+                        var finalContent = chat.messages[msgIndex].content;
+                        var finalReasoning = chat.messages[msgIndex].reasoning;
+                        var finalToShow = finalContent;
+                        if (finalReasoning) {
+                            var endIdx = finalContent.indexOf('\n\nОтвет:\n');
+                            if (endIdx !== -1) {
+                                finalToShow = finalContent.substring(endIdx + '\n\nОтвет:\n'.length);
+                            }
+                            if (reasoningEl) {
+                                reasoningEl.innerHTML = formatMessage(finalReasoning);
+                            }
+                        }
+                        msgEl.innerHTML = formatMessage(finalToShow);
+                        msgEl.querySelectorAll('pre code').forEach(function(block) {
+                            if (typeof hljs !== 'undefined') {
+                                hljs.highlightElement(block);
+                            }
+                        });
+                        setupFloatingCopyButtonsForMsg(msgEl);
+                    }
+                    buildNavContainer();
                     if (onComplete) onComplete();
                 }
+            }
+            
+            // Ищем DOM-элемент сообщения (он уже создан в renderMessages)
+            msgEl = document.getElementById('stream-' + msgIndex);
+            if (!msgEl) {
+                // fallback: если элемент не найден, рендерим всё
+                renderMessages();
+                msgEl = document.getElementById('stream-' + msgIndex);
             }
             streamNext();
         }
@@ -2104,6 +2180,44 @@
                     if (typeof previewBtn !== 'undefined') previewBtn.style.color = '#555';
                 }
                 updateFloatingButtons();
+            });
+        }
+        function setupFloatingCopyButtonsForMsg(msgEl) {
+            if (!msgEl) return;
+            msgEl.querySelectorAll('pre').forEach(function(pre) {
+                if (pre.querySelector('.floating-code-header')) return;
+                
+                var codeBlock = pre.querySelector('code');
+                var lang = '';
+                if (codeBlock) {
+                    var cls = codeBlock.className;
+                    var m = cls.match(/language-(\w+)/);
+                    if (m) lang = m[1];
+                }
+
+                var header = document.createElement('div');
+                header.className = 'floating-code-header';
+                header.style.cssText = 'position:fixed; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1; pointer-events:none;';
+                if (document.body.classList.contains('light')) {
+                    header.style.background = '#f8f8f8';
+                    header.style.color = '#555';
+                }
+                header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
+                pre.insertBefore(header, pre.firstChild);
+                pre._floatHeader = header;
+                var actions = header.querySelector('span:last-child');
+
+                var copyBtn = document.createElement('button');
+                copyBtn.className = 'floating-copy-btn';
+                copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+                copyBtn.style.cssText = 'background:transparent; border:none; color:#aaa; cursor:pointer; padding:4px 6px; border-radius:4px; font-family:Inter,sans-serif; font-size:11px; pointer-events:auto;';
+                copyBtn.onclick = function() {
+                    var code = pre.querySelector('code') ? pre.querySelector('code').textContent : '';
+                    navigator.clipboard.writeText(code);
+                    copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copy';
+                    setTimeout(function() { copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy'; }, 2000);
+                };
+                actions.appendChild(copyBtn);
             });
         }
 
