@@ -1502,23 +1502,23 @@
                         if (el) el.remove();
                         if (resp.ok) {
                                 const data = await resp.json();
-                                if (data.steps && data.steps.length > 0) {
-                                        for (var i = 0; i < data.steps.length; i++) {
-                                                const step = data.steps[i];
-                                                const cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
-                                                const cleanUser = step.user;
-                                                chat.messages.push({ role: 'user', content: cleanUser });
-                                                chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, isSelfPlay: true });
-                                        }
-                                        chat.lastMessageTime = Date.now();
-                                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                                        autoNameChat(chat);
-                                        renderChatList();
+                                if (data.reply) {
+                                        var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, isSelfPlay: true };
+                                        chat.messages.push(assistantMsg);
+                                        var newMsgIndex = chat.messages.length - 1;
+                                        var streamId = 'selfplay_stream_' + newMsgIndex;
+                                        activeStreamId = streamId;
                                         renderMessages();
-                                        var mainEl = document.querySelector('.main');
-                                        if (mainEl) { mainEl.scrollTop = mainEl.scrollHeight; }
-                                        updateBranchesFromServer();
-                                        updateBalance();
+                                        streamReplyIntoChat(chat, newMsgIndex, data.reply, streamId, function() {
+                                                chat.lastMessageTime = Date.now();
+                                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                                                autoNameChat(chat);
+                                                updateBranchesFromServer().then(function() {
+                                                        renderChatList();
+                                                        renderMessages();
+                                                });
+                                                updateBalance();
+                                        });
                                 }
                         } else {
 
