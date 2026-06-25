@@ -1247,6 +1247,11 @@
             var wordsPerChunk = isLong ? 8 : 2;
             var delayMs = isLong ? 15 : 20;
             
+            // Принудительно включаем автоскролл при новом стриме
+            autoScroll = true;
+            var scrollBtn = document.getElementById('scrollBottomBtn');
+            if (scrollBtn) scrollBtn.style.display = 'none';
+            
             // Кешируем ссылку на DOM-элемент сообщения
             var msgEl = document.getElementById('stream-' + msgIndex);
             var reasoningEl = null;
@@ -1310,7 +1315,11 @@
                     
                     if (autoScroll) { 
                         var main = document.querySelector('.main'); 
-                        if (main) { main.scrollTop = main.scrollHeight; } 
+                        if (main) { 
+                            main.style.scrollBehavior = 'auto';
+                            main.scrollTop = main.scrollHeight;
+                            main.style.scrollBehavior = 'smooth';
+                        } 
                     }
                     typingInterval = setTimeout(streamNext, delayMs);
                 } else {
