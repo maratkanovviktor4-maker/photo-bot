@@ -458,6 +458,17 @@
             border-color: rgba(0,0,0,0.1);
             box-shadow: 0 8px 24px rgba(0,0,0,0.15);
         }
+        #editMessageModal .modal-box {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 16px;
+        }
+        #editMessageInput:focus {
+            outline: none;
+            border: none;
+            box-shadow: none;
+        }
 
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -567,6 +578,21 @@
             </div>
         </div>
     </div>
+    <!-- Модалка редактирования сообщения -->
+    <div id="editMessageModal" class="modal-overlay">
+        <div class="modal-box" style="max-width:600px;padding:16px;">
+            <div style="width:100%;max-width:75%;margin-left:auto;background:#1a1a2e;border:2px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;transition:border-color 0.2s,box-shadow 0.2s;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+                <div style="display:flex;gap:8px;align-items:flex-end;width:100%;padding:8px 12px 0 12px;">
+                    <textarea id="editMessageInput" style="flex:1;padding:0;border-radius:0;border:none;background:transparent;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;font-size:15px;outline:none;resize:none;min-height:48px;max-height:300px;overflow-y:auto;min-width:0;width:100%;line-height:1.5;" placeholder="Введите сообщение..."></textarea>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;justify-content:flex-end;">
+                    <button onclick="closeEditMessageModal()" style="padding:6px 16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#a0a0b0;border-radius:16px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;font-weight:500;transition:0.3s ease;">Отмена</button>
+                    <button id="editMessageConfirmBtn" onclick="confirmEditMessage()" style="padding:6px 16px;background:linear-gradient(90deg,#00CBF5,#14E9FC);border:2px solid transparent;color:#201F28;border-radius:16px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;font-weight:600;transition:0.3s ease;box-shadow:0 4px 16px rgba(0,203,245,0.3);">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         var autoScroll = true;
 
@@ -1364,85 +1390,87 @@
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'user') return;
             
-            var newText = prompt('Отредактируйте сообщение:', msg.content);
-            if (!newText || newText === msg.content) return;
-            
-            isSending = true;
-            if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
-            sendBtnStop();
-            
-            msg.content = newText;
-            
-            // Затираем все сообщения ПОСЛЕ редактируемого
-            chat.messages = chat.messages.slice(0, msgIndex + 1);
-            
-            renderMessages();
-            var placeholderId = 'regen_user_' + Date.now();
-            var area = document.getElementById('chatArea');
-            var loadingRow = document.createElement('div');
-            loadingRow.className = 'message-row assistant';
-            loadingRow.id = placeholderId;
-            loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
-            area.appendChild(loadingRow);
-            var main = document.querySelector('.main');
-            if (main) { main.scrollTop = main.scrollHeight; }
-            
-            try {
-                var resp = await fetch(SERVER_URL + '/regenerate_user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({
-                        user_id: currentUserId,
-                        model: 'flash',
-                        mode: currentMode,
-                        chat_id: currentChatId,
-                        branch_id: currentBranchId,
-                        edit_msg_id: msg.msg_id,
-                        new_prompt: newText
-                    })
-                });
+            showEditMessageModal(msg.content, function(newText) {
+                if (!newText || newText === msg.content) return;
                 
-                var el = document.getElementById(placeholderId);
-                if (el) el.remove();
-                
-                if (resp.ok) {
-                    var data = await resp.json();
+                (async function() {
+                    isSending = true;
+                    if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
+                    sendBtnStop();
                     
-                    var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
-                    var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
-                    chat.messages.push(assistantMsg);
-                    var newMsgIndex = chat.messages.length - 1;
-                    var streamId = 'regen_stream_' + newMsgIndex;
-                    activeStreamId = streamId;
+                    msg.content = newText;
+                    
+                    // Затираем все сообщения ПОСЛЕ редактируемого
+                    chat.messages = chat.messages.slice(0, msgIndex + 1);
                     
                     renderMessages();
-                    streamReplyIntoChat(chat, newMsgIndex, fullContent, streamId, function() {
-                        chat.lastMessageTime = Date.now();
-                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                        autoNameChat(chat);
-                        updateBranchesFromServer();
-                        renderChatList();
-                        updateBalance();
+                    var placeholderId = 'regen_user_' + Date.now();
+                    var area = document.getElementById('chatArea');
+                    var loadingRow = document.createElement('div');
+                    loadingRow.className = 'message-row assistant';
+                    loadingRow.id = placeholderId;
+                    loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
+                    area.appendChild(loadingRow);
+                    var main = document.querySelector('.main');
+                    if (main) { main.scrollTop = main.scrollHeight; }
+                    
+                    try {
+                        var resp = await fetch(SERVER_URL + '/regenerate_user', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                            body: JSON.stringify({
+                                user_id: currentUserId,
+                                model: 'flash',
+                                mode: currentMode,
+                                chat_id: currentChatId,
+                                branch_id: currentBranchId,
+                                edit_msg_id: msg.msg_id,
+                                new_prompt: newText
+                            })
+                        });
+                        
+                        var el = document.getElementById(placeholderId);
+                        if (el) el.remove();
+                        
+                        if (resp.ok) {
+                            var data = await resp.json();
+                            
+                            var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                            var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
+                            chat.messages.push(assistantMsg);
+                            var newMsgIndex = chat.messages.length - 1;
+                            var streamId = 'regen_stream_' + newMsgIndex;
+                            activeStreamId = streamId;
+                            
+                            renderMessages();
+                            streamReplyIntoChat(chat, newMsgIndex, fullContent, streamId, function() {
+                                chat.lastMessageTime = Date.now();
+                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                                autoNameChat(chat);
+                                updateBranchesFromServer();
+                                renderChatList();
+                                updateBalance();
+                                isSending = false;
+                                activeStreamId = null;
+                                sendBtnArrow();
+                            });
+                        } else {
+                            var errData = await resp.json();
+                            showAlertModal('Ошибка', errData.error || 'Неизвестная ошибка', '❌');
+                            isSending = false;
+                            sendBtnArrow();
+                        }
+                    } catch(e) {
+                        var el2 = document.getElementById(placeholderId);
+                        if (el2) el2.remove();
+                        console.error('regenerateUserMessage error:', e);
+                        showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
                         isSending = false;
-                        activeStreamId = null;
                         sendBtnArrow();
-                    });
-                } else {
-                    var errData = await resp.json();
-                    showAlertModal('Ошибка', errData.error || 'Неизвестная ошибка', '❌');
-                    isSending = false;
-                    sendBtnArrow();
-                }
-            } catch(e) {
-                var el2 = document.getElementById(placeholderId);
-                if (el2) el2.remove();
-                console.error('regenerateUserMessage error:', e);
-                showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
-                isSending = false;
-                sendBtnArrow();
-            }
+                    }
+                })();
+            });
         }
-        
         async function regenerateAssistantMessage(msgIndex) {
             if (isSending) return;
             var chat = chats.find(function(c) { return c.id === currentChatId; });
@@ -2905,6 +2933,95 @@
                 document.getElementById('alertModalOverlay').classList.remove('active');
             }
         });
+        async function regenerateUserMessage(msgIndex) {
+            if (isSending) return;
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[msgIndex];
+            if (!msg || msg.role !== 'user') return;
+            
+            showEditMessageModal(msg.content, function(newText) {
+                if (!newText || newText === msg.content) return;
+                
+                (async function() {
+                    isSending = true;
+                    if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
+                    sendBtnStop();
+                    
+                    msg.content = newText;
+                    
+                    // Затираем все сообщения ПОСЛЕ редактируемого
+                    chat.messages = chat.messages.slice(0, msgIndex + 1);
+                    
+                    renderMessages();
+                    var placeholderId = 'regen_user_' + Date.now();
+                    var area = document.getElementById('chatArea');
+                    var loadingRow = document.createElement('div');
+                    loadingRow.className = 'message-row assistant';
+                    loadingRow.id = placeholderId;
+                    loadingRow.innerHTML = '<div><div class="message-content"><svg width="40" height="8" viewBox="0 0 40 8"><circle cx="4" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0s" repeatCount="indefinite"/></circle><circle cx="16" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.2s" repeatCount="indefinite"/></circle><circle cx="28" cy="4" r="3" fill="#00CBF5"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle></svg></div></div>';
+                    area.appendChild(loadingRow);
+                    var main = document.querySelector('.main');
+                    if (main) { main.scrollTop = main.scrollHeight; }
+                    
+                    try {
+                        var resp = await fetch(SERVER_URL + '/regenerate_user', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                            body: JSON.stringify({
+                                user_id: currentUserId,
+                                model: 'flash',
+                                mode: currentMode,
+                                chat_id: currentChatId,
+                                branch_id: currentBranchId,
+                                edit_msg_id: msg.msg_id,
+                                new_prompt: newText
+                            })
+                        });
+                        
+                        var el = document.getElementById(placeholderId);
+                        if (el) el.remove();
+                        
+                        if (resp.ok) {
+                            var data = await resp.json();
+                            
+                            var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
+                            var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || null };
+                            chat.messages.push(assistantMsg);
+                            var newMsgIndex = chat.messages.length - 1;
+                            var streamId = 'regen_stream_' + newMsgIndex;
+                            activeStreamId = streamId;
+                            
+                            renderMessages();
+                            streamReplyIntoChat(chat, newMsgIndex, fullContent, streamId, function() {
+                                chat.lastMessageTime = Date.now();
+                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                                autoNameChat(chat);
+                                updateBranchesFromServer();
+                                renderChatList();
+                                updateBalance();
+                                isSending = false;
+                                activeStreamId = null;
+                                sendBtnArrow();
+                            });
+                        } else {
+                            var errData = await resp.json();
+                            showAlertModal('Ошибка', errData.error || 'Неизвестная ошибка', '❌');
+                            isSending = false;
+                            sendBtnArrow();
+                        }
+                    } catch(e) {
+                        var el2 = document.getElementById(placeholderId);
+                        if (el2) el2.remove();
+                        console.error('regenerateUserMessage error:', e);
+                        showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
+                        isSending = false;
+                        sendBtnArrow();
+                    }
+                })();
+            });
+        }
+
     </script>
         <!-- Единая система модальных окон -->
         <div id="modalOverlay" class="modal-overlay">
