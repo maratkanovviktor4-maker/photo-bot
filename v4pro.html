@@ -2080,8 +2080,16 @@
             input.style.height = 'auto';
             var h = Math.min(input.scrollHeight, 300);
             input.style.height = h + 'px';
-            var wrapper = input.closest('.modal-box');
-            if (wrapper) wrapper.style.maxWidth = '600px';
+            var modalBox = document.querySelector('#editMessageModal .modal-box');
+            if (modalBox) {
+                modalBox.style.maxWidth = '600px';
+                modalBox.style.width = 'auto';
+            }
+            var innerWrapper = input.closest('div[style*="max-width:75%"]');
+            if (innerWrapper) {
+                innerWrapper.style.maxWidth = '100%';
+                innerWrapper.style.width = '100%';
+            }
             setTimeout(function() { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }, 100);
         }
         function closeEditMessageModal() { document.getElementById('editMessageModal').classList.remove('active'); editMessageCallback = null; }
