@@ -943,7 +943,7 @@
         }
         async function loadChatMessages(chatId) {
             try {
-                const resp = await fetch(`${SERVER_URL}/get_chat_tree?user_id=${currentUserId}&model=flash&chat_id=${chatId}&session_token=${sessionToken}`);
+                const resp = await fetch(`${SERVER_URL}/get_chat_tree?user_id=${currentUserId}&model=flash&chat_id=${chatId}&session_token=${sessionToken}&limit=30&offset=0`);
                 if (resp.ok) {
                     const data = await resp.json();
                     var chat = chats.find(function(c) { return c.id === chatId; });
@@ -975,6 +975,20 @@
                         var activeBid = chat.activeBranch || 'main';
                         if (branches[activeBid]) {
                             chat.messages = branches[activeBid].messages || [];
+                        }
+                        // Кнопка загрузить ещё
+                        var loadMoreBtn = document.getElementById('loadMoreBtn');
+                        if (loadMoreBtn) loadMoreBtn.remove();
+                        
+                        var totalMsgs = data.total_messages || 0;
+                        var loadedMsgs = chat.messages.length;
+                        if (totalMsgs > loadedMsgs) {
+                            var chatArea = document.getElementById('chatArea');
+                            var btn = document.createElement('div');
+                            btn.id = 'loadMoreBtn';
+                            btn.style.cssText = 'text-align:center;padding:8px;';
+                            btn.innerHTML = '<button onclick="loadMoreMessages(\'' + chatId + '\', ' + loadedMsgs + ')" style="padding:8px 20px;background:rgba(0,203,245,0.1);border:1px solid rgba(0,203,245,0.3);color:#00CBF5;border-radius:8px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;">📜 Загрузить ещё ' + (totalMsgs - loadedMsgs) + ' сообщений</button>';
+                            chatArea.insertBefore(btn, chatArea.firstChild);
                         }
                         renderBranchesPanel();
                         renderMessages();
@@ -3108,8 +3122,32 @@
             } catch(e) {}
             return null;
         }
-
-
+        async function loadMoreMessages(chatId, offset) {
+            var chat = chats.find(function(c) { return c.id === chatId; });
+            if (!chat) return;
+            
+            try {
+                var resp = await fetch(`${SERVER_URL}/get_chat_tree?user_id=${currentUserId}&model=flash&chat_id=${chatId}&session_token=${sessionToken}&limit=30&offset=${offset}`);
+                if (resp.ok) {
+                    var data = await resp.json();
+                    if (data.branches && chat.allBranches) {
+                        var activeBid = chat.activeBranch || 'main';
+                        if (data.branches[activeBid]) {
+                            var oldMsgs = [];
+                            for (var mid of data.branches[activeBid].msg_ids) {
+                                if (data.messages[mid]) {
+                                    oldMsgs.push(data.messages[mid]);
+                                }
+                            }
+                            chat.messages = oldMsgs.concat(chat.messages);
+                        }
+                    }
+                    renderMessages();
+                }
+            } catch(e) {
+                console.error('loadMoreMessages error:', e);
+            }
+        }
     </script>
         <!-- Единая система модальных окон -->
         <div id="modalOverlay" class="modal-overlay">
