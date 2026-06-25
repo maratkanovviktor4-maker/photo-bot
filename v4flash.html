@@ -430,6 +430,35 @@
             border-color: #00CBF5;
             box-shadow: 0 0 0 3px rgba(0,203,245,0.2);
         }
+        /* Подсказка при наведении на длинные названия */
+        .chat-item .chat-name[title]:hover::after {
+            content: attr(title);
+            position: fixed;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            z-index: 99999;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            pointer-events: none;
+            transform: translateY(-100%);
+            margin-top: -8px;
+        }
+        
+        body.light .chat-item .chat-name[title]:hover::after {
+            background: #ffffff;
+            color: #111;
+            border-color: rgba(0,0,0,0.1);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -1011,7 +1040,7 @@
             const list = document.getElementById('chatList');
             list.innerHTML = chats.map(c => `
                 <div class="chat-item${c.id === currentChatId ? ' active' : ''}" onclick="openChat('${c.id}')">
-                    <span class="chat-name">${c.title}</span>
+                    <span class="chat-name" title="${escapeHtml(c.title)}">${c.title}</span>
                     <button class="chat-menu-btn" onclick="toggleChatMenu(event, '${c.id}')">...</button>
                     <div class="chat-menu-dropdown" id="menu_${c.id}">
                         <button onclick="renameChat('${c.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle;"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>Переименовать</button>
@@ -1021,6 +1050,7 @@
                 </div>
             `).join('');
         }
+
         
         function filterChats() {
             var query = document.getElementById('chatSearch').value.toLowerCase();
