@@ -1002,29 +1002,14 @@
             return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
         
-        async function newChat() {
-            try {
-                var resp = await fetch(SERVER_URL + '/create_chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash' })
-                });
-                if (resp.ok) {
-                    var data = await resp.json();
-                    var chatId = data.chat_id;
-                    const chat = { id: chatId, title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: { 'main': { name: 'Основная', messages: [], msg_ids: [] } }, lastMessageTime: Date.now() };
-                    chats.push(chat);
-                    chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                    currentChatId = chatId;
-                    localStorage.setItem('photobot_active_chat', currentChatId);
-                    currentBranchId = 'main';
-                    renderChatList();
-                    renderMessages();
-                    renderBranchesPanel();
-                }
-            } catch(e) {
-                console.error('newChat error:', e);
-            }
+        function newChat() {
+            currentChatId = null;
+            currentBranchId = 'main';
+            localStorage.removeItem('photobot_active_chat');
+            renderChatList();
+            var area = document.getElementById('chatArea');
+            area.innerHTML = '<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display=\'none\'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>';
+            document.getElementById('branchesPanel').style.display = 'none';
         }
         
         function openChat(id) {
@@ -2152,8 +2137,13 @@
             const input = document.getElementById('userInput');
             const text = input.value.trim();
             if (!text && !pendingFile) return;
-            if (!currentUserId) { alert('Авторизуйтесь на главной странице'); return; }
-            if (!currentChatId) { newChat(); }
+            if (!currentUserId) { showAlertModal('Ошибка', 'Авторизуйтесь на главной странице', '❌'); return; }
+            if (!currentChatId) {
+                currentChatId = Date.now().toString();
+                var newChatObj = { id: currentChatId, title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: {}, lastMessageTime: Date.now() };
+                chats.push(newChatObj);
+                renderChatList();
+            }
             input.value = ''; input.style.height = 'auto'; input._init = false;
             isSending = true;
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
