@@ -1513,25 +1513,15 @@
                                         chat.lastMessageTime = Date.now();
                                         chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                                         autoNameChat(chat);
-                                        updateBranchesFromServer().then(function() {
-                                                renderChatList();
-                                                renderMessages();
-                                                setTimeout(function() {
-                                                        var main = document.querySelector('.main');
-                                                        if (main) { main.scrollTop = main.scrollHeight; }
-                                                }, 100);
-                                        });
+                                        renderChatList();
+                                        renderMessages();
+                                        var mainEl = document.querySelector('.main');
+                                        if (mainEl) { mainEl.scrollTop = mainEl.scrollHeight; }
+                                        updateBranchesFromServer();
                                         updateBalance();
                                 }
-
-                                chat.lastMessageTime = Date.now();
-                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                                autoNameChat(chat);
-                                renderChatList();
-                                renderMessages();
-                                updateBranchesFromServer();
-                                updateBalance();
                         } else {
+
                                 const errData = await resp.json();
                                 showAlertModal('Ошибка Self-Play', errData.error || 'Неизвестная ошибка', '❌');
                         }
