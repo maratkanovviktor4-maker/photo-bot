@@ -502,8 +502,9 @@
                 var btn = document.getElementById('scrollBottomBtn');
                 if (!mainEl) return;
                 var st = Math.max(0, mainEl.scrollTop);
+                var overflowHeight = mainEl.scrollHeight - mainEl.clientHeight;
                 var atBottom = mainEl.scrollHeight - st - mainEl.clientHeight < 80;
-                if (atBottom) {
+                if (atBottom || overflowHeight < 10) {
                     btn.style.display = 'none';
                     autoScroll = true;
                 } else {
