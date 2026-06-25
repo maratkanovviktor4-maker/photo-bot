@@ -1667,7 +1667,7 @@
             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             renderChatList();
             renderMessages();
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', msg_id: null, _abortController: null };
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
             chat.messages.push(assistantMsg);
             const msgIndex = chat.messages.length - 1;
             const streamId = 'stream_' + msgIndex;
@@ -1734,7 +1734,7 @@
                 const decoder = new TextDecoder();
                 let buffer = '';
                 let finalMeta = null;
-
+                assistantMsg._fullBuffer = '';
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
@@ -1749,15 +1749,24 @@
                             const parsed = JSON.parse(dataStr);
                             if (parsed.assistant_msg_id) {
                                 finalMeta = parsed;
-                            } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
-                                if (parsed.content) assistantMsg.content += parsed.content;
-                                if (parsed.reasoning) assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                            } else {
+                                if (parsed.reasoning) {
+                                    assistantMsg._fullBuffer += '🔹' + parsed.reasoning;
+                                }
+                                if (parsed.content) {
+                                    assistantMsg._fullBuffer += parsed.content;
+                                }
+                                const parts = assistantMsg._fullBuffer.split('🔹');
+                                const reasoningText = parts.length > 1 ? parts[1] : '';
+                                const contentText = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
+                                assistantMsg._reasoningBuffer = reasoningText;
+                                assistantMsg.content = contentText;
                                 const msgEl = document.getElementById('stream-' + msgIndex);
                                 if (msgEl) {
-                                    const reasoningBlock = assistantMsg._reasoningBuffer
-                                        ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>'
+                                    const reasoningBlock = reasoningText
+                                        ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
                                         : '';
-                                    msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg.content);
+                                    msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
                                     msgEl.querySelectorAll('pre code').forEach(function(block) {
                                         if (typeof hljs !== 'undefined') hljs.highlightElement(block);
                                     });
@@ -1777,6 +1786,11 @@
 
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
+                if (assistantMsg._fullBuffer) {
+                    const parts = assistantMsg._fullBuffer.split('🔹');
+                    assistantMsg._reasoningBuffer = parts.length > 1 ? parts[1] : '';
+                    assistantMsg.content = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
+                }
                 if (finalMeta) {
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
                     chat.messages[chat.messages.length - 2].msg_id = finalMeta.user_msg_id;
