@@ -1498,10 +1498,25 @@
                                 if (data.steps && data.steps.length > 0) {
                                         for (var i = 0; i < data.steps.length; i++) {
                                                 const step = data.steps[i];
-                                                chat.messages.push({ role: 'user', content: step.user });
-                                                chat.messages.push({ role: 'assistant', content: step.assistant.replace('[КОНСЕНСУС] ', ''), finished: true, isSelfPlay: true });
+                                                const cleanAssistant = decodeURIComponent(escape(step.assistant)).replace('[КОНСЕНСУС] ', '');
+                                                const cleanUser = decodeURIComponent(escape(step.user));
+                                                chat.messages.push({ role: 'user', content: cleanUser });
+                                                chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, isSelfPlay: true });
                                         }
+                                        chat.lastMessageTime = Date.now();
+                                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                                        autoNameChat(chat);
+                                        updateBranchesFromServer().then(function() {
+                                                renderChatList();
+                                                renderMessages();
+                                                setTimeout(function() {
+                                                        var main = document.querySelector('.main');
+                                                        if (main) { main.scrollTop = main.scrollHeight; }
+                                                }, 100);
+                                        });
+                                        updateBalance();
                                 }
+
                                 chat.lastMessageTime = Date.now();
                                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                                 autoNameChat(chat);
