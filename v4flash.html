@@ -936,7 +936,6 @@
                 }
                 // Загружаем сообщения только для активного чата
                 await loadChatMessages(currentChatId);
-                openChat(currentChatId);
             } else {
                 renderMessages();
             }
@@ -976,11 +975,12 @@
                         var activeBid = chat.activeBranch || 'main';
                         if (branches[activeBid]) {
                             chat.messages = branches[activeBid].messages || [];
-                            chat._totalMessages = data.total_messages || 0;
                         }
-                        renderMessages();
-                        // Кнопка загрузить ещё
                         renderBranchesPanel();
+                        renderMessages();
+                        // Кешируем сообщения
+                        cacheChatMessages(chatId, chat.messages);
+
                     }
                 }
             } catch(e) {
@@ -1017,12 +1017,18 @@
             renderBranchesPanel();
         }
         
-        async function openChat(id) {
+        function openChat(id) {
             closePreview();
             currentChatId = id;
             localStorage.setItem('photobot_active_chat', id);
             var chat = chats.find(function(c) { return c.id === id; });
-
+            // Проверяем кеш
+            if (chat && (!chat.messages || chat.messages.length === 0)) {
+                var cached = getCachedChatMessages(chat.id);
+                if (cached) {
+                    chat.messages = cached;
+                }
+            }
             if (chat) {
                 if (chat._personality) {
                     currentPersonality = chat._personality;
@@ -1033,9 +1039,13 @@
                 currentBranchId = chat.activeBranch || 'main';
                 allBranchesCache = chat.allBranches || {};
             }
+            // Если сообщения не загружены — загружаем
+            if (!chat.messages || chat.messages.length === 0) {
+                loadChatMessages(currentChatId);
+            }
             renderChatList();
             renderBranchesPanel();
-            await loadChatMessages(currentChatId);
+            renderMessages();
             setTimeout(function() {
                 var main = document.querySelector('.main');
                 if (main) {
@@ -1110,11 +1120,8 @@
                 async function() {
                     try {
                         await fetch(`${SERVER_URL}/delete_chat?user_id=${currentUserId}&model=flash&chat_id=${id}&session_token=${sessionToken}`, {
-                        method: 'DELETE'
-                    });
-                    await fetch(`${SERVER_URL}/delete_chat_sqlite?user_id=${currentUserId}&model=flash&chat_id=${id}&session_token=${sessionToken}`, {
-                        method: 'DELETE'
-                    });
+                            method: 'DELETE'
+                        });
                     } catch (e) {}
                     chats = chats.filter(c => c.id !== id);
                     if (currentChatId === id) {
@@ -1190,7 +1197,7 @@
             var list = document.getElementById('branchesList');
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             
-            if (!chat || !chat.allBranches || Object.keys(chat.allBranches).length < 1) {
+            if (!chat || !chat.allBranches || Object.keys(chat.allBranches).length <= 1) {
                 panel.style.display = 'none';
                 return;
             }
@@ -1219,7 +1226,7 @@
                 return '<div class="' + rowClass + '" onclick="switchBranch(\'' + bid + '\')" style="' + (isFromAssistant && bid !== currentBranchId ? '--branch-hover-bg: rgba(76,175,80,0.12);' : '') + '">' +
                     '<svg class="branch-icon" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="' + iconColor + '"/></svg>' +
                     '<span class="branch-name">' + escapeHtml(b.name || bid) + '</span>' +
-                    '<span style="font-size:10px;color:#666;">' + ((b.msg_count || b.msg_ids?.length) || 0) + '</span>' +
+                    '<span style="font-size:10px;color:#666;">' + ((b.msg_ids && b.msg_ids.length) || 0) + '</span>' +
                     (bid !== 'main' ? '<button class="branch-delete-btn" onclick="event.stopPropagation();deleteBranch(\'' + bid + '\')" title="Удалить ветку" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:12px;padding:0 4px;">✕</button>' : '') +
                     '<button class="branch-rename-btn" onclick="event.stopPropagation();renameBranch(\'' + bid + '\')" title="Переименовать" style="background:transparent;border:none;color:#888;cursor:pointer;font-size:12px;padding:0 4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
                     '</div>';
@@ -1391,22 +1398,8 @@
                     chat.activeBranch = data.branch_id;
                     
                     // Загружаем полное дерево с сервера (НЕ перезаписываем chat.messages)
-                    // Добавляем ветку локально
-                    if (!chat.allBranches) chat.allBranches = {};
-                    chat.allBranches[data.branch_id] = {
-                        name: data.branch_name || 'Новая ветка',
-                        messages: chat.messages.slice(),
-                        msg_ids: chat.messages.map(m => m.msg_id),
-                        source_role: msg.role
-                    };
-                    // Очищаем кеш, чтобы новая ветка не пропала
-                    try {
-                        var cache = JSON.parse(localStorage.getItem('chat_cache') || '{}');
-                        delete cache[currentChatId];
-                        localStorage.setItem('chat_cache', JSON.stringify(cache));
-                    } catch(e) {}
-
-                    renderBranchesPanel();                    
+                    await updateBranchesFromServer();
+                    
                     // Восстанавливаем историю ДО из загруженной ветки, но без assistant-ответа
                     if (chat.allBranches && chat.allBranches[data.branch_id]) {
                         chat.messages = chat.allBranches[data.branch_id].messages || [];
@@ -1814,19 +1807,6 @@
                     }
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
-            }
-            // Кнопка загрузить ещё (после перерисовки)
-            var oldLoadBtn = document.getElementById('loadMoreBtn');
-            if (oldLoadBtn) oldLoadBtn.remove();
-            
-            var chat2 = chats.find(c => c.id === currentChatId);
-            if (chat2 && chat2._totalMessages && chat2._totalMessages > chat2.messages.length) {
-                var chatArea = document.getElementById('chatArea');
-                var btnDiv = document.createElement('div');
-                btnDiv.id = 'loadMoreBtn';
-                btnDiv.style.cssText = 'text-align:center;padding:8px;';
-                btnDiv.innerHTML = '<button onclick="loadMoreMessages(\'' + currentChatId + '\', ' + chat2.messages.length + ')" style="padding:8px 20px;background:rgba(0,203,245,0.1);border:1px solid rgba(0,203,245,0.3);color:#00CBF5;border-radius:8px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;">📜 Загрузить ещё ' + (chat2._totalMessages - chat2.messages.length) + ' сообщений</button>';
-                chatArea.insertBefore(btnDiv, chatArea.firstChild);
             }
             hljs.highlightAll();
             setupFloatingCopyButtons();
@@ -3098,35 +3078,38 @@
         function hideLoading() {
             document.getElementById('loadingSpinner').style.display = 'none';
         }
-
-        
-
-        async function loadMoreMessages(chatId, offset) {
-            var chat = chats.find(function(c) { return c.id === chatId; });
-            if (!chat) return;
-            
+        function cacheChatMessages(chatId, messages) {
             try {
-                var resp = await fetch(`${SERVER_URL}/get_chat_tree?user_id=${currentUserId}&model=flash&chat_id=${chatId}&session_token=${sessionToken}&limit=30&offset=${offset}`);
-                if (resp.ok) {
-                    var data = await resp.json();
-                    if (data.branches && chat.allBranches) {
-                        var activeBid = chat.activeBranch || 'main';
-                        if (data.branches[activeBid]) {
-                            var oldMsgs = [];
-                            for (var mid of data.branches[activeBid].msg_ids) {
-                                if (data.messages[mid]) {
-                                    oldMsgs.push(data.messages[mid]);
-                                }
-                            }
-                            chat.messages = oldMsgs.concat(chat.messages);
-                        }
-                    }
-                    renderMessages();
+                var cache = JSON.parse(localStorage.getItem('chat_cache') || '{}');
+                cache[chatId] = {
+                    messages: messages,
+                    timestamp: Date.now()
+                };
+                // Ограничим кеш 10 чатами
+                var keys = Object.keys(cache);
+                if (keys.length > 10) {
+                    var oldest = keys.sort((a, b) => cache[a].timestamp - cache[b].timestamp)[0];
+                    delete cache[oldest];
                 }
-            } catch(e) {
-                console.error('loadMoreMessages error:', e);
-            }
+                localStorage.setItem('chat_cache', JSON.stringify(cache));
+            } catch(e) {}
         }
+        
+        function getCachedChatMessages(chatId) {
+            try {
+                var cache = JSON.parse(localStorage.getItem('chat_cache') || '{}');
+                var entry = cache[chatId];
+                if (entry) {
+                    // Кеш живёт 5 минут
+                    if (Date.now() - entry.timestamp < 5 * 60 * 1000) {
+                        return entry.messages;
+                    }
+                }
+            } catch(e) {}
+            return null;
+        }
+
+
     </script>
         <!-- Единая система модальных окон -->
         <div id="modalOverlay" class="modal-overlay">
