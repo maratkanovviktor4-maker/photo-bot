@@ -1260,21 +1260,22 @@
                         actionsHtml += '<button onclick="shareChat(\'' + currentChatId + '\')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg></button>';
                         if (m.interrupted) actionsHtml += '<button onclick="continueMessage(' + i + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                         actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + i + ')" title="Self-Play диалог" style="color:#F59E0B;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
-
                     }
                     var dataAttr = ' data-msg-index="' + i + '"';
                     var reasoningHtml = '';
-                    var contentToShow = m.content;
-                    if (m.reasoning) {
-                        reasoningHtml = '<div class="reasoning-block">' + formatMessage(m.reasoning) + '</div>';
-                        var endIdx = m.content.indexOf('\n\nОтвет:\n');
-                        if (endIdx !== -1) contentToShow = m.content.substring(endIdx + '\n\nОтвет:\n'.length);
-                    } else if (m._reasoningInProgress && m.content) {
-                        var startIdx = m.content.indexOf('Размышление:\n');
-                        if (startIdx !== -1) {
-                            reasoningHtml = '<div class="reasoning-block">' + escapeHtml(m.content.substring(startIdx + 'Размышление:\n'.length)).replace(/\n/g, '<br>') + '</div>';
-                            contentToShow = '';
-                        }
+                    var contentToShow = m.content || '';
+                    // Если есть отдельное поле reasoning (старые сообщения) или _reasoningBuffer (новый стрим)
+                    var hasReasoning = false;
+                    var reasoningText = '';
+                    if (m._reasoningBuffer) {
+                        reasoningText = m._reasoningBuffer;
+                        hasReasoning = true;
+                    } else if (m.reasoning) {
+                        reasoningText = m.reasoning;
+                        hasReasoning = true;
+                    }
+                    if (hasReasoning) {
+                        reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
                     }
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
