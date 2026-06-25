@@ -1476,6 +1476,7 @@
                 isSending = true;
                 if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
                 sendBtnStop();
+
                 const placeholderId = 'selfplay_' + Date.now();
                 const area = document.getElementById('chatArea');
                 const loadingRow = document.createElement('div');
@@ -1485,6 +1486,7 @@
                 area.appendChild(loadingRow);
                 var main = document.querySelector('.main');
                 if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+
                 try {
                         const resp = await fetch(SERVER_URL + '/selfplay', {
                                 method: 'POST',
@@ -1500,96 +1502,46 @@
                         });
                         var el = document.getElementById(placeholderId);
                         if (el) el.remove();
-                                var replyText = data.reply || '';
-                                var steps = [];
-                                var lines = replyText.split('\n');
-                                var currentUser = '';
-                                var currentAssistant = '';
-                                for (var k = 0; k < lines.length; k++) {
-                                        var line = lines[k].trim();
-                                        if (line.toUpperCase().startsWith('USER:') || line.toUpperCase().startsWith('U:')) {
-                                                if (currentUser && currentAssistant) {
-                                                        steps.push({ user: currentUser, assistant: currentAssistant });
-                                                }
-                                                currentUser = line.substring(line.indexOf(':') + 1).trim();
-                                                currentAssistant = '';
-                                        } else if (line.toUpperCase().startsWith('ASSISTANT:') || line.toUpperCase().startsWith('A:')) {
-                                                currentAssistant = line.substring(line.indexOf(':') + 1).trim();
-                                        } else if (line.startsWith('[КОНСЕНСУС]')) {
-                                                currentAssistant = line.trim();
-                                        } else if (currentAssistant) {
-                                                currentAssistant += ' ' + line;
-                                        } else if (currentUser) {
-                                                currentUser += ' ' + line;
-                                        }
-                                }
-                                if (currentUser && currentAssistant) {
-                                        steps.push({ user: currentUser, assistant: currentAssistant });
-                                }
-                                if (steps.length > 0) {
-                                        for (var s = 0; s < steps.length; s++) {
-                                                chat.messages.push({ role: 'user', content: steps[s].user });
-                                                chat.messages.push({ role: 'assistant', content: steps[s].assistant.replace('[КОНСЕНСУС] ', ''), finished: true, isSelfPlay: true });
-                                        }
-                                        chat.lastMessageTime = Date.now();
-                                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                                        autoNameChat(chat);
+
+                        if (!resp.ok) {
+                                const errData = await resp.json().catch(function() { return {}; });
+                                showAlertModal('Ошибка Self-Play', errData.error || 'Ошибка сервера', '❌');
+                                return;
+                        }
+
+                        const data = await resp.json();
+                        if (!data.reply) {
+                                showAlertModal('Ошибка Self-Play', 'Пустой ответ от сервера', '❌');
+                                return;
+                        }
+
+                        // Сервер уже возвращает готовый ответ ассистента — просто стримим его в чат
+                        var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, isSelfPlay: true };
+                        chat.messages.push(assistantMsg);
+                        var newMsgIndex = chat.messages.length - 1;
+                        var streamId = 'selfplay_stream_' + newMsgIndex;
+                        activeStreamId = streamId;
+                        renderMessages();
+                        streamReplyIntoChat(chat, newMsgIndex, data.reply, streamId, function() {
+                                chat.lastMessageTime = Date.now();
+                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                                autoNameChat(chat);
+                                updateBranchesFromServer().then(function() {
                                         renderChatList();
                                         renderMessages();
-                                        var mainEl = document.querySelector('.main');
-                                        if (mainEl) { mainEl.scrollTop = mainEl.scrollHeight; }
-                                        updateBranchesFromServer();
-                                        updateBalance();
-                                } else {
-                                        var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, isSelfPlay: true };
-                                        chat.messages.push(assistantMsg);
-                                        var newMsgIndex = chat.messages.length - 1;
-                                        var streamId = 'selfplay_stream_' + newMsgIndex;
-                                        activeStreamId = streamId;
-                                        renderMessages();
-                                        streamReplyIntoChat(chat, newMsgIndex, replyText, streamId, function() {
-                                                chat.lastMessageTime = Date.now();
-                                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                                                autoNameChat(chat);
-                                                updateBranchesFromServer().then(function() {
-                                                        renderChatList();
-                                                        renderMessages();
-                                                });
-                                                updateBalance();
-                                        });
-                                }
-
-                                        var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, isSelfPlay: true };
-                                        chat.messages.push(assistantMsg);
-                                        var newMsgIndex = chat.messages.length - 1;
-                                        var streamId = 'selfplay_stream_' + newMsgIndex;
-                                        activeStreamId = streamId;
-                                        renderMessages();
-                                        streamReplyIntoChat(chat, newMsgIndex, data.reply, streamId, function() {
-                                                chat.lastMessageTime = Date.now();
-                                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                                                autoNameChat(chat);
-                                                updateBranchesFromServer().then(function() {
-                                                        renderChatList();
-                                                        renderMessages();
-                                                });
-                                                updateBalance();
-                                        });
-                                }
-                        } else {
-
-                                const errData = await resp.json();
-                                showAlertModal('Ошибка Self-Play', errData.error || 'Неизвестная ошибка', '❌');
-                        }
+                                });
+                                updateBalance();
+                        });
                 } catch(e) {
                         var el2 = document.getElementById(placeholderId);
                         if (el2) el2.remove();
                         console.error('selfPlay error:', e);
                         showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
+                } finally {
+                        isSending = false;
+                        activeStreamId = null;
+                        sendBtnArrow();
                 }
-                isSending = false;
-                activeStreamId = null;
-                sendBtnArrow();
         }
 
 
