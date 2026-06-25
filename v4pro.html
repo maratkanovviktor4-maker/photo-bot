@@ -923,6 +923,15 @@
                                     currentBranchId = newBranchId;
                                     chat.activeBranch = newBranchId;
                                     chat.messages = branchMessages.slice();
+                                    // Присвоить msg_id из source_msg_id последнему user-сообщению
+                                    if (parsed.source_msg_id) {
+                                        for (var bm = chat.messages.length - 1; bm >= 0; bm--) {
+                                            if (chat.messages[bm].role === 'user') {
+                                                chat.messages[bm].msg_id = parsed.source_msg_id;
+                                                break;
+                                            }
+                                        }
+                                    }
                                     assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                                     chat.messages.push(assistantMsg);
                                     streamMsgIndex = chat.messages.length - 1;
@@ -936,6 +945,12 @@
                                         assistantMsg.msg_id = parsed.assistant_msg_id;
                                         assistantMsg.finished = true;
                                         assistantMsg._streaming = false;
+                                    }
+                                    if (parsed.source_msg_id && branchMessages.length > 0) {
+                                        var lastUserMsg = branchMessages[branchMessages.length - 1];
+                                        if (lastUserMsg && lastUserMsg.role === 'user') {
+                                            lastUserMsg.msg_id = parsed.source_msg_id;
+                                        }
                                     }
                                 } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
                                     if (assistantMsg) {
