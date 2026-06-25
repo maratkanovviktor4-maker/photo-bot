@@ -2227,6 +2227,114 @@
                     setTimeout(function() { copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy'; }, 2000);
                 };
                 actions.appendChild(copyBtn);
+
+                var downloadBtn = document.createElement('button');
+                downloadBtn.className = 'floating-download-btn';
+                downloadBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download';
+                downloadBtn.style.cssText = 'background:transparent; border:none; color:#aaa; cursor:pointer; padding:4px 6px; border-radius:4px; font-family:Inter,sans-serif; font-size:11px; pointer-events:auto;';
+                downloadBtn.onmouseenter = function() { downloadBtn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
+                downloadBtn.onmouseleave = function() { downloadBtn.style.background = 'transparent'; };
+                downloadBtn.onclick = function() {
+                    var code = pre.querySelector('code') ? pre.querySelector('code').textContent : '';
+                    var blob = new Blob([code], {type: 'text/plain'});
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'code.txt';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                };
+                actions.appendChild(downloadBtn);
+
+                var isHtml = lang === 'html' || lang === 'htm' || (pre.textContent.trim().match(/^<(!DOCTYPE|html)/i));
+                if (isHtml) {
+                    var previewBtn = document.createElement('button');
+                    previewBtn.className = 'floating-preview-btn';
+                    previewBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Предпросмотр';
+                    previewBtn.style.cssText = 'background:transparent; border:none; color:#aaa; cursor:pointer; padding:4px 6px; border-radius:4px; font-family:Inter,sans-serif; font-size:11px; pointer-events:auto;';
+                    previewBtn.onmouseenter = function() { previewBtn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
+                    previewBtn.onmouseleave = function() { previewBtn.style.background = 'transparent'; };
+                    previewBtn.onclick = function() {
+                        var code = pre.querySelector('code') ? pre.querySelector('code').textContent : '';
+                        var panel = document.getElementById('previewPanel');
+                        var iframe = document.getElementById('previewIframe');
+                        var handle = document.getElementById('resizeHandle');
+                        if (!panel) {
+                            panel = document.createElement('div');
+                            panel.id = 'previewPanel';
+                            panel.className = 'preview-panel';
+                            panel.innerHTML = '<div class="preview-header"><span class="preview-title">Предпросмотр</span><button class="preview-close" onclick="closePreview()">✕</button></div><iframe id="previewIframe" class="preview-iframe" sandbox="allow-scripts allow-same-origin"></iframe>';
+                            document.body.appendChild(panel);
+                            iframe = document.getElementById('previewIframe');
+                        }
+                        if (!handle) {
+                            handle = document.createElement('div');
+                            handle.id = 'resizeHandle';
+                            handle.className = 'resize-handle';
+                            document.body.appendChild(handle);
+                            handle._startX = 0;
+                            handle._startWidth = 50;
+                            handle.addEventListener('pointerdown', function(e) {
+                                e.preventDefault();
+                                handle.setPointerCapture(e.pointerId);
+                                handle._startX = e.clientX;
+                                handle._startWidth = parseInt(getComputedStyle(document.body).getPropertyValue('--preview-width')) || 50;
+                                handle.classList.add('dragging');
+                                document.body.style.userSelect = 'none';
+                            });
+                            handle.addEventListener('pointermove', function(e) {
+                                if (!handle.classList.contains('dragging')) return;
+                                var dx = handle._startX - e.clientX;
+                                var mainWidth = document.querySelector('.main').clientWidth;
+                                var minChat = 400;
+                                var maxPw = ((mainWidth - minChat) / window.innerWidth) * 100;
+                                if (maxPw < 20) maxPw = 20;
+                                if (maxPw > 80) maxPw = 80;
+                                var newWidth = Math.max(20, Math.min(maxPw, handle._startWidth + (dx / window.innerWidth) * 100));
+                                document.body.style.setProperty('--preview-width', newWidth + '%');
+                                handle.style.right = newWidth + '%';
+                                updateFloatingButtons();
+                            });
+                            handle.addEventListener('pointerup', function(e) {
+                                handle.classList.remove('dragging');
+                                document.body.style.userSelect = '';
+                                handle.releasePointerCapture(e.pointerId);
+                            });
+                            handle.addEventListener('pointercancel', function(e) {
+                                handle.classList.remove('dragging');
+                                document.body.style.userSelect = '';
+                                handle.releasePointerCapture(e.pointerId);
+                            });
+                        }
+                        document.body.style.setProperty('--preview-width', '50%');
+                        panel.classList.add('active');
+                        handle.classList.add('active');
+                        handle.style.right = '50%';
+                        document.querySelector('.main').classList.add('preview-open');
+                        updateFloatingButtons();
+                        var main = document.querySelector('.main');
+                        if (main) {
+                            var rafId;
+                            var tick = function() {
+                                updateFloatingButtons();
+                                rafId = requestAnimationFrame(tick);
+                            };
+                            rafId = requestAnimationFrame(tick);
+                            main.addEventListener('transitionend', function() {
+                                cancelAnimationFrame(rafId);
+                                updateFloatingButtons();
+                            }, { once: true });
+                        }
+                        iframe.srcdoc = code;
+                    };
+                    actions.appendChild(previewBtn);
+                }
+                
+                if (document.body.classList.contains('light')) {
+                    copyBtn.style.color = '#555';
+                    downloadBtn.style.color = '#555';
+                    if (typeof previewBtn !== 'undefined') previewBtn.style.color = '#555';
+                }
             });
         }
 
