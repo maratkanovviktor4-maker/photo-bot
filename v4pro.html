@@ -1133,6 +1133,8 @@
                         msgEl.querySelectorAll('pre code').forEach(function(block) {
                             if (typeof hljs !== 'undefined') hljs.highlightElement(block);
                         });
+                        updateFloatingButtons();
+                        setupFloatingCopyButtonsForMsg(msgEl);
                     }
                     if (autoScroll) { var main = document.querySelector('.main'); if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; } }
                     typingInterval = setTimeout(streamNext, delayMs);
@@ -1153,6 +1155,7 @@
                         msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                         setupFloatingCopyButtonsForMsg(msgEl);
                     }
+                    updateFloatingButtons();
                     buildNavContainer();
                     if (onComplete) onComplete();
                 }
@@ -1208,6 +1211,7 @@
             }
             hljs.highlightAll();
             setupFloatingCopyButtons();
+            updateFloatingButtons();
             buildNavContainer();
             if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
             updateBranchIndicator();
@@ -1492,6 +1496,7 @@
                                 body: JSON.stringify({
                                         user_id: currentUserId,
                                         model: 'pro',
+                                        mode: currentMode,
                                         chat_id: currentChatId,
                                         branch_id: currentBranchId,
                                         source_msg_id: msg.msg_id || '',
@@ -1503,37 +1508,50 @@
                         if (resp.ok) {
                                 const data = await resp.json();
                                 if (data.steps && data.steps.length > 0) {
-                                        for (var i = 0; i < data.steps.length; i++) {
-                                                const step = data.steps[i];
-                                                const cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
+                                        // Добавляем все шаги кроме последнего ассистента статически
+                                        const steps = data.steps;
+                                        for (var i = 0; i < steps.length - 1; i++) {
+                                                const step = steps[i];
                                                 const cleanUser = step.user;
-                                                chat.messages.push({ role: 'user', content: cleanUser });
-                                                chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, isSelfPlay: true });
+                                                const cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
+                                                chat.messages.push({ role: 'user', content: cleanUser, msg_id: step.user_msg_id });
+                                                chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id });
                                         }
-                                        chat.lastMessageTime = Date.now();
-                                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                                        autoNameChat(chat);
-                                        renderChatList();
+                                        // Последний шаг: добавляем user, а assistant будем стримить
+                                        const lastStep = steps[steps.length - 1];
+                                        chat.messages.push({ role: 'user', content: lastStep.user, msg_id: lastStep.user_msg_id });
+                                        var assistantMsg = { role: 'assistant', content: '', finished: false, _streamWords: null, _streamPos: 0, _reasoningInProgress: false, msg_id: data.assistant_msg_id || lastStep.assistant_msg_id };
+                                        chat.messages.push(assistantMsg);
+                                        const msgIndex = chat.messages.length - 1;
+                                        const streamId = 'stream_' + msgIndex;
+                                        activeStreamId = streamId;
+                                        // Формируем fullContent из reply (последний ответ ассистента)
+                                        var fullContent = data.reasoning ? 'Размышление:\n' + data.reasoning + '\n\nОтвет:\n' + data.reply : data.reply;
                                         renderMessages();
-                                        var mainEl = document.querySelector('.main');
-                                        if (mainEl) { mainEl.scrollTop = mainEl.scrollHeight; }
-                                        updateBranchesFromServer();
-                                        updateBalance();
+                                        streamReplyIntoChat(chat, msgIndex, fullContent, streamId, function() {
+                                                chat.lastMessageTime = Date.now();
+                                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                                                autoNameChat(chat);
+                                                updateBranchesFromServer();
+                                                updateBalance();
+                                                if (activeStreamId === streamId) { isSending = false; activeStreamId = null; sendBtnArrow(); }
+                                        });
                                 }
                         } else {
-
                                 const errData = await resp.json();
                                 showAlertModal('Ошибка Self-Play', errData.error || 'Неизвестная ошибка', '❌');
+                                isSending = false;
+                                sendBtnArrow();
                         }
                 } catch(e) {
                         var el2 = document.getElementById(placeholderId);
                         if (el2) el2.remove();
                         console.error('selfPlay error:', e);
                         showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
+                        isSending = false;
+                        sendBtnArrow();
                 }
-                isSending = false;
-                activeStreamId = null;
-                sendBtnArrow();
+                // Не сбрасываем isSending здесь, он сбросится в колбэке стрима
         }
 
 
