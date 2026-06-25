@@ -1822,6 +1822,28 @@
         }
         
         function formatMessage(text) {
+            // Преобразование Markdown-таблиц в HTML
+            text = text.replace(/\n?\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n?)+)/g, function(match, headerRow, bodyRows) {
+              var headers = headerRow.split('|').map(function(h) { return h.trim(); }).filter(Boolean);
+              var rows = bodyRows.trim().split('\n').map(function(row) {
+                return row.split('|').map(function(cell) { return cell.trim(); }).filter(Boolean);
+              });
+              var html = '<table>\n<thead>\n<tr>\n';
+              headers.forEach(function(h) {
+                html += '<th>' + h + '</th>\n';
+              });
+              html += '</tr>\n</thead>\n<tbody>\n';
+              rows.forEach(function(row) {
+                if (row.length === 0) return;
+                html += '<tr>\n';
+                row.forEach(function(cell, idx) {
+                  html += '<td>' + (cell || '') + '</td>\n';
+                });
+                html += '</tr>\n';
+              });
+              html += '</tbody>\n</table>';
+              return '\n' + html + '\n';
+            });
             var B = String.fromCharCode(96);
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) {
                 text = B + B + B + 'html\n' + text + '\n' + B + B + B;
@@ -1878,6 +1900,7 @@
             }
             return result;
         }
+
         
         function stopTyping() {
             if (typingInterval) {
