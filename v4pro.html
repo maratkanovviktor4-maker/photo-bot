@@ -2078,7 +2078,10 @@
             editMessageCallback = callback;
             document.getElementById('editMessageModal').classList.add('active');
             input.style.height = 'auto';
-            input.style.height = Math.min(input.scrollHeight, 300) + 'px';
+            var h = Math.min(input.scrollHeight, 300);
+            input.style.height = h + 'px';
+            var wrapper = input.closest('.modal-box');
+            if (wrapper) wrapper.style.maxWidth = '600px';
             setTimeout(function() { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }, 100);
         }
         function closeEditMessageModal() { document.getElementById('editMessageModal').classList.remove('active'); editMessageCallback = null; }
