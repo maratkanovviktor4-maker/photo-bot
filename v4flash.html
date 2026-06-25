@@ -469,6 +469,30 @@
             border: none;
             box-shadow: none;
         }
+        .branch-item:hover .branch-name {
+            overflow: visible !important;
+            white-space: normal !important;
+            word-break: break-all !important;
+            background: #1a1a2e;
+            position: absolute;
+            left: 0;
+            z-index: 100;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            max-width: 260px;
+        }
+        
+        body.light .branch-item:hover .branch-name {
+            background: #ffffff;
+            border-color: rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .branch-item {
+            position: relative;
+        }
 
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -1150,7 +1174,7 @@
                 var rowClass = 'branch-item' + (bid === currentBranchId ? ' active' : '') + (isFromAssistant ? ' branch-from-assistant' : '');
                 return '<div class="' + rowClass + '" onclick="switchBranch(\'' + bid + '\')" style="' + (isFromAssistant && bid !== currentBranchId ? '--branch-hover-bg: rgba(76,175,80,0.12);' : '') + '">' +
                     '<svg class="branch-icon" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="' + iconColor + '"/></svg>' +
-                    '<span class="branch-name" title="' + escapeHtml(b.name || bid) + '">' + escapeHtml(b.name || bid) + '</span>' +
+                    '<span class="branch-name">' + escapeHtml(b.name || bid) + '</span>' +
                     '<span style="font-size:10px;color:#666;">' + ((b.msg_ids && b.msg_ids.length) || 0) + '</span>' +
                     (bid !== 'main' ? '<button class="branch-delete-btn" onclick="event.stopPropagation();deleteBranch(\'' + bid + '\')" title="Удалить ветку" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:12px;padding:0 4px;">✕</button>' : '') +
                     '<button class="branch-rename-btn" onclick="event.stopPropagation();renameBranch(\'' + bid + '\')" title="Переименовать" style="background:transparent;border:none;color:#888;cursor:pointer;font-size:12px;padding:0 4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
