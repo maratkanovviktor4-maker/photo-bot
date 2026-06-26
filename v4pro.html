@@ -1138,6 +1138,15 @@
                             assistantMsg.content = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
                         }
                         await updateBranchesFromServer();
+                        if (assistantMsg._reasoningBuffer && chat.allBranches && chat.allBranches[currentBranchId]) {
+                            var branchMsgs = chat.allBranches[currentBranchId].messages || [];
+                            var lastMsg = branchMsgs[branchMsgs.length - 1];
+                            if (lastMsg && lastMsg.role === 'assistant') {
+                                lastMsg.reasoning = assistantMsg._reasoningBuffer;
+                                lastMsg._reasoningBuffer = assistantMsg._reasoningBuffer;
+                            }
+                            chat.messages = branchMsgs;
+                        }
                         chat.lastMessageTime = Date.now();
                         chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                         autoNameChat(chat);
