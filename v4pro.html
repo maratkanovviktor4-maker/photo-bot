@@ -235,6 +235,11 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         #loadingSpinner { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(32,31,40,0.8); z-index: 99998; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
         body.light #loadingSpinner { background: rgba(255,255,255,0.8); }
+        .regenerate-popup { position: fixed; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 4px; z-index: 20; min-width: 130px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: none; }
+        body.light .regenerate-popup { background: #ffffff; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        .regenerate-popup button { display: block; width: 100%; padding: 8px 12px; border: none; background: transparent; color: #e0e0e0; font-size: 12px; cursor: pointer; text-align: left; border-radius: 6px; font-family: 'Inter', sans-serif; }
+        body.light .regenerate-popup button { color: #333; }
+        .regenerate-popup button:hover { background: rgba(245,158,11,0.15); }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -1173,12 +1178,36 @@
             });
         }
 
-        async function regenerateAssistantMessage(msgIndex) {
+        var regenerateMsgIndex = null;
+        function showRegeneratePopup(msgIndex, btnElement) {
+            var existing = document.querySelector('.regenerate-popup');
+            if (existing) existing.remove();
+            regenerateMsgIndex = msgIndex;
+            var popup = document.createElement('div');
+            popup.className = 'regenerate-popup';
+            popup.style.display = 'block';
+            var rect = btnElement.getBoundingClientRect();
+            popup.style.top = (rect.bottom + 4) + 'px';
+            popup.style.left = rect.left + 'px';
+            popup.innerHTML = '<button onclick="doRegenerate(\'short\')">⚡ Коротко</button><button onclick="doRegenerate(\'long\')">📖 Развёрнуто</button>';
+            document.body.appendChild(popup);
+            setTimeout(function() {
+                function close(e) { if (!popup.contains(e.target) && e.target !== btnElement) { popup.remove(); document.removeEventListener('click', close); } }
+                document.addEventListener('click', close);
+            }, 10);
+        }
+        function doRegenerate(style) {
+            var popup = document.querySelector('.regenerate-popup');
+            if (popup) popup.remove();
+            regenerateAssistantMessage(regenerateMsgIndex, style);
+        }
+        async function regenerateAssistantMessage(msgIndex, style) {
             if (isSending) return;
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'assistant') return;
+            style = style || '';
             isSending = true;
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
@@ -1199,7 +1228,7 @@
                 var resp = await fetch(SERVER_URL + '/regenerate_assistant', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id }),
+                    body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, style: style }),
                     signal: abortController.signal
                 });
                 if (!resp.ok) {
@@ -1325,7 +1354,7 @@
                     } else {
                         actionsHtml += '<button onclick="copyMessage(' + i + ')" id="copy-btn-' + i + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
                         actionsHtml += '<button onclick="downloadMessage(' + i + ')" id="download-btn-' + i + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
-                        actionsHtml += '<button class="roll-btn" onclick="regenerateAssistantMessage(' + i + ')" title="Регенерировать ответ"><svg width="14" height="14" viewBox="0 -1 16 16" fill="currentColor"><path d="M15.854,6.146a.5.5,0,0,0-.708,0L14,7.293V7a7,7,0,1,0-7,7,.5.5,0,0,0,0-1,6,6,0,1,1,6-6v.293L11.854,6.146a.5.5,0,0,0-.708.708l2,2a.518.518,0,0,0,.163.109.5.5,0,0,0,.382,0,.518.518,0,0,0,.163-.109l2-2A.5.5,0,0,0,15.854,6.146Z"/></svg></button>';
+                        actionsHtml += '<button class="roll-btn" onclick="showRegeneratePopup(' + i + ', this)" title="Регенерировать ответ"><svg width="14" height="14" viewBox="0 -1 16 16" fill="currentColor"><path d="M15.854,6.146a.5.5,0,0,0-.708,0L14,7.293V7a7,7,0,1,0-7,7,.5.5,0,0,0,0-1,6,6,0,1,1,6-6v.293L11.854,6.146a.5.5,0,0,0-.708.708l2,2a.518.518,0,0,0,.163.109.5.5,0,0,0,.382,0,.518.518,0,0,0,.163-.109l2-2A.5.5,0,0,0,15.854,6.146Z"/></svg></button>';
                         actionsHtml += '<button class="branch-btn" onclick="createBranchFromMessage(' + i + ')" title="Ответвить от этого сообщения" style="color:#4caf50;"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#4caf50"/></svg></button>';
                         actionsHtml += '<button onclick="showCopyHistoryModal(' + i + ')" title="Перенести историю"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg></button>';
                         actionsHtml += '<button onclick="shareChat(\'' + currentChatId + '\')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg></button>';
