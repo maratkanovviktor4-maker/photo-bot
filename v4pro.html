@@ -1132,18 +1132,14 @@
                         }
                         assistantMsg.finished = true;
                         assistantMsg._streaming = false;
-                        if (assistantMsg._fullBuffer) {
-                            var parts = assistantMsg._fullBuffer.split('🔹');
-                            assistantMsg._reasoningBuffer = parts.length > 1 ? parts[1] : '';
-                            assistantMsg.content = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
-                        }
+                        assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
                         await updateBranchesFromServer();
-                        if (assistantMsg._reasoningBuffer && chat.allBranches && chat.allBranches[currentBranchId]) {
+                        if (chat.allBranches && chat.allBranches[currentBranchId]) {
                             var branchMsgs = chat.allBranches[currentBranchId].messages || [];
                             var lastMsg = branchMsgs[branchMsgs.length - 1];
                             if (lastMsg && lastMsg.role === 'assistant') {
-                                lastMsg.reasoning = assistantMsg._reasoningBuffer;
-                                lastMsg._reasoningBuffer = assistantMsg._reasoningBuffer;
+                                lastMsg.reasoning = assistantMsg._reasoningBuffer || '';
+                                lastMsg._reasoningBuffer = assistantMsg._reasoningBuffer || '';
                             }
                             chat.messages = branchMsgs;
                         }
