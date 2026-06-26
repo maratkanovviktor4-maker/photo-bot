@@ -1687,13 +1687,15 @@
                                 const data = await resp.json();
                                 if (data.steps && data.steps.length > 0) {
                                         const steps = data.steps;
-                                        for (var i = 0; i < steps.length; i++) {
-                                                const step = steps[i];
-                                                const cleanUser = step.user;
-                                                const cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
-                                                chat.messages.push({ role: 'user', content: cleanUser, msg_id: step.user_msg_id });
-                                                chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id });
-                                        }
+                                const reasoning = data.reasoning || '';
+                                for (var i = 0; i < steps.length; i++) {
+                                        const step = steps[i];
+                                        const cleanUser = step.user;
+                                        const cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
+                                        chat.messages.push({ role: 'user', content: cleanUser, msg_id: step.user_msg_id });
+                                        var isLast = (i === steps.length - 1);
+                                        chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id, reasoning: isLast ? reasoning : '' });
+                                }
                                         renderMessages();
                                         chat.lastMessageTime = Date.now();
                                         chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
