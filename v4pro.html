@@ -1105,14 +1105,13 @@
                                         assistantMsg.msg_id = parsed.assistant_msg_id;
                                     } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
                                         if (parsed.reasoning) {
-                                            assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + '🔹' + parsed.reasoning;
+                                            assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
                                         }
                                         if (parsed.content) {
                                             assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                         }
-                                        var parts = assistantMsg._fullBuffer.split('🔹');
-                                        var reasoningText = parts.length > 1 ? parts[1] : '';
-                                        var contentText = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
+                                        var reasoningText = assistantMsg._reasoningBuffer || '';
+                                        var contentText = assistantMsg._fullBuffer || '';
                                         assistantMsg._reasoningBuffer = reasoningText;
                                         assistantMsg.content = contentText;
                                         var msgEl = document.getElementById('stream-' + newMsgIndex);
@@ -1236,14 +1235,13 @@
                                 assistantMsg.msg_id = parsed.assistant_msg_id;
                             } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
                                 if (parsed.reasoning) {
-                                    assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + '🔹' + parsed.reasoning;
+                                    assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
                                 }
                                 if (parsed.content) {
                                     assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                 }
-                                var parts = assistantMsg._fullBuffer.split('🔹');
-                                var reasoningText = parts.length > 1 ? parts[1] : '';
-                                var contentText = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
+                                var reasoningText = assistantMsg._reasoningBuffer || '';
+                                var contentText = assistantMsg._fullBuffer || '';
                                 assistantMsg._reasoningBuffer = reasoningText;
                                 assistantMsg.content = contentText;
                                 var msgEl = document.getElementById('stream-' + newMsgIndex);
