@@ -1846,15 +1846,13 @@
                                 finalMeta = parsed;
                             } else {
                                 if (parsed.reasoning) {
-                                    assistantMsg._fullBuffer += '🔹' + parsed.reasoning;
+                                    assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
                                 }
                                 if (parsed.content) {
-                                    assistantMsg._fullBuffer += parsed.content;
+                                    assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                 }
-                                const parts = assistantMsg._fullBuffer.split('🔹');
-                                const reasoningText = parts.length > 1 ? parts[1] : '';
-                                const contentText = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
-                                assistantMsg._reasoningBuffer = reasoningText;
+                                const reasoningText = assistantMsg._reasoningBuffer || '';
+                                const contentText = assistantMsg._fullBuffer || '';
                                 assistantMsg.content = contentText;
                                 const msgEl = document.getElementById('stream-' + msgIndex);
                                 if (msgEl) {
@@ -1881,11 +1879,7 @@
 
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
-                if (assistantMsg._fullBuffer) {
-                    const parts = assistantMsg._fullBuffer.split('🔹');
-                    assistantMsg._reasoningBuffer = parts.length > 1 ? parts[1] : '';
-                    assistantMsg.content = parts.length > 1 ? parts.slice(2).join('🔹') : parts[0];
-                }
+                assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
                 if (finalMeta) {
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
                     chat.messages[chat.messages.length - 2].msg_id = finalMeta.user_msg_id;
