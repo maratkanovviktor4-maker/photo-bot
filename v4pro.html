@@ -1063,7 +1063,7 @@
                         var resp = await fetch(SERVER_URL + '/regenerate_user', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                            body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: currentMode, chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText }),
+                            body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText }),
                             signal: abortController.signal
                         });
                         if (!resp.ok) {
@@ -1193,7 +1193,7 @@
                 var resp = await fetch(SERVER_URL + '/regenerate_assistant', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: currentMode, chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id }),
+                    body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id }),
                     signal: abortController.signal
                 });
                 if (!resp.ok) {
