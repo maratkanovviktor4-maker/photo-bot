@@ -1663,12 +1663,33 @@
                 var pending = '';
                 var area = document.getElementById('chatArea');
                 if (area.querySelector('.empty-state')) area.innerHTML = '';
-                area.insertAdjacentHTML('beforeend', '<div class="message-row assistant" data-msg-index="' + currentMsgIndex + '"><div><div class="message-content" id="stream-' + currentMsgIndex + '"></div></div></div>');
+
+                var currentRow, currentContent;
+                function createRow(role, idx) {
+                    var row = document.createElement('div');
+                    row.className = 'message-row ' + role;
+                    row.setAttribute('data-msg-index', idx);
+                    var inner = document.createElement('div');
+                    var content = document.createElement('div');
+                    content.className = 'message-content';
+                    content.id = 'stream-' + idx;
+                    inner.appendChild(content);
+                    row.appendChild(inner);
+                    area.appendChild(row);
+                    return { row: row, content: content };
+                }
+                var rowData = createRow('assistant', currentMsgIndex);
+                currentRow = rowData.row;
+                currentContent = rowData.content;
 
                 function finishMsg() {
                     currentMsg.finished = true;
                     currentMsg._streaming = false;
                     currentMsg.content = currentMsg._fullBuffer || '';
+                    var act = document.createElement('div');
+                    act.className = 'message-actions';
+                    act.id = 'actions-' + currentMsgIndex;
+                    currentRow.querySelector('div').appendChild(act);
                 }
                 function newMsg(role) {
                     finishMsg();
@@ -1676,16 +1697,16 @@
                     currentMsg = { role: role, content: '', finished: false, _streaming: true, _fullBuffer: '', msg_id: null };
                     chat.messages.push(currentMsg);
                     currentMsgIndex = chat.messages.length - 1;
-                    var rowClass = role === 'user' ? 'message-row user' : 'message-row assistant';
-                    area.insertAdjacentHTML('beforeend', '<div class="' + rowClass + '" data-msg-index="' + currentMsgIndex + '"><div><div class="message-content" id="stream-' + currentMsgIndex + '"></div></div></div>');
+                    rowData = createRow(role, currentMsgIndex);
+                    currentRow = rowData.row;
+                    currentContent = rowData.content;
                 }
 
                 function updateMsgDOM() {
-                    var el = document.getElementById('stream-' + currentMsgIndex);
-                    if (el) {
-                        el.innerHTML = formatMessage(currentMsg.content);
-                        el.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                        setupFloatingCopyButtonsForMsg(el);
+                    if (currentContent) {
+                        currentContent.innerHTML = formatMessage(currentMsg.content);
+                        currentContent.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                        setupFloatingCopyButtonsForMsg(currentContent);
                         updateFloatingButtons();
                     }
                     if (autoScroll) {
@@ -1698,8 +1719,11 @@
                     currentMsg._fullBuffer += txt;
                     var display = currentMsg._fullBuffer;
                     var colonIdx = display.indexOf(':');
-                    if (colonIdx > 0 && (display.substring(0, colonIdx).toUpperCase() === 'USER' || display.substring(0, colonIdx).toUpperCase() === 'ASSISTANT' || display.substring(0, colonIdx).toUpperCase() === 'U' || display.substring(0, colonIdx).toUpperCase() === 'A')) {
-                        display = display.substring(colonIdx + 1).trim();
+                    if (colonIdx > 0) {
+                        var prefix = display.substring(0, colonIdx).toUpperCase();
+                        if (prefix === 'USER' || prefix === 'ASSISTANT' || prefix === 'U' || prefix === 'A') {
+                            display = display.substring(colonIdx + 1).trim();
+                        }
                     }
                     if (display.toUpperCase().startsWith('[КОНСЕНСУС]')) {
                         display = display.substring(11).trim();
