@@ -1703,9 +1703,13 @@
                                                                 currentBranchId = parsed.branch_id;
                                                                 chat.activeBranch = parsed.branch_id;
                                                                 if (!chat.allBranches) chat.allBranches = {};
-                                                                if (!chat.allBranches[parsed.branch_id]) {
-                                                                        chat.allBranches[parsed.branch_id] = { name: '🧠 Self-Play', messages: [], msg_ids: [], source_role: 'assistant' };
-                                                                }
+                                                                chat.allBranches[parsed.branch_id] = { name: '🧠 Self-Play', messages: [], msg_ids: [], source_role: 'assistant' };
+                                                                chat.messages = [];
+                                                                var area = document.getElementById('chatArea');
+                                                                area.innerHTML = '';
+                                                                assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
+                                                                chat.messages.push(assistantMsg);
+                                                                streamMsgIndex = 0;
                                                                 renderBranchesPanel();
                                                         }
                                                         if (parsed.steps) {
