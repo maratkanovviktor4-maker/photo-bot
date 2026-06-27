@@ -273,6 +273,7 @@
             <select id="personalitySelect" onchange="changePersonality()" style="padding:6px 10px;border-radius:16px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;margin-right:8px;">
                 <option value="default">🤖 Ассистент</option>
             </select>
+            <span id="personalityPrompt" style="font-size:10px;color:#888;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Inter,sans-serif;"></span>
             <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
         </div>
         <div class="chat-wrapper">
@@ -375,7 +376,20 @@
                 }
             } catch(e) { console.error('loadPersonalities:', e); }
         }
-
+        function updatePersonalityPrompt(key) {
+            var promptEl = document.getElementById('personalityPrompt');
+            if (!promptEl) return;
+            if (key === 'custom') {
+                promptEl.textContent = '🎭 Своя роль';
+                return;
+            }
+            var p = personalities[key];
+            if (p && p.prompt) {
+                promptEl.textContent = p.prompt.substring(0, 80) + (p.prompt.length > 80 ? '...' : '');
+            } else {
+                promptEl.textContent = '';
+            }
+        }
         function changePersonality() {
             var val = document.getElementById('personalitySelect').value;
             if (val === 'custom') {
@@ -390,6 +404,7 @@
             currentPersonality = val;
             localStorage.setItem('photobot_personality', val);
             document.getElementById('personalitySelect').value = val;
+            updatePersonalityPrompt(val);
             var currentChat = chats.find(function(c) { return c.id === currentChatId; });
             if (currentChat) {
                 currentChat._personality = val;
@@ -615,6 +630,7 @@
                     localStorage.setItem('photobot_personality', currentPersonality);
                     var select = document.getElementById('personalitySelect');
                     if (select) select.value = currentPersonality;
+                    updatePersonalityPrompt(currentPersonality);
                 }
                 currentBranchId = chat.activeBranch || 'main';
                 allBranchesCache = chat.allBranches || {};
