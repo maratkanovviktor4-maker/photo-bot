@@ -1655,12 +1655,26 @@
                 if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
                 sendBtnStop();
 
-                var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
-                chat.messages.push(assistantMsg);
-                var streamMsgIndex = chat.messages.length - 1;
-                var streamId = 'selfplay_stream_' + streamMsgIndex;
-                activeStreamId = streamId;
+                var currentRole = 'assistant';
+                var currentMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '', msg_id: null };
+                chat.messages.push(currentMsg);
+                var currentMsgIndex = chat.messages.length - 1;
+                activeStreamId = 'selfplay_stream_' + currentMsgIndex;
+                var accumulated = '';
                 renderMessages();
+
+                function finishCurrentMsg() {
+                    currentMsg.finished = true;
+                    currentMsg._streaming = false;
+                    currentMsg.content = currentMsg._fullBuffer || '';
+                }
+                function startNewMsg(role) {
+                    finishCurrentMsg();
+                    currentMsg = { role: role, content: '', finished: false, _streaming: true, _fullBuffer: '', msg_id: null };
+                    chat.messages.push(currentMsg);
+                    currentMsgIndex = chat.messages.length - 1;
+                    currentRole = role;
+                }
 
                 try {
                         const resp = await fetch(SERVER_URL + '/selfplay', {
@@ -1702,15 +1716,7 @@
                                                 try {
                                                         var parsed = JSON.parse(dataStr);
                                                         if (parsed.steps) {
-                                                                chat.messages.pop();
-                                                                var steps = parsed.steps;
-                                                                for (var s = 0; s < steps.length; s++) {
-                                                                        var step = steps[s];
-                                                                        var cleanUser = step.user;
-                                                                        var cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
-                                                                        chat.messages.push({ role: 'user', content: cleanUser, msg_id: step.user_msg_id });
-                                                                        chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id });
-                                                                }
+                                                                finishCurrentMsg();
                                                                 renderMessages();
                                                                 chat.lastMessageTime = Date.now();
                                                                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
@@ -1722,16 +1728,48 @@
                                                                 sendBtnArrow();
                                                         } else if (parsed.content !== undefined) {
                                                                 if (parsed.content) {
-                                                                        assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
+                                                                        accumulated += parsed.content;
+                                                                        var newlineIdx = accumulated.indexOf('\n');
+                                                                        while (newlineIdx !== -1) {
+                                                                                var lineText = accumulated.substring(0, newlineIdx).trim();
+                                                                                accumulated = accumulated.substring(newlineIdx + 1);
+                                                                                if (lineText.toUpperCase().startsWith('USER:') || lineText.toUpperCase().startsWith('U:')) {
+                                                                                        var userText = lineText.substring(lineText.indexOf(':') + 1).trim();
+                                                                                        if (currentRole === 'user') {
+                                                                                                currentMsg._fullBuffer = (currentMsg._fullBuffer ? currentMsg._fullBuffer + '\n' : '') + lineText;
+                                                                                                currentMsg.content = currentMsg._fullBuffer;
+                                                                                        } else {
+                                                                                                startNewMsg('user');
+                                                                                                currentMsg._fullBuffer = lineText;
+                                                                                                currentMsg.content = userText;
+                                                                                        }
+                                                                                } else if (lineText.toUpperCase().startsWith('ASSISTANT:') || lineText.toUpperCase().startsWith('A:')) {
+                                                                                        var assistantText = lineText.substring(lineText.indexOf(':') + 1).trim();
+                                                                                        if (currentRole === 'assistant') {
+                                                                                                currentMsg._fullBuffer = (currentMsg._fullBuffer ? currentMsg._fullBuffer + '\n' : '') + lineText;
+                                                                                                currentMsg.content = currentMsg._fullBuffer;
+                                                                                        } else {
+                                                                                                startNewMsg('assistant');
+                                                                                                currentMsg._fullBuffer = lineText;
+                                                                                                currentMsg.content = assistantText;
+                                                                                        }
+                                                                                } else if (lineText.toUpperCase().startsWith('[КОНСЕНСУС]')) {
+                                                                                        if (currentRole !== 'assistant') startNewMsg('assistant');
+                                                                                        currentMsg._fullBuffer = (currentMsg._fullBuffer ? currentMsg._fullBuffer + '\n' : '') + lineText;
+                                                                                        currentMsg.content = currentMsg._fullBuffer;
+                                                                                } else {
+                                                                                        currentMsg._fullBuffer = (currentMsg._fullBuffer ? currentMsg._fullBuffer + '\n' : '') + lineText;
+                                                                                        currentMsg.content = currentMsg._fullBuffer;
+                                                                                }
+                                                                                newlineIdx = accumulated.indexOf('\n');
+                                                                        }
+                                                                        if (accumulated) {
+                                                                                currentMsg._fullBuffer = (currentMsg._fullBuffer ? currentMsg._fullBuffer : '') + accumulated;
+                                                                                currentMsg.content = currentMsg._fullBuffer;
+                                                                                accumulated = '';
+                                                                        }
                                                                 }
-                                                                assistantMsg.content = assistantMsg._fullBuffer || '';
-                                                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
-                                                                if (msgEl) {
-                                                                        msgEl.innerHTML = formatMessage(assistantMsg.content);
-                                                                        msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                                                                        setupFloatingCopyButtonsForMsg(msgEl);
-                                                                        updateFloatingButtons();
-                                                                }
+                                                                renderMessages();
                                                                 if (autoScroll) {
                                                                         var main = document.querySelector('.main');
                                                                         if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
