@@ -253,6 +253,20 @@
     <script src="config.js"></script>
 </head>
 <body>
+    <div id="customPersonalityModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon" style="background:rgba(245,158,11,0.15);color:#F59E0B;">🎭</div>
+            <div class="modal-title" style="margin-bottom:16px;">Кастомная личность</div>
+            <div style="margin-bottom:20px;">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">ОПИШИТЕ ЛИЧНОСТЬ</label>
+                <textarea id="customPersonalityInput" style="width:100%;padding:12px 14px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:14px;font-family:Inter,sans-serif;outline:none;resize:none;min-height:80px;transition:all 0.2s ease;" placeholder="Например: Ты — гениальный физик, объясняешь через аналогии..."></textarea>
+            </div>
+            <div class="modal-actions" style="gap:12px;">
+                <button class="modal-btn-secondary" onclick="closeCustomPersonalityModal()" style="flex:1;padding:12px;">Отмена</button>
+                <button id="customPersonalityConfirmBtn" class="modal-btn-primary" onclick="confirmCustomPersonality()" style="flex:1;padding:12px;">Сохранить</button>
+            </div>
+        </div>
+    </div>
     <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Свернуть панель">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
@@ -401,10 +415,26 @@
                 promptEl.title = '';
             }
         }
+        function showCustomPersonalityModal() {
+            document.getElementById('customPersonalityInput').value = '';
+            document.getElementById('customPersonalityModal').classList.add('active');
+            setTimeout(function() { document.getElementById('customPersonalityInput').focus(); }, 100);
+        }
+        function closeCustomPersonalityModal() {
+            document.getElementById('customPersonalityModal').classList.remove('active');
+        }
+        function confirmCustomPersonality() {
+            var newPrompt = document.getElementById('customPersonalityInput').value.trim();
+            if (newPrompt) {
+                saveCustomPersonality();
+            }
+            closeCustomPersonalityModal();
+        }
         function changePersonality() {
             var val = document.getElementById('personalitySelect').value;
             if (val === 'custom') {
-                var newPrompt = prompt('Введите кастомную личность:', '');
+                showCustomPersonalityModal();
+                return;
                 if (newPrompt !== null) {
                     document.getElementById('customPersonalityInput').value = newPrompt;
                     saveCustomPersonality();
@@ -2576,6 +2606,11 @@
             }
         });
         document.getElementById('editMessageModal').addEventListener('click', function(e) { if (e.target === this) closeEditMessageModal(); });
+        document.getElementById('customPersonalityInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmCustomPersonality(); }
+            if (e.key === 'Escape') { closeCustomPersonalityModal(); }
+        });
+        document.getElementById('customPersonalityModal').addEventListener('click', function(e) { if (e.target === this) closeCustomPersonalityModal(); });
 
         var chatAreaObserver = new MutationObserver(function() { setupFloatingCopyButtons(); updateFloatingButtons(); });
         window.addEventListener('load', function() {
