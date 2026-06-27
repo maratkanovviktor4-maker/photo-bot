@@ -1655,97 +1655,142 @@
                 if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
                 sendBtnStop();
 
-                var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
-                chat.messages.push(assistantMsg);
-                var streamMsgIndex = chat.messages.length - 1;
-                var streamId = 'selfplay_stream_' + streamMsgIndex;
-                activeStreamId = streamId;
+                var currentRole = 'assistant';
+                var currentMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '', msg_id: null };
+                chat.messages.push(currentMsg);
+                var currentMsgIndex = chat.messages.length - 1;
+                activeStreamId = 'selfplay_' + currentMsgIndex;
+                var pending = '';
                 renderMessages();
 
+                function finishMsg() {
+                    currentMsg.finished = true;
+                    currentMsg._streaming = false;
+                    currentMsg.content = currentMsg._fullBuffer || '';
+                }
+                function newMsg(role) {
+                    finishMsg();
+                    currentRole = role;
+                    currentMsg = { role: role, content: '', finished: false, _streaming: true, _fullBuffer: '', msg_id: null };
+                    chat.messages.push(currentMsg);
+                    currentMsgIndex = chat.messages.length - 1;
+                }
+
+                function updateMsgDOM() {
+                    var el = document.getElementById('stream-' + currentMsgIndex);
+                    if (el) {
+                        el.innerHTML = formatMessage(currentMsg.content);
+                        el.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                        setupFloatingCopyButtonsForMsg(el);
+                        updateFloatingButtons();
+                    }
+                    if (autoScroll) {
+                        var main = document.querySelector('.main');
+                        if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+                    }
+                }
+
+                function appendText(txt) {
+                    currentMsg._fullBuffer += txt;
+                    var display = currentMsg._fullBuffer;
+                    var colonIdx = display.indexOf(':');
+                    if (colonIdx > 0 && (display.substring(0, colonIdx).toUpperCase() === 'USER' || display.substring(0, colonIdx).toUpperCase() === 'ASSISTANT' || display.substring(0, colonIdx).toUpperCase() === 'U' || display.substring(0, colonIdx).toUpperCase() === 'A')) {
+                        display = display.substring(colonIdx + 1).trim();
+                    }
+                    if (display.toUpperCase().startsWith('[КОНСЕНСУС]')) {
+                        display = display.substring(11).trim();
+                    }
+                    currentMsg.content = display;
+                    updateMsgDOM();
+                }
+
                 try {
-                        const resp = await fetch(SERVER_URL + '/selfplay', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                body: JSON.stringify({
-                                        user_id: currentUserId,
-                                        model: 'pro',
-                                        mode: currentMode,
-                                        chat_id: currentChatId,
-                                        branch_id: currentBranchId,
-                                        source_msg_id: msg.msg_id || '',
-                                        prompt: promptText
-                                })
-                        });
-                        if (!resp.ok) {
-                                const errData = await resp.json().catch(() => ({}));
-                                showAlertModal('Ошибка Self-Play', errData.error || 'Неизвестная ошибка', '❌');
-                                isSending = false;
-                                sendBtnArrow();
-                                return;
-                        }
-                        var contentType = resp.headers.get('content-type') || '';
-                        if (contentType.includes('text/event-stream')) {
-                                var reader = resp.body.getReader();
-                                var decoder = new TextDecoder();
-                                var buffer = '';
-                                while (true) {
-                                        var readResult = await reader.read();
-                                        if (readResult.done) break;
-                                        buffer += decoder.decode(readResult.value, { stream: true });
-                                        var lines = buffer.split('\n');
-                                        buffer = lines.pop() || '';
-                                        for (var i = 0; i < lines.length; i++) {
-                                                var line = lines[i];
-                                                if (!line.startsWith('data: ')) continue;
-                                                var dataStr = line.slice(6).trim();
-                                                if (dataStr === '[DONE]') continue;
-                                                try {
-                                                        var parsed = JSON.parse(dataStr);
-                                                        if (parsed.steps) {
-                                                                chat.messages.pop();
-                                                                var steps = parsed.steps;
-                                                                for (var s = 0; s < steps.length; s++) {
-                                                                        var step = steps[s];
-                                                                        var cleanUser = step.user;
-                                                                        var cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
-                                                                        chat.messages.push({ role: 'user', content: cleanUser, msg_id: step.user_msg_id });
-                                                                        chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id });
-                                                                }
-                                                                renderMessages();
-                                                                chat.lastMessageTime = Date.now();
-                                                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                                                                autoNameChat(chat);
-                                                                updateBranchesFromServer();
-                                                                updateBalance();
-                                                                isSending = false;
-                                                                activeStreamId = null;
-                                                                sendBtnArrow();
-                                                        } else if (parsed.content !== undefined) {
-                                                                if (parsed.content) {
-                                                                        assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
-                                                                }
-                                                                assistantMsg.content = assistantMsg._fullBuffer || '';
-                                                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
-                                                                if (msgEl) {
-                                                                        msgEl.innerHTML = formatMessage(assistantMsg.content);
-                                                                        msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                                                                        setupFloatingCopyButtonsForMsg(msgEl);
-                                                                        updateFloatingButtons();
-                                                                }
-                                                                if (autoScroll) {
-                                                                        var main = document.querySelector('.main');
-                                                                        if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
-                                                                }
-                                                        }
-                                                } catch(e) {}
+                    const resp = await fetch(SERVER_URL + '/selfplay', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({
+                            user_id: currentUserId,
+                            model: 'pro',
+                            mode: currentMode,
+                            chat_id: currentChatId,
+                            branch_id: currentBranchId,
+                            source_msg_id: msg.msg_id || '',
+                            prompt: promptText
+                        })
+                    });
+                    if (!resp.ok) {
+                        var errData = await resp.json().catch(() => ({}));
+                        showAlertModal('Ошибка Self-Play', errData.error || 'Неизвестная ошибка', '❌');
+                        isSending = false; sendBtnArrow(); return;
+                    }
+                    var cType = resp.headers.get('content-type') || '';
+                    if (!cType.includes('text/event-stream')) {
+                        var errJson = await resp.json().catch(() => ({}));
+                        showAlertModal('Ошибка', errJson.error || 'Неверный ответ', '❌');
+                        isSending = false; sendBtnArrow(); return;
+                    }
+                    var reader = resp.body.getReader();
+                    var decoder = new TextDecoder();
+                    var buf = '';
+                    while (true) {
+                        var r = await reader.read();
+                        if (r.done) break;
+                        buf += decoder.decode(r.value, { stream: true });
+                        var lines = buf.split('\n');
+                        buf = lines.pop() || '';
+                        for (var i = 0; i < lines.length; i++) {
+                            var line = lines[i];
+                            if (!line.startsWith('data: ')) continue;
+                            var s = line.slice(6).trim();
+                            if (s === '[DONE]') continue;
+                            try {
+                                var p = JSON.parse(s);
+                                if (p.steps) {
+                                    finishMsg();
+                                    renderMessages();
+                                    chat.lastMessageTime = Date.now();
+                                    chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                                    autoNameChat(chat);
+                                    updateBranchesFromServer();
+                                    updateBalance();
+                                    isSending = false;
+                                    activeStreamId = null;
+                                    sendBtnArrow();
+                                } else if (p.content !== undefined && p.content) {
+                                    pending += p.content;
+                                    while (pending.indexOf('\n') !== -1) {
+                                        var nl = pending.indexOf('\n');
+                                        var oneLine = pending.substring(0, nl);
+                                        pending = pending.substring(nl + 1);
+                                        var trimmed = oneLine.trim();
+                                        if (!trimmed) { appendText('\n'); continue; }
+                                        var up = trimmed.toUpperCase();
+                                        if (up.startsWith('USER:') || up.startsWith('U:')) {
+                                            newMsg('user');
+                                            appendText(trimmed + '\n');
+                                        } else if (up.startsWith('ASSISTANT:') || up.startsWith('A:')) {
+                                            newMsg('assistant');
+                                            appendText(trimmed + '\n');
+                                        } else if (up.startsWith('[КОНСЕНСУС]')) {
+                                            if (currentRole !== 'assistant') newMsg('assistant');
+                                            appendText(trimmed);
+                                        } else {
+                                            appendText(trimmed + '\n');
                                         }
+                                    }
+                                    if (pending) {
+                                        appendText(pending);
+                                        pending = '';
+                                    }
+                                    renderMessages();
                                 }
+                            } catch(e) {}
                         }
+                    }
                 } catch(e) {
-                        console.error('selfPlay error:', e);
-                        showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
-                        isSending = false;
-                        sendBtnArrow();
+                    console.error('selfPlay error:', e);
+                    showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
+                    isSending = false; sendBtnArrow();
                 }
         }
 
