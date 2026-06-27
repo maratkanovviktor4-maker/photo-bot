@@ -1661,7 +1661,9 @@
                 var currentMsgIndex = chat.messages.length - 1;
                 activeStreamId = 'selfplay_' + currentMsgIndex;
                 var pending = '';
-                renderMessages();
+                var area = document.getElementById('chatArea');
+                if (area.querySelector('.empty-state')) area.innerHTML = '';
+                area.insertAdjacentHTML('beforeend', '<div class="message-row assistant" data-msg-index="' + currentMsgIndex + '"><div><div class="message-content" id="stream-' + currentMsgIndex + '"></div></div></div>');
 
                 function finishMsg() {
                     currentMsg.finished = true;
@@ -1674,6 +1676,8 @@
                     currentMsg = { role: role, content: '', finished: false, _streaming: true, _fullBuffer: '', msg_id: null };
                     chat.messages.push(currentMsg);
                     currentMsgIndex = chat.messages.length - 1;
+                    var rowClass = role === 'user' ? 'message-row user' : 'message-row assistant';
+                    area.insertAdjacentHTML('beforeend', '<div class="' + rowClass + '" data-msg-index="' + currentMsgIndex + '"><div><div class="message-content" id="stream-' + currentMsgIndex + '"></div></div></div>');
                 }
 
                 function updateMsgDOM() {
@@ -1747,7 +1751,6 @@
                                 var p = JSON.parse(s);
                                 if (p.steps) {
                                     finishMsg();
-                                    renderMessages();
                                     chat.lastMessageTime = Date.now();
                                     chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                                     autoNameChat(chat);
@@ -1782,7 +1785,6 @@
                                         appendText(pending);
                                         pending = '';
                                     }
-                                    renderMessages();
                                 }
                             } catch(e) {}
                         }
