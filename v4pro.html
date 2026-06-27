@@ -1658,15 +1658,6 @@
                 isSending = true;
                 if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
                 sendBtnStop();
-                const placeholderId = 'selfplay_' + Date.now();
-                const area = document.getElementById('chatArea');
-                const loadingRow = document.createElement('div');
-                loadingRow.className = 'message-row assistant';
-                loadingRow.id = placeholderId;
-                loadingRow.innerHTML = '<div><div class="message-content" style="color:#F59E0B;">🧠 Self-Play: ' + escapeHtml(promptText.substring(0, 80)) + '...</div></div>';
-                area.appendChild(loadingRow);
-                var main = document.querySelector('.main');
-                if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
                 try {
                         const resp = await fetch(SERVER_URL + '/selfplay', {
                                 method: 'POST',
@@ -1681,8 +1672,6 @@
                                         prompt: promptText
                                 })
                         });
-                        var el = document.getElementById(placeholderId);
-                        if (el) el.remove();
                         if (!resp.ok) {
                                 const errData = await resp.json().catch(() => ({}));
                                 showAlertModal('Ошибка Self-Play', errData.error || 'Неизвестная ошибка', '❌');
@@ -1690,17 +1679,9 @@
                                 sendBtnArrow();
                                 return;
                         }
-                        const contentType = resp.headers.get('content-type') || '';
-                        if (!contentType.includes('text/event-stream')) {
-                                showAlertModal('Ошибка', 'Неверный ответ сервера', '❌');
-                                isSending = false;
-                                sendBtnArrow();
-                                return;
-                        }
                         const reader = resp.body.getReader();
                         const decoder = new TextDecoder();
                         let buffer = '';
-                        let lastStepsCount = 0;
                         while (true) {
                                 const readResult = await reader.read();
                                 if (readResult.done) break;
@@ -1715,50 +1696,19 @@
                                         try {
                                                 const parsed = JSON.parse(dataStr);
                                                 if (parsed.done) {
-                                                        chat.messages = chat.messages.filter(m => !m._selfplayTemp);
-                                                        const steps = parsed.steps || [];
-                                                        const reasoning = parsed.reasoning || '';
-                                                        for (var s = 0; s < steps.length; s++) {
-                                                                const step = steps[s];
-                                                                const cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
-                                                                const isLast = (s === steps.length - 1);
-                                                                chat.messages.push({ role: 'user', content: step.user, msg_id: step.user_msg_id });
-                                                                chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id, reasoning: isLast ? reasoning : '' });
-                                                        }
-                                                        renderMessages();
+                                                        isSending = false;
+                                                        activeStreamId = null;
+                                                        sendBtnArrow();
                                                         chat.lastMessageTime = Date.now();
                                                         chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                                                         autoNameChat(chat);
                                                         updateBranchesFromServer();
                                                         updateBalance();
-                                                        isSending = false;
-                                                        activeStreamId = null;
-                                                        sendBtnArrow();
-                                                } else if (parsed.lines) {
-                                                        // Удаляем временные selfplay сообщения
-                                                        chat.messages = chat.messages.filter(m => !m._selfplayTemp);
-                                                        const lines = parsed.lines.split('\n');
-                                                        let currentUser = '';
-                                                        let currentAssistant = '';
-                                                        for (var l = 0; l < lines.length; l++) {
-                                                                const ln = lines[l].trim();
-                                                                if (ln.upper().startsWith('USER:') || ln.upper().startsWith('U:')) {
-                                                                        if (currentUser && currentAssistant) {
-                                                                                chat.messages.push({ role: 'user', content: currentUser, _selfplayTemp: true });
-                                                                                chat.messages.push({ role: 'assistant', content: currentAssistant, _selfplayTemp: true });
-                                                                        }
-                                                                        currentUser = ln.split(':', 1)[1].trim();
-                                                                        currentAssistant = '';
-                                                                } else if (ln.upper().startsWith('ASSISTANT:') || ln.upper().startsWith('A:')) {
-                                                                        currentAssistant = ln.split(':', 1)[1].trim();
-                                                                } else if (ln.upper().startsWith('[КОНСЕНСУС]')) {
-                                                                        currentAssistant = ln.trim();
-                                                                }
-                                                        }
-                                                        if (currentUser && currentAssistant) {
-                                                                chat.messages.push({ role: 'user', content: currentUser, _selfplayTemp: true });
-                                                                chat.messages.push({ role: 'assistant', content: currentAssistant, _selfplayTemp: true });
-                                                        }
+                                                        renderMessages();
+                                                        renderBranchesPanel();
+                                                } else if (parsed.role && parsed.content) {
+                                                        var reason = parsed.reasoning || '';
+                                                        chat.messages.push({ role: parsed.role, content: parsed.content, reasoning: reason, finished: true });
                                                         renderMessages();
                                                         if (autoScroll) {
                                                                 var m = document.querySelector('.main');
@@ -1769,8 +1719,6 @@
                                 }
                         }
                 } catch(e) {
-                        var el2 = document.getElementById(placeholderId);
-                        if (el2) el2.remove();
                         console.error('selfPlay error:', e);
                         showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
                         isSending = false;
