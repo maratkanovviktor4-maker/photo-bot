@@ -1676,12 +1676,10 @@
                                         prompt: promptText
                                 })
                         });
-                        if (!resp.ok) {
-                                const errData = await resp.json().catch(() => ({}));
-                                showAlertModal('Ошибка Self-Play', errData.error || 'Неизвестная ошибка', '❌');
-                                isSending = false;
-                                sendBtnArrow();
-                                return;
+                        var newBranchId = resp.headers.get('X-Branch-Id');
+                        if (newBranchId) {
+                                currentBranchId = newBranchId;
+                                chat.activeBranch = newBranchId;
                         }
                         var contentType = resp.headers.get('content-type') || '';
                         if (contentType.includes('text/event-stream')) {
@@ -1716,6 +1714,8 @@
                                                                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                                                                 autoNameChat(chat);
                                                                 updateBranchesFromServer();
+                        					renderBranchesPanel();
+                       						renderChatList();
                                                                 updateBalance();
                                                                 isSending = false;
                                                                 activeStreamId = null;
