@@ -379,7 +379,6 @@
         function changePersonality() {
             var val = document.getElementById('personalitySelect').value;
             if (val === 'custom') {
-                // Простое редактирование через prompt
                 var newPrompt = prompt('Введите кастомную личность:', document.getElementById('customPersonalityInput')?.value || '');
                 if (newPrompt !== null) {
                     document.getElementById('customPersonalityInput').value = newPrompt;
@@ -388,22 +387,12 @@
                 document.getElementById('personalitySelect').value = currentPersonality;
                 return;
             }
-            var oldPersonality = currentPersonality;
             currentPersonality = val;
             localStorage.setItem('photobot_personality', val);
             document.getElementById('personalitySelect').value = val;
             var currentChat = chats.find(function(c) { return c.id === currentChatId; });
-            if (currentChat && currentChat.messages.length > 0 && oldPersonality !== val) {
-                newChat();
-                var newChatObj = chats[chats.length - 1];
-                if (newChatObj) newChatObj._personality = val;
-                renderChatList();
-                renderMessages();
-                var tempMsg = document.createElement('div');
-                tempMsg.style.cssText = 'text-align:center;padding:12px;color:#F59E0B;font-size:13px;font-family:Inter,sans-serif;';
-                tempMsg.textContent = '🔄 Новый чат с личностью «' + (personalities[val] ? personalities[val].name : val) + '»';
-                document.getElementById('chatArea').appendChild(tempMsg);
-                setTimeout(function() { if (tempMsg.parentNode) tempMsg.remove(); }, 3000);
+            if (currentChat) {
+                currentChat._personality = val;
             }
         }
 
