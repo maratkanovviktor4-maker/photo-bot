@@ -427,14 +427,16 @@
         }
         function closeCustomPersonalityModal() {
             document.getElementById('customPersonalityModal').classList.remove('active');
+            document.getElementById('personalitySelect').value = currentPersonality;
+            document.getElementById('editCustomBtn').style.display = currentPersonality === 'custom' ? 'inline-flex' : 'none';
         }
         function confirmCustomPersonality() {
             var newPrompt = document.getElementById('customPersonalityInput').value.trim();
             if (newPrompt) {
                 saveCustomPersonality();
                 updatePersonalityPrompt('custom');
+                document.getElementById('customPersonalityModal').classList.remove('active');
             }
-            closeCustomPersonalityModal();
         }
         function changePersonality() {
             var val = document.getElementById('personalitySelect').value;
