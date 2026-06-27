@@ -1704,9 +1704,22 @@
                                                                 chat.activeBranch = parsed.branch_id;
                                                                 if (!chat.allBranches) chat.allBranches = {};
                                                                 chat.allBranches[parsed.branch_id] = { name: '🧠 Self-Play', messages: [], msg_ids: [], source_role: 'assistant' };
+                                                                var oldMessages = chat.messages.slice(0, msgIndex + 1);
                                                                 chat.messages = [];
                                                                 var area = document.getElementById('chatArea');
                                                                 area.innerHTML = '';
+                                                                for (var om = 0; om < oldMessages.length; om++) {
+                                                                        chat.messages.push(oldMessages[om]);
+                                                                        var oldMsg = oldMessages[om];
+                                                                        var cls = 'message-row ' + (oldMsg.role === 'user' ? 'user' : (oldMsg.role === 'system' ? 'system' : 'assistant'));
+                                                                        var contentHtml = '';
+                                                                        if (oldMsg.role === 'system') {
+                                                                                contentHtml = '<div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">' + escapeHtml(oldMsg.content) + '</div></div>';
+                                                                        } else {
+                                                                                contentHtml = '<div><div class="message-content">' + formatMessage(oldMsg.content || '') + '</div></div>';
+                                                                        }
+                                                                        area.innerHTML += '<div class="' + cls + '">' + contentHtml + '</div>';
+                                                                }
                                                                 if (parsed.placeholder_id) {
                                                                         chat.messages.push({ role: 'system', content: '🧠 Self-Play начат: ' + (promptText ? promptText.substring(0, 80) : ''), msg_id: parsed.placeholder_id });
                                                                         area.innerHTML = '<div class="message-row system"><div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">🧠 Self-Play начат: ' + escapeHtml(promptText ? promptText.substring(0, 80) : '') + '</div></div></div>';
