@@ -1714,6 +1714,9 @@
                                                         }
                                                         if (parsed.steps) {
                                                                 chat.messages.pop();
+                                                                if (parsed.start_placeholder_id) {
+                                                                        chat.messages.push({ role: 'system', content: '🧠 Self-Play начат: ' + (promptText ? promptText.substring(0, 80) : ''), msg_id: parsed.start_placeholder_id });
+                                                                }
                                                                 var steps = parsed.steps;
                                                                 for (var s = 0; s < steps.length; s++) {
                                                                         var step = steps[s];
@@ -1721,6 +1724,9 @@
                                                                         var cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
                                                                         chat.messages.push({ role: 'user', content: cleanUser, msg_id: step.user_msg_id });
                                                                         chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id });
+                                                                }
+                                                                if (parsed.end_placeholder_id) {
+                                                                        chat.messages.push({ role: 'system', content: '🧠 Self-Play завершён', msg_id: parsed.end_placeholder_id });
                                                                 }
                                                                 renderMessages();
                                                                 chat.lastMessageTime = Date.now();
