@@ -1699,6 +1699,15 @@
                                                 if (dataStr === '[DONE]') continue;
                                                 try {
                                                         var parsed = JSON.parse(dataStr);
+                                                        if (parsed.branch_id) {
+                                                                currentBranchId = parsed.branch_id;
+                                                                chat.activeBranch = parsed.branch_id;
+                                                                if (!chat.allBranches) chat.allBranches = {};
+                                                                if (!chat.allBranches[parsed.branch_id]) {
+                                                                        chat.allBranches[parsed.branch_id] = { name: '🧠 Self-Play', messages: [], msg_ids: [], source_role: 'assistant' };
+                                                                }
+                                                                renderBranchesPanel();
+                                                        }
                                                         if (parsed.steps) {
                                                                 chat.messages.pop();
                                                                 var steps = parsed.steps;
