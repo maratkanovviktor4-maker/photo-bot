@@ -1707,9 +1707,17 @@
                                                                 chat.messages = [];
                                                                 var area = document.getElementById('chatArea');
                                                                 area.innerHTML = '';
+                                                                if (parsed.placeholder_id) {
+                                                                        chat.messages.push({ role: 'system', content: '🧠 Self-Play начат: ' + (promptText ? promptText.substring(0, 80) : ''), msg_id: parsed.placeholder_id });
+                                                                        area.innerHTML = '<div class="message-row system"><div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">🧠 Self-Play начат: ' + escapeHtml(promptText ? promptText.substring(0, 80) : '') + '</div></div></div>';
+                                                                }
                                                                 assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                                                                 chat.messages.push(assistantMsg);
-                                                                streamMsgIndex = 0;
+                                                                streamMsgIndex = chat.messages.length - 1;
+                                                                var row = document.createElement('div');
+                                                                row.className = 'message-row assistant';
+                                                                row.innerHTML = '<div><div class="message-content" id="stream-' + streamMsgIndex + '"></div></div>';
+                                                                area.appendChild(row);
                                                                 renderBranchesPanel();
                                                         }
                                                         if (parsed.steps) {
