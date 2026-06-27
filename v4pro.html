@@ -1654,15 +1654,14 @@
                 isSending = true;
                 if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
                 sendBtnStop();
-                const placeholderId = 'selfplay_' + Date.now();
-                const area = document.getElementById('chatArea');
-                const loadingRow = document.createElement('div');
-                loadingRow.className = 'message-row assistant';
-                loadingRow.id = placeholderId;
-                loadingRow.innerHTML = '<div><div class="message-content" style="color:#F59E0B;">🧠 Self-Play: ' + escapeHtml(promptText.substring(0, 80)) + '...</div></div>';
-                area.appendChild(loadingRow);
-                var main = document.querySelector('.main');
-                if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+
+                var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
+                chat.messages.push(assistantMsg);
+                var streamMsgIndex = chat.messages.length - 1;
+                var streamId = 'selfplay_stream_' + streamMsgIndex;
+                activeStreamId = streamId;
+                renderMessages();
+
                 try {
                         const resp = await fetch(SERVER_URL + '/selfplay', {
                                 method: 'POST',
@@ -1677,38 +1676,72 @@
                                         prompt: promptText
                                 })
                         });
-                        var el = document.getElementById(placeholderId);
-                        if (el) el.remove();
-                        if (resp.ok) {
-                                const data = await resp.json();
-                                if (data.steps && data.steps.length > 0) {
-                                        const steps = data.steps;
-                                        for (var i = 0; i < steps.length; i++) {
-                                                const step = steps[i];
-                                                const cleanUser = step.user;
-                                                const cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
-                                                chat.messages.push({ role: 'user', content: cleanUser, msg_id: step.user_msg_id });
-                                                chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id });
-                                        }
-                                        renderMessages();
-                                        chat.lastMessageTime = Date.now();
-                                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                                        autoNameChat(chat);
-                                        updateBranchesFromServer();
-                                        updateBalance();
-                                        isSending = false;
-                                        activeStreamId = null;
-                                        sendBtnArrow();
-                                }
-                        } else {
-                                const errData = await resp.json();
+                        if (!resp.ok) {
+                                const errData = await resp.json().catch(() => ({}));
                                 showAlertModal('Ошибка Self-Play', errData.error || 'Неизвестная ошибка', '❌');
                                 isSending = false;
                                 sendBtnArrow();
+                                return;
+                        }
+                        var contentType = resp.headers.get('content-type') || '';
+                        if (contentType.includes('text/event-stream')) {
+                                var reader = resp.body.getReader();
+                                var decoder = new TextDecoder();
+                                var buffer = '';
+                                while (true) {
+                                        var readResult = await reader.read();
+                                        if (readResult.done) break;
+                                        buffer += decoder.decode(readResult.value, { stream: true });
+                                        var lines = buffer.split('\n');
+                                        buffer = lines.pop() || '';
+                                        for (var i = 0; i < lines.length; i++) {
+                                                var line = lines[i];
+                                                if (!line.startsWith('data: ')) continue;
+                                                var dataStr = line.slice(6).trim();
+                                                if (dataStr === '[DONE]') continue;
+                                                try {
+                                                        var parsed = JSON.parse(dataStr);
+                                                        if (parsed.steps) {
+                                                                chat.messages.pop();
+                                                                var steps = parsed.steps;
+                                                                for (var s = 0; s < steps.length; s++) {
+                                                                        var step = steps[s];
+                                                                        var cleanUser = step.user;
+                                                                        var cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
+                                                                        chat.messages.push({ role: 'user', content: cleanUser, msg_id: step.user_msg_id });
+                                                                        chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id });
+                                                                }
+                                                                renderMessages();
+                                                                chat.lastMessageTime = Date.now();
+                                                                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                                                                autoNameChat(chat);
+                                                                updateBranchesFromServer();
+                                                                updateBalance();
+                                                                isSending = false;
+                                                                activeStreamId = null;
+                                                                sendBtnArrow();
+                                                        } else if (parsed.content !== undefined) {
+                                                                if (parsed.content) {
+                                                                        assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
+                                                                }
+                                                                assistantMsg.content = assistantMsg._fullBuffer || '';
+                                                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
+                                                                if (msgEl) {
+                                                                        msgEl.innerHTML = formatMessage(assistantMsg.content);
+                                                                        msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                                                        setupFloatingCopyButtonsForMsg(msgEl);
+                                                                        updateFloatingButtons();
+                                                                }
+                                                                if (autoScroll) {
+                                                                        var main = document.querySelector('.main');
+                                                                        if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+                                                                }
+                                                        }
+                                                } catch(e) {}
+                                        }
+                                }
                         }
                 } catch(e) {
-                        var el2 = document.getElementById(placeholderId);
-                        if (el2) el2.remove();
                         console.error('selfPlay error:', e);
                         showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
                         isSending = false;
