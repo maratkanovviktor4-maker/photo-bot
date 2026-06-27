@@ -1615,35 +1615,6 @@
         }
         var selfPlayIndex = -1;
 
-        function showSelfPlayModal(index) {
-                selfPlayIndex = index;
-                document.getElementById('selfPlayPrompt').value = '';
-                document.getElementById('selfPlayModal').classList.add('active');
-                setTimeout(function() { document.getElementById('selfPlayPrompt').focus(); }, 100);
-        }
-
-        function closeSelfPlayModal() {
-                document.getElementById('selfPlayModal').classList.remove('active');
-                selfPlayIndex = -1;
-        }
-
-        function confirmSelfPlay() {
-                var promptText = document.getElementById('selfPlayPrompt').value.trim();
-                if (!promptText) return;
-                var idx = selfPlayIndex;
-                closeSelfPlayModal();
-                selfPlay(idx, promptText);
-        }
-
-
-        document.getElementById('selfPlayPrompt').addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') { closeSelfPlayModal(); }
-        });
-
-        document.getElementById('selfPlayModal').addEventListener('click', function(e) {
-                if (e.target === this) closeSelfPlayModal();
-        });
-
         async function selfPlay(msgIndex, promptText) {
                 if (isSending) return;
                 if (!currentChatId) {
@@ -1681,34 +1652,69 @@
                                         prompt: promptText
                                 })
                         });
-                        var el = document.getElementById(placeholderId);
-                        if (el) el.remove();
-                        if (resp.ok) {
-                                const data = await resp.json();
-                                if (data.steps && data.steps.length > 0) {
-                                        const steps = data.steps;
-                                        for (var i = 0; i < steps.length; i++) {
-                                                const step = steps[i];
-                                                const cleanUser = step.user;
-                                                const cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
-                                                chat.messages.push({ role: 'user', content: cleanUser, msg_id: step.user_msg_id });
-                                                chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id });
-                                        }
-                                        renderMessages();
-                                        chat.lastMessageTime = Date.now();
-                                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                                        autoNameChat(chat);
-                                        updateBranchesFromServer();
-                                        updateBalance();
-                                        isSending = false;
-                                        activeStreamId = null;
-                                        sendBtnArrow();
-                                }
-                        } else {
-                                const errData = await resp.json();
+                        if (!resp.ok) {
+                                var el = document.getElementById(placeholderId);
+                                if (el) el.remove();
+                                const errData = await resp.json().catch(() => ({}));
                                 showAlertModal('Ошибка Self-Play', errData.error || 'Неизвестная ошибка', '❌');
                                 isSending = false;
                                 sendBtnArrow();
+                                return;
+                        }
+                        const reader = resp.body.getReader();
+                        const decoder = new TextDecoder();
+                        let buffer = '';
+                        let firstStep = true;
+                        while (true) {
+                                const readResult = await reader.read();
+                                if (readResult.done) break;
+                                buffer += decoder.decode(readResult.value, { stream: true });
+                                const lines = buffer.split('\n');
+                                buffer = lines.pop() || '';
+                                for (var i = 0; i < lines.length; i++) {
+                                        const line = lines[i];
+                                        if (!line.startsWith('data: ')) continue;
+                                        const dataStr = line.slice(6).trim();
+                                        if (dataStr === '[DONE]') continue;
+                                        try {
+                                                const parsed = JSON.parse(dataStr);
+                                                if (parsed.done) {
+                                                        var el = document.getElementById(placeholderId);
+                                                        if (el) el.remove();
+                                                        isSending = false;
+                                                        activeStreamId = null;
+                                                        sendBtnArrow();
+                                                        chat.lastMessageTime = Date.now();
+                                                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                                                        autoNameChat(chat);
+                                                        updateBranchesFromServer();
+                                                        updateBalance();
+                                                        renderMessages();
+                                                        renderBranchesPanel();
+                                                } else if (parsed.step) {
+                                                        if (firstStep) {
+                                                                var el = document.getElementById(placeholderId);
+                                                                if (el) el.remove();
+                                                                firstStep = false;
+                                                        }
+                                                        const step = parsed.step;
+                                                        const cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
+                                                        chat.messages.push({ role: 'user', content: step.user, msg_id: step.user_msg_id });
+                                                        chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id, reasoning: step.reasoning || '' });
+                                                        renderMessages();
+                                                        if (autoScroll) {
+                                                                var m = document.querySelector('.main');
+                                                                if (m) { m.style.scrollBehavior = 'auto'; m.scrollTop = m.scrollHeight; m.style.scrollBehavior = 'smooth'; }
+                                                        }
+                                                } else if (parsed.error) {
+                                                        var el = document.getElementById(placeholderId);
+                                                        if (el) el.remove();
+                                                        showAlertModal('Ошибка Self-Play', parsed.error, '❌');
+                                                        isSending = false;
+                                                        sendBtnArrow();
+                                                }
+                                        } catch(e) {}
+                                }
                         }
                 } catch(e) {
                         var el2 = document.getElementById(placeholderId);
