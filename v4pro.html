@@ -1615,6 +1615,35 @@
         }
         var selfPlayIndex = -1;
 
+        function showSelfPlayModal(index) {
+                selfPlayIndex = index;
+                document.getElementById('selfPlayPrompt').value = '';
+                document.getElementById('selfPlayModal').classList.add('active');
+                setTimeout(function() { document.getElementById('selfPlayPrompt').focus(); }, 100);
+        }
+
+        function closeSelfPlayModal() {
+                document.getElementById('selfPlayModal').classList.remove('active');
+                selfPlayIndex = -1;
+        }
+
+        function confirmSelfPlay() {
+                var promptText = document.getElementById('selfPlayPrompt').value.trim();
+                if (!promptText) return;
+                var idx = selfPlayIndex;
+                closeSelfPlayModal();
+                selfPlay(idx, promptText);
+        }
+
+
+        document.getElementById('selfPlayPrompt').addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') { closeSelfPlayModal(); }
+        });
+
+        document.getElementById('selfPlayModal').addEventListener('click', function(e) {
+                if (e.target === this) closeSelfPlayModal();
+        });
+
         async function selfPlay(msgIndex, promptText) {
                 if (isSending) return;
                 if (!currentChatId) {
