@@ -292,9 +292,10 @@
         <div class="top-bar">
             <span id="balanceDisplay"></span>
             <span id="branchIndicatorTop"></span>
-            <select id="personalitySelect" onchange="changePersonality()" style="padding:8px 14px;border-radius:24px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:2px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;margin-right:8px;transition:all 0.2s ease;font-weight:500;backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(0,0,0,0.2);">
+            <select id="personalitySelect" onchange="changePersonality()" style="padding:8px 14px;border-radius:24px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:2px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;margin-right:4px;transition:all 0.2s ease;font-weight:500;backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(0,0,0,0.2);">
                 <option value="default">🤖 Ассистент</option>
             </select>
+            <button onclick="showCustomPersonalityModal()" id="editCustomBtn" style="display:none;background:transparent;border:none;color:#F59E0B;cursor:pointer;font-size:12px;padding:4px 6px;border-radius:8px;margin-right:8px;" title="Редактировать кастомную">✏️</button>
             <span id="personalityPrompt" title="" style="font-size:10px;color:#888;font-family:Inter,sans-serif;cursor:default;"></span>
             <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
         </div>
@@ -389,6 +390,7 @@
                     if (currentPersonality === 'custom') customOpt.selected = true;
                     select.appendChild(customOpt);
                     updatePersonalityPrompt(currentPersonality);
+                    document.getElementById('editCustomBtn').style.display = currentPersonality === 'custom' ? 'inline-flex' : 'none';
                     if (currentPersonality === 'custom') {
                         var customResp = await fetch(SERVER_URL + '/get_custom_personality?user_id=' + currentUserId + '&session_token=' + sessionToken);
                         if (customResp.ok) {
@@ -449,6 +451,7 @@
             currentPersonality = val;
             localStorage.setItem('photobot_personality', val);
             document.getElementById('personalitySelect').value = val;
+            document.getElementById('editCustomBtn').style.display = val === 'custom' ? 'inline-flex' : 'none';
             updatePersonalityPrompt(val);
             var currentChat = chats.find(function(c) { return c.id === currentChatId; });
             if (currentChat) {
