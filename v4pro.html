@@ -1693,7 +1693,9 @@
                         const reader = resp.body.getReader();
                         const decoder = new TextDecoder();
                         let buffer = '';
-                        let firstStep = true;
+                        let firstChunk = true;
+                        let lastRole = null;
+                        let lastMsgIndex = -1;
                         while (true) {
                                 const readResult = await reader.read();
                                 if (readResult.done) break;
@@ -1720,27 +1722,26 @@
                                                         updateBalance();
                                                         renderMessages();
                                                         renderBranchesPanel();
-                                                } else if (parsed.step) {
-                                                        if (firstStep) {
+                                                } else if (parsed.role) {
+                                                        if (firstChunk) {
                                                                 var el = document.getElementById(placeholderId);
                                                                 if (el) el.remove();
-                                                                firstStep = false;
+                                                                firstChunk = false;
                                                         }
-                                                        const step = parsed.step;
-                                                        const cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
-                                                        chat.messages.push({ role: 'user', content: step.user, msg_id: step.user_msg_id });
-                                                        chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id, reasoning: step.reasoning || '' });
+                                                        if (parsed.full_text && parsed.role !== lastRole) {
+                                                                chat.messages.push({ role: parsed.role, content: parsed.full_text, finished: true });
+                                                                lastMsgIndex = chat.messages.length - 1;
+                                                                lastRole = parsed.role;
+                                                        } else if (parsed.chunk && lastMsgIndex >= 0) {
+                                                                chat.messages[lastMsgIndex].content += parsed.chunk;
+                                                        } else if (parsed.full_text && parsed.role === lastRole) {
+                                                                chat.messages[lastMsgIndex].content = parsed.full_text;
+                                                        }
                                                         renderMessages();
                                                         if (autoScroll) {
                                                                 var m = document.querySelector('.main');
                                                                 if (m) { m.style.scrollBehavior = 'auto'; m.scrollTop = m.scrollHeight; m.style.scrollBehavior = 'smooth'; }
                                                         }
-                                                } else if (parsed.error) {
-                                                        var el = document.getElementById(placeholderId);
-                                                        if (el) el.remove();
-                                                        showAlertModal('Ошибка Self-Play', parsed.error, '❌');
-                                                        isSending = false;
-                                                        sendBtnArrow();
                                                 }
                                         } catch(e) {}
                                 }
