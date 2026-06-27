@@ -273,7 +273,7 @@
             <select id="personalitySelect" onchange="changePersonality()" style="padding:6px 10px;border-radius:16px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;margin-right:8px;">
                 <option value="default">🤖 Ассистент</option>
             </select>
-            <span id="personalityPrompt" style="font-size:10px;color:#888;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Inter,sans-serif;"></span>
+            <span id="personalityPrompt" title="" style="font-size:10px;color:#888;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Inter,sans-serif;cursor:default;"></span>
             <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
         </div>
         <div class="chat-wrapper">
@@ -385,9 +385,11 @@
             }
             var p = personalities[key];
             if (p && p.prompt) {
-                promptEl.textContent = p.prompt.substring(0, 80) + (p.prompt.length > 80 ? '...' : '');
+                promptEl.textContent = p.prompt;
+                promptEl.title = p.prompt;
             } else {
                 promptEl.textContent = '';
+                promptEl.title = '';
             }
         }
         function changePersonality() {
