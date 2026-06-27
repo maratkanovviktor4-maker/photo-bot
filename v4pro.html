@@ -403,7 +403,9 @@
             var promptEl = document.getElementById('personalityPrompt');
             if (!promptEl) return;
             if (key === 'custom') {
-                promptEl.textContent = '🎭 Своя роль';
+                var customPrompt = localStorage.getItem('photobot_custom_prompt') || '';
+                promptEl.textContent = customPrompt || '🎭 Своя роль';
+                promptEl.title = customPrompt || 'Своя роль';
                 return;
             }
             var p = personalities[key];
@@ -456,6 +458,7 @@
         async function saveCustomPersonality() {
             var prompt = document.getElementById('customPersonalityInput')?.value?.trim() || '';
             if (!prompt) return;
+            localStorage.setItem('photobot_custom_prompt', prompt);
             try {
                 await fetch(SERVER_URL + '/save_custom_personality', {
                     method: 'POST',
