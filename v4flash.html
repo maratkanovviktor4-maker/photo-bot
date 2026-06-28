@@ -1234,7 +1234,6 @@
             });
         }
 
-        var regenerateMsgIndex = null;
         function showRegeneratePopup(msgIndex, btnElement) {
             var existing = document.querySelector('.regenerate-popup');
             if (existing) existing.remove();
@@ -1242,16 +1241,25 @@
             var popup = document.createElement('div');
             popup.className = 'regenerate-popup';
             popup.style.display = 'block';
+            popup.style.opacity = '0';
+            popup.style.transform = 'translateY(-8px)';
+            popup.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
             var rect = btnElement.getBoundingClientRect();
             popup.style.top = (rect.bottom + 4) + 'px';
             popup.style.left = rect.left + 'px';
             popup.innerHTML = '<button onclick="doRegenerate(\'short\')">⚡ Коротко</button><button onclick="doRegenerate(\'long\')">📖 Развёрнуто</button>';
             document.body.appendChild(popup);
+            requestAnimationFrame(function() {
+                popup.style.opacity = '1';
+                popup.style.transform = 'translateY(0)';
+            });
             var closeTimer = null;
             function tryClose(e) {
                 closeTimer = setTimeout(function() {
                     if (!popup.matches(':hover') && !btnElement.matches(':hover')) {
-                        popup.remove();
+                        popup.style.opacity = '0';
+                        popup.style.transform = 'translateY(-8px)';
+                        setTimeout(function() { popup.remove(); }, 200);
                         btnElement.removeEventListener('mouseleave', tryClose);
                         popup.removeEventListener('mouseleave', tryClose);
                     }
