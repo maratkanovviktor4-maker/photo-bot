@@ -705,8 +705,30 @@
 
         function toggleChatMenu(e, id) {
             e.stopPropagation();
+            document.querySelectorAll('.chat-menu-dropdown').forEach(function(d) {
+                if (d.classList.contains('show')) {
+                    d.style.opacity = '0';
+                    d.style.transform = 'translateY(-8px)';
+                    setTimeout(function() { d.classList.remove('show'); }, 200);
+                }
+            });
             const dropdown = document.getElementById('menu_' + id);
-            if (dropdown) dropdown.classList.toggle('show');
+            if (dropdown) {
+                if (dropdown.classList.contains('show')) {
+                    dropdown.style.opacity = '0';
+                    dropdown.style.transform = 'translateY(-8px)';
+                    setTimeout(function() { dropdown.classList.remove('show'); }, 200);
+                } else {
+                    dropdown.classList.add('show');
+                    dropdown.style.opacity = '0';
+                    dropdown.style.transform = 'translateY(-8px)';
+                    dropdown.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                    requestAnimationFrame(function() {
+                        dropdown.style.opacity = '1';
+                        dropdown.style.transform = 'translateY(0)';
+                    });
+                }
+            }
         }
 
         async function renameChat(id) {
