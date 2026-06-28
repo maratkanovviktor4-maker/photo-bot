@@ -618,6 +618,11 @@
                 var area = document.getElementById('chatArea');
                 if (area && area.querySelector('.empty-state') && chat && chat.messages && chat.messages.length > 0) {
                     renderMessages();
+                    setTimeout(function() {
+                        updateFloatingButtons();
+                        var main = document.querySelector('.main');
+                        if (main) { main.scrollTop = main.scrollHeight; }
+                    }, 200);
                 }
             }
             if (chats.length === 0 || !currentChatId) {
@@ -1045,7 +1050,9 @@
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
                                             msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                             setupFloatingCopyButtonsForMsg(msgEl);
-                                            updateFloatingButtons();
+                                            requestAnimationFrame(function() {
+                                                updateFloatingButtons();
+                                            });
                                         }
                                         if (autoScroll) {
                                             var main = document.querySelector('.main');
@@ -1192,7 +1199,9 @@
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
                                             msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                             setupFloatingCopyButtonsForMsg(msgEl);
-                                            updateFloatingButtons();
+                                            requestAnimationFrame(function() {
+                                                updateFloatingButtons();
+                                            });
                                         }
                                         if (autoScroll) {
                                             var main = document.querySelector('.main');
@@ -1351,7 +1360,9 @@
                                     msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
                                     msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                     setupFloatingCopyButtonsForMsg(msgEl);
-                                    updateFloatingButtons();
+                                    requestAnimationFrame(function() {
+                                        updateFloatingButtons();
+                                    });
                                 }
                                 if (autoScroll) {
                                     var main = document.querySelector('.main');
@@ -1841,7 +1852,9 @@
                                                                         msgEl.innerHTML = formatMessage(assistantMsg.content);
                                                                         msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                                                         setupFloatingCopyButtonsForMsg(msgEl);
-                                                                        updateFloatingButtons();
+                                                                        requestAnimationFrame(function() {
+                                                                            updateFloatingButtons();
+                                                                        });
                                                                 }
                                                                 if (autoScroll) {
                                                                         var main = document.querySelector('.main');
@@ -2029,7 +2042,9 @@
                                     if (typeof hljs !== 'undefined') hljs.highlightElement(block);
                                 });
                                 setupFloatingCopyButtonsForMsg(msgEl);
-                                updateFloatingButtons();
+                                requestAnimationFrame(function() {
+                                    updateFloatingButtons();
+                                });
                                 }
                             }
                         } catch (e) {
