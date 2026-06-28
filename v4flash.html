@@ -2191,7 +2191,16 @@
             showAlertModal('Продолжение', 'Продолжение недоступно для прерванных сообщений. Отправьте новый запрос.', 'ℹ️');
         }
 
-        document.addEventListener('click', () => document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show')));
+        document.addEventListener('click', function(e) {
+            var dropdowns = document.querySelectorAll('.chat-menu-dropdown.show');
+            for (var i = 0; i < dropdowns.length; i++) {
+                var d = dropdowns[i];
+                var btn = d.parentElement.querySelector('.chat-menu-btn');
+                if (!d.contains(e.target) && e.target !== btn) {
+                    d.classList.remove('show');
+                }
+            }
+        });
 
         function setupFloatingCopyButtons() {
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
