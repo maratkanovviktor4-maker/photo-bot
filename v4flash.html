@@ -2172,7 +2172,7 @@
                 if (codeBlock) { var cls = codeBlock.className; var m = cls.match(/language-(\w+)/); if (m) lang = m[1]; }
                 var header = document.createElement('div');
                 header.className = 'floating-code-header';
-                header.style.cssText = 'position:sticky; top:56.8px; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1; pointer-events:none;';
+                header.style.cssText = 'position:fixed; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1; pointer-events:none;';
                 if (document.body.classList.contains('light')) { header.style.background = '#f8f8f8'; header.style.color = '#555'; }
                 header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
                 pre.insertBefore(header, pre.firstChild);
@@ -2274,7 +2274,7 @@
                 if (codeBlock) { var cls = codeBlock.className; var m = cls.match(/language-(\w+)/); if (m) lang = m[1]; }
                 var header = document.createElement('div');
                 header.className = 'floating-code-header';
-                header.style.cssText = 'position:sticky; top:56.8px; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1; pointer-events:none;';
+                header.style.cssText = 'position:fixed; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1; pointer-events:none;';
                 if (document.body.classList.contains('light')) { header.style.background = '#f8f8f8'; header.style.color = '#555'; }
                 header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
                 pre.insertBefore(header, pre.firstChild);
@@ -2469,6 +2469,7 @@
         }
 
         window.addEventListener('load', function() { setupFloatingCopyButtons(); });
+        window.addEventListener('scroll', updateFloatingButtons, true);
         window.addEventListener('resize', updateFloatingButtons);
 
         function showConfirmModal(title, message, icon, confirmText, cancelText, confirmClass, onConfirm) {
