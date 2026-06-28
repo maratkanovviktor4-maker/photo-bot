@@ -1442,7 +1442,6 @@
             }
             hljs.highlightAll();
             setupFloatingCopyButtons();
-            updateFloatingButtons();
             buildNavContainer();
             if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
             updateBranchIndicator();
@@ -2171,7 +2170,6 @@
                 if (document.body.classList.contains('light')) { header.style.background = '#f8f8f8'; header.style.color = '#555'; }
                 header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
                 pre.insertBefore(header, pre.firstChild);
-                pre._floatHeader = header;
                 var actions = header.querySelector('span:last-child');
                 var editBtn = document.createElement('button');
                 editBtn.className = 'floating-edit-btn';
@@ -2273,6 +2271,7 @@
                 header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
                 pre.insertBefore(header, pre.firstChild);
                 pre._floatHeader = header;
+                setupStickyObserver(pre);
                 var actions = header.querySelector('span:last-child');
                 var copyBtn = document.createElement('button');
                 copyBtn.className = 'floating-copy-btn';
@@ -2376,6 +2375,45 @@
         }
 
         function updateFloatingButtons() {
+            document.querySelectorAll('.message-content pre').forEach(function(pre) {
+                var header = pre._floatHeader;
+                if (!header) return;
+                var rect = pre.getBoundingClientRect();
+                var topBar = document.querySelector('.top-bar');
+                var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
+                if (header.style.position === 'fixed') {
+                    var headerH = header.offsetHeight || 28;
+                    var top = Math.max(rect.top, topBarBottom);
+                    var maxTop = rect.bottom - headerH;
+                    if (top > maxTop) top = maxTop;
+                    header.style.top = top + 'px';
+                    header.style.left = rect.left + 'px';
+                    header.style.width = rect.width + 'px';
+                }
+            });
+        }
+
+        function setupStickyObserver(pre) {
+            if (pre._stickyObserver) {
+                pre._stickyObserver.disconnect();
+            }
+            var header = pre._floatHeader;
+            if (!header) return;
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        header.style.position = 'sticky';
+                        header.style.top = '0';
+                        header.style.left = '';
+                        header.style.width = '';
+                    } else {
+                        header.style.position = 'fixed';
+                        updateFloatingButtons();
+                    }
+                });
+            }, { threshold: 0, rootMargin: '0px 0px 0px 0px' });
+            observer.observe(pre);
+            pre._stickyObserver = observer;
         }
 
         function buildNavContainer() {
@@ -2438,7 +2476,9 @@
             if (main) { var rafId; var tick = function() { updateFloatingButtons(); rafId = requestAnimationFrame(tick); }; rafId = requestAnimationFrame(tick); main.addEventListener('transitionend', function() { cancelAnimationFrame(rafId); updateFloatingButtons(); }, { once: true }); }
         }
 
-        window.addEventListener('load', function() { setupFloatingCopyButtons(); updateFloatingButtons(); });
+        window.addEventListener('load', function() { setupFloatingCopyButtons(); });
+        window.addEventListener('scroll', updateFloatingButtons, true);
+        window.addEventListener('resize', updateFloatingButtons);
 
         function showConfirmModal(title, message, icon, confirmText, cancelText, confirmClass, onConfirm) {
             document.getElementById('modalOverlay').classList.add('active');
@@ -2598,7 +2638,6 @@
             var main = document.querySelector('.main');
             if (main) chatAreaObserver.observe(main, { childList: true, subtree: true });
             setupFloatingCopyButtons();
-            updateFloatingButtons();
         });
     </script>
     <div id="selfPlayModal" class="modal-overlay">
