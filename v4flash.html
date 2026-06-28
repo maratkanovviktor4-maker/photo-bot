@@ -2468,11 +2468,13 @@
             if (main) { var rafId; var tick = function() { updateFloatingButtons(); rafId = requestAnimationFrame(tick); }; rafId = requestAnimationFrame(tick); main.addEventListener('transitionend', function() { cancelAnimationFrame(rafId); updateFloatingButtons(); }, { once: true }); }
         }
 
-        window.addEventListener('load', function() { setupFloatingCopyButtons(); });
+        window.addEventListener('load', function() { 
+            setupFloatingCopyButtons(); 
+            var mainEl3 = document.querySelector('.main');
+            if (mainEl3) mainEl3.addEventListener('scroll', updateFloatingButtons);
+        });
         window.addEventListener('scroll', updateFloatingButtons, true);
         window.addEventListener('resize', updateFloatingButtons);
-        var mainEl3 = document.querySelector('.main');
-        if (mainEl3) mainEl3.addEventListener('scroll', updateFloatingButtons);
 
         function showConfirmModal(title, message, icon, confirmText, cancelText, confirmClass, onConfirm) {
             document.getElementById('modalOverlay').classList.add('active');
