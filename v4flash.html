@@ -1443,9 +1443,12 @@
                 }).join('');
             }
             hljs.highlightAll();
-            setupFloatingCopyButtons();
-            updateFloatingButtons();
+            setTimeout(function() {
+                setupFloatingCopyButtons();
+                updateFloatingButtons();
+            }, 50);
             buildNavContainer();
+
             if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
             updateBranchIndicator();
         }
@@ -2167,6 +2170,7 @@
         function setupFloatingCopyButtons() {
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 if (pre.querySelector('.floating-code-header')) return;
+                pre.style.position = 'relative';
                 var codeBlock = pre.querySelector('code');
                 var lang = '';
                 if (codeBlock) { var cls = codeBlock.className; var m = cls.match(/language-(\w+)/); if (m) lang = m[1]; }
@@ -2269,6 +2273,7 @@
             if (!msgEl) return;
             msgEl.querySelectorAll('pre').forEach(function(pre) {
                 if (pre.querySelector('.floating-code-header')) return;
+                pre.style.position = 'relative';
                 var codeBlock = pre.querySelector('code');
                 var lang = '';
                 if (codeBlock) { var cls = codeBlock.className; var m = cls.match(/language-(\w+)/); if (m) lang = m[1]; }
@@ -2404,9 +2409,12 @@
                     header.style.left = rect.left + 'px';
                     header.style.right = 'auto';
                     header.style.width = rect.width + 'px';
+                    header.style.position = 'fixed';
+                    header.style.zIndex = '15';
                 } else { header.style.display = 'none'; }
             });
         }
+
 
         function buildNavContainer() {
             var container = document.getElementById('navContainer');
@@ -2629,8 +2637,10 @@
         window.addEventListener('load', function() {
             var main = document.querySelector('.main');
             if (main) chatAreaObserver.observe(main, { childList: true, subtree: true });
-            setupFloatingCopyButtons();
-            updateFloatingButtons();
+            setTimeout(function() {
+                setupFloatingCopyButtons();
+                updateFloatingButtons();
+            }, 100);
         });
     </script>
     <div id="selfPlayModal" class="modal-overlay">
