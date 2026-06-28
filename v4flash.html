@@ -2542,8 +2542,10 @@
 
         function closeAlertModal() { document.getElementById('alertModalOverlay').classList.remove('active'); }
 
-        document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
-        document.getElementById('alertModalOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+        ['modalOverlay','alertModalOverlay','renameModal','customPersonalityModal','copyHistoryModal','editMessageModal','selfPlayModal'].forEach(function(id) {
+            var m = document.getElementById(id);
+            if (m) m.addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); this.style.display = 'none'; } });
+        });
 
 
         // Rename modal
