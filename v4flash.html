@@ -2544,22 +2544,7 @@
 
         document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
         document.getElementById('alertModalOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
-        document.body.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                var modals = ['modalOverlay', 'alertModalOverlay', 'renameModal', 'customPersonalityModal', 'copyHistoryModal', 'editMessageModal', 'selfPlayModal'];
-                for (var m = 0; m < modals.length; m++) {
-                    var modal = document.getElementById(modals[m]);
-                    if (modal && modal.classList.contains('active')) {
-                        modal.classList.remove('active');
-                        break;
-                    }
-                    if (modal && modal.style.display === 'flex') {
-                        modal.style.display = 'none';
-                        break;
-                    }
-                }
-            }
-        });
+
 
         // Rename modal
         var renameCallback = null;
@@ -2690,6 +2675,23 @@
             if (main) chatAreaObserver.observe(main, { childList: true, subtree: true });
             setupFloatingCopyButtons();
             updateFloatingButtons();
+        });
+
+        document.body.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var modals = ['modalOverlay', 'alertModalOverlay', 'renameModal', 'customPersonalityModal', 'copyHistoryModal', 'editMessageModal', 'selfPlayModal'];
+                for (var m = 0; m < modals.length; m++) {
+                    var modal = document.getElementById(modals[m]);
+                    if (modal && modal.classList.contains('active')) {
+                        modal.classList.remove('active');
+                        break;
+                    }
+                    if (modal && modal.style.display === 'flex') {
+                        modal.style.display = 'none';
+                        break;
+                    }
+                }
+            }
         });
     </script>
     <div id="selfPlayModal" class="modal-overlay">
