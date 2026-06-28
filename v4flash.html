@@ -2096,9 +2096,11 @@
             }
             let result = '';
             for (const part of parts) {
-                if (part.type === 'code') {
-                    var lang = part.lang || '';
-                    result += '<pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre>';
+		if (part.type === 'code') {
+   	 	    var lang = part.lang || '';
+   	 	    result += '<div style="height:100vh; overflow:clip; position:relative;">';
+   	 	    result += '<pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre>';
+   		    result += '</div>';
                 } else {
                     var text2 = escapeHtml(part.content);
                     text2 = text2.replace(/`([^`]+)`/g, '<code>$1</code>');
