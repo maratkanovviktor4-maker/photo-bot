@@ -111,7 +111,7 @@
         body.light .message-row.assistant .message-content { background: #ffffff; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
         .message-row.user .message-content { background: rgba(0,203,245,0.15); border-radius: 18px; }
         body.light .message-row.user .message-content { background: #EDF3FE; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
-        .message-content pre { background: #1a1a2e; padding: 14px; padding-top: 36px; border-radius: 10px; overflow-x: auto; font-size: 14px; margin: 8px 0; border: none; white-space: pre-wrap; word-break: break-all; position: relative; }
+        .message-content pre { background: #1a1a2e; padding: 14px; padding-top: 32px; border-radius: 10px; overflow-x: auto; font-size: 14px; margin: 8px 0; border: none; white-space: pre-wrap; word-break: break-all; position: relative; }
         body.light .message-content pre { background: #f8f8f8; border: none; color: #111; }
         .message-content pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; border-radius: 0; display: block; color: inherit; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; }
@@ -1442,6 +1442,7 @@
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + formatMessage(contentToShow) + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
+            hljs.highlightAll();
             setupFloatingCopyButtons();
             updateFloatingButtons();
             buildNavContainer();
@@ -2171,7 +2172,7 @@
                 if (codeBlock) { var cls = codeBlock.className; var m = cls.match(/language-(\w+)/); if (m) lang = m[1]; }
                 var header = document.createElement('div');
                 header.className = 'floating-code-header';
-                header.style.cssText = 'position:absolute; top:0; left:0; right:0; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:5; display:flex; align-items:center; justify-content:space-between; line-height:1; transform:translateY(0);';
+                header.style.cssText = 'position:fixed; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1; pointer-events:none;';
                 if (document.body.classList.contains('light')) { header.style.background = '#f8f8f8'; header.style.color = '#555'; }
                 header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
                 pre.insertBefore(header, pre.firstChild);
@@ -2273,7 +2274,7 @@
                 if (codeBlock) { var cls = codeBlock.className; var m = cls.match(/language-(\w+)/); if (m) lang = m[1]; }
                 var header = document.createElement('div');
                 header.className = 'floating-code-header';
-                header.style.cssText = 'position:absolute; top:0; left:0; right:0; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:5; display:flex; align-items:center; justify-content:space-between; line-height:1; transform:translateY(0);';
+                header.style.cssText = 'position:fixed; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1; pointer-events:none;';
                 if (document.body.classList.contains('light')) { header.style.background = '#f8f8f8'; header.style.color = '#555'; }
                 header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
                 pre.insertBefore(header, pre.firstChild);
@@ -2382,24 +2383,28 @@
         }
 
         function updateFloatingButtons() {
-            var main = document.querySelector('.main');
-            var mainRect = main ? main.getBoundingClientRect() : null;
-            var mainTop = mainRect ? mainRect.top : 0;
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 var header = pre._floatHeader;
                 if (!header) return;
-                header.style.transform = 'translateY(0)';
-                header.style.display = 'flex';
-                var preRect = pre.getBoundingClientRect();
-                var headerH = header.offsetHeight || 28;
-                var preTop = preRect.top;
-                if (preTop < mainTop) {
-                    var maxShift = preRect.height - headerH;
-                    var shift = mainTop - preTop;
-                    if (shift > maxShift) shift = maxShift;
-                    if (shift < 0) shift = 0;
-                    header.style.transform = 'translateY(' + shift + 'px)';
-                }
+                var rect = pre.getBoundingClientRect();
+                var topBar = document.querySelector('.top-bar');
+                var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
+                var visibleTop = Math.max(rect.top, topBarBottom);
+                var visibleBottom = Math.min(rect.bottom, window.innerHeight);
+                var visibleHeight = visibleBottom - visibleTop;
+                var visible = visibleHeight >= 28;
+                if (visible) {
+                    header.style.display = 'flex';
+                    var headerHeight = header.offsetHeight || 28;
+                    var top = visibleTop;
+                    var bottomLimit = rect.bottom - headerHeight;
+                    if (top > bottomLimit) top = bottomLimit;
+                    if (top < topBarBottom) top = topBarBottom;
+                    header.style.top = top + 'px';
+                    header.style.left = rect.left + 'px';
+                    header.style.right = 'auto';
+                    header.style.width = rect.width + 'px';
+                } else { header.style.display = 'none'; }
             });
         }
 
@@ -2620,33 +2625,12 @@
         });
         document.getElementById('customPersonalityModal').addEventListener('click', function(e) { if (e.target === this) closeCustomPersonalityModal(); });
 
-        var chatAreaObserver = new MutationObserver(function(mutations) {
-            var hasNewPre = false;
-            mutations.forEach(function(m) {
-                m.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) {
-                        if (node.querySelectorAll('pre').length > 0 || node.tagName === 'PRE') {
-                            hasNewPre = true;
-                        }
-                    }
-                });
-            });
-            if (hasNewPre) {
-                setupFloatingCopyButtons();
-            }
-            updateFloatingButtons();
-        });
+        var chatAreaObserver = new MutationObserver(function() { setupFloatingCopyButtons(); updateFloatingButtons(); });
         window.addEventListener('load', function() {
             var main = document.querySelector('.main');
             if (main) chatAreaObserver.observe(main, { childList: true, subtree: true });
-            setTimeout(function() {
-                document.querySelectorAll('.message-content pre').forEach(function(pre) {
-                    if (pre._floatHeader) pre._floatHeader.remove();
-                    pre._floatHeader = null;
-                });
-                setupFloatingCopyButtons();
-                updateFloatingButtons();
-            }, 300);
+            setupFloatingCopyButtons();
+            updateFloatingButtons();
         });
     </script>
     <div id="selfPlayModal" class="modal-overlay">
