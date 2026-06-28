@@ -2008,12 +2008,7 @@
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
-                // Помечаем блоки кода как завершённые
-                document.querySelectorAll('.message-content pre').forEach(function(pre) {
-                    pre._streaming = false;
-                });
                 if (finalMeta) {
-
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
                     chat.messages[chat.messages.length - 2].msg_id = finalMeta.user_msg_id;
                 }
@@ -2177,11 +2172,10 @@
                 if (codeBlock) { var cls = codeBlock.className; var m = cls.match(/language-(\w+)/); if (m) lang = m[1]; }
                 var header = document.createElement('div');
                 header.className = 'floating-code-header';
-                header.style.cssText = 'position:fixed; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1; pointer-events:none;';
+                header.style.cssText = 'position:sticky; top:56.8px; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1; pointer-events:none;';
                 if (document.body.classList.contains('light')) { header.style.background = '#f8f8f8'; header.style.color = '#555'; }
                 header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
                 pre.insertBefore(header, pre.firstChild);
-                pre._streaming = false;
                 pre._floatHeader = header;
                 var actions = header.querySelector('span:last-child');
                 var editBtn = document.createElement('button');
@@ -2280,7 +2274,7 @@
                 if (codeBlock) { var cls = codeBlock.className; var m = cls.match(/language-(\w+)/); if (m) lang = m[1]; }
                 var header = document.createElement('div');
                 header.className = 'floating-code-header';
-                header.style.cssText = 'position:fixed; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1; pointer-events:none;';
+                header.style.cssText = 'position:sticky; top:56.8px; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:15; display:none; align-items:center; justify-content:space-between; line-height:1; pointer-events:none;';
                 if (document.body.classList.contains('light')) { header.style.background = '#f8f8f8'; header.style.color = '#555'; }
                 header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
                 pre.insertBefore(header, pre.firstChild);
@@ -2395,32 +2389,24 @@
                 var rect = pre.getBoundingClientRect();
                 var topBar = document.querySelector('.top-bar');
                 var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
+                var visibleTop = Math.max(rect.top, topBarBottom);
                 var visibleBottom = Math.min(rect.bottom, window.innerHeight);
-                var visibleHeight = visibleBottom - Math.max(rect.top, topBarBottom);
-                if (visibleHeight >= 28) {
+                var visibleHeight = visibleBottom - visibleTop;
+                var visible = visibleHeight >= 28;
+                if (visible) {
                     header.style.display = 'flex';
                     var headerHeight = header.offsetHeight || 28;
-                    var top;
-                    if (pre._streaming) {
-                        // Во время стрима — хедер не уходит выше topBarBottom
-                        top = Math.max(topBarBottom, Math.min(rect.top, rect.bottom - headerHeight));
-                    } else {
-                        // После стрима — полное отслеживание за блоком
-                        top = Math.max(rect.top, topBarBottom);
-                        var bottomLimit = rect.bottom - headerHeight;
-                        if (top > bottomLimit) top = bottomLimit;
-                    }
+                    var top = visibleTop;
+                    var bottomLimit = rect.bottom - headerHeight;
+                    if (top > bottomLimit) top = bottomLimit;
                     if (top < topBarBottom) top = topBarBottom;
                     header.style.top = top + 'px';
                     header.style.left = rect.left + 'px';
                     header.style.right = 'auto';
                     header.style.width = rect.width + 'px';
-                } else {
-                    header.style.display = 'none';
-                }
+                } else { header.style.display = 'none'; }
             });
         }
-
 
         function buildNavContainer() {
             var container = document.getElementById('navContainer');
@@ -2483,7 +2469,6 @@
         }
 
         window.addEventListener('load', function() { setupFloatingCopyButtons(); });
-        document.querySelector('.main').addEventListener('scroll', updateFloatingButtons, true);
         window.addEventListener('resize', updateFloatingButtons);
 
         function showConfirmModal(title, message, icon, confirmText, cancelText, confirmClass, onConfirm) {
