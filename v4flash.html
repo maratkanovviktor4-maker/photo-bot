@@ -2383,37 +2383,30 @@
         }
 
         function updateFloatingButtons() {
-            var chatArea = document.getElementById('chatArea');
-            var chatAreaRect = chatArea ? chatArea.getBoundingClientRect() : {top: 0, left: 0, width: 0};
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 var header = pre._floatHeader;
                 if (!header) return;
-                var preRect = pre.getBoundingClientRect();
+                var rect = pre.getBoundingClientRect();
                 var topBar = document.querySelector('.top-bar');
                 var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
-                var visibleTop = Math.max(preRect.top, topBarBottom);
-                var visibleBottom = Math.min(preRect.bottom, window.innerHeight);
+                var visibleTop = Math.max(rect.top, topBarBottom);
+                var visibleBottom = Math.min(rect.bottom, window.innerHeight);
                 var visibleHeight = visibleBottom - visibleTop;
-                var visible = visibleHeight >= 28 && preRect.width > 50;
+                var visible = visibleHeight >= 28;
                 if (visible) {
                     header.style.display = 'flex';
                     var headerHeight = header.offsetHeight || 28;
-                    var top = preRect.top;
-                    var bottomLimit = preRect.bottom - headerHeight;
-                    if (top > bottomLimit) top = Math.max(bottomLimit, topBarBottom);
+                    var top = visibleTop;
+                    var bottomLimit = rect.bottom - headerHeight;
+                    if (top > bottomLimit) top = bottomLimit;
                     if (top < topBarBottom) top = topBarBottom;
-                    header.style.position = 'sticky';
-                    header.style.top = '0';
-                    header.style.left = '0';
-                    header.style.right = '0';
-                    header.style.width = '100%';
-                    header.style.margin = '0';
-                } else {
-                    header.style.display = 'none';
-                }
+                    header.style.top = top + 'px';
+                    header.style.left = rect.left + 'px';
+                    header.style.right = 'auto';
+                    header.style.width = rect.width + 'px';
+                } else { header.style.display = 'none'; }
             });
         }
-
 
         function buildNavContainer() {
             var container = document.getElementById('navContainer');
@@ -2633,13 +2626,9 @@
         document.getElementById('customPersonalityModal').addEventListener('click', function(e) { if (e.target === this) closeCustomPersonalityModal(); });
 
         var chatAreaObserver = new MutationObserver(function() { setupFloatingCopyButtons(); updateFloatingButtons(); });
-        var contentObserver = new MutationObserver(function() { updateFloatingButtons(); });
         window.addEventListener('load', function() {
             var main = document.querySelector('.main');
-            if (main) {
-                chatAreaObserver.observe(main, { childList: true, subtree: true });
-                contentObserver.observe(main, { childList: false, subtree: true, characterData: true, attributes: false });
-            }
+            if (main) chatAreaObserver.observe(main, { childList: true, subtree: true });
             setupFloatingCopyButtons();
             updateFloatingButtons();
         });
