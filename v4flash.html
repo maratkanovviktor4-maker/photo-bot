@@ -2264,14 +2264,43 @@
             if (!chat) return;
             const msg = chat.messages[index];
             if (!msg || msg.role !== 'assistant' || !msg.interrupted) return;
-            msg.interrupted = false;
-            msg.finished = true;
-            await loadChatMessages(currentChatId);
+            isSending = true;
+            msg._streaming = true;
+            msg.content = '';
             renderMessages();
-            renderChatList();
-            renderBranchesPanel();
-            var main = document.querySelector('.main');
-            if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+            var pollCount = 0;
+            var poll = setInterval(async function() {
+                pollCount++;
+                try {
+                    var resp = await fetch(SERVER_URL + '/check_full_response?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + currentBranchId + '&msg_id=' + (msg.msg_id || '') + '&session_token=' + sessionToken);
+                    var data = await resp.json();
+                    if (data.ready) {
+                        clearInterval(poll);
+                        msg.content = data.content;
+                        msg.reasoning = data.reasoning;
+                        msg._reasoningBuffer = data.reasoning;
+                        msg.msg_id = data.msg_id;
+                        msg._streaming = false;
+                        msg.finished = true;
+                        msg.interrupted = false;
+                        renderMessages();
+                        updateBalance();
+                        isSending = false;
+                    } else if (pollCount > 30) {
+                        clearInterval(poll);
+                        msg._streaming = false;
+                        msg.interrupted = true;
+                        renderMessages();
+                        isSending = false;
+                    }
+                } catch(e) {
+                    clearInterval(poll);
+                    msg._streaming = false;
+                    msg.interrupted = true;
+                    renderMessages();
+                    isSending = false;
+                }
+            }, 1000);
         }
 
         document.addEventListener('click', function(e) {
