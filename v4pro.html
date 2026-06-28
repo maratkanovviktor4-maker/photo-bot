@@ -1793,31 +1793,40 @@
                                                                 renderBranchesPanel();
                                                         }
                                                         if (parsed.steps) {
-                                                                assistantMsg.finished = true;
-                                                                assistantMsg._streaming = false;
+                                                                chat.messages.pop();
+                                                                if (parsed.start_placeholder_id) {
+                                                                        chat.messages.push({ role: 'system', content: '🧠 Self-Play начат: ' + (promptText ? promptText.substring(0, 80) : ''), msg_id: parsed.start_placeholder_id });
+                                                                }
+                                                                var steps = parsed.steps;
+                                                                for (var s = 0; s < steps.length; s++) {
+                                                                        var step = steps[s];
+                                                                        var cleanUser = step.user;
+                                                                        var cleanAssistant = step.assistant.replace('[КОНСЕНСУС] ', '');
+                                                                        chat.messages.push({ role: 'user', content: cleanUser, msg_id: step.user_msg_id });
+                                                                        chat.messages.push({ role: 'assistant', content: cleanAssistant, finished: true, msg_id: step.assistant_msg_id });
+                                                                }
+                                                                if (parsed.end_placeholder_id) {
+                                                                        chat.messages.push({ role: 'system', content: '🧠 Self-Play завершён', msg_id: parsed.end_placeholder_id });
+                                                                }
+                                                                renderMessages();
                                                                 chat.lastMessageTime = Date.now();
                                                                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                                                                 autoNameChat(chat);
+                                                                updateBranchesFromServer();
                         					renderBranchesPanel();
                        						renderChatList();
                                                                 updateBalance();
                                                                 isSending = false;
                                                                 activeStreamId = null;
                                                                 sendBtnArrow();
-                                                        } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
-                                                                if (parsed.reasoning) {
-                                                                        assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
-                                                                }
+                                                        } else if (parsed.content !== undefined) {
                                                                 if (parsed.content) {
                                                                         assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                                                 }
-                                                                var reasoningText = assistantMsg._reasoningBuffer || '';
-                                                                var contentText = assistantMsg._fullBuffer || '';
-                                                                assistantMsg.content = contentText;
+                                                                assistantMsg.content = assistantMsg._fullBuffer || '';
                                                                 var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                                                 if (msgEl) {
-                                                                        var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
-                                                                        msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                                                        msgEl.innerHTML = formatMessage(assistantMsg.content);
                                                                         msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                                                         setupFloatingCopyButtonsForMsg(msgEl);
                                                                         updateFloatingButtons();
