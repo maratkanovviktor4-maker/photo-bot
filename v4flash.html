@@ -2388,17 +2388,22 @@
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 var header = pre._floatHeader;
                 if (!header) return;
+                header.style.transform = 'translateY(0)';
                 var preRect = pre.getBoundingClientRect();
-                var visible = preRect.bottom > mainTop && preRect.top < window.innerHeight;
-                if (!visible) {
+                var headerH = header.offsetHeight || 28;
+                var preTop = preRect.top;
+                var preBottom = preRect.bottom;
+                if (preBottom <= mainTop || preTop >= window.innerHeight) {
                     header.style.display = 'none';
                     return;
                 }
                 header.style.display = 'flex';
-                if (preRect.top < mainTop) {
-                    header.style.transform = 'translateY(' + (mainTop - preRect.top) + 'px)';
-                } else {
-                    header.style.transform = 'translateY(0)';
+                if (preTop < mainTop) {
+                    var maxShift = preRect.height - headerH;
+                    var shift = mainTop - preTop;
+                    if (shift > maxShift) shift = maxShift;
+                    if (shift < 0) shift = 0;
+                    header.style.transform = 'translateY(' + shift + 'px)';
                 }
             });
         }
