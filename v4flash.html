@@ -2396,14 +2396,14 @@
                 if (!header) return;
                 var preRect = pre.getBoundingClientRect();
                 var headerHeight = header.offsetHeight || 34;
-                var naturalTop = preRect.top;
-                var stickyTop = Math.max(naturalTop, tbBottom);
-                var maxTop = preRect.bottom - headerHeight;
-                if (stickyTop > maxTop) stickyTop = maxTop;
-                header.style.position = 'fixed';
+                var stickyTop = 0;
+                if (preRect.top < tbBottom) {
+                    stickyTop = tbBottom - preRect.top;
+                }
+                var maxSticky = preRect.height - headerHeight;
+                if (stickyTop > maxSticky) stickyTop = maxSticky;
+                if (stickyTop < 0) stickyTop = 0;
                 header.style.top = stickyTop + 'px';
-                header.style.left = preRect.left + 'px';
-                header.style.width = preRect.width + 'px';
                 header.style.display = (preRect.bottom > tbBottom && preRect.top < window.innerHeight) ? 'flex' : 'none';
             });
         }
