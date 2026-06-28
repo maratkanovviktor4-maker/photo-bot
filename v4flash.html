@@ -605,8 +605,20 @@
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (chat) {
                     currentBranchId = chat.activeBranch || 'main';
+                    if (chat._personality && chat._personality !== 'default') {
+                        currentPersonality = chat._personality;
+                        localStorage.setItem('photobot_personality', currentPersonality);
+                        var select = document.getElementById('personalitySelect');
+                        if (select) select.value = currentPersonality;
+                        updatePersonalityPrompt(currentPersonality);
+                    }
+                    document.getElementById('editCustomBtn').style.display = currentPersonality === 'custom' ? 'inline-flex' : 'none';
                 }
                 await loadChatMessages(currentChatId);
+                var area = document.getElementById('chatArea');
+                if (area && area.querySelector('.empty-state') && chat && chat.messages && chat.messages.length > 0) {
+                    renderMessages();
+                }
             }
             if (chats.length === 0 || !currentChatId) {
                 currentChatId = null;
@@ -1987,12 +1999,37 @@
                                     const reasoningBlock = reasoningText
                                         ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
                                         : '';
-                                    msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                        if (typeof hljs !== 'undefined') hljs.highlightElement(block);
-                                    });
-                                    setupFloatingCopyButtonsForMsg(msgEl);
-                                    updateFloatingButtons();
+                                var editorStates = {};
+                                msgEl.querySelectorAll('pre').forEach(function(pre, idx) {
+                                    if (pre._editorActive && pre._textarea) {
+                                        editorStates[idx] = { active: true, code: pre._textarea.value };
+                                    }
+                                });
+
+                                msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+
+                                msgEl.querySelectorAll('pre').forEach(function(pre, idx) {
+                                    if (editorStates[idx] && editorStates[idx].active) {
+                                        var codeEl = pre.querySelector('code');
+                                        if (codeEl) {
+                                            codeEl.style.display = 'none';
+                                            pre._originalCode = codeEl.textContent;
+                                            var textarea = document.createElement('textarea');
+                                            textarea.value = editorStates[idx].code;
+                                            textarea.style.cssText = 'width:100%;min-height:200px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:10px;font-family:\'Courier New\',monospace;font-size:13px;resize:vertical;outline:none;';
+                                            if (document.body.classList.contains('light')) { textarea.style.background = '#ffffff'; textarea.style.color = '#111'; textarea.style.border = '1px solid rgba(0,0,0,0.15)'; }
+                                            pre.appendChild(textarea);
+                                            pre._textarea = textarea;
+                                            pre._editorActive = true;
+                                        }
+                                    }
+                                });
+
+                                msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                    if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+                                });
+                                setupFloatingCopyButtonsForMsg(msgEl);
+                                updateFloatingButtons();
                                 }
                             }
                         } catch (e) {
@@ -2280,6 +2317,16 @@
                 pre.insertBefore(header, pre.firstChild);
                 pre._floatHeader = header;
                 var actions = header.querySelector('span:last-child');
+                var editBtn = document.createElement('button');
+                editBtn.className = 'floating-edit-btn';
+                editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+                editBtn.title = 'Редактировать код';
+                editBtn.style.cssText = 'background:transparent; border:none; color:#aaa; cursor:pointer; padding:4px 6px; border-radius:4px; font-family:Inter,sans-serif; font-size:12px; pointer-events:auto; line-height:1;';
+                editBtn.onmouseenter = function() { editBtn.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; };
+                editBtn.onmouseleave = function() { editBtn.style.background = 'transparent'; };
+                editBtn.onclick = function() { toggleCodeEditor(pre); };
+                actions.appendChild(editBtn);
+
                 var copyBtn = document.createElement('button');
                 copyBtn.className = 'floating-copy-btn';
                 copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
@@ -2383,28 +2430,25 @@
         }
 
         function updateFloatingButtons() {
+            var topBar = document.querySelector('.top-bar');
+            var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 var header = pre._floatHeader;
                 if (!header) return;
                 var rect = pre.getBoundingClientRect();
-                var topBar = document.querySelector('.top-bar');
-                var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
-                var visibleTop = Math.max(rect.top, topBarBottom);
-                var visibleBottom = Math.min(rect.bottom, window.innerHeight);
-                var visibleHeight = visibleBottom - visibleTop;
-                var visible = visibleHeight >= 28;
-                if (visible) {
-                    header.style.display = 'flex';
-                    var headerHeight = header.offsetHeight || 28;
-                    var top = visibleTop;
-                    var bottomLimit = rect.bottom - headerHeight;
-                    if (top > bottomLimit) top = bottomLimit;
-                    if (top < topBarBottom) top = topBarBottom;
-                    header.style.top = top + 'px';
-                    header.style.left = rect.left + 'px';
-                    header.style.right = 'auto';
-                    header.style.width = rect.width + 'px';
-                } else { header.style.display = 'none'; }
+                var isVisible = rect.bottom > topBarBottom && rect.top < window.innerHeight;
+                if (!isVisible) {
+                    header.style.display = 'none';
+                    return;
+                }
+                header.style.display = 'flex';
+                var headerH = header.offsetHeight || 28;
+                var top = Math.max(rect.top, topBarBottom);
+                var maxTop = rect.bottom - headerH;
+                if (top > maxTop) top = maxTop;
+                header.style.top = top + 'px';
+                header.style.left = rect.left + 'px';
+                header.style.width = rect.width + 'px';
             });
         }
 
@@ -2469,6 +2513,10 @@
         }
 
         window.addEventListener('load', function() { setupFloatingCopyButtons(); });
+        var mainElForFloating = document.querySelector('.main');
+        if (mainElForFloating) {
+            mainElForFloating.addEventListener('scroll', updateFloatingButtons, true);
+        }
         window.addEventListener('scroll', updateFloatingButtons, true);
         window.addEventListener('resize', updateFloatingButtons);
 
