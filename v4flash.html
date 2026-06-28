@@ -2381,26 +2381,29 @@
         }
 
         function updateFloatingButtons() {
-            var main = document.querySelector('.main');
-            var mainRect = main ? main.getBoundingClientRect() : null;
-            var mainTop = mainRect ? mainRect.top : 0;
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 var header = pre._floatHeader;
                 if (!header) return;
-                header.style.transform = 'translateY(0)';
-                header.style.display = 'flex';
-                var preRect = pre.getBoundingClientRect();
-                var headerH = header.offsetHeight || 28;
-                var preTop = preRect.top;
-                if (preTop < mainTop) {
-                    var maxShift = preRect.height - headerH;
-                    var shift = mainTop - preTop;
-                    if (shift > maxShift) shift = maxShift;
-                    if (shift < 0) shift = 0;
-                    header.style.transform = 'translateY(' + shift + 'px)';
+                var rect = pre.getBoundingClientRect();
+                var topBar = document.querySelector('.top-bar');
+                var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
+                var visibleBottom = Math.min(rect.bottom, window.innerHeight);
+                var visible = rect.bottom > topBarBottom && rect.top < window.innerHeight;
+                if (visible) {
+                    header.style.display = 'flex';
+                    var headerHeight = header.offsetHeight || 28;
+                    var top = Math.max(rect.top, topBarBottom);
+                    var bottomLimit = rect.bottom - headerHeight;
+                    if (top > bottomLimit) top = bottomLimit;
+                    header.style.top = top + 'px';
+                    header.style.left = rect.left + 'px';
+                    header.style.width = rect.width + 'px';
+                } else {
+                    header.style.display = 'none';
                 }
             });
         }
+
 
         function buildNavContainer() {
             var container = document.getElementById('navContainer');
