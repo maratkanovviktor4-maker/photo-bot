@@ -2389,21 +2389,24 @@
                 var rect = pre.getBoundingClientRect();
                 var topBar = document.querySelector('.top-bar');
                 var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
+                var visibleTop = Math.max(rect.top, topBarBottom);
                 var visibleBottom = Math.min(rect.bottom, window.innerHeight);
-                var visibleHeight = visibleBottom - Math.max(rect.top, topBarBottom);
-                if (visibleHeight >= 28) {
+                var visibleHeight = visibleBottom - visibleTop;
+                var visible = visibleHeight >= 28;
+                if (visible) {
                     header.style.display = 'flex';
                     var headerHeight = header.offsetHeight || 28;
-                    var top = Math.max(topBarBottom, Math.min(rect.top, rect.bottom - headerHeight));
+                    var top = visibleTop;
+                    var bottomLimit = rect.bottom - headerHeight;
+                    if (top > bottomLimit) top = bottomLimit;
+                    if (top < topBarBottom) top = topBarBottom;
                     header.style.top = top + 'px';
                     header.style.left = rect.left + 'px';
+                    header.style.right = 'auto';
                     header.style.width = rect.width + 'px';
-                } else {
-                    header.style.display = 'none';
-                }
+                } else { header.style.display = 'none'; }
             });
         }
-
 
         function buildNavContainer() {
             var container = document.getElementById('navContainer');
