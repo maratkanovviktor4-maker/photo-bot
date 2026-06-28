@@ -1448,6 +1448,13 @@
             buildNavContainer();
             if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
             updateBranchIndicator();
+            if (!window._mainScrollListenerAdded) {
+                var mainEl3 = document.querySelector('.main');
+                if (mainEl3) {
+                    mainEl3.addEventListener('scroll', updateFloatingButtons);
+                    window._mainScrollListenerAdded = true;
+                }
+            }
         }
 
         function copyMessage(index) {
