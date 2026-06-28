@@ -705,7 +705,6 @@
 
         function toggleChatMenu(e, id) {
             e.stopPropagation();
-            document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
             const dropdown = document.getElementById('menu_' + id);
             if (dropdown) dropdown.classList.toggle('show');
         }
@@ -2696,7 +2695,6 @@
                         break;
                     }
                 }
-                document.querySelectorAll('.chat-menu-dropdown.show').forEach(function(d) { d.classList.remove('show'); });
             }
         });
         document.addEventListener('keydown', function(e) {
@@ -2715,6 +2713,13 @@
         ['modalOverlay','alertModalOverlay','renameModal','customPersonalityModal','copyHistoryModal','editMessageModal','selfPlayModal'].forEach(function(id) {
             var m = document.getElementById(id);
             if (m) m.addEventListener('pointerup', function(e) { if (e.target === this) { this.classList.remove('active'); this.style.display = ''; } });
+        });
+
+        document.addEventListener('click', function(e) {
+            var d = document.querySelector('.chat-menu-dropdown.show');
+            if (d && !d.contains(e.target) && !e.target.classList.contains('chat-menu-btn')) {
+                d.classList.remove('show');
+            }
         });
     </script>
     <div id="selfPlayModal" class="modal-overlay">
