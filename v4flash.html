@@ -2171,7 +2171,7 @@
                 if (codeBlock) { var cls = codeBlock.className; var m = cls.match(/language-(\w+)/); if (m) lang = m[1]; }
                 var header = document.createElement('div');
                 header.className = 'floating-code-header';
-                header.style.cssText = 'position:sticky; top:0; left:0; right:0; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:5; display:flex; align-items:center; justify-content:space-between; line-height:1;';
+                header.style.cssText = 'position:absolute; top:0; left:0; right:0; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:5; display:flex; align-items:center; justify-content:space-between; line-height:1;';
                 if (document.body.classList.contains('light')) { header.style.background = '#f8f8f8'; header.style.color = '#555'; }
                 header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
                 pre.insertBefore(header, pre.firstChild);
@@ -2273,7 +2273,7 @@
                 if (codeBlock) { var cls = codeBlock.className; var m = cls.match(/language-(\w+)/); if (m) lang = m[1]; }
                 var header = document.createElement('div');
                 header.className = 'floating-code-header';
-                header.style.cssText = 'position:sticky; top:0; left:0; right:0; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:5; display:flex; align-items:center; justify-content:space-between; line-height:1;';
+                header.style.cssText = 'position:absolute; top:0; left:0; right:0; background:#1a1a2e; border-radius:10px 10px 0 0; padding:6px 14px; font-size:12px; color:#aaa; font-family:Inter,sans-serif; z-index:5; display:flex; align-items:center; justify-content:space-between; line-height:1;';
                 if (document.body.classList.contains('light')) { header.style.background = '#f8f8f8'; header.style.color = '#555'; }
                 header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
                 pre.insertBefore(header, pre.firstChild);
@@ -2382,16 +2382,23 @@
         }
 
         function updateFloatingButtons() {
+            var main = document.querySelector('.main');
+            var mainRect = main ? main.getBoundingClientRect() : null;
+            var mainTop = mainRect ? mainRect.top : 0;
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 var header = pre._floatHeader;
                 if (!header) return;
                 var preRect = pre.getBoundingClientRect();
-                var headerHeight = header.offsetHeight || 30;
-                var visible = preRect.bottom > 0 && preRect.top < window.innerHeight;
-                if (visible) {
-                    header.style.display = 'flex';
-                } else {
+                var visible = preRect.bottom > mainTop && preRect.top < window.innerHeight;
+                if (!visible) {
                     header.style.display = 'none';
+                    return;
+                }
+                header.style.display = 'flex';
+                if (preRect.top < mainTop) {
+                    header.style.transform = 'translateY(' + (mainTop - preRect.top) + 'px)';
+                } else {
+                    header.style.transform = 'translateY(0)';
                 }
             });
         }
