@@ -491,6 +491,7 @@
                     ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css'
                     : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
             }
+            updateFloatingButtons();
         }
 
         (function() {
@@ -2398,9 +2399,16 @@
         function updateFloatingButtons() {
             var topBar = document.querySelector('.top-bar');
             var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
+            var isLight = document.body.classList.contains('light');
             document.querySelectorAll('.message-content pre').forEach(function(pre) {
                 var header = pre._floatHeader;
                 if (!header) return;
+                header.style.background = isLight ? '#f8f8f8' : '#1a1a2e';
+                header.style.color = isLight ? '#555' : '#aaa';
+                var btns = header.querySelectorAll('button');
+                for (var b = 0; b < btns.length; b++) {
+                    btns[b].style.color = isLight ? '#555' : '#aaa';
+                }
                 var preRect = pre.getBoundingClientRect();
                 var headerHeight = header.offsetHeight || 34;
                 var stickyTop = 0;
