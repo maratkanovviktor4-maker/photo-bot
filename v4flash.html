@@ -775,6 +775,7 @@
                 'Отмена',
                 'modal-btn-danger',
                 async function() {
+                    showLoading();
                     try {
                         await fetch(`${SERVER_URL}/delete_chat?user_id=${currentUserId}&model=flash&chat_id=${id}&session_token=${sessionToken}`, { method: 'DELETE' });
                     } catch (e) {}
@@ -790,6 +791,7 @@
                     renderBranchesPanel();
                     renderMessages();
                     document.querySelectorAll('.chat-menu-dropdown').forEach(d => d.classList.remove('show'));
+                    hideLoading();
                 }
             );
         }
@@ -873,6 +875,7 @@
         async function switchBranch(branchId) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
+            showLoading();
             try {
                 var resp = await fetch(SERVER_URL + '/switch_branch', {
                     method: 'POST',
@@ -893,6 +896,7 @@
                     }, 100);
                 }
             } catch(e) { console.error('switchBranch error:', e); }
+            hideLoading();
         }
 
         async function renameBranch(branchId) {
@@ -923,6 +927,7 @@
                 'Отмена',
                 'modal-btn-danger',
                 async function() {
+                    showLoading();
                     try {
                         var resp = await fetch(SERVER_URL + '/delete_branch?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + branchId + '&session_token=' + sessionToken, { method: 'DELETE' });
                         if (resp.ok) {
@@ -939,6 +944,7 @@
                             });
                         }
                     } catch(e) { console.error('deleteBranch error:', e); }
+                    hideLoading();
                 }
             );
         }
