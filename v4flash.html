@@ -2639,8 +2639,14 @@
         window.addEventListener('load', function() {
             var main = document.querySelector('.main');
             if (main) chatAreaObserver.observe(main, { childList: true, subtree: true });
-            setupFloatingCopyButtons();
-            updateFloatingButtons();
+            setTimeout(function() {
+                document.querySelectorAll('.message-content pre').forEach(function(pre) {
+                    if (pre._floatHeader) pre._floatHeader.remove();
+                    pre._floatHeader = null;
+                });
+                setupFloatingCopyButtons();
+                updateFloatingButtons();
+            }, 300);
         });
     </script>
     <div id="selfPlayModal" class="modal-overlay">
