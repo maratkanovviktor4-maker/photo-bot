@@ -2557,7 +2557,12 @@
         }
         function closeRenameModal() { document.getElementById('renameModal').classList.remove('active'); renameCallback = null; }
         function confirmRename() { var value = document.getElementById('renameInput').value.trim(); if (value && renameCallback) { renameCallback(value); } closeRenameModal(); }
-        document.getElementById('renameInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); confirmRename(); } if (e.key === 'Escape') { closeRenameModal(); e.stopPropagation(); } });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.getElementById('renameModal').classList.contains('active')) {
+                e.preventDefault();
+                confirmRename();
+            }
+        });
         document.getElementById('renameModal').addEventListener('click', function(e) { if (e.target === this) closeRenameModal(); });
 
         function updateBranchIndicator() {
