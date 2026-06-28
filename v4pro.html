@@ -1819,12 +1819,20 @@
                                                                 isSending = false;
                                                                 activeStreamId = null;
                                                                 sendBtnArrow();
-                                                        } else if (parsed.content !== undefined) {
+                                                        } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
+                                                                if (parsed.reasoning) {
+                                                                        assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                                                }
                                                                 if (parsed.content) {
                                                                         assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                                                 }
-                                                                assistantMsg.content = assistantMsg._fullBuffer || '';
+                                                                var reasoningText = assistantMsg._reasoningBuffer || '';
+                                                                var contentText = assistantMsg._fullBuffer || '';
+                                                                assistantMsg.content = contentText;
                                                                 var msgEl = document.getElementById('stream-' + streamMsgIndex);
+                                                                if (msgEl) {
+                                                                        var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
+                                                                        msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
                                                                 if (msgEl) {
                                                                         msgEl.innerHTML = formatMessage(assistantMsg.content);
                                                                         msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
