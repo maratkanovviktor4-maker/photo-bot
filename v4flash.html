@@ -2544,7 +2544,22 @@
 
         document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
         document.getElementById('alertModalOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
-        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { document.getElementById('modalOverlay').classList.remove('active'); document.getElementById('alertModalOverlay').classList.remove('active'); } });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var modals = ['modalOverlay', 'alertModalOverlay', 'renameModal', 'customPersonalityModal', 'copyHistoryModal', 'editMessageModal', 'selfPlayModal'];
+                for (var m = 0; m < modals.length; m++) {
+                    var modal = document.getElementById(modals[m]);
+                    if (modal && modal.classList.contains('active')) {
+                        modal.classList.remove('active');
+                        break;
+                    }
+                    if (modal && modal.style.display === 'flex') {
+                        modal.style.display = 'none';
+                        break;
+                    }
+                }
+            }
+        });
 
         // Rename modal
         var renameCallback = null;
@@ -2574,6 +2589,10 @@
 
         // Copy history modal
         document.getElementById('copyHistoryModal')?.addEventListener('click', function(e) { if (e.target === this) closeCopyHistoryModal(); });
+        document.getElementById('editMessageModal')?.addEventListener('click', function(e) { if (e.target === this) closeEditMessageModal(); });
+        document.getElementById('selfPlayModal')?.addEventListener('click', function(e) { if (e.target === this) closeSelfPlayModal(); });
+        document.getElementById('renameModal')?.addEventListener('click', function(e) { if (e.target === this) closeRenameModal(); });
+        document.getElementById('customPersonalityModal')?.addEventListener('click', function(e) { if (e.target === this) closeCustomPersonalityModal(); });
         document.getElementById('copyHistoryConfirmBtn')?.addEventListener('click', confirmCopyHistory);
         document.querySelector('#copyHistoryModal .modal-btn-secondary')?.addEventListener('click', closeCopyHistoryModal);
     </script>
