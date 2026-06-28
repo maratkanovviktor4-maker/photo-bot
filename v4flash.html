@@ -2531,9 +2531,13 @@
         window.addEventListener('load', function() { setupFloatingCopyButtons(); });
         var mainElForFloating = document.querySelector('.main');
         if (mainElForFloating) {
-            mainElForFloating.addEventListener('scroll', updateFloatingButtons, true);
+            mainElForFloating.addEventListener('scroll', function() {
+                updateFloatingButtons();
+            });
         }
-        window.addEventListener('scroll', updateFloatingButtons, true);
+        window.addEventListener('scroll', function() {
+            updateFloatingButtons();
+        });
         window.addEventListener('resize', updateFloatingButtons);
 
         function showConfirmModal(title, message, icon, confirmText, cancelText, confirmClass, onConfirm) {
