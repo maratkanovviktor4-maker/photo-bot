@@ -1496,12 +1496,23 @@
                 if (!chat) return;
                 var assistantMsg = chat.messages[msgIndex];
                 if (!assistantMsg) return;
-                var reasoningText = assistantMsg._reasoningBuffer || '';
-                var contentText = assistantMsg._fullBuffer || '';
-                msgEl.innerHTML = (reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '') + formatMessage(contentText);
-                debouncedHighlightBlocks(msgEl, msgIndex);
-                setupFloatingCopyButtonsForMsg(msgEl);
-                updateFloatingButtons();
+                var rawText = (assistantMsg._reasoningBuffer || '') + '\n' + (assistantMsg._fullBuffer || '');
+                if (!msgEl._rawTextEl) {
+                    msgEl._rawTextEl = document.createElement('div');
+                    msgEl._rawTextEl.style.cssText = 'display:none;';
+                    msgEl.appendChild(msgEl._rawTextEl);
+                }
+                msgEl._rawTextEl.textContent = rawText;
+                var now = Date.now();
+                if (!msgEl._lastRender || now - msgEl._lastRender > 500 || assistantMsg.finished) {
+                    msgEl._lastRender = now;
+                    var reasoningText = assistantMsg._reasoningBuffer || '';
+                    var contentText = assistantMsg._fullBuffer || '';
+                    msgEl.innerHTML = (reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '') + formatMessage(contentText);
+                    debouncedHighlightBlocks(msgEl, msgIndex);
+                    setupFloatingCopyButtonsForMsg(msgEl);
+                    updateFloatingButtons();
+                }
             });
         }
         function renderMessages() {
