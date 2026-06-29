@@ -1652,9 +1652,16 @@
             var sizeInfo = '';
             if (pendingFile.data) {
                 var bytes = Math.round(pendingFile.data.length * 3 / 4);
-                if (bytes < 1024) sizeInfo = ' (' + bytes + ' B)';
-                else if (bytes < 1048576) sizeInfo = ' (' + (bytes / 1024).toFixed(1) + ' KB)';
-                else sizeInfo = ' (' + (bytes / 1048576).toFixed(1) + ' MB)';
+                var sizeStr = bytes < 1024 ? bytes + ' B' : (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB');
+                sizeInfo = ' (' + sizeStr;
+                var textExts = ['txt','json','csv','xml','html','htm','md','py','js','java','kt','cpp','c','h','css','gradle','properties','pro','yml','yaml','log','cfg','ini','conf'];
+                if (textExts.indexOf(ext) !== -1 || (pendingFile.mime && pendingFile.mime.startsWith('text/'))) {
+                    try {
+                        var decoded = atob(pendingFile.data);
+                        sizeInfo += ' / ' + decoded.length + ' симв';
+                    } catch(e) {}
+                }
+                sizeInfo += ')';
             }
             if (inline) inline.innerHTML = '<span style="color:' + color + '">' + icon + ' ' + escapeHtml(pendingFile.name) + sizeInfo + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
             updateSendBtn();
