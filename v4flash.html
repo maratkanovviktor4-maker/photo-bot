@@ -2084,6 +2084,91 @@
             btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(32,31,40,0.3);border-top-color:#201F28;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
             btn.onclick = null;
         }
+        var StreamRenderer = {
+            _pending: {},
+            _htmlCache: {},
+            _codeBlocks: {},
+            schedule: function(msgIndex) {
+                var self = this;
+                if (this._pending[msgIndex]) return;
+                this._pending[msgIndex] = true;
+                requestAnimationFrame(function() {
+                    self._pending[msgIndex] = false;
+                    self.render(msgIndex);
+                });
+            },
+            render: function(msgIndex) {
+                var chat = chats.find(function(c) { return c.id === currentChatId; });
+                if (!chat) return;
+                var msg = chat.messages[msgIndex];
+                if (!msg) return;
+                var msgEl = document.getElementById('stream-' + msgIndex);
+                if (!msgEl) return;
+                var rawText = (msg._reasoningBuffer || '') + '\n' + (msg._fullBuffer || '');
+                var key = rawText.length.toString();
+                if (this._htmlCache[msgIndex] === key && !msg.finished) return;
+                if (!msg.finished && rawText.length - (this._lastRenderLen || 0) < 200 && this._htmlCache[msgIndex]) return;
+                this._htmlCache[msgIndex] = key;
+                var html;
+                var codeBlocks;
+                if (msg.finished || rawText.length < 5000) {
+                    var reasoningHtml = msg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>' : '';
+                    var contentHtml = formatMessage(msg._fullBuffer || '');
+                    html = reasoningHtml + contentHtml;
+                    codeBlocks = html.match(/<pre><code[\s\S]*?<\/code><\/pre>/g) || [];
+                } else {
+                    var chunks = this._splitIntoChunks(rawText);
+                    html = '';
+                    codeBlocks = [];
+                    for (var i = 0; i < chunks.length; i++) {
+                        var chunkHtml = formatMessage(chunks[i]);
+                        html += chunkHtml;
+                        var cb = chunkHtml.match(/<pre><code[\s\S]*?<\/code><\/pre>/g);
+                        if (cb) codeBlocks = codeBlocks.concat(cb);
+                    }
+                }
+                var prevScrollTop = msgEl.parentElement ? msgEl.parentElement.getBoundingClientRect().top : 0;
+                msgEl.innerHTML = html;
+                if (msgEl.parentElement) {
+                    var newScrollTop = msgEl.parentElement.getBoundingClientRect().top;
+                    var main = document.querySelector('.main');
+                    if (main) main.scrollTop += (newScrollTop - prevScrollTop);
+                }
+                if (codeBlocks.length > 0 && codeBlocks.join('').length < 50000) {
+                    var blocks = msgEl.querySelectorAll('pre code:not([data-highlighted])');
+                    for (var b = 0; b < blocks.length; b++) {
+                        if (typeof hljs !== 'undefined') {
+                            try { hljs.highlightElement(blocks[b]); } catch(e) {}
+                            blocks[b].dataset.highlighted = '1';
+                        }
+                    }
+                }
+                setupFloatingCopyButtonsForMsg(msgEl);
+                updateFloatingButtons();
+                if (autoScroll && msg.finished) {
+                    var main = document.querySelector('.main');
+                    if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+                }
+            },
+            _splitIntoChunks: function(text) {
+                var chunks = [];
+                var codeBlockRegex = /```(\w*)\r?\n([\s\S]*?)```/g;
+                var lastIdx = 0;
+                var match;
+                while ((match = codeBlockRegex.exec(text)) !== null) {
+                    if (match.index > lastIdx) {
+                        chunks.push(text.substring(lastIdx, match.index));
+                    }
+                    chunks.push('```' + match[1] + '\n' + match[2] + '```');
+                    lastIdx = codeBlockRegex.lastIndex;
+                }
+                if (lastIdx < text.length) {
+                    chunks.push(text.substring(lastIdx));
+                }
+                if (chunks.length === 0) chunks.push(text);
+                return chunks;
+            }
+        };
 
         async function sendMessage() {
             if (isSending) return;
@@ -2286,91 +2371,7 @@
                 }
             } catch(e) { console.error('updateBranchesFromServer error:', e); }
         }
-        var StreamRenderer = {
-            _pending: {},
-            _htmlCache: {},
-            _codeBlocks: {},
-            schedule: function(msgIndex) {
-                var self = this;
-                if (this._pending[msgIndex]) return;
-                this._pending[msgIndex] = true;
-                requestAnimationFrame(function() {
-                    self._pending[msgIndex] = false;
-                    self.render(msgIndex);
-                });
-            },
-            render: function(msgIndex) {
-                var chat = chats.find(function(c) { return c.id === currentChatId; });
-                if (!chat) return;
-                var msg = chat.messages[msgIndex];
-                if (!msg) return;
-                var msgEl = document.getElementById('stream-' + msgIndex);
-                if (!msgEl) return;
-                var rawText = (msg._reasoningBuffer || '') + '\n' + (msg._fullBuffer || '');
-                var key = rawText.length.toString();
-                if (this._htmlCache[msgIndex] === key && !msg.finished) return;
-                if (!msg.finished && rawText.length - (this._lastRenderLen || 0) < 200 && this._htmlCache[msgIndex]) return;
-                this._htmlCache[msgIndex] = key;
-                var html;
-                var codeBlocks;
-                if (msg.finished || rawText.length < 5000) {
-                    var reasoningHtml = msg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>' : '';
-                    var contentHtml = formatMessage(msg._fullBuffer || '');
-                    html = reasoningHtml + contentHtml;
-                    codeBlocks = html.match(/<pre><code[\s\S]*?<\/code><\/pre>/g) || [];
-                } else {
-                    var chunks = this._splitIntoChunks(rawText);
-                    html = '';
-                    codeBlocks = [];
-                    for (var i = 0; i < chunks.length; i++) {
-                        var chunkHtml = formatMessage(chunks[i]);
-                        html += chunkHtml;
-                        var cb = chunkHtml.match(/<pre><code[\s\S]*?<\/code><\/pre>/g);
-                        if (cb) codeBlocks = codeBlocks.concat(cb);
-                    }
-                }
-                var prevScrollTop = msgEl.parentElement ? msgEl.parentElement.getBoundingClientRect().top : 0;
-                msgEl.innerHTML = html;
-                if (msgEl.parentElement) {
-                    var newScrollTop = msgEl.parentElement.getBoundingClientRect().top;
-                    var main = document.querySelector('.main');
-                    if (main) main.scrollTop += (newScrollTop - prevScrollTop);
-                }
-                if (codeBlocks.length > 0 && codeBlocks.join('').length < 50000) {
-                    var blocks = msgEl.querySelectorAll('pre code:not([data-highlighted])');
-                    for (var b = 0; b < blocks.length; b++) {
-                        if (typeof hljs !== 'undefined') {
-                            try { hljs.highlightElement(blocks[b]); } catch(e) {}
-                            blocks[b].dataset.highlighted = '1';
-                        }
-                    }
-                }
-                setupFloatingCopyButtonsForMsg(msgEl);
-                updateFloatingButtons();
-                if (autoScroll && msg.finished) {
-                    var main = document.querySelector('.main');
-                    if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
-                }
-            },
-            _splitIntoChunks: function(text) {
-                var chunks = [];
-                var codeBlockRegex = /```(\w*)\r?\n([\s\S]*?)```/g;
-                var lastIdx = 0;
-                var match;
-                while ((match = codeBlockRegex.exec(text)) !== null) {
-                    if (match.index > lastIdx) {
-                        chunks.push(text.substring(lastIdx, match.index));
-                    }
-                    chunks.push('```' + match[1] + '\n' + match[2] + '```');
-                    lastIdx = codeBlockRegex.lastIndex;
-                }
-                if (lastIdx < text.length) {
-                    chunks.push(text.substring(lastIdx));
-                }
-                if (chunks.length === 0) chunks.push(text);
-                return chunks;
-            }
-        };
+
 
         function formatMessage(text) {
             var B = String.fromCharCode(96);
