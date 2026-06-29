@@ -1484,6 +1484,26 @@
                 }
             }
         }
+        var _streamUpdateScheduled = {};
+        function scheduleStreamUpdate(msgIndex) {
+            if (_streamUpdateScheduled[msgIndex]) return;
+            _streamUpdateScheduled[msgIndex] = true;
+            requestAnimationFrame(function() {
+                _streamUpdateScheduled[msgIndex] = false;
+                var msgEl = document.getElementById('stream-' + msgIndex);
+                if (!msgEl) return;
+                var chat = chats.find(function(c) { return c.id === currentChatId; });
+                if (!chat) return;
+                var assistantMsg = chat.messages[msgIndex];
+                if (!assistantMsg) return;
+                var reasoningText = assistantMsg._reasoningBuffer || '';
+                var contentText = assistantMsg._fullBuffer || '';
+                msgEl.innerHTML = (reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '') + formatMessage(contentText);
+                debouncedHighlightBlocks(msgEl, msgIndex);
+                setupFloatingCopyButtonsForMsg(msgEl);
+                updateFloatingButtons();
+            });
+        }
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId);
@@ -2238,19 +2258,7 @@
                                 const reasoningText = assistantMsg._reasoningBuffer || '';
                                 const contentText = assistantMsg._fullBuffer || '';
                                 assistantMsg.content = contentText;
-                                if (_streamBufferTimers[msgIndex]) clearTimeout(_streamBufferTimers[msgIndex]);
-                                _streamBufferTimers[msgIndex] = setTimeout(function() {
-                                    const msgEl = document.getElementById('stream-' + msgIndex);
-                                    if (msgEl) {
-                                        const reasoningBlock = assistantMsg._reasoningBuffer
-                                            ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>'
-                                            : '';
-                                        msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg._fullBuffer || '');
-                                        debouncedHighlightBlocks(msgEl, msgIndex);
-                                        setupFloatingCopyButtonsForMsg(msgEl);
-                                        updateFloatingButtons();
-                                    }
-                                }, 100);
+                                scheduleStreamUpdate(msgIndex);
                             }
                         } catch (e) {
                             console.warn('SSE parse error:', e, dataStr);
