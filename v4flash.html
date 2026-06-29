@@ -1512,13 +1512,12 @@
                 msgEl.innerHTML = '';
                 msgEl._textNode = document.createTextNode('');
                 msgEl.appendChild(msgEl._textNode);
+                msgEl._lastRender = 0;
             }
-            var rawText = (reasoningText ? '[Размышление]\n' + reasoningText + '\n[/Размышление]\n' : '') + contentText;
-            msgEl._textNode.textContent = rawText;
+            msgEl._textNode.textContent = (reasoningText ? '[Размышление]\n' + reasoningText + '\n[/Размышление]\n' : '') + contentText;
             var now = Date.now();
-            if (assistantMsg.finished || !msgEl._lastRender || now - msgEl._lastRender > 800) {
+            if (assistantMsg.finished || now - msgEl._lastRender > 800) {
                 msgEl._lastRender = now;
-                msgEl._lastRenderLen = rawText.length;
                 var textToFormat = (reasoningText ? '%%REASONING%%' + reasoningText + '%%ENDREASONING%%' : '') + contentText;
                 formatMessageAsync(textToFormat, function(html) {
                     if (!msgEl.isConnected) return;
