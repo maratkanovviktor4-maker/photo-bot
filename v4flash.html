@@ -1498,23 +1498,31 @@
                 }
             }
         }
-        var _streamUpdateScheduled = {};
-        var _streamUpdateScheduled = {};
         var _streamLastRender = {};
         function scheduleStreamUpdate(msgIndex) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             var assistantMsg = chat.messages[msgIndex];
             if (!assistantMsg) return;
+            var msgEl = document.getElementById('stream-' + msgIndex);
+            if (!msgEl) return;
             var reasoningText = assistantMsg._reasoningBuffer || '';
             var contentText = assistantMsg._fullBuffer || '';
-            var textToFormat = (reasoningText ? '%%REASONING%%' + reasoningText + '%%ENDREASONING%%' : '') + contentText;
+            if (!msgEl._textNode) {
+                msgEl.innerHTML = '';
+                msgEl._textNode = document.createTextNode('');
+                msgEl.appendChild(msgEl._textNode);
+            }
+            var rawText = (reasoningText ? '[Размышление]\n' + reasoningText + '\n[/Размышление]\n' : '') + contentText;
+            msgEl._textNode.textContent = rawText;
             var now = Date.now();
-            if (!_streamLastRender[msgIndex] || now - _streamLastRender[msgIndex] > 400 || assistantMsg.finished || assistantMsg._fullBuffer.length < 100) {
-                _streamLastRender[msgIndex] = now;
+            if (assistantMsg.finished || !msgEl._lastRender || now - msgEl._lastRender > 1000 || rawText.length - (msgEl._lastRenderLen || 0) > 500) {
+                msgEl._lastRender = now;
+                msgEl._lastRenderLen = rawText.length;
+                var textToFormat = (reasoningText ? '%%REASONING%%' + reasoningText + '%%ENDREASONING%%' : '') + contentText;
                 formatMessageAsync(textToFormat, function(html) {
-                    var msgEl = document.getElementById('stream-' + msgIndex);
-                    if (!msgEl) return;
+                    if (!msgEl.isConnected) return;
+                    if (msgEl._textNode) { msgEl._textNode.remove(); msgEl._textNode = null; }
                     html = html.replace(/%%REASONING%%([\s\S]*?)%%ENDREASONING%%/g, '<div class="reasoning-block">$1</div>');
                     msgEl.innerHTML = html;
                     debouncedHighlightBlocks(msgEl, msgIndex);
