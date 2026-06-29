@@ -114,16 +114,15 @@
         body.light .chat-area .empty-state .title { color: #333; }
         .message-row { display: flex; gap: 12px; align-items: flex-start; max-width: 100%; }
         .message-row.user { align-self: flex-end; flex-direction: row-reverse; max-width: 75%; }
-        .message-row.assistant { align-self: flex-start; width: 100%; }
-        .message-content { padding: 10px 14px; border-radius: 12px; font-size: 15px !important; line-height: 1.5; white-space: pre-wrap; word-break: break-word; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important; max-width: 100%; overflow-x: hidden; width: 100%; flex: 1 1 auto; min-width: 0; }
-	.message-content > div { width: 100%; }
+        .message-row.assistant { align-self: flex-start; }
+        .message-content { padding: 10px 14px; border-radius: 12px; font-size: 15px !important; line-height: 1.5; white-space: pre-wrap; word-break: break-word; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important; max-width: 100%; overflow-x: hidden; }
         .message-row.assistant .message-content { background: transparent; backdrop-filter: none; border-radius: 4px; }
         body.light .message-row.assistant .message-content { background: #ffffff; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
         .message-row.user .message-content { background: rgba(0,203,245,0.15); border-radius: 18px; }
         body.light .message-row.user .message-content { background: #EDF3FE; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
-        .message-content pre { background: #1a1a2e; padding: 0 14px 14px 14px; border-radius: 10px; overflow-x: hidden; overflow-y: visible; font-size: 14px; margin: 8px 0; border: none; white-space: pre-wrap; word-break: break-word; position: relative; width: 100%; display: block; box-sizing: border-box; }
+        .message-content pre { background: #1a1a2e; padding: 0 14px 14px 14px; border-radius: 10px; overflow-x: auto; overflow-y: visible; font-size: 14px; margin: 8px 0; border: none; white-space: pre-wrap; word-break: break-all; position: relative; }
         body.light .message-content pre { background: #f8f8f8; border: none; color: #111; }
-        .message-content pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; border-radius: 0; display: block; color: inherit; padding-top: 34px; white-space: pre-wrap; word-break: break-word; overflow-x: hidden; width: 100%; }
+        .message-content pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; border-radius: 0; display: block; color: inherit; padding-top: 34px; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; }
         body.light .message-content code { background: #f5f5f5; color: #111; }
         .floating-code-header { position: absolute; top: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; z-index: 5; display: flex; align-items: center; justify-content: space-between; line-height: 1; }
@@ -260,7 +259,6 @@
         #personalitySelect { border-radius: 24px !important; }
         #editCustomBtn:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
         body.light #editCustomBtn:hover { background: rgba(0,0,0,0.06); }
-	.message-row.assistant > div { flex: 1 1 auto; min-width: 0; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -379,25 +377,6 @@
         let typingInterval = null;
         let pendingFile = null;
         let activeStreamId = null;
-        var HIGHLIGHT_DEBOUNCE_MS = 200;
-        var HIGHLIGHT_TOKEN_LIMIT = 10000;
-        var _highlightTimers = {};
-        var _highlightPlainCache = {};
-        var _formatWorkerCode = '\n            self.onmessage = function(e) {\n                var text = e.data.text;\n                var B = String.fromCharCode(96);\n                var result = "";\n                var lastIndex = 0;\n                var regex = new RegExp(B+B+B+"(\\\\w*)\\\\r?\\\\n([\\\\s\\\\S]*?)"+B+B+B, "g");\n                var match;\n                var parts = [];\n                while ((match = regex.exec(text)) !== null) {\n                    if (match.index > lastIndex) parts.push({type:"text", content: text.substring(lastIndex, match.index)});\n                    parts.push({type:"code", lang: match[1], content: match[2]});\n                    lastIndex = regex.lastIndex;\n                }\n                if (lastIndex < text.length) parts.push({type:"text", content: text.substring(lastIndex)});\n                for (var i = 0; i < parts.length; i++) {\n                    var p = parts[i];\n                    if (p.type === "code") {\n                        result += "<pre><code class=\\"" + (p.lang ? "language-" + p.lang : "") + "\\">" + esc(p.content) + "</code></pre>";\n                    } else {\n                        result += fmtText(p.content);\n                    }\n                }\n                self.postMessage({ id: e.data.id, html: result });\n            };\n            function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }\n            function fmtText(t) {\n                t = esc(t);\n                t = t.replace(/`([^`]+)`/g, "<code>$1</code>");\n                t = t.replace(/\\*\\*(.+?)\\*\\*/g, "<strong>$1</strong>");\n                t = t.replace(/\\*(.+?)\\*/g, "<em>$1</em>");\n                t = t.replace(/\\[(.+?)\\]\\((.+?)\\)/g, \'<a href="$2" target="_blank">$1</a>\');\n                t = t.replace(/^### (.+)$/gm, "<h3>$1</h3>");\n                t = t.replace(/^#### (.+)$/gm, "<h4>$1</h4>");\n                t = t.replace(/^## (.+)$/gm, "<h2>$1</h2>");\n                t = t.replace(/^# (.+)$/gm, "<h1>$1</h1>");\n                t = t.replace(/^---$/gm, "<hr>");\n                t = t.replace(/^[-*]\\s(.+)$/gm, "<li>$1</li>");\n                t = t.replace(/((?:<li>.*<\\/li>\\s*)+)/g, "<ul>$1</ul>");\n                t = t.replace(/^\\d+\\.\\s(.+)$/gm, "<li>$1</li>");\n                t = t.replace(/~~(.+?)~~/g, "<del>$1</del>");\n                t = t.replace(/^&gt;\\s(.+)$/gm, "<blockquote>$1</blockquote>");\n                t = t.replace(/\\n/g, "<br>");\n                return t;\n            }\n        ';
-        var _formatWorkerBlob = new Blob([_formatWorkerCode], { type: 'application/javascript' });
-        var _formatWorker = new Worker(URL.createObjectURL(_formatWorkerBlob));
-        var _workerCallbacks = {};
-        var _workerIdCounter = 0;
-        _formatWorker.onmessage = function(e) {
-            var cb = _workerCallbacks[e.data.id];
-            if (cb) { cb(e.data.html); delete _workerCallbacks[e.data.id]; }
-        };
-        function formatMessageAsync(text, callback) {
-            var id = ++_workerIdCounter;
-            _workerCallbacks[id] = callback;
-            _formatWorker.postMessage({ id: id, text: text });
-        }
-        var _streamBufferTimers = {};
         let allBranchesCache = {};
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
@@ -1094,7 +1073,7 @@
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                            debouncedHighlightBlocks(msgEl, streamMsgIndex);
+                                            msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                             setupFloatingCopyButtonsForMsg(msgEl);
                                             updateFloatingButtons();
                                         }
@@ -1244,7 +1223,7 @@
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                            debouncedHighlightBlocks(msgEl, newMsgIndex);
+                                            msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                             setupFloatingCopyButtonsForMsg(msgEl);
                                             updateFloatingButtons();
                                         }
@@ -1427,7 +1406,7 @@
                                 if (msgEl) {
                                     var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                     msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                    debouncedHighlightBlocks(msgEl, newMsgIndex);
+                                    msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                     setupFloatingCopyButtonsForMsg(msgEl);
                                     updateFloatingButtons();
                                 }
@@ -1477,46 +1456,9 @@
                 }
             }
         }
-        function debouncedHighlightBlocks(msgEl, msgIndex) {
-            if (!msgEl) return;
-            var now = Date.now();
-            var lastRun = msgEl._lastHighlight || 0;
-            if (now - lastRun < 300) return;
-            msgEl._lastHighlight = now;
-            var codeBlocks = msgEl.querySelectorAll('pre code:not([data-highlighted])');
-            for (var i = 0; i < codeBlocks.length; i++) {
-                var block = codeBlocks[i];
-                if (block.dataset.highlighted) continue;
-                var textLen = block.textContent.length;
-                if (textLen > HIGHLIGHT_TOKEN_LIMIT) {
-                    block.dataset.highlighted = 'plain';
-                    continue;
-                }
-                if (typeof hljs !== 'undefined' && block.isConnected) {
-                    try { hljs.highlightElement(block); } catch(e) {}
-                    block.dataset.highlighted = '1';
-                }
-            }
-        }
-        var _streamLastRender = {};
-        function scheduleStreamUpdate(msgIndex) {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var assistantMsg = chat.messages[msgIndex];
-            if (!assistantMsg) return;
-            var msgEl = document.getElementById('stream-' + msgIndex);
-            if (!msgEl) return;
-            var now = Date.now();
-            if (!msgEl._lastRender) msgEl._lastRender = 0;
-            if (!assistantMsg.finished && now - msgEl._lastRender < 500) return;
-            msgEl._lastRender = now;
-            var reasoningText = assistantMsg._reasoningBuffer || '';
-            var contentText = assistantMsg._fullBuffer || '';
-            msgEl.innerHTML = (reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '') + formatMessage(contentText);
-            debouncedHighlightBlocks(msgEl, msgIndex);
-            setupFloatingCopyButtonsForMsg(msgEl);
-            updateFloatingButtons();
-        }
+
+        
+
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId);
@@ -1579,15 +1521,10 @@
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + contentHtml + truncatedHtml + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
+            hljs.highlightAll();
             setupFloatingCopyButtons();
             updateFloatingButtons();
             buildNavContainer();
-            document.querySelectorAll('.message-content pre code').forEach(function(block) {
-                if (typeof hljs !== 'undefined' && block.isConnected && !block.dataset.highlighted) {
-                    hljs.highlightElement(block);
-                    block.dataset.highlighted = '1';
-                }
-            });
             if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
             updateBranchIndicator();
             if (!window._mainScrollListenerAdded) {
@@ -2059,7 +1996,7 @@
                                                                 var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                                                 if (msgEl) {
                                                                         msgEl.innerHTML = formatMessage(assistantMsg.content);
-                                                                        debouncedHighlightBlocks(msgEl, streamMsgIndex);
+                                                                        msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                                                         setupFloatingCopyButtonsForMsg(msgEl);
                                                                         updateFloatingButtons();
                                                                 }
@@ -2271,7 +2208,7 @@
                                 const reasoningText = assistantMsg._reasoningBuffer || '';
                                 const contentText = assistantMsg._fullBuffer || '';
                                 assistantMsg.content = contentText;
-                                scheduleStreamUpdate(msgIndex);
+                                StreamRenderer.schedule(msgIndex);
                             }
                         } catch (e) {
                             console.warn('SSE parse error:', e, dataStr);
@@ -2349,6 +2286,91 @@
                 }
             } catch(e) { console.error('updateBranchesFromServer error:', e); }
         }
+        var StreamRenderer = {
+            _pending: {},
+            _htmlCache: {},
+            _codeBlocks: {},
+            schedule: function(msgIndex) {
+                var self = this;
+                if (this._pending[msgIndex]) return;
+                this._pending[msgIndex] = true;
+                requestAnimationFrame(function() {
+                    self._pending[msgIndex] = false;
+                    self.render(msgIndex);
+                });
+            },
+            render: function(msgIndex) {
+                var chat = chats.find(function(c) { return c.id === currentChatId; });
+                if (!chat) return;
+                var msg = chat.messages[msgIndex];
+                if (!msg) return;
+                var msgEl = document.getElementById('stream-' + msgIndex);
+                if (!msgEl) return;
+                var rawText = (msg._reasoningBuffer || '') + '\n' + (msg._fullBuffer || '');
+                var key = rawText.length.toString();
+                if (this._htmlCache[msgIndex] === key && !msg.finished) return;
+                if (!msg.finished && rawText.length - (this._lastRenderLen || 0) < 200 && this._htmlCache[msgIndex]) return;
+                this._htmlCache[msgIndex] = key;
+                var html;
+                var codeBlocks;
+                if (msg.finished || rawText.length < 5000) {
+                    var reasoningHtml = msg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>' : '';
+                    var contentHtml = formatMessage(msg._fullBuffer || '');
+                    html = reasoningHtml + contentHtml;
+                    codeBlocks = html.match(/<pre><code[\s\S]*?<\/code><\/pre>/g) || [];
+                } else {
+                    var chunks = this._splitIntoChunks(rawText);
+                    html = '';
+                    codeBlocks = [];
+                    for (var i = 0; i < chunks.length; i++) {
+                        var chunkHtml = formatMessage(chunks[i]);
+                        html += chunkHtml;
+                        var cb = chunkHtml.match(/<pre><code[\s\S]*?<\/code><\/pre>/g);
+                        if (cb) codeBlocks = codeBlocks.concat(cb);
+                    }
+                }
+                var prevScrollTop = msgEl.parentElement ? msgEl.parentElement.getBoundingClientRect().top : 0;
+                msgEl.innerHTML = html;
+                if (msgEl.parentElement) {
+                    var newScrollTop = msgEl.parentElement.getBoundingClientRect().top;
+                    var main = document.querySelector('.main');
+                    if (main) main.scrollTop += (newScrollTop - prevScrollTop);
+                }
+                if (codeBlocks.length > 0 && codeBlocks.join('').length < 50000) {
+                    var blocks = msgEl.querySelectorAll('pre code:not([data-highlighted])');
+                    for (var b = 0; b < blocks.length; b++) {
+                        if (typeof hljs !== 'undefined') {
+                            try { hljs.highlightElement(blocks[b]); } catch(e) {}
+                            blocks[b].dataset.highlighted = '1';
+                        }
+                    }
+                }
+                setupFloatingCopyButtonsForMsg(msgEl);
+                updateFloatingButtons();
+                if (autoScroll && msg.finished) {
+                    var main = document.querySelector('.main');
+                    if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+                }
+            },
+            _splitIntoChunks: function(text) {
+                var chunks = [];
+                var codeBlockRegex = /```(\w*)\r?\n([\s\S]*?)```/g;
+                var lastIdx = 0;
+                var match;
+                while ((match = codeBlockRegex.exec(text)) !== null) {
+                    if (match.index > lastIdx) {
+                        chunks.push(text.substring(lastIdx, match.index));
+                    }
+                    chunks.push('```' + match[1] + '\n' + match[2] + '```');
+                    lastIdx = codeBlockRegex.lastIndex;
+                }
+                if (lastIdx < text.length) {
+                    chunks.push(text.substring(lastIdx));
+                }
+                if (chunks.length === 0) chunks.push(text);
+                return chunks;
+            }
+        };
 
         function formatMessage(text) {
             var B = String.fromCharCode(96);
