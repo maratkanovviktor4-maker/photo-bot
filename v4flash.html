@@ -1643,8 +1643,14 @@
 
         function updateFileList() {
             const inline = document.getElementById('fileNameInline');
-            if (!pendingFile) { if (inline) inline.innerHTML = ''; return; }
-            if (inline) inline.innerHTML = '📎 ' + escapeHtml(pendingFile.name) + ' <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+            if (!pendingFile) { if (inline) inline.innerHTML = ''; updateSendBtn(); return; }
+            var ext = pendingFile.name.split('.').pop().toLowerCase();
+            var mimeOk = pendingFile.mime && (pendingFile.mime.startsWith('image/') || pendingFile.mime.startsWith('text/') || pendingFile.mime === 'application/pdf' || pendingFile.mime.includes('zip') || pendingFile.mime.includes('word') || pendingFile.mime.includes('excel') || pendingFile.mime.includes('powerpoint'));
+            var fileOk = supportedExtensions.indexOf(ext) !== -1 || mimeOk;
+            var icon = fileOk ? '📎' : '⚠️';
+            var color = fileOk ? '#00CBF5' : '#e74c3c';
+            if (inline) inline.innerHTML = '<span style="color:' + color + '">' + icon + ' ' + escapeHtml(pendingFile.name) + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+            updateSendBtn();
         }
 
         async function handleFileSelect(e) {
@@ -1708,7 +1714,8 @@
         setupPaste();
         var input = document.getElementById('userInput');
         var btn = document.getElementById('sendBtn');
-        function updateSendBtn() { var hasText = input.value.trim().length > 0; var hasFile = pendingFile !== null; btn.disabled = !(hasText || hasFile); }
+        var supportedExtensions = ['txt','json','csv','xml','html','htm','md','py','js','java','kt','cpp','c','h','css','gradle','properties','pro','yml','yaml','log','cfg','ini','conf','pdf','docx','xlsx','pptx','zip','jpg','jpeg','png','gif','webp','bmp'];
+        function updateSendBtn() { var hasText = input.value.trim().length > 0; var hasFile = pendingFile !== null; var fileOk = true; if (hasFile) { var ext = pendingFile.name.split('.').pop().toLowerCase(); var mimeOk = pendingFile.mime && (pendingFile.mime.startsWith('image/') || pendingFile.mime.startsWith('text/') || pendingFile.mime === 'application/pdf' || pendingFile.mime.includes('zip') || pendingFile.mime.includes('word') || pendingFile.mime.includes('excel') || pendingFile.mime.includes('powerpoint')); fileOk = supportedExtensions.indexOf(ext) !== -1 || mimeOk; } btn.disabled = !((hasText || hasFile) && fileOk); }
         input.addEventListener('input', updateSendBtn);
         updateSendBtn();
 
