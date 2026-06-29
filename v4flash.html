@@ -1464,28 +1464,17 @@
         }
         function debouncedHighlightBlocks(msgEl, msgIndex) {
             if (!msgEl) return;
-            var codeBlocks = msgEl.querySelectorAll('pre code');
+            var codeBlocks = msgEl.querySelectorAll('pre code:not([data-highlighted])');
             codeBlocks.forEach(function(block) {
                 var textLen = block.textContent.length;
                 if (textLen > HIGHLIGHT_TOKEN_LIMIT) {
-                    if (!_highlightPlainCache[msgIndex + '_' + block.textContent.substring(0, 40)]) {
-                        block.classList.add('plain-code');
-                        _highlightPlainCache[msgIndex + '_' + block.textContent.substring(0, 40)] = true;
-                    }
+                    block.dataset.highlighted = 'plain';
                     return;
                 }
-                var blockKey = msgIndex + '_' + (block.dataset.hlBlockKey || '');
-                if (!block.dataset.hlBlockKey) {
-                    block.dataset.hlBlockKey = Math.random().toString(36).slice(2);
-                    blockKey = msgIndex + '_' + block.dataset.hlBlockKey;
+                if (typeof hljs !== 'undefined' && block.isConnected) {
+                    try { hljs.highlightElement(block); } catch(e) {}
+                    block.dataset.highlighted = '1';
                 }
-                if (_highlightTimers[blockKey]) clearTimeout(_highlightTimers[blockKey]);
-                _highlightTimers[blockKey] = setTimeout(function() {
-                    if (typeof hljs !== 'undefined' && block.isConnected) {
-                        hljs.highlightElement(block);
-                    }
-                    delete _highlightTimers[blockKey];
-                }, HIGHLIGHT_DEBOUNCE_MS);
             });
         }
         function renderMessages() {
