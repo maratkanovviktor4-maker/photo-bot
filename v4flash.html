@@ -1102,29 +1102,17 @@
                                         var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
-                                            if (!assistantMsg._raf) {
-                                                assistantMsg._raf = requestAnimationFrame(function() {
-                                                    assistantMsg._raf = null;
-                                                    var reasoningText = assistantMsg._reasoningBuffer || '';
-                                                    var contentText = assistantMsg._fullBuffer || '';
-                                                    assistantMsg.content = contentText;
-                                                    var msgEl = document.getElementById('stream-' + streamMsgIndex);
-                                                    if (msgEl) {
-                                                        var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
-                                                        msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                                        msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                            var lang = block.className.replace('language-', '') || '';
-                                                            if (lang) {
-                                                                highlightInWorker(block.textContent, lang, function(html, text) {
-                                                                    if (html) block.innerHTML = html;
-                                                                });
-                                                            }
-                                                        });
-                                                        setupFloatingCopyButtonsForMsg(msgEl);
-                                                        updateFloatingButtons();
-                                                    }
-                                                });
-                                            }
+                                            msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                            msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                                var lang = block.className.replace('language-', '') || '';
+                                                if (lang) {
+                                                    highlightInWorker(block.textContent, lang, function(html, text) {
+                                                        if (html) block.innerHTML = html;
+                                                    });
+                                                }
+                                            });
+                                            setupFloatingCopyButtonsForMsg(msgEl);
+                                            updateFloatingButtons();
                                         }
                                         if (autoScroll) {
                                             var main = document.querySelector('.main');
@@ -1271,30 +1259,17 @@
                                         var msgEl = document.getElementById('stream-' + newMsgIndex);
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
-                                            if (!assistantMsg._raf) {
-                                                assistantMsg._raf = requestAnimationFrame(function() {
-                                                    assistantMsg._raf = null;
-                                                    var reasoningText = assistantMsg._reasoningBuffer || '';
-                                                    var contentText = assistantMsg._fullBuffer || '';
-                                                    assistantMsg._reasoningBuffer = reasoningText;
-                                                    assistantMsg.content = contentText;
-                                                    var msgEl = document.getElementById('stream-' + newMsgIndex);
-                                                    if (msgEl) {
-                                                        var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
-                                                        msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                                        msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                            var lang = block.className.replace('language-', '') || '';
-                                                            if (lang) {
-                                                                highlightInWorker(block.textContent, lang, function(html, text) {
-                                                                    if (html) block.innerHTML = html;
-                                                                });
-                                                            }
-                                                        });
-                                                        setupFloatingCopyButtonsForMsg(msgEl);
-                                                        updateFloatingButtons();
-                                                    }
-                                                });
-                                            }
+                                            msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                            msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                                var lang = block.className.replace('language-', '') || '';
+                                                if (lang) {
+                                                    highlightInWorker(block.textContent, lang, function(html, text) {
+                                                        if (html) block.innerHTML = html;
+                                                    });
+                                                }
+                                            });
+                                            setupFloatingCopyButtonsForMsg(msgEl);
+                                            updateFloatingButtons();
                                         }
                                         if (autoScroll) {
                                             var main = document.querySelector('.main');
@@ -1474,30 +1449,17 @@
                                 var msgEl = document.getElementById('stream-' + newMsgIndex);
                                 if (msgEl) {
                                     var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
-                                    if (!assistantMsg._raf) {
-                                        assistantMsg._raf = requestAnimationFrame(function() {
-                                            assistantMsg._raf = null;
-                                            var reasoningText = assistantMsg._reasoningBuffer || '';
-                                            var contentText = assistantMsg._fullBuffer || '';
-                                            assistantMsg._reasoningBuffer = reasoningText;
-                                            assistantMsg.content = contentText;
-                                            var msgEl = document.getElementById('stream-' + newMsgIndex);
-                                            if (msgEl) {
-                                                var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
-                                                msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                                msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                    var lang = block.className.replace('language-', '') || '';
-                                                    if (lang) {
-                                                        highlightInWorker(block.textContent, lang, function(html, text) {
-                                                            if (html) block.innerHTML = html;
-                                                        });
-                                                    }
-                                                });
-                                                setupFloatingCopyButtonsForMsg(msgEl);
-                                                updateFloatingButtons();
-                                            }
-                                        });
-                                    }
+                                    msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                        var lang = block.className.replace('language-', '') || '';
+                                        if (lang) {
+                                            highlightInWorker(block.textContent, lang, function(html, text) {
+                                                if (html) block.innerHTML = html;
+                                            });
+                                        }
+                                    });
+                                    setupFloatingCopyButtonsForMsg(msgEl);
+                                    updateFloatingButtons();
                                 }
                                 if (autoScroll) {
                                     var main = document.querySelector('.main');
@@ -2084,26 +2046,17 @@
                                                                 assistantMsg.content = assistantMsg._fullBuffer || '';
                                                                 var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                                                 if (msgEl) {
-                                                                        if (!assistantMsg._raf) {
-                                                                            assistantMsg._raf = requestAnimationFrame(function() {
-                                                                                assistantMsg._raf = null;
-                                                                                assistantMsg.content = assistantMsg._fullBuffer || '';
-                                                                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
-                                                                                if (msgEl) {
-                                                                                    msgEl.innerHTML = formatMessage(assistantMsg.content);
-                                                                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                                                        var lang = block.className.replace('language-', '') || '';
-                                                                                        if (lang) {
-                                                                                            highlightInWorker(block.textContent, lang, function(html, text) {
-                                                                                                if (html) block.innerHTML = html;
-                                                                                            });
-                                                                                        }
-                                                                                    });
-                                                                                    setupFloatingCopyButtonsForMsg(msgEl);
-                                                                                    updateFloatingButtons();
-                                                                                }
-                                                                            });
-                                                                        }
+                                                                        msgEl.innerHTML = formatMessage(assistantMsg.content);
+                                                                        msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                                                            var lang = block.className.replace('language-', '') || '';
+                                                                            if (lang) {
+                                                                                highlightInWorker(block.textContent, lang, function(html, text) {
+                                                                                    if (html) block.innerHTML = html;
+                                                                                });
+                                                                            }
+                                                                        });
+                                                                        setupFloatingCopyButtonsForMsg(msgEl);
+                                                                        updateFloatingButtons();
                                                                 }
                                                                 if (autoScroll) {
                                                                         var main = document.querySelector('.main');
@@ -2325,24 +2278,21 @@
                                             const contentText = assistantMsg._fullBuffer || '';
                                             assistantMsg.content = contentText;
                                             const msgEl = document.getElementById('stream-' + msgIndex);
-                                            if (msgEl) {
-                                                const reasoningBlock = reasoningText
-                                                    ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
-                                                    : '';
-                                                msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                                msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                    var lang = block.className.replace('language-', '') || '';
-                                                    if (lang) {
-                                                        highlightInWorker(block.textContent, lang, function(html, text) {
-                                                            if (html) block.innerHTML = html;
-                                                        });
-                                                    }
-                                                });
-                                                setupFloatingCopyButtonsForMsg(msgEl);
-                                                updateFloatingButtons();
-                                            }
-                                        });
-                                    }
+                                if (msgEl) {
+                                    const reasoningBlock = reasoningText
+                                        ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
+                                        : '';
+                                    msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                        var lang = block.className.replace('language-', '') || '';
+                                        if (lang) {
+                                            highlightInWorker(block.textContent, lang, function(html, text) {
+                                                if (html) block.innerHTML = html;
+                                            });
+                                        }
+                                    });
+                                    setupFloatingCopyButtonsForMsg(msgEl);
+                                    updateFloatingButtons();
                                 }
                             }
                         } catch (e) {
