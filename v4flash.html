@@ -1506,28 +1506,16 @@
             if (!assistantMsg) return;
             var msgEl = document.getElementById('stream-' + msgIndex);
             if (!msgEl) return;
+            var now = Date.now();
+            if (!msgEl._lastRender) msgEl._lastRender = 0;
+            if (!assistantMsg.finished && now - msgEl._lastRender < 500) return;
+            msgEl._lastRender = now;
             var reasoningText = assistantMsg._reasoningBuffer || '';
             var contentText = assistantMsg._fullBuffer || '';
-            if (!msgEl._textNode) {
-                msgEl.innerHTML = '';
-                msgEl._textNode = document.createTextNode('');
-                msgEl.appendChild(msgEl._textNode);
-                msgEl._pendingFormat = false;
-            }
-            msgEl._textNode.textContent = (reasoningText ? '[Размышление]\n' + reasoningText + '\n[/Размышление]\n' : '') + contentText;
-            if (msgEl._pendingFormat) return;
-            msgEl._pendingFormat = true;
-            var textToFormat = (reasoningText ? '%%REASONING%%' + reasoningText + '%%ENDREASONING%%' : '') + contentText;
-            formatMessageAsync(textToFormat, function(html) {
-                if (!msgEl.isConnected) return;
-                msgEl._pendingFormat = false;
-                if (msgEl._textNode) { msgEl._textNode.remove(); msgEl._textNode = null; }
-                html = html.replace(/%%REASONING%%([\s\S]*?)%%ENDREASONING%%/g, '<div class="reasoning-block">$1</div>');
-                msgEl.innerHTML = html;
-                debouncedHighlightBlocks(msgEl, msgIndex);
-                setupFloatingCopyButtonsForMsg(msgEl);
-                updateFloatingButtons();
-            });
+            msgEl.innerHTML = (reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '') + formatMessage(contentText);
+            debouncedHighlightBlocks(msgEl, msgIndex);
+            setupFloatingCopyButtonsForMsg(msgEl);
+            updateFloatingButtons();
         }
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
