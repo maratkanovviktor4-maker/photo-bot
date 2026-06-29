@@ -1464,22 +1464,24 @@
         }
         function debouncedHighlightBlocks(msgEl, msgIndex) {
             if (!msgEl) return;
+            var now = Date.now();
+            var lastRun = msgEl._lastHighlight || 0;
+            if (now - lastRun < 300) return;
+            msgEl._lastHighlight = now;
             var codeBlocks = msgEl.querySelectorAll('pre code:not([data-highlighted])');
-            if (codeBlocks.length === 0) return;
-            requestAnimationFrame(function() {
-                codeBlocks.forEach(function(block) {
-                    if (block.dataset.highlighted) return;
-                    var textLen = block.textContent.length;
-                    if (textLen > HIGHLIGHT_TOKEN_LIMIT) {
-                        block.dataset.highlighted = 'plain';
-                        return;
-                    }
-                    if (typeof hljs !== 'undefined' && block.isConnected) {
-                        try { hljs.highlightElement(block); } catch(e) {}
-                        block.dataset.highlighted = '1';
-                    }
-                });
-            });
+            for (var i = 0; i < codeBlocks.length; i++) {
+                var block = codeBlocks[i];
+                if (block.dataset.highlighted) continue;
+                var textLen = block.textContent.length;
+                if (textLen > HIGHLIGHT_TOKEN_LIMIT) {
+                    block.dataset.highlighted = 'plain';
+                    continue;
+                }
+                if (typeof hljs !== 'undefined' && block.isConnected) {
+                    try { hljs.highlightElement(block); } catch(e) {}
+                    block.dataset.highlighted = '1';
+                }
+            }
         }
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
