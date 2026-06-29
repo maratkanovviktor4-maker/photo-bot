@@ -383,6 +383,7 @@
         var HIGHLIGHT_TOKEN_LIMIT = 10000;
         var _highlightTimers = {};
         var _highlightPlainCache = {};
+        var _streamBufferTimers = {};
         let allBranchesCache = {};
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
@@ -2237,16 +2238,19 @@
                                 const reasoningText = assistantMsg._reasoningBuffer || '';
                                 const contentText = assistantMsg._fullBuffer || '';
                                 assistantMsg.content = contentText;
-                                const msgEl = document.getElementById('stream-' + msgIndex);
-                                if (msgEl) {
-                                    const reasoningBlock = reasoningText
-                                        ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
-                                        : '';
-                                    msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                    debouncedHighlightBlocks(msgEl, msgIndex);
-                                    setupFloatingCopyButtonsForMsg(msgEl);
-                                    updateFloatingButtons();
-                                }
+                                if (_streamBufferTimers[msgIndex]) clearTimeout(_streamBufferTimers[msgIndex]);
+                                _streamBufferTimers[msgIndex] = setTimeout(function() {
+                                    const msgEl = document.getElementById('stream-' + msgIndex);
+                                    if (msgEl) {
+                                        const reasoningBlock = assistantMsg._reasoningBuffer
+                                            ? '<div class="reasoning-block">' + formatMessage(assistantMsg._reasoningBuffer) + '</div>'
+                                            : '';
+                                        msgEl.innerHTML = reasoningBlock + formatMessage(assistantMsg._fullBuffer || '');
+                                        debouncedHighlightBlocks(msgEl, msgIndex);
+                                        setupFloatingCopyButtonsForMsg(msgEl);
+                                        updateFloatingButtons();
+                                    }
+                                }, 100);
                             }
                         } catch (e) {
                             console.warn('SSE parse error:', e, dataStr);
