@@ -1514,11 +1514,7 @@
                     if (m.role === 'assistant' && m._streaming && !contentToShow && !hasReasoning) {
                         contentHtml = '<div class="typing-dots"><span></span><span></span><span></span></div>';
                     }
-                    var truncatedHtml = '';
-                    if (m.truncated) {
-                        truncatedHtml = '<div style="margin-top:6px;"><button onclick="expandMessage(\'' + (m.msg_id || '') + '\', ' + i + ')" style="background:rgba(0,203,245,0.1);border:1px solid #00CBF5;color:#00CBF5;padding:4px 12px;border-radius:12px;cursor:pointer;font-size:12px;font-family:Inter,sans-serif;">Развернуть</button></div>';
-                    }
-                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + contentHtml + truncatedHtml + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
             hljs.highlightAll();
@@ -1534,20 +1530,6 @@
                     window._mainScrollListenerAdded = true;
                 }
             }
-        }
-        async function expandMessage(msgId, index) {
-            if (!msgId) return;
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            try {
-                var resp = await fetch(SERVER_URL + '/get_full_message?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&msg_id=' + msgId + '&session_token=' + sessionToken);
-                if (resp.ok) {
-                    var data = await resp.json();
-                    chat.messages[index].content = data.content;
-                    chat.messages[index].truncated = false;
-                    renderMessages();
-                }
-            } catch(e) {}
         }
 
         function copyMessage(index) {
