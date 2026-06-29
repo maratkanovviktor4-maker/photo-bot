@@ -1073,15 +1073,30 @@
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                            msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                if (typeof hljs !== 'undefined') {
-                                                    var lang = block.className.replace('language-', '');
-                                                    if (lang && hljs.getLanguage(lang)) {
-                                                        var result = hljs.highlight(block.textContent, { language: lang });
-                                                        block.innerHTML = result.value;
+                                            if (!assistantMsg._raf) {
+                                                assistantMsg._raf = requestAnimationFrame(function() {
+                                                    assistantMsg._raf = null;
+                                                    var reasoningText = assistantMsg._reasoningBuffer || '';
+                                                    var contentText = assistantMsg._fullBuffer || '';
+                                                    assistantMsg.content = contentText;
+                                                    var msgEl = document.getElementById('stream-' + streamMsgIndex);
+                                                    if (msgEl) {
+                                                        var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
+                                                        msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                                        msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                                            if (typeof hljs !== 'undefined') {
+                                                                var lang = block.className.replace('language-', '');
+                                                                if (lang && hljs.getLanguage(lang)) {
+                                                                    var result = hljs.highlight(block.textContent, { language: lang });
+                                                                    block.innerHTML = result.value;
+                                                                }
+                                                            }
+                                                        });
+                                                        setupFloatingCopyButtonsForMsg(msgEl);
+                                                        updateFloatingButtons();
                                                     }
-                                                }
-                                            });
+                                                });
+                                            }
                                             setupFloatingCopyButtonsForMsg(msgEl);
                                             updateFloatingButtons();
                                         }
@@ -1231,15 +1246,31 @@
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                            msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                if (typeof hljs !== 'undefined') {
-                                                    var lang = block.className.replace('language-', '');
-                                                    if (lang && hljs.getLanguage(lang)) {
-                                                        var result = hljs.highlight(block.textContent, { language: lang });
-                                                        block.innerHTML = result.value;
+                                            if (!assistantMsg._raf) {
+                                                assistantMsg._raf = requestAnimationFrame(function() {
+                                                    assistantMsg._raf = null;
+                                                    var reasoningText = assistantMsg._reasoningBuffer || '';
+                                                    var contentText = assistantMsg._fullBuffer || '';
+                                                    assistantMsg._reasoningBuffer = reasoningText;
+                                                    assistantMsg.content = contentText;
+                                                    var msgEl = document.getElementById('stream-' + newMsgIndex);
+                                                    if (msgEl) {
+                                                        var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
+                                                        msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                                        msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                                            if (typeof hljs !== 'undefined') {
+                                                                var lang = block.className.replace('language-', '');
+                                                                if (lang && hljs.getLanguage(lang)) {
+                                                                    var result = hljs.highlight(block.textContent, { language: lang });
+                                                                    block.innerHTML = result.value;
+                                                                }
+                                                            }
+                                                        });
+                                                        setupFloatingCopyButtonsForMsg(msgEl);
+                                                        updateFloatingButtons();
                                                     }
-                                                }
-                                            });
+                                                });
+                                            }
                                             setupFloatingCopyButtonsForMsg(msgEl);
                                             updateFloatingButtons();
                                         }
@@ -1422,15 +1453,31 @@
                                 if (msgEl) {
                                     var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                     msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                        if (typeof hljs !== 'undefined') {
-                                            var lang = block.className.replace('language-', '');
-                                            if (lang && hljs.getLanguage(lang)) {
-                                                var result = hljs.highlight(block.textContent, { language: lang });
-                                                block.innerHTML = result.value;
+                                    if (!assistantMsg._raf) {
+                                        assistantMsg._raf = requestAnimationFrame(function() {
+                                            assistantMsg._raf = null;
+                                            var reasoningText = assistantMsg._reasoningBuffer || '';
+                                            var contentText = assistantMsg._fullBuffer || '';
+                                            assistantMsg._reasoningBuffer = reasoningText;
+                                            assistantMsg.content = contentText;
+                                            var msgEl = document.getElementById('stream-' + newMsgIndex);
+                                            if (msgEl) {
+                                                var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
+                                                msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                                msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                                    if (typeof hljs !== 'undefined') {
+                                                        var lang = block.className.replace('language-', '');
+                                                        if (lang && hljs.getLanguage(lang)) {
+                                                            var result = hljs.highlight(block.textContent, { language: lang });
+                                                            block.innerHTML = result.value;
+                                                        }
+                                                    }
+                                                });
+                                                setupFloatingCopyButtonsForMsg(msgEl);
+                                                updateFloatingButtons();
                                             }
-                                        }
-                                    });
+                                        });
+                                    }
                                     setupFloatingCopyButtonsForMsg(msgEl);
                                     updateFloatingButtons();
                                 }
@@ -2020,15 +2067,27 @@
                                                                 var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                                                 if (msgEl) {
                                                                         msgEl.innerHTML = formatMessage(assistantMsg.content);
-                                                                        msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                                            if (typeof hljs !== 'undefined') {
-                                                                                var lang = block.className.replace('language-', '');
-                                                                                if (lang && hljs.getLanguage(lang)) {
-                                                                                    var result = hljs.highlight(block.textContent, { language: lang });
-                                                                                    block.innerHTML = result.value;
+                                                                        if (!assistantMsg._raf) {
+                                                                            assistantMsg._raf = requestAnimationFrame(function() {
+                                                                                assistantMsg._raf = null;
+                                                                                assistantMsg.content = assistantMsg._fullBuffer || '';
+                                                                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
+                                                                                if (msgEl) {
+                                                                                    msgEl.innerHTML = formatMessage(assistantMsg.content);
+                                                                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                                                                        if (typeof hljs !== 'undefined') {
+                                                                                            var lang = block.className.replace('language-', '');
+                                                                                            if (lang && hljs.getLanguage(lang)) {
+                                                                                                var result = hljs.highlight(block.textContent, { language: lang });
+                                                                                                block.innerHTML = result.value;
+                                                                                            }
+                                                                                        }
+                                                                                    });
+                                                                                    setupFloatingCopyButtonsForMsg(msgEl);
+                                                                                    updateFloatingButtons();
                                                                                 }
-                                                                            }
-                                                                        });
+                                                                            });
+                                                                        }
                                                                         setupFloatingCopyButtonsForMsg(msgEl);
                                                                         updateFloatingButtons();
                                                                 }
@@ -2246,15 +2305,32 @@
                                         ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
                                         : '';
                                     msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                        if (typeof hljs !== 'undefined') {
-                                            var lang = block.className.replace('language-', '');
-                                            if (lang && hljs.getLanguage(lang)) {
-                                                var result = hljs.highlight(block.textContent, { language: lang });
-                                                block.innerHTML = result.value;
+                                    if (!assistantMsg._raf) {
+                                        assistantMsg._raf = requestAnimationFrame(function() {
+                                            assistantMsg._raf = null;
+                                            const reasoningText = assistantMsg._reasoningBuffer || '';
+                                            const contentText = assistantMsg._fullBuffer || '';
+                                            assistantMsg.content = contentText;
+                                            const msgEl = document.getElementById('stream-' + msgIndex);
+                                            if (msgEl) {
+                                                const reasoningBlock = reasoningText
+                                                    ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
+                                                    : '';
+                                                msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                                msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                                    if (typeof hljs !== 'undefined') {
+                                                        var lang = block.className.replace('language-', '');
+                                                        if (lang && hljs.getLanguage(lang)) {
+                                                            var result = hljs.highlight(block.textContent, { language: lang });
+                                                            block.innerHTML = result.value;
+                                                        }
+                                                    }
+                                                });
+                                                setupFloatingCopyButtonsForMsg(msgEl);
+                                                updateFloatingButtons();
                                             }
-                                        }
-                                    });
+                                        });
+                                    }
                                     setupFloatingCopyButtonsForMsg(msgEl);
                                     updateFloatingButtons();
                                 }
