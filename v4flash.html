@@ -1770,9 +1770,53 @@
 
         function showSelfPlayModal(index) {
                 selfPlayIndex = index;
+                var container = document.getElementById('selfPlayPersonalities');
+                container.innerHTML = '';
+                var list = Object.keys(personalities).filter(function(k) { return k !== 'default' && k !== 'custom'; });
+                for (var i = 0; i < list.length; i++) {
+                    var key = list[i];
+                    var p = personalities[key];
+                    (function(k) {
+                        var chip = document.createElement('div');
+                        chip.style.cssText = 'padding:6px 12px;border-radius:20px;font-size:13px;cursor:pointer;font-family:Inter,sans-serif;border:2px solid rgba(255,255,255,0.1);background:rgba(34,34,34,0.8);color:#aaa;user-select:none;transition:0.2s;';
+                        chip.textContent = p.name;
+                        chip.dataset.key = k;
+                        chip.addEventListener('click', function() {
+                            chip.classList.toggle('selected');
+                            if (chip.classList.contains('selected')) {
+                                chip.style.background = 'rgba(0,203,245,0.2)';
+                                chip.style.borderColor = '#00CBF5';
+                                chip.style.color = '#00CBF5';
+                            } else {
+                                chip.style.background = 'rgba(34,34,34,0.8)';
+                                chip.style.borderColor = 'rgba(255,255,255,0.1)';
+                                chip.style.color = '#aaa';
+                            }
+                            updateSelfPlayForm();
+                        });
+                        container.appendChild(chip);
+                    })(key);
+                }
                 document.getElementById('selfPlayPrompt').value = '';
+                document.getElementById('selfPlayConsensus').innerHTML = '<option value="">Сначала выберите личности</option>';
+                document.getElementById('selfPlayConfirmBtn').disabled = true;
                 document.getElementById('selfPlayModal').classList.add('active');
                 setTimeout(function() { document.getElementById('selfPlayPrompt').focus(); }, 100);
+        }
+
+        function updateSelfPlayForm() {
+            var selected = [];
+            document.querySelectorAll('#selfPlayPersonalities div.selected').forEach(function(c) { selected.push({key: c.dataset.key, name: c.textContent}); });
+            var select = document.getElementById('selfPlayConsensus');
+            select.innerHTML = '<option value="">Выберите личность</option>';
+            for (var i = 0; i < selected.length; i++) {
+                var opt = document.createElement('option');
+                opt.value = selected[i].key;
+                opt.textContent = selected[i].name;
+                select.appendChild(opt);
+            }
+            var promptText = document.getElementById('selfPlayPrompt').value.trim();
+            document.getElementById('selfPlayConfirmBtn').disabled = selected.length < 2 || !promptText;
         }
 
         function closeSelfPlayModal() {
@@ -1783,21 +1827,26 @@
         function confirmSelfPlay() {
                 var promptText = document.getElementById('selfPlayPrompt').value.trim();
                 if (!promptText) return;
+                var selected = [];
+                document.querySelectorAll('#selfPlayPersonalities div.selected').forEach(function(c) { selected.push(c.dataset.key); });
+                var consensus = document.getElementById('selfPlayConsensus').value;
+                if (!consensus) consensus = selected[selected.length - 1];
                 var idx = selfPlayIndex;
                 closeSelfPlayModal();
-                selfPlay(idx, promptText);
+                selfPlay(idx, promptText, selected, consensus);
         }
 
 
         document.getElementById('selfPlayPrompt').addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') { closeSelfPlayModal(); }
         });
+        document.getElementById('selfPlayPrompt').addEventListener('input', updateSelfPlayForm);
 
         document.getElementById('selfPlayModal').addEventListener('click', function(e) {
                 if (e.target === this) closeSelfPlayModal();
         });
 
-        async function selfPlay(msgIndex, promptText) {
+        async function selfPlay(msgIndex, promptText, selectedRoles, consensusRole) {
                 if (isSending) return;
                 if (!currentChatId) {
                         currentChatId = Date.now().toString();
@@ -1830,7 +1879,9 @@
                                         chat_id: currentChatId,
                                         branch_id: currentBranchId,
                                         source_msg_id: msg.msg_id || '',
-                                        prompt: promptText
+                                        prompt: promptText,
+                                        roles: selectedRoles.join(','),
+                                        consensus_role: consensusRole
                                 })
                         });
                         var newBranchId = resp.headers.get('X-Branch-Id');
@@ -2836,16 +2887,26 @@
         });
     </script>
     <div id="selfPlayModal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-icon" style="background:rgba(rgba(0,203,245,0.15);color:#00CBF5;">🧠</div>
-            <div class="modal-title" style="margin-bottom:16px;">Self-Play Диалог</div>
-            <div style="margin-bottom:20px;">
+        <div class="modal-box" style="max-width:600px;">
+            <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;">🧠</div>
+            <div class="modal-title" style="margin-bottom:12px;">Self-Play Диалог</div>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">ЛИЧНОСТИ (выберите ≥2)</label>
+                <div id="selfPlayPersonalities" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+            </div>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">КОНСЕНСУС ВЫНОСИТ</label>
+                <select id="selfPlayConsensus" style="width:100%;padding:10px 14px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:14px;font-family:Inter,sans-serif;outline:none;">
+                    <option value="">Сначала выберите личности</option>
+                </select>
+            </div>
+            <div style="margin-bottom:16px;">
                 <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">СУТЬ ДИАЛОГА</label>
                 <textarea id="selfPlayPrompt" style="width:100%;padding:12px 14px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:14px;font-family:Inter,sans-serif;outline:none;resize:none;min-height:80px;transition:all 0.2s ease;" placeholder="Что нужно решить? Например: выбрать БД для highload, сравнить Python vs Go..."></textarea>
             </div>
             <div class="modal-actions" style="gap:12px;">
                 <button class="modal-btn-secondary" onclick="closeSelfPlayModal()" style="flex:1;padding:12px;">Отмена</button>
-                <button id="selfPlayConfirmBtn" class="modal-btn-primary" onclick="confirmSelfPlay()" style="flex:1;padding:12px;">Запустить</button>
+                <button id="selfPlayConfirmBtn" class="modal-btn-primary" onclick="confirmSelfPlay()" style="flex:1;padding:12px;" disabled>Запустить</button>
             </div>
         </div>
     </div>
