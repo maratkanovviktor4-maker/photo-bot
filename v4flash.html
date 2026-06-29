@@ -259,31 +259,6 @@
         #personalitySelect { border-radius: 24px !important; }
         #editCustomBtn:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
         body.light #editCustomBtn:hover { background: rgba(0,0,0,0.06); }
-        .debate-btn {
-            color: #FF4500 !important;
-            font-weight: 500;
-        }
-        .debate-btn:hover {
-            background: rgba(255,69,0,0.15) !important;
-        }
-        .debate-message-flash {
-            border-left: 3px solid #00CBF5;
-            padding-left: 10px;
-            margin: 4px 0;
-        }
-        .debate-message-pro {
-            border-left: 3px solid #FF4500;
-            padding-left: 10px;
-            margin: 4px 0;
-        }
-        .debate-verdict {
-            border-left: 3px solid #FFD700;
-            padding-left: 10px;
-            margin: 8px 0;
-            background: rgba(255,215,0,0.05);
-            border-radius: 0 6px 6px 0;
-        }
-
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -1098,6 +1073,7 @@
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                            msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                             setupFloatingCopyButtonsForMsg(msgEl);
                                             updateFloatingButtons();
                                         }
@@ -1247,6 +1223,7 @@
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                            msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                             setupFloatingCopyButtonsForMsg(msgEl);
                                             updateFloatingButtons();
                                         }
@@ -1429,6 +1406,7 @@
                                 if (msgEl) {
                                     var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                     msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                    msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                     setupFloatingCopyButtonsForMsg(msgEl);
                                     updateFloatingButtons();
                                 }
@@ -1508,7 +1486,6 @@
                         actionsHtml += '<button onclick="shareChat(\'' + currentChatId + '\')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg></button>';
                         if (m.interrupted) actionsHtml += '<button onclick="continueMessage(' + i + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                         actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + i + ')" title="Self-Play диалог" style="color:#00CBF5;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
-                        actionsHtml += '<button class="debate-btn" onclick="showDebateModal(' + i + ')" title="Дебаты Flash vs Pro" style="color:#FF4500;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>';
                     }
                     var dataAttr = ' data-msg-index="' + i + '"';
                     var reasoningHtml = '';
@@ -2019,6 +1996,7 @@
                                                                 var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                                                 if (msgEl) {
                                                                         msgEl.innerHTML = formatMessage(assistantMsg.content);
+                                                                        msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                                                                         setupFloatingCopyButtonsForMsg(msgEl);
                                                                         updateFloatingButtons();
                                                                 }
@@ -2052,241 +2030,6 @@
                         sendBtnArrow();
                 }
         }
-        // === ДЕБАТЫ FLASH vs PRO ===
-
-        var debateIndex = -1;
-
-        function showDebateModal(index) {
-            debateIndex = index;
-            document.getElementById('debateModal').classList.add('active');
-            setTimeout(function() { document.getElementById('debatePrompt').focus(); }, 100);
-        }
-
-        function closeDebateModal() {
-            document.getElementById('debateModal').classList.remove('active');
-            debateIndex = -1;
-        }
-
-        function confirmDebate() {
-            var promptText = document.getElementById('debatePrompt').value.trim();
-            if (!promptText) {
-                showAlertModal('Ошибка', 'Введите тему для дебатов.', '❌');
-                return;
-            }
-
-            var role1 = document.getElementById('debateRole1').value.trim() || 'Адвокат (Flash)';
-            var role2 = document.getElementById('debateRole2').value.trim() || 'Судья (Pro)';
-            var iterations = parseInt(document.getElementById('debateIterations').value) || 3;
-            var temperature = parseFloat(document.getElementById('debateTemperature').value) || 1.0;
-
-            var idx = debateIndex;
-            closeDebateModal();
-            startDebate(idx, promptText, role1, role2, iterations, temperature);
-        }
-
-        function startDebate(msgIndex, promptText, role1, role2, iterations, temperature) {
-        if (isSending) return;
-
-        if (!currentChatId) {
-            currentChatId = Date.now().toString();
-            var newChatObj = { id: currentChatId, title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: {}, lastMessageTime: Date.now() };
-            chats.push(newChatObj);
-            renderChatList();
-        }
-
-        const chat = chats.find(c => c.id === currentChatId);
-        if (!chat) return;
-
-        const msg = chat.messages[msgIndex];
-        if (!msg || msg.role !== 'assistant') return;
-
-        isSending = true;
-        if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
-        sendBtnStop();
-
-        chat.messages.push({ role: 'system', content: '⚡ Начало дебатов: ' + promptText, msg_id: 'debate_start_' + Date.now() });
-
-        var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
-        chat.messages.push(assistantMsg);
-        var streamMsgIndex = chat.messages.length - 1;
-        var streamId = 'debate_stream_' + streamMsgIndex;
-        activeStreamId = streamId;
-        renderMessages();
-
-        var abortController = new AbortController();
-        assistantMsg._abortController = abortController;
-
-        var sendBtnRef = document.getElementById('sendBtn');
-        sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
-        sendBtnRef.onclick = function() { stopTyping(); };
-
-        fetch(SERVER_URL + '/debate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-            body: JSON.stringify({
-                user_id: currentUserId,
-                chat_id: currentChatId,
-                branch_id: currentBranchId,
-                prompt: promptText,
-                iterations: iterations,
-                temperature: temperature,
-                role1_name: role1,
-                role2_name: role2,
-                mode: currentMode
-            }),
-            signal: abortController.signal
-        })
-        .then(function(resp) {
-            if (!resp.ok) {
-                throw new Error('Server error: ' + resp.status);
-            }
-
-            var newBranchId = resp.headers.get('X-Branch-Id');
-            if (newBranchId) {
-                currentBranchId = newBranchId;
-                chat.activeBranch = newBranchId;
-            }
-
-            var contentType = resp.headers.get('content-type') || '';
-            if (contentType.includes('text/event-stream')) {
-                var reader = resp.body.getReader();
-                var decoder = new TextDecoder();
-                var buffer = '';
-
-                var debateStarted = false;
-
-                function readStream() {
-                    reader.read().then(function(result) {
-                        if (result.done) {
-                            finalizeDebate();
-                            return;
-                        }
-
-                        buffer += decoder.decode(result.value, { stream: true });
-                        var lines = buffer.split('\n');
-                        buffer = lines.pop() || '';
-
-                        for (var i = 0; i < lines.length; i++) {
-                            var line = lines[i];
-                            if (!line.startsWith('data: ')) continue;
-                            var dataStr = line.slice(6).trim();
-                            if (dataStr === '[DONE]') continue;
-
-                            try {
-                                var parsed = JSON.parse(dataStr);
-
-                                if (parsed.branch_id && !debateStarted) {
-                                    debateStarted = true;
-                                    currentBranchId = parsed.branch_id;
-                                    chat.activeBranch = parsed.branch_id;
-                                    if (!chat.allBranches) chat.allBranches = {};
-                                    chat.allBranches[parsed.branch_id] = { name: '⚡ Дебаты', messages: [], msg_ids: [], source_role: 'assistant' };
-                                    renderBranchesPanel();
-                                }
-
-                                if (parsed.content) {
-                                    var rolePrefix = '';
-                                    if (parsed.role === 'адвокат') {
-                                        rolePrefix = '<span style="color:#00CBF5;font-weight:600;">🎭 ' + role1 + ':</span> ';
-                                    } else if (parsed.role === 'судья') {
-                                        rolePrefix = '<span style="color:#FF4500;font-weight:600;">⚖️ ' + role2 + ':</span> ';
-                                    } else if (parsed.role === 'вердикт') {
-                                        rolePrefix = '<span style="color:#FFD700;font-weight:700;">🏆 ВЕРДИКТ:</span> ';
-                                    }
-
-                                    assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + rolePrefix + parsed.content + '\n\n';
-                                    assistantMsg.content = assistantMsg._fullBuffer || '';
-
-                                    var msgEl = document.getElementById('stream-' + streamMsgIndex);
-                                    if (msgEl) {
-                                        msgEl.innerHTML = formatMessage(assistantMsg.content);
-                                        setupFloatingCopyButtonsForMsg(msgEl);
-                                        updateFloatingButtons();
-                                    }
-
-                                    if (autoScroll) {
-                                        var main = document.querySelector('.main');
-                                        if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
-                                    }
-                                }
-                            } catch(e) {
-                                console.warn('Debate SSE parse error:', e);
-                            }
-                        }
-
-                        readStream();
-                    }).catch(function(error) {
-                        console.error('Debate stream error:', error);
-                        finalizeDebate();
-                    });
-                }
-
-                readStream();
-            }
-        })
-        .catch(function(error) {
-            if (error.name === 'AbortError') {
-                // Пользователь остановил
-            } else {
-                console.error('Debate error:', error);
-                showAlertModal('Ошибка', 'Не удалось начать дебаты. Проверьте подключение.', '❌');
-            }
-            finalizeDebate();
-        });
-
-        function finalizeDebate() {
-            assistantMsg.finished = true;
-            assistantMsg._streaming = false;
-
-            if (chat && chat.id) {
-                updateBranchesFromServer().then(function() {
-                    if (chat && chat.allBranches && chat.allBranches[currentBranchId]) {
-                        chat.messages = chat.allBranches[currentBranchId].messages || [];
-                    }
-                    if (chat) {
-                        chat.lastMessageTime = Date.now();
-                        chats.sort(function(a, b) { return (b.lastMessageTime || 0) - (a.lastMessageTime || 0); });
-                        autoNameChat(chat);
-                    }
-                    renderMessages();
-                    renderChatList();
-                    renderBranchesPanel();
-                }).catch(function(e) {
-                    console.error('finalizeDebate update error:', e);
-                    renderMessages();
-                    renderChatList();
-                    renderBranchesPanel();
-                });
-            } else {
-                renderMessages();
-                renderChatList();
-                renderBranchesPanel();
-            }
-
-            updateBalance();
-            isSending = false;
-            activeStreamId = null;
-            sendBtnArrow();
-        }
-    }
-
-
-
-        // Закрытие модалки по клику вне
-        document.getElementById('debateModal').addEventListener('click', function(e) {
-            if (e.target === this) closeDebateModal();
-        });
-
-        // Закрытие по Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                var modal = document.getElementById('debateModal');
-                if (modal && modal.classList.contains('active')) {
-                    closeDebateModal();
-                }
-            }
-        });
-
         var voiceInputActive = false;
         var recognition = null;
         function toggleVoiceInput() {
@@ -2470,7 +2213,10 @@
                                     const reasoningBlock = reasoningText
                                         ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
                                         : '';
-                                    msgEl.innerHTML = reasoningBlock + formatMessage(contentText);;
+                                    msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                        if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+                                    });
                                     setupFloatingCopyButtonsForMsg(msgEl);
                                     updateFloatingButtons();
                                 }
@@ -2555,12 +2301,10 @@
                         }
                         chat.allBranches = branches;
                         renderBranchesPanel();
-                        updateBranchIndicator();
                     }
                 }
             } catch(e) { console.error('updateBranchesFromServer error:', e); }
         }
-
 
         function formatMessage(text) {
             var B = String.fromCharCode(96);
@@ -3213,43 +2957,6 @@
             }
         });
     </script>
-         <!-- Модальное окно для дебатов Flash vs Pro -->
-         <div id="debateModal" class="modal-overlay">
-            <div class="modal-box" style="max-width:600px;">
-                <div class="modal-icon" style="background:rgba(255,69,0,0.15);color:#FF4500;">⚡</div>
-                <div class="modal-title" style="margin-bottom:12px;">Дебаты Flash vs Pro</div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">ТЕМА ДЕБАТОВ</label>
-                    <textarea id="debatePrompt" style="width:100%;padding:12px 14px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:14px;font-family:Inter,sans-serif;outline:none;resize:none;min-height:80px;transition:all 0.2s ease;" placeholder="Например: Нужна ли смертная казнь? Что лучше: Python или JavaScript?"></textarea>
-                </div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">РОЛЬ FLASH (Адвокат)</label>
-                    <input id="debateRole1" type="text" value="Адвокат (Flash)" style="width:100%;padding:10px 14px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:14px;font-family:Inter,sans-serif;outline:none;">
-                </div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">РОЛЬ PRO (Судья)</label>
-                    <input id="debateRole2" type="text" value="Судья (Pro)" style="width:100%;padding:10px 14px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:14px;font-family:Inter,sans-serif;outline:none;">
-                </div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">КОЛИЧЕСТВО РАУНДОВ</label>
-                    <select id="debateIterations" style="width:100%;padding:10px 14px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:14px;font-family:Inter,sans-serif;outline:none;">
-                        <option value="2">2 раунда (быстро)</option>
-                        <option value="3" selected>3 раунда (рекомендуется)</option>
-                        <option value="4">4 раунда (глубоко)</option>
-                        <option value="5">5 раундов (максимум)</option>
-                    </select>
-                </div>
-                <div style="margin-bottom:16px;">
-                    <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">ТЕМПЕРАТУРА: <span id="debateTempValue">1.0</span></label>
-                    <input type="range" id="debateTemperature" min="0.5" max="2.0" step="0.1" value="1.0" style="width:100%;height:8px;border-radius:4px;background:linear-gradient(to right, #00CBF5, #FF4500);-webkit-appearance:none;appearance:none;outline:none;cursor:pointer;" oninput="document.getElementById('debateTempValue').textContent=this.value">
-                </div>
-                <div class="modal-actions" style="gap:12px;">
-                    <button class="modal-btn-secondary" onclick="closeDebateModal()" style="flex:1;padding:12px;">Отмена</button>
-                    <button id="debateConfirmBtn" class="modal-btn-primary" onclick="confirmDebate()" style="flex:1;padding:12px;background:linear-gradient(90deg,#FF4500,#FF6347);border:none;color:#fff;">Начать дебаты</button>
-                </div>
-            </div>
-        </div>
-   
     <div id="selfPlayModal" class="modal-overlay">
         <div class="modal-box" style="max-width:600px;">
             <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;">🧠</div>
