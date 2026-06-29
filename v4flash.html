@@ -1510,7 +1510,7 @@
             var contentText = assistantMsg._fullBuffer || '';
             var textToFormat = (reasoningText ? '%%REASONING%%' + reasoningText + '%%ENDREASONING%%' : '') + contentText;
             var now = Date.now();
-            if (!_streamLastRender[msgIndex] || now - _streamLastRender[msgIndex] > 400 || assistantMsg.finished) {
+            if (!_streamLastRender[msgIndex] || now - _streamLastRender[msgIndex] > 400 || assistantMsg.finished || assistantMsg._fullBuffer.length < 100) {
                 _streamLastRender[msgIndex] = now;
                 formatMessageAsync(textToFormat, function(html) {
                     var msgEl = document.getElementById('stream-' + msgIndex);
