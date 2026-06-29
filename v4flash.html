@@ -363,6 +363,36 @@
     </div>
 
     <script>
+        var highlightWorker = null;
+        var highlightCallbacks = {};
+        var highlightIdCounter = 0;
+
+        function initHighlightWorker() {
+            if (highlightWorker) return;
+            try {
+                highlightWorker = new Worker('highlight.worker.js');
+                highlightWorker.onmessage = function(e) {
+                    var data = e.data;
+                    var cb = highlightCallbacks[data.id];
+                    if (cb) {
+                        cb(data.html, data.text);
+                        delete highlightCallbacks[data.id];
+                    }
+                };
+            } catch(e) {
+                highlightWorker = null;
+            }
+        }
+
+        function highlightInWorker(text, lang, callback) {
+            if (!highlightWorker) {
+                callback(null, text);
+                return;
+            }
+            var id = ++highlightIdCounter;
+            highlightCallbacks[id] = callback;
+            highlightWorker.postMessage({ id: id, text: text, lang: lang });
+        }
         var autoScroll = true;
         const SERVER_URL = CONFIG.SERVER_URL;
         let currentPersonality = localStorage.getItem('photobot_personality') || 'default';
@@ -1084,18 +1114,13 @@
                                                         var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                                         msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
                                                         msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                            if (typeof hljs !== 'undefined') {
-                                                                var lang = block.className.replace('language-', '');
-                                                                if (lang && hljs.getLanguage(lang)) {
-                                                                    var result = hljs.highlight(block.textContent, { language: lang });
-                                                                    block.innerHTML = result.value;
-                                                                }
+                                                            var lang = block.className.replace('language-', '') || '';
+                                                            if (lang) {
+                                                                highlightInWorker(block.textContent, lang, function(html, text) {
+                                                                    if (html) block.innerHTML = html;
+                                                                });
                                                             }
                                                         });
-                                                        setupFloatingCopyButtonsForMsg(msgEl);
-                                                        updateFloatingButtons();
-                                                    }
-                                                });
                                             }
                                             setupFloatingCopyButtonsForMsg(msgEl);
                                             updateFloatingButtons();
@@ -1258,18 +1283,13 @@
                                                         var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                                         msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
                                                         msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                            if (typeof hljs !== 'undefined') {
-                                                                var lang = block.className.replace('language-', '');
-                                                                if (lang && hljs.getLanguage(lang)) {
-                                                                    var result = hljs.highlight(block.textContent, { language: lang });
-                                                                    block.innerHTML = result.value;
-                                                                }
+                                                            var lang = block.className.replace('language-', '') || '';
+                                                            if (lang) {
+                                                                highlightInWorker(block.textContent, lang, function(html, text) {
+                                                                    if (html) block.innerHTML = html;
+                                                                });
                                                             }
                                                         });
-                                                        setupFloatingCopyButtonsForMsg(msgEl);
-                                                        updateFloatingButtons();
-                                                    }
-                                                });
                                             }
                                             setupFloatingCopyButtonsForMsg(msgEl);
                                             updateFloatingButtons();
@@ -1465,18 +1485,13 @@
                                                 var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                                 msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
                                                 msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                    if (typeof hljs !== 'undefined') {
-                                                        var lang = block.className.replace('language-', '');
-                                                        if (lang && hljs.getLanguage(lang)) {
-                                                            var result = hljs.highlight(block.textContent, { language: lang });
-                                                            block.innerHTML = result.value;
-                                                        }
+                                                    var lang = block.className.replace('language-', '') || '';
+                                                    if (lang) {
+                                                        highlightInWorker(block.textContent, lang, function(html, text) {
+                                                            if (html) block.innerHTML = html;
+                                                        });
                                                     }
                                                 });
-                                                setupFloatingCopyButtonsForMsg(msgEl);
-                                                updateFloatingButtons();
-                                            }
-                                        });
                                     }
                                     setupFloatingCopyButtonsForMsg(msgEl);
                                     updateFloatingButtons();
@@ -2075,18 +2090,13 @@
                                                                                 if (msgEl) {
                                                                                     msgEl.innerHTML = formatMessage(assistantMsg.content);
                                                                                     msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                                                        if (typeof hljs !== 'undefined') {
-                                                                                            var lang = block.className.replace('language-', '');
-                                                                                            if (lang && hljs.getLanguage(lang)) {
-                                                                                                var result = hljs.highlight(block.textContent, { language: lang });
-                                                                                                block.innerHTML = result.value;
-                                                                                            }
+                                                                                        var lang = block.className.replace('language-', '') || '';
+                                                                                        if (lang) {
+                                                                                            highlightInWorker(block.textContent, lang, function(html, text) {
+                                                                                                if (html) block.innerHTML = html;
+                                                                                            });
                                                                                         }
                                                                                     });
-                                                                                    setupFloatingCopyButtonsForMsg(msgEl);
-                                                                                    updateFloatingButtons();
-                                                                                }
-                                                                            });
                                                                         }
                                                                         setupFloatingCopyButtonsForMsg(msgEl);
                                                                         updateFloatingButtons();
@@ -2318,18 +2328,13 @@
                                                     : '';
                                                 msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
                                                 msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                    if (typeof hljs !== 'undefined') {
-                                                        var lang = block.className.replace('language-', '');
-                                                        if (lang && hljs.getLanguage(lang)) {
-                                                            var result = hljs.highlight(block.textContent, { language: lang });
-                                                            block.innerHTML = result.value;
-                                                        }
+                                                    var lang = block.className.replace('language-', '') || '';
+                                                    if (lang) {
+                                                        highlightInWorker(block.textContent, lang, function(html, text) {
+                                                            if (html) block.innerHTML = html;
+                                                        });
                                                     }
                                                 });
-                                                setupFloatingCopyButtonsForMsg(msgEl);
-                                                updateFloatingButtons();
-                                            }
-                                        });
                                     }
                                     setupFloatingCopyButtonsForMsg(msgEl);
                                     updateFloatingButtons();
@@ -2862,6 +2867,7 @@
         }
 
         window.addEventListener('load', function() { 
+            initHighlightWorker();
             setupFloatingCopyButtons(); 
             var mainEl3 = document.querySelector('.main');
             if (mainEl3) mainEl3.addEventListener('scroll', updateFloatingButtons);
@@ -3024,6 +3030,7 @@
 
         var chatAreaObserver = new MutationObserver(function() { setupFloatingCopyButtons(); updateFloatingButtons(); });
         window.addEventListener('load', function() {
+            initHighlightWorker();
             var main = document.querySelector('.main');
             if (main) chatAreaObserver.observe(main, { childList: true, subtree: true });
             setupFloatingCopyButtons();
