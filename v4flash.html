@@ -1833,7 +1833,8 @@
                 if (!consensus) consensus = selected[selected.length - 1];
                 var idx = selfPlayIndex;
                 closeSelfPlayModal();
-                selfPlay(idx, promptText, selected, consensus);
+                var temperature = parseFloat(document.getElementById('selfPlayTemperature').value);
+                selfPlay(idx, promptText, selected, consensus, temperature);
         }
 
 
@@ -1846,7 +1847,7 @@
                 if (e.target === this) closeSelfPlayModal();
         });
 
-        async function selfPlay(msgIndex, promptText, selectedRoles, consensusRole) {
+        async function selfPlay(msgIndex, promptText, selectedRoles, consensusRole, temperature) {
                 if (isSending) return;
                 if (!currentChatId) {
                         currentChatId = Date.now().toString();
@@ -1881,7 +1882,8 @@
                                         source_msg_id: msg.msg_id || '',
                                         prompt: promptText,
                                         roles: selectedRoles.join(','),
-                                        consensus_role: consensusRole
+                                        consensus_role: consensusRole,
+                                        temperature: temperature
                                 })
                         });
                         var newBranchId = resp.headers.get('X-Branch-Id');
@@ -2886,6 +2888,10 @@
                 <select id="selfPlayConsensus" style="width:100%;padding:10px 14px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:14px;font-family:Inter,sans-serif;outline:none;">
                     <option value="">Сначала выберите личности</option>
                 </select>
+            </div>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">ТЕМПЕРАТУРА: <span id="selfPlayTempValue">1.0</span></label>
+                <input type="range" id="selfPlayTemperature" min="0.5" max="2.0" step="0.1" value="1.0" style="width:100%;accent-color:#00CBF5;" oninput="document.getElementById('selfPlayTempValue').textContent=this.value">
             </div>
             <div style="margin-bottom:16px;">
                 <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">СУТЬ ДИАЛОГА</label>
