@@ -378,6 +378,111 @@
         let pendingFile = null;
         let activeStreamId = null;
         let allBranchesCache = {};
+        // ==================== StreamEngine v2.0 ====================
+        var StreamEngine = (function() {
+            const WORKER_SCRIPT = `
+                importScripts('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js');
+                const B = '\`';
+                const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const fmt = t => {
+                    t = esc(t);
+                    t = t.replace(/\`([^\`]+)\`/g,'<code>$1</code>');
+                    t = t.replace(/\\*\\*(.+?)\\*\\*/g,'<strong>$1</strong>');
+                    t = t.replace(/\\*(.+?)\\*/g,'<em>$1</em>');
+                    t = t.replace(/\\[(.+?)\\]\\((.+?)\\)/g,'<a href="$2" target="_blank">$1</a>');
+                    t = t.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+                    t = t.replace(/^#### (.+)$/gm,'<h4>$1</h4>');
+                    t = t.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+                    t = t.replace(/^# (.+)$/gm,'<h1>$1</h1>');
+                    t = t.replace(/^---$/gm,'<hr>');
+                    t = t.replace(/^[-*]\\s(.+)$/gm,'<li>$1</li>');
+                    t = t.replace(/((?:<li>.*<\\/li>\\s*)+)/g,'<ul>$1</ul>');
+                    t = t.replace(/^\\d+\\.\\s(.+)$/gm,'<li>$1</li>');
+                    t = t.replace(/~~(.+?)~~/g,'<del>$1</del>');
+                    t = t.replace(/^&gt;\\s(.+)$/gm,'<blockquote>$1</blockquote>');
+                    t = t.replace(/\\n/g,'<br>');
+                    return t;
+                };
+                const highlight = (code, lang) => {
+                    if (!lang) return esc(code);
+                    if (hljs.getLanguage(lang)) {
+                        try { return hljs.highlight(code, { language: lang, ignoreIllegals: true }).value; }
+                        catch(e) { return esc(code); }
+                    }
+                    try { return hljs.highlightAuto(code).value; } catch(e) { return esc(code); }
+                };
+                self.onmessage = e => {
+                    const { text, id } = e.data;
+                    let result = '', last = 0;
+                    const regex = new RegExp(B+B+B+'(\\\\w*)\\\\r?\\\\n([\\\\s\\\\S]*?)'+B+B+B, 'g');
+                    let m;
+                    while ((m = regex.exec(text)) !== null) {
+                        if (m.index > last) result += fmt(text.substring(last, m.index));
+                        result += '<pre><code class="hljs language-'+m[1]+'">'+highlight(m[2], m[1])+'</code></pre>';
+                        last = regex.lastIndex;
+                    }
+                    if (last < text.length) result += fmt(text.substring(last));
+                    self.postMessage({ id, html: result });
+                };
+            `;
+            const worker = new Worker(URL.createObjectURL(new Blob([WORKER_SCRIPT], { type: 'application/javascript' })));
+            const tasks = {};
+            let taskId = 0;
+            worker.onmessage = e => {
+                const t = tasks[e.data.id];
+                if (t) t(e.data.html);
+                delete tasks[e.data.id];
+            };
+
+            let currentMsgIndex = null;
+            let lastRender = 0;
+
+            function scheduleRender(msgIndex, force) {
+                const chat = chats.find(c => c.id === currentChatId);
+                if (!chat) return;
+                const msg = chat.messages[msgIndex];
+                if (!msg) return;
+                const el = document.getElementById('stream-' + msgIndex);
+                if (!el) return;
+
+                const now = Date.now();
+                if (!force && now - lastRender < 100) return; // не чаще 10 fps
+                lastRender = now;
+
+                const reasoning = msg._reasoningBuffer || '';
+                const content = msg._fullBuffer || '';
+                const text = (reasoning ? '%%REASONING%%' + reasoning + '%%ENDREASONING%%' : '') + content;
+
+                const id = ++taskId;
+                tasks[id] = html => {
+                    if (!el.isConnected) return;
+                    el.innerHTML = html.replace(/%%REASONING%%([\s\S]*?)%%ENDREASONING%%/g, '<div class="reasoning-block">$1</div>');
+                    setupFloatingCopyButtonsForMsg(el);
+                    updateFloatingButtons();
+                    if (autoScroll && force) {
+                        const main = document.querySelector('.main');
+                        if (main) { main.scrollTop = main.scrollHeight; }
+                    }
+                };
+                worker.postMessage({ id, text });
+            }
+
+            return {
+                update(msgIndex) {
+                    if (currentMsgIndex !== msgIndex) { currentMsgIndex = msgIndex; lastRender = 0; }
+                    scheduleRender(msgIndex, false);
+                },
+                finalize(msgIndex) {
+                    scheduleRender(msgIndex, true);
+                    currentMsgIndex = null;
+                },
+                reset() {
+                    currentMsgIndex = null;
+                    lastRender = 0;
+                }
+            };
+        })();
+        // ===========================================================
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
         window.addEventListener('drop', function(e) { e.preventDefault(); e.stopPropagation(); });
@@ -2084,91 +2189,6 @@
             btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(32,31,40,0.3);border-top-color:#201F28;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
             btn.onclick = null;
         }
-        var StreamRenderer = {
-            _pending: {},
-            _htmlCache: {},
-            _codeBlocks: {},
-            schedule: function(msgIndex) {
-                var self = this;
-                if (this._pending[msgIndex]) return;
-                this._pending[msgIndex] = true;
-                requestAnimationFrame(function() {
-                    self._pending[msgIndex] = false;
-                    self.render(msgIndex);
-                });
-            },
-            render: function(msgIndex) {
-                var chat = chats.find(function(c) { return c.id === currentChatId; });
-                if (!chat) return;
-                var msg = chat.messages[msgIndex];
-                if (!msg) return;
-                var msgEl = document.getElementById('stream-' + msgIndex);
-                if (!msgEl) return;
-                var rawText = (msg._reasoningBuffer || '') + '\n' + (msg._fullBuffer || '');
-                var key = rawText.length.toString();
-                if (this._htmlCache[msgIndex] === key && !msg.finished) return;
-                if (!msg.finished && rawText.length - (this._lastRenderLen || 0) < 200 && this._htmlCache[msgIndex]) return;
-                this._htmlCache[msgIndex] = key;
-                var html;
-                var codeBlocks;
-                if (msg.finished || rawText.length < 5000) {
-                    var reasoningHtml = msg._reasoningBuffer ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>' : '';
-                    var contentHtml = formatMessage(msg._fullBuffer || '');
-                    html = reasoningHtml + contentHtml;
-                    codeBlocks = html.match(/<pre><code[\s\S]*?<\/code><\/pre>/g) || [];
-                } else {
-                    var chunks = this._splitIntoChunks(rawText);
-                    html = '';
-                    codeBlocks = [];
-                    for (var i = 0; i < chunks.length; i++) {
-                        var chunkHtml = formatMessage(chunks[i]);
-                        html += chunkHtml;
-                        var cb = chunkHtml.match(/<pre><code[\s\S]*?<\/code><\/pre>/g);
-                        if (cb) codeBlocks = codeBlocks.concat(cb);
-                    }
-                }
-                var prevScrollTop = msgEl.parentElement ? msgEl.parentElement.getBoundingClientRect().top : 0;
-                msgEl.innerHTML = html;
-                if (msgEl.parentElement) {
-                    var newScrollTop = msgEl.parentElement.getBoundingClientRect().top;
-                    var main = document.querySelector('.main');
-                    if (main) main.scrollTop += (newScrollTop - prevScrollTop);
-                }
-                if (codeBlocks.length > 0 && codeBlocks.join('').length < 50000) {
-                    var blocks = msgEl.querySelectorAll('pre code:not([data-highlighted])');
-                    for (var b = 0; b < blocks.length; b++) {
-                        if (typeof hljs !== 'undefined') {
-                            try { hljs.highlightElement(blocks[b]); } catch(e) {}
-                            blocks[b].dataset.highlighted = '1';
-                        }
-                    }
-                }
-                setupFloatingCopyButtonsForMsg(msgEl);
-                updateFloatingButtons();
-                if (autoScroll && msg.finished) {
-                    var main = document.querySelector('.main');
-                    if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
-                }
-            },
-            _splitIntoChunks: function(text) {
-                var chunks = [];
-                var codeBlockRegex = /```(\w*)\r?\n([\s\S]*?)```/g;
-                var lastIdx = 0;
-                var match;
-                while ((match = codeBlockRegex.exec(text)) !== null) {
-                    if (match.index > lastIdx) {
-                        chunks.push(text.substring(lastIdx, match.index));
-                    }
-                    chunks.push('```' + match[1] + '\n' + match[2] + '```');
-                    lastIdx = codeBlockRegex.lastIndex;
-                }
-                if (lastIdx < text.length) {
-                    chunks.push(text.substring(lastIdx));
-                }
-                if (chunks.length === 0) chunks.push(text);
-                return chunks;
-            }
-        };
 
         async function sendMessage() {
             if (isSending) return;
@@ -2290,10 +2310,8 @@
                                 if (parsed.content) {
                                     assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                 }
-                                const reasoningText = assistantMsg._reasoningBuffer || '';
-                                const contentText = assistantMsg._fullBuffer || '';
-                                assistantMsg.content = contentText;
-                                StreamRenderer.schedule(msgIndex);
+                                assistantMsg.content = assistantMsg._fullBuffer || '';
+                                StreamEngine.update(msgIndex);
                             }
                         } catch (e) {
                             console.warn('SSE parse error:', e, dataStr);
@@ -2323,6 +2341,7 @@
                 sendBtnArrow();
                 pendingFile = null;
                 updateFileList();
+                StreamEngine.finalize(msgIndex);
                 renderMessages();
                 buildNavContainer();
             } catch (e) {
@@ -2371,7 +2390,6 @@
                 }
             } catch(e) { console.error('updateBranchesFromServer error:', e); }
         }
-
 
         function formatMessage(text) {
             var B = String.fromCharCode(96);
@@ -2428,6 +2446,7 @@
             if (activeStreamId) {
                 var oldStreamId = activeStreamId;
                 activeStreamId = null;
+            	StreamEngine.reset();
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (chat && chat.messages.length > 0) {
                     var lastMsg = chat.messages[chat.messages.length - 1];
