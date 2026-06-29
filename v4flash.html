@@ -1465,16 +1465,20 @@
         function debouncedHighlightBlocks(msgEl, msgIndex) {
             if (!msgEl) return;
             var codeBlocks = msgEl.querySelectorAll('pre code:not([data-highlighted])');
-            codeBlocks.forEach(function(block) {
-                var textLen = block.textContent.length;
-                if (textLen > HIGHLIGHT_TOKEN_LIMIT) {
-                    block.dataset.highlighted = 'plain';
-                    return;
-                }
-                if (typeof hljs !== 'undefined' && block.isConnected) {
-                    try { hljs.highlightElement(block); } catch(e) {}
-                    block.dataset.highlighted = '1';
-                }
+            if (codeBlocks.length === 0) return;
+            requestAnimationFrame(function() {
+                codeBlocks.forEach(function(block) {
+                    if (block.dataset.highlighted) return;
+                    var textLen = block.textContent.length;
+                    if (textLen > HIGHLIGHT_TOKEN_LIMIT) {
+                        block.dataset.highlighted = 'plain';
+                        return;
+                    }
+                    if (typeof hljs !== 'undefined' && block.isConnected) {
+                        try { hljs.highlightElement(block); } catch(e) {}
+                        block.dataset.highlighted = '1';
+                    }
+                });
             });
         }
         function renderMessages() {
