@@ -379,6 +379,10 @@
         let typingInterval = null;
         let pendingFile = null;
         let activeStreamId = null;
+        var HIGHLIGHT_DEBOUNCE_MS = 200;
+        var HIGHLIGHT_TOKEN_LIMIT = 10000;
+        var _highlightTimers = {};
+        var _highlightPlainCache = {};
         let allBranchesCache = {};
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
@@ -1075,7 +1079,7 @@
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                            msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                            debouncedHighlightBlocks(msgEl, streamMsgIndex);
                                             setupFloatingCopyButtonsForMsg(msgEl);
                                             updateFloatingButtons();
                                         }
@@ -1225,7 +1229,7 @@
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                            msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                            debouncedHighlightBlocks(msgEl, newMsgIndex);
                                             setupFloatingCopyButtonsForMsg(msgEl);
                                             updateFloatingButtons();
                                         }
@@ -1408,7 +1412,7 @@
                                 if (msgEl) {
                                     var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                     msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                    msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                    debouncedHighlightBlocks(msgEl, newMsgIndex);
                                     setupFloatingCopyButtonsForMsg(msgEl);
                                     updateFloatingButtons();
                                 }
@@ -1458,9 +1462,32 @@
                 }
             }
         }
-
-        
-
+        function debouncedHighlightBlocks(msgEl, msgIndex) {
+            if (!msgEl) return;
+            var codeBlocks = msgEl.querySelectorAll('pre code');
+            codeBlocks.forEach(function(block) {
+                var textLen = block.textContent.length;
+                if (textLen > HIGHLIGHT_TOKEN_LIMIT) {
+                    if (!_highlightPlainCache[msgIndex + '_' + block.textContent.substring(0, 40)]) {
+                        block.classList.add('plain-code');
+                        _highlightPlainCache[msgIndex + '_' + block.textContent.substring(0, 40)] = true;
+                    }
+                    return;
+                }
+                var blockKey = msgIndex + '_' + (block.dataset.hlBlockKey || '');
+                if (!block.dataset.hlBlockKey) {
+                    block.dataset.hlBlockKey = Math.random().toString(36).slice(2);
+                    blockKey = msgIndex + '_' + block.dataset.hlBlockKey;
+                }
+                if (_highlightTimers[blockKey]) clearTimeout(_highlightTimers[blockKey]);
+                _highlightTimers[blockKey] = setTimeout(function() {
+                    if (typeof hljs !== 'undefined' && block.isConnected) {
+                        hljs.highlightElement(block);
+                    }
+                    delete _highlightTimers[blockKey];
+                }, HIGHLIGHT_DEBOUNCE_MS);
+            });
+        }
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId);
@@ -1523,7 +1550,6 @@
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + contentHtml + truncatedHtml + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
-            hljs.highlightAll();
             setupFloatingCopyButtons();
             updateFloatingButtons();
             buildNavContainer();
@@ -1998,7 +2024,7 @@
                                                                 var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                                                 if (msgEl) {
                                                                         msgEl.innerHTML = formatMessage(assistantMsg.content);
-                                                                        msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                                                        debouncedHighlightBlocks(msgEl, streamMsgIndex);
                                                                         setupFloatingCopyButtonsForMsg(msgEl);
                                                                         updateFloatingButtons();
                                                                 }
@@ -2216,9 +2242,7 @@
                                         ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
                                         : '';
                                     msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                        if (typeof hljs !== 'undefined') hljs.highlightElement(block);
-                                    });
+                                    debouncedHighlightBlocks(msgEl, msgIndex);
                                     setupFloatingCopyButtonsForMsg(msgEl);
                                     updateFloatingButtons();
                                 }
@@ -2251,14 +2275,6 @@
                 sendBtnArrow();
                 pendingFile = null;
                 updateFileList();
-                var msgElFinal = document.getElementById('stream-' + msgIndex);
-                if (msgElFinal) {
-                    msgElFinal.querySelectorAll('pre code').forEach(function(block) {
-                        if (typeof hljs !== 'undefined') hljs.highlightElement(block);
-                    });
-                    setupFloatingCopyButtonsForMsg(msgElFinal);
-                    updateFloatingButtons();
-                }
                 renderMessages();
                 buildNavContainer();
             } catch (e) {
