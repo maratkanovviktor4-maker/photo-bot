@@ -2272,14 +2272,17 @@
                                         ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
                                         : '';
                                     msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                        var lang = block.className.replace('language-', '') || '';
-                                        if (lang) {
-                                            highlightInWorker(block.textContent, lang, function(html, text) {
-                                                if (html) block.innerHTML = html;
-                                            });
-                                        }
-                                    });
+                                    if (!assistantMsg._lastHighlight || Date.now() - assistantMsg._lastHighlight > 200) {
+                                        assistantMsg._lastHighlight = Date.now();
+                                        msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                            var lang = block.className.replace('language-', '') || '';
+                                            if (lang) {
+                                                highlightInWorker(block.textContent, lang, function(html, text) {
+                                                    if (html) block.innerHTML = html;
+                                                });
+                                            }
+                                        });
+                                    }
                                     setupFloatingCopyButtonsForMsg(msgEl);
                                     updateFloatingButtons();
                                 }
