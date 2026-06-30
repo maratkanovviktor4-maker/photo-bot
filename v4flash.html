@@ -559,7 +559,7 @@
             main.addEventListener('scroll', function() {
                 var btn = document.getElementById('scrollBottomBtn');
                 if (!btn) return;
-                var atBottom = main.scrollHeight - main.scrollTop - main.clientHeight < 5;
+                var atBottom = main.scrollHeight - main.scrollTop - main.clientHeight < 2;
                 if (atBottom) {
                     btn.style.display = 'none';
                     autoScroll = true;
@@ -2139,11 +2139,13 @@
                 }
                 setupFloatingCopyButtonsForMsg(el);
                 updateFloatingButtons();
-                var main = document.querySelector('.main');
-                if (main) {
-                    main.style.scrollBehavior = 'auto';
-                    main.scrollTop = main.scrollHeight;
-                    main.style.scrollBehavior = 'smooth';
+                if (autoScroll) {
+                    var main = document.querySelector('.main');
+                    if (main) {
+                        main.style.scrollBehavior = 'auto';
+                        main.scrollTop = main.scrollHeight;
+                        main.style.scrollBehavior = 'smooth';
+                    }
                 }
             }, 16);
         }
