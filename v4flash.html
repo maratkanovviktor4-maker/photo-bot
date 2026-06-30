@@ -2135,10 +2135,8 @@
                 }
                 setupFloatingCopyButtonsForMsg(el);
                 updateFloatingButtons();
-                if (autoScroll) {
-                    var main = document.querySelector('.main');
-                    if (main) { main.scrollTop = main.scrollHeight; }
-                }
+                var main = document.querySelector('.main');
+                if (main) { main.scrollTop = main.scrollHeight; }
             }, 16);
         }
         async function sendMessage() {
@@ -2295,6 +2293,8 @@
                 updateFileList();
                 renderMessages();
                 buildNavContainer();
+                var mainFinal = document.querySelector('.main');
+                if (mainFinal) { mainFinal.scrollTop = mainFinal.scrollHeight; }
             } catch (e) {
                 if (e.name === 'AbortError') {
                     assistantMsg.interrupted = true;
