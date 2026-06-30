@@ -2822,25 +2822,7 @@
         function showLoading() { document.getElementById('loadingSpinner').style.display = 'flex'; }
         function hideLoading() { document.getElementById('loadingSpinner').style.display = 'none'; }
 
-        // Copy history modal
-        (function() {
-            var modalClosePairs = [
-                ['copyHistoryModal', closeCopyHistoryModal],
-                ['editMessageModal', closeEditMessageModal],
-                ['selfPlayModal', closeSelfPlayModal],
-                ['renameModal', closeRenameModal],
-                ['customPersonalityModal', closeCustomPersonalityModal]
-            ];
-            for (var i = 0; i < modalClosePairs.length; i++) {
-                var pair = modalClosePairs[i];
-                var el = document.getElementById(pair[0]);
-                if (el) {
-                    el.addEventListener('click', (function(closeFn) {
-                        return function(e) { if (e.target === this) closeFn(); };
-                    })(pair[1]));
-                }
-            }
-        })();
+
     </script>
 
     <div id="modalOverlay" class="modal-overlay">
@@ -2925,6 +2907,24 @@
             }
             closeEditMessageModal();
         }
+        (function() {
+            var modalClosePairs = [
+                ['copyHistoryModal', closeCopyHistoryModal],
+                ['editMessageModal', closeEditMessageModal],
+                ['selfPlayModal', closeSelfPlayModal],
+                ['renameModal', closeRenameModal],
+                ['customPersonalityModal', closeCustomPersonalityModal]
+            ];
+            for (var i = 0; i < modalClosePairs.length; i++) {
+                var pair = modalClosePairs[i];
+                var el = document.getElementById(pair[0]);
+                if (el) {
+                    el.addEventListener('click', (function(closeFn) {
+                        return function(e) { if (e.target === this) closeFn(); };
+                    })(pair[1]));
+                }
+            }
+        })();
         document.getElementById('editMessageInput').addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 300) + 'px'; });
         document.getElementById('editMessageInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && e.shiftKey) {
