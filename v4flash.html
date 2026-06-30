@@ -121,13 +121,13 @@
         .message-row.user .message-content { background: rgba(0,203,245,0.15); border-radius: 18px; }
         body.light .message-row.user .message-content { background: #EDF3FE; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
         .message-content pre { display: none; }
-        .msg-code-block { width: 775px; max-width: 775px; margin: 8px -14px; box-sizing: border-box; background: #1a1a2e; border-radius: 10px; overflow-x: hidden; font-size: 14px; border: none; outline: none; position: relative; padding-top: 34px; }
+        .msg-code-block { width: 775px; max-width: 775px; margin: 8px -14px; box-sizing: border-box; background: #1a1a2e; border-radius: 10px; overflow-x: hidden; font-size: 14px; border: none; outline: none; }
         .msg-code-block pre { display: block; background: transparent; padding: 0 14px 14px 14px; margin: 0; border-radius: 0; overflow: visible; white-space: pre-wrap; word-break: break-all; position: static; border: none; outline: none; }
         .msg-code-block pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; display: block; color: inherit; white-space: pre-wrap; word-break: break-all; }
         body.light .msg-code-block { background: #f8f8f8; border: none; }
         body.light .msg-code-block pre { background: transparent; }
         body.light .msg-code-block pre code { background: transparent; }
-        .floating-code-header { position: absolute; top: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; z-index: 5; display: flex; align-items: center; justify-content: space-between; line-height: 1; }
+        .floating-code-header { display: flex; align-items: center; justify-content: space-between; background: #1a1a2e; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; line-height: 1; }
         body.light .floating-code-header { background: #f8f8f8; color: #555; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; }
         body.light .message-content code { background: #f5f5f5; color: #111; }
@@ -2446,7 +2446,7 @@
                 header.style.color = '#555';
             }
             header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
-            pre.insertBefore(header, pre.firstChild);
+            block.insertBefore(header, block.firstChild);
             block._floatHeader = header;
 
             var actions = header.querySelector('span:last-child');
@@ -2579,6 +2579,7 @@
                     btns[b].style.color = clr;
                 }
                 var blockRect = block.getBoundingClientRect();
+                var headerHeight = header.offsetHeight || 34;
                 var preEl = block.querySelector('pre');
                 var codeTop = preEl ? preEl.getBoundingClientRect().top : blockRect.top;
                 var codeBottom = preEl ? preEl.getBoundingClientRect().bottom : blockRect.bottom;
@@ -2587,11 +2588,11 @@
                     header.style.position = 'fixed';
                     header.style.top = tbBottom + 'px';
                     header.style.left = blockRect.left + 'px';
-                    header.style.width = '775px';
+                    header.style.width = blockRect.width + 'px';
                     header.style.display = 'flex';
                 } else {
-                    header.style.position = 'sticky';
-                    header.style.top = '0px';
+                    header.style.position = 'static';
+                    header.style.top = '';
                     header.style.left = '';
                     header.style.width = '';
                     header.style.display = (blockRect.bottom > tbBottom && blockRect.top < window.innerHeight) ? 'flex' : 'none';
