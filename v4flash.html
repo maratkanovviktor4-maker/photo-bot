@@ -2052,8 +2052,7 @@
         }
         var voiceInputActive = false;
         var recognition = null;
-        var voiceInputActive = false;
-        var recognition = null;
+
 
         function toggleVoiceInput() {
             if (voiceInputActive) {
@@ -2097,25 +2096,10 @@
             var micBtn = document.getElementById('micBtn');
             if (micBtn) micBtn.style.color = '#888';
         }
-        function stopVoiceInput() {
-            if (recognition) {
-                try { recognition.stop(); } catch(e) {}
-                recognition = null;
-            }
-            voiceInputActive = false;
-            var micBtn = document.getElementById('micBtn');
-            if (micBtn) micBtn.style.color = '#888';
-        }
         function sendBtnArrow() {
             var btn = document.getElementById('sendBtn');
             btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
             btn.onclick = sendMessage;
-        }
-
-        function sendBtnStop() {
-            var btn = document.getElementById('sendBtn');
-            btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(32,31,40,0.3);border-top-color:#201F28;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
-            btn.onclick = null;
         }
 
         function sendBtnStop() {
@@ -2281,7 +2265,7 @@
                         } catch (e) {
                             console.warn('SSE parse error:', e, dataStr);
                         }
-
+                    }
                 }
 
                 assistantMsg.finished = true;
