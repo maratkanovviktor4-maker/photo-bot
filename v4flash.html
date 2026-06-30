@@ -121,14 +121,13 @@
         .message-row.user .message-content { background: rgba(0,203,245,0.15); border-radius: 18px; }
         body.light .message-row.user .message-content { background: #EDF3FE; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
         .message-content pre { display: none; }
-        .msg-code-block { width: 775px; max-width: 100%; margin: 8px -14px; box-sizing: border-box; background: #1a1a2e; border-radius: 10px; overflow-x: hidden; font-size: 14px; border: none; position: relative; }
-        .msg-code-block pre { display: block; background: transparent; padding: 34px 14px 14px 14px; margin: 0; border-radius: 0; overflow: visible; white-space: pre-wrap; word-break: break-all; position: static; }
+        .msg-code-block-wrap { width: 775px; max-width: 100%; margin: 8px -14px; box-sizing: border-box; background: #1a1a2e; border-radius: 10px; overflow: hidden; font-size: 14px; border: none; position: relative; }
+        .msg-code-block-wrap .floating-code-header { position: sticky; top: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; z-index: 5; display: flex; align-items: center; justify-content: space-between; line-height: 1; }
+        .msg-code-block { background: transparent; overflow-x: hidden; }
+        .msg-code-block pre { display: block; background: transparent; padding: 0 14px 14px 14px; margin: 0; border-radius: 0; overflow: visible; white-space: pre-wrap; word-break: break-all; position: static; }
         .msg-code-block pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; display: block; color: inherit; white-space: pre-wrap; word-break: break-all; }
-        body.light .msg-code-block { background: #f8f8f8; border: 1px solid rgba(0,0,0,0.08); }
-        body.light .msg-code-block pre { background: transparent; }
-        body.light .msg-code-block pre code { background: transparent; }
-        .floating-code-header { position: sticky; top: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; z-index: 5; display: flex; align-items: center; justify-content: space-between; line-height: 1; }
-        body.light .floating-code-header { background: #f8f8f8; color: #555; }
+        body.light .msg-code-block-wrap { background: #f8f8f8; border: 1px solid rgba(0,0,0,0.08); }
+        body.light .msg-code-block-wrap .floating-code-header { background: #f8f8f8; color: #555; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; }
         body.light .message-content code { background: #f5f5f5; color: #111; }
         .message-actions { display: flex; gap: 6px; margin-top: 6px; }
@@ -2372,7 +2371,7 @@
                 var part = parts[p];
                 if (part.type === 'code') {
                     var lang = part.lang || '';
-                    result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
+                    result += '<div class="msg-code-block-wrap"><div class="floating-code-header"><span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span></div><div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div></div>';
                 } else {
                     var text2 = escapeHtml(part.content);
                     for (var r = 0; r < _inlineRules.length; r++) {
@@ -2421,29 +2420,15 @@
         }
 
 
-        function _setupSingleCodeBlock(block) {
-            if (block.querySelector('.floating-code-header')) return;
-            var pre = block.tagName === 'PRE' ? block : block.querySelector('pre');
+        function _setupSingleCodeBlock(wrap) {
+            if (!wrap || wrap.querySelector('.floating-copy-btn')) return;
+            var header = wrap.querySelector('.floating-code-header');
+            if (!header) return;
+            var pre = wrap.querySelector('pre');
             if (!pre) return;
-            var codeBlock = pre.querySelector('code');
-            var lang = '';
-            if (codeBlock) {
-                var cls = codeBlock.className || '';
-                var m = cls.match(/language-(\w+)/);
-                if (m) lang = m[1];
-            }
-            var header = document.createElement('div');
-            header.className = 'floating-code-header';
-            header.style.cssText = 'position:sticky;top:0;left:0;right:0;background:#1a1a2e;border-radius:10px 10px 0 0;padding:6px 14px;font-size:12px;color:#aaa;font-family:Inter,sans-serif;z-index:5;display:flex;align-items:center;justify-content:space-between;line-height:1;';
-            if (document.body.classList.contains('light')) {
-                header.style.background = '#f8f8f8';
-                header.style.color = '#555';
-            }
-            header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
-            block.insertBefore(header, block.firstChild);
-            block._floatHeader = header;
-
             var actions = header.querySelector('span:last-child');
+            if (!actions || actions.querySelector('.floating-copy-btn')) return;
+
             var copyBtn = _makeActionBtn('Copy', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy', function() {
                 var code = pre._editorActive && pre._textarea ? pre._textarea.value : (pre.querySelector('code') ? pre.querySelector('code').textContent : '');
                 navigator.clipboard.writeText(code);
@@ -2464,7 +2449,9 @@
             });
             actions.appendChild(downloadBtn);
 
-            var isHtml = lang === 'html' || lang === 'htm' || /^\s*<(!DOCTYPE|html)/i.test((pre.querySelector('code') ? pre.querySelector('code').textContent : ''));
+            var codeEl = pre.querySelector('code');
+            var lang = codeEl ? (codeEl.className.match(/language-(\w+)/) || [])[1] || '' : '';
+            var isHtml = lang === 'html' || lang === 'htm' || /^\s*<(!DOCTYPE|html)/i.test(codeEl ? codeEl.textContent : '');
             if (isHtml) {
                 var previewBtn = _makeActionBtn('Предпросмотр', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Предпросмотр', function() {
                     var code = pre._editorActive && pre._textarea ? pre._textarea.value : (pre.querySelector('code') ? pre.querySelector('code').textContent : '');
@@ -2491,9 +2478,9 @@
         }
 
         function setupFloatingCopyButtons() {
-            var blocks = document.querySelectorAll('.msg-code-block');
-            for (var i = 0; i < blocks.length; i++) {
-                _setupSingleCodeBlock(blocks[i]);
+            var wraps = document.querySelectorAll('.msg-code-block-wrap');
+            for (var i = 0; i < wraps.length; i++) {
+                _setupSingleCodeBlock(wraps[i]);
             }
             _floatingHeaders = [];
             updateFloatingButtons();
@@ -2501,10 +2488,10 @@
 
         function setupFloatingCopyButtonsForMsg(msgEl) {
             if (!msgEl) return;
-            var blocks = msgEl.querySelectorAll('.msg-code-block');
-            for (var i = 0; i < blocks.length; i++) {
-                if (blocks[i].querySelector('.floating-code-header')) continue;
-                _setupSingleCodeBlock(blocks[i]);
+            var wraps = msgEl.querySelectorAll('.msg-code-block-wrap');
+            for (var i = 0; i < wraps.length; i++) {
+                if (wraps[i].querySelector('.floating-copy-btn')) continue;
+                _setupSingleCodeBlock(wraps[i]);
             }
             _floatingHeaders = [];
             updateFloatingButtons();
@@ -2549,9 +2536,10 @@
 
         function _collectFloatingHeaders() {
             _floatingHeaders = [];
-            var blocks = document.querySelectorAll('.msg-code-block');
-            for (var i = 0; i < blocks.length; i++) {
-                if (blocks[i]._floatHeader) _floatingHeaders.push(blocks[i]);
+            var wraps = document.querySelectorAll('.msg-code-block-wrap');
+            for (var i = 0; i < wraps.length; i++) {
+                var h = wraps[i].querySelector('.floating-code-header');
+                if (h) { wraps[i]._floatHeader = h; _floatingHeaders.push(wraps[i]); }
             }
         }
 
@@ -2568,7 +2556,7 @@
                 if (!header || !header.isConnected) { _floatingHeaders.splice(i, 1); i--; continue; }
                 header.style.background = bg;
                 header.style.color = clr;
-                var btns = header.querySelectorAll('button');
+                var btns = header.querySelectorAll('button:not(.editor-apply-btn):not(.editor-cancel-btn)');
                 for (var b = 0; b < btns.length; b++) {
                     btns[b].style.color = clr;
                 }
