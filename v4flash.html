@@ -2579,17 +2579,23 @@
                     btns[b].style.color = clr;
                 }
                 var blockRect = block.getBoundingClientRect();
-                var headerHeight = header.offsetHeight || 34;
                 var preEl = block.querySelector('pre');
                 var codeTop = preEl ? preEl.getBoundingClientRect().top : blockRect.top;
                 var codeBottom = preEl ? preEl.getBoundingClientRect().bottom : blockRect.bottom;
-                var stickyTop = 0;
-                if (codeTop < tbBottom && codeBottom > tbBottom) {
-                    stickyTop = tbBottom - blockRect.top;
+                var touchingBar = codeTop < tbBottom && codeBottom > tbBottom;
+                if (touchingBar) {
+                    header.style.position = 'fixed';
+                    header.style.top = tbBottom + 'px';
+                    header.style.left = blockRect.left + 'px';
+                    header.style.width = blockRect.width + 'px';
+                    header.style.display = 'flex';
+                } else {
+                    header.style.position = 'sticky';
+                    header.style.top = '0px';
+                    header.style.left = '';
+                    header.style.width = '';
+                    header.style.display = (blockRect.bottom > tbBottom && blockRect.top < window.innerHeight) ? 'flex' : 'none';
                 }
-                if (stickyTop < 0) stickyTop = 0;
-                header.style.top = stickyTop + 'px';
-                header.style.display = (stickyTop > 0) ? 'flex' : 'none';
             }
         }
 
