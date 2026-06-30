@@ -2138,30 +2138,37 @@
         }
 
         function renderStreamContent(el, msg) {
-            var reasoningHtml = (msg._reasoningBuffer)
-                ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
-                : '';
-            el.innerHTML = reasoningHtml + formatMessage(msg.content || '');
-            var codeBlocks = el.querySelectorAll('pre code');
-            for (var i = 0; i < codeBlocks.length; i++) {
-                var block = codeBlocks[i];
-                if (!block._highlighted && typeof hljs !== 'undefined') {
-                    hljs.highlightElement(block);
-                    block._highlighted = true;
+            if (!el._streamInit) {
+                el._streamInit = true;
+                el._reasoningEl = null;
+                el._contentEl = null;
+                el.innerHTML = '';
+                if (msg._reasoningBuffer) {
+                    var rDiv = document.createElement('div');
+                    rDiv.className = 'reasoning-block';
+                    el.appendChild(rDiv);
+                    el._reasoningEl = rDiv;
                 }
+                var cDiv = document.createElement('div');
+                el.appendChild(cDiv);
+                el._contentEl = cDiv;
             }
-            setupFloatingCopyButtonsForMsg(el);
-            updateFloatingButtons();
-            var btn = document.getElementById('scrollBottomBtn');
-            if (btn) { btn.style.display = 'none'; btn.style.pointerEvents = 'none'; }
-            requestAnimationFrame(function() {
-                requestAnimationFrame(function() {
-                    var main = document.querySelector('.main');
-                    if (main) {
-                        main.scrollTop = main.scrollHeight;
+            if (el._reasoningEl && msg._reasoningBuffer) {
+                el._reasoningEl.innerHTML = formatMessage(msg._reasoningBuffer);
+            }
+            if (el._contentEl && msg.content !== undefined) {
+                el._contentEl.innerHTML = formatMessage(msg.content);
+                var codeBlocks = el._contentEl.querySelectorAll('pre code');
+                for (var i = 0; i < codeBlocks.length; i++) {
+                    var block = codeBlocks[i];
+                    if (!block._highlighted && typeof hljs !== 'undefined') {
+                        hljs.highlightElement(block);
+                        block._highlighted = true;
                     }
-                });
-            });
+                }
+                setupFloatingCopyButtonsForMsg(el._contentEl);
+            }
+            updateFloatingButtons();
         }
         async function sendMessage() {
             if (isSending) return;
