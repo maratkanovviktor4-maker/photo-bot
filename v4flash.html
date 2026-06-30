@@ -377,202 +377,117 @@
         let typingInterval = null;
         let pendingFile = null;
         let activeStreamId = null;
-
-        // ============== IncrementalRenderer v2 ==============
-        var IncrementalRenderer = (function() {
-            var states = {};
-            var rafId = null;
-
-            function getState(msgIndex) {
-                if (!states[msgIndex]) {
-                    states[msgIndex] = {
-                        container: null,
-                        codeBlock: null,
-                        codeLang: '',
-                        codeBuffer: '',
-                        textNode: null,
-                        rawBuffer: '',
-                        lastProcessedLength: 0,
-                        highlightTimer: null,
-                        dirty: false
-                    };
-                }
-                return states[msgIndex];
-            }
-
-            function scheduleRender() {
-                if (rafId) return;
-                rafId = requestAnimationFrame(function() {
-                    rafId = null;
-                    for (var idx in states) {
-                        if (states[idx].dirty) render(parseInt(idx));
+        // ================== StreamEngine vFinal (без фризов) ==================
+        var StreamEngine = (function() {
+            var worker = new Worker(URL.createObjectURL(new Blob([`
+                importScripts('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js');
+                var B = '\`';
+                function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+                function fmt(t){t=esc(t);t=t.replace(/\`([^\`]+)\`/g,'<code>$1</code>');t=t.replace(/\\*\\*(.+?)\\*\\*/g,'<strong>$1</strong>');t=t.replace(/\\*(.+?)\\*/g,'<em>$1</em>');t=t.replace(/\\[(.+?)\\]\\((.+?)\\)/g,'<a href="$2" target="_blank">$1</a>');t=t.replace(/^### (.+)$/gm,'<h3>$1</h3>');t=t.replace(/^#### (.+)$/gm,'<h4>$1</h4>');t=t.replace(/^## (.+)$/gm,'<h2>$1</h2>');t=t.replace(/^# (.+)$/gm,'<h1>$1</h1>');t=t.replace(/^---$/gm,'<hr>');t=t.replace(/^[-*]\\s(.+)$/gm,'<li>$1</li>');t=t.replace(/((?:<li>.*<\\/li>\\s*)+)/g,'<ul>$1</ul>');t=t.replace(/^\\d+\\.\\s(.+)$/gm,'<li>$1</li>');t=t.replace(/~~(.+?)~~/g,'<del>$1</del>');t=t.replace(/^&gt;\\s(.+)$/gm,'<blockquote>$1</blockquote>');t=t.replace(/\\n/g,'<br>');return t;}
+                function highlight(code,lang){if(!lang)return esc(code);if(hljs.getLanguage(lang)){try{return hljs.highlight(code,{language:lang,ignoreIllegals:true}).value;}catch(e){return esc(code);}}try{return hljs.highlightAuto(code).value;}catch(e){return esc(code);}}
+                self.onmessage=function(e){
+                    var text=e.data.text,id=e.data.id,version=e.data.version;
+                    var result='',last=0;
+                    var regex=new RegExp(B+B+B+'(\\\\w*)\\\\r?\\\\n([\\\\s\\\\S]*?)'+B+B+B,'g'),m;
+                    while((m=regex.exec(text))!==null){
+                        if(m.index>last)result+=fmt(text.substring(last,m.index));
+                        result+='<pre><code class="hljs language-'+m[1]+'">'+highlight(m[2],m[1])+'</code></pre>';
+                        last=regex.lastIndex;
                     }
-                });
-            }
+                    if(last<text.length)result+=fmt(text.substring(last));
+                    self.postMessage({id:id,html:result,version:version});
+                };
+            `],{type:'application/javascript'})));
 
-            function render(msgIndex) {
+            var tasks = {}, taskId = 0;
+            worker.onmessage = function(e) {
+                var t = tasks[e.data.id]; if (t) t(e.data.html, e.data.version);
+                delete tasks[e.data.id];
+            };
+
+            var states = {}; // msgIndex -> { textNode, lastVersion, lastRequestTime, pending }
+
+            function update(msgIndex) {
                 var el = document.getElementById('stream-' + msgIndex);
                 if (!el) return;
-                var chat = chats.find(function(c) { return c.id === currentChatId; });
+                var chat = chats.find(function(c){return c.id === currentChatId;});
                 if (!chat) return;
                 var msg = chat.messages[msgIndex];
                 if (!msg) return;
 
-                var newRaw = (msg._reasoningBuffer || '') + '\n' + (msg._fullBuffer || '');
-                var state = getState(msgIndex);
-                state.dirty = false;
+                var reasoning = msg._reasoningBuffer || '';
+                var content = msg._fullBuffer || '';
+                var rawText = (reasoning ? '=== Размышление ===\n' + reasoning + '\n=== Ответ ===\n' : '') + content;
 
-                if (!state.container || state.container.parentNode !== el) {
+                var state = states[msgIndex];
+                if (!state) {
                     el.innerHTML = '';
-                    state.container = document.createDocumentFragment();
+                    state = { textNode: document.createTextNode(''), lastVersion: 0, lastRequestTime: 0, pending: false };
+                    el.appendChild(state.textNode);
+                    states[msgIndex] = state;
+                }
+
+                state.textNode.textContent = rawText;
+
+                var now = Date.now();
+                if (state.pending) return;
+                if (now - state.lastRequestTime < 150 && !msg.finished) return;
+
+                state.pending = true;
+                state.lastRequestTime = now;
+                var version = ++state.lastVersion;
+                var textToSend = (reasoning ? '%%REASONING%%' + reasoning + '%%ENDREASONING%%' : '') + content;
+                var id = ++taskId;
+                tasks[id] = function(html, workerVersion) {
+                    state.pending = false;
+                    if (workerVersion !== version) return; // игнорируем устаревший ответ
+                    if (!el.isConnected) return;
+                    if (state.textNode && state.textNode.parentNode) state.textNode.remove();
+                    el.innerHTML = html.replace(/%%REASONING%%([\s\S]*?)%%ENDREASONING%%/g, '<div class="reasoning-block">$1</div>');
+                    setupFloatingCopyButtonsForMsg(el);
+                    updateFloatingButtons();
                     state.textNode = null;
-                    state.codeBlock = null;
-                    state.rawBuffer = '';
-                    state.lastProcessedLength = 0;
-                    el.appendChild(state.container);
-                }
-
-                if (newRaw.length <= state.lastProcessedLength) return;
-
-                var newPart = newRaw.substring(state.lastProcessedLength);
-                state.lastProcessedLength = newRaw.length;
-                state.rawBuffer = newRaw;
-
-                var B = '`';
-                var tripleQuote = B+B+B;
-                var i = 0;
-                while (i < newPart.length) {
-                    if (!state.codeBlock) {
-                        var idx = newPart.indexOf(tripleQuote, i);
-                        if (idx === -1) {
-                            appendText(state, newPart.substring(i));
-                            break;
-                        } else {
-                            if (idx > i) appendText(state, newPart.substring(i, idx));
-                            var lineEnd = newPart.indexOf('\n', idx + 3);
-                            var lang = '';
-                            if (lineEnd !== -1) {
-                                lang = newPart.substring(idx + 3, lineEnd).trim();
-                                i = lineEnd + 1;
-                            } else {
-                                lang = '';
-                                i = idx + 3;
-                            }
-                            startCodeBlock(state, lang);
-                        }
-                    } else {
-                        var closeIdx = newPart.indexOf(tripleQuote, i);
-                        if (closeIdx === -1) {
-                            appendCode(state, newPart.substring(i));
-                            break;
-                        } else {
-                            if (closeIdx > i) appendCode(state, newPart.substring(i, closeIdx));
-                            finishCodeBlock(state);
-                            i = closeIdx + 3;
-                            if (newPart[i] === '\n') i++;
-                        }
-                    }
-                }
-
-                if (autoScroll) {
-                    var main = document.querySelector('.main');
-                    if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
-                }
-            }
-
-            function appendText(state, text) {
-                if (!state.textNode) {
-                    state.textNode = document.createTextNode('');
-                    state.container.appendChild(state.textNode);
-                }
-                state.textNode.textContent += text;
-            }
-
-            function startCodeBlock(state, lang) {
-                state.codeBlock = document.createElement('pre');
-                var code = document.createElement('code');
-                code.className = lang ? 'language-' + lang : '';
-                state.codeBlock.appendChild(code);
-                state.container.appendChild(state.codeBlock);
-                state.codeLang = lang;
-                state.codeBuffer = '';
-                state.textNode = null;
-                var header = document.createElement('div');
-                header.className = 'floating-code-header';
-                header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
-                state.codeBlock.insertBefore(header, code);
-                header.style.marginLeft = '-14px';
-                header.style.marginRight = '-14px';
-                header.style.width = 'calc(100% + 28px)';
-                state.codeBlock._floatHeader = header;
-                var actionsSpan = header.querySelector('span:last-child');
-                var copyBtn = document.createElement('button');
-                copyBtn.className = 'floating-copy-btn';
-                copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
-                copyBtn.style.cssText = 'background:transparent;border:none;color:#aaa;cursor:pointer;padding:4px 6px;border-radius:4px;font-size:11px;';
-                copyBtn.onclick = function() {
-                    navigator.clipboard.writeText(state.codeBlock.querySelector('code').textContent);
-                    copyBtn.innerHTML = '✓ Copied';
-                    setTimeout(function() { copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy'; }, 2000);
                 };
-                actionsSpan.appendChild(copyBtn);
-            }
-
-            function appendCode(state, text) {
-                if (!state.codeBlock) return;
-                var code = state.codeBlock.querySelector('code');
-                state.codeBuffer += text;
-                code.textContent = state.codeBuffer;
-                if (state.highlightTimer) clearTimeout(state.highlightTimer);
-                state.highlightTimer = setTimeout(function() {
-                    if (typeof hljs !== 'undefined' && code.isConnected) {
-                        try { hljs.highlightElement(code); } catch(e) {}
-                    }
-                }, 200);
-            }
-
-            function finishCodeBlock(state) {
-                if (!state.codeBlock) return;
-                var code = state.codeBlock.querySelector('code');
-                if (state.highlightTimer) { clearTimeout(state.highlightTimer); state.highlightTimer = null; }
-                if (typeof hljs !== 'undefined') {
-                    try { hljs.highlightElement(code); } catch(e) {}
-                }
-                state.codeBlock = null;
-                state.codeLang = '';
-                state.codeBuffer = '';
-                state.textNode = null;
-            }
-
-            function update(msgIndex) {
-                var state = getState(msgIndex);
-                state.dirty = true;
-                scheduleRender();
+                worker.postMessage({ id: id, text: textToSend, version: version });
             }
 
             function finalize(msgIndex) {
-                var state = getState(msgIndex);
-                state.dirty = true;
-                scheduleRender();
-                // Дополнительно гарантируем закрытие кода после отработки кадра
+                var state = states[msgIndex];
+                if (!state) { update(msgIndex); return; }
+                // Принудительно отправляем последний запрос без троттлинга
+                state.lastRequestTime = 0;
+                update(msgIndex);
+                // Дополнительная гарантия через 250 мс
                 setTimeout(function() {
-                    var st = states[msgIndex];
-                    if (st && st.codeBlock) {
-                        render(msgIndex);
-                        finishCodeBlock(st);
-                    }
-                    updateFloatingButtons();
-                }, 50);
+                    var el = document.getElementById('stream-' + msgIndex);
+                    if (!el) return;
+                    var chat = chats.find(function(c){return c.id === currentChatId;});
+                    if (!chat) return;
+                    var msg = chat.messages[msgIndex];
+                    if (!msg) return;
+                    var reasoning = msg._reasoningBuffer || '';
+                    var content = msg._fullBuffer || '';
+                    var textToSend = (reasoning ? '%%REASONING%%' + reasoning + '%%ENDREASONING%%' : '') + content;
+                    var version = ++state.lastVersion;
+                    var id = ++taskId;
+                    tasks[id] = function(html, workerVersion) {
+                        if (workerVersion !== version) return;
+                        if (!el.isConnected) return;
+                        el.innerHTML = html.replace(/%%REASONING%%([\s\S]*?)%%ENDREASONING%%/g, '<div class="reasoning-block">$1</div>');
+                        setupFloatingCopyButtonsForMsg(el);
+                        updateFloatingButtons();
+                    };
+                    worker.postMessage({ id: id, text: textToSend, version: version });
+                }, 250);
             }
 
             function reset() {
                 states = {};
-                if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
             }
 
             return { update: update, finalize: finalize, reset: reset };
         })();
-        // ===================================================
+        // =====================================================================
         let allBranchesCache = {};
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
@@ -2402,7 +2317,7 @@
                                     assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                 }
                                 assistantMsg.content = assistantMsg._fullBuffer || '';
-                                IncrementalRenderer.update(msgIndex);
+                                StreamEngine.update(msgIndex);
                             }
                         } catch (e) {
                             console.warn('SSE parse error:', e, dataStr);
@@ -2432,7 +2347,7 @@
                 sendBtnArrow();
                 pendingFile = null;
                 updateFileList();
-                IncrementalRenderer.finalize(msgIndex);
+                StreamEngine.finalize(msgIndex);
                 renderMessages();
                 buildNavContainer();
             } catch (e) {
@@ -2536,8 +2451,8 @@
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             if (activeStreamId) {
                 var oldStreamId = activeStreamId;
-            	activeStreamId = null;
-            	IncrementalRenderer.reset();
+                activeStreamId = null;
+                StreamEngine.reset();
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (chat && chat.messages.length > 0) {
                     var lastMsg = chat.messages[chat.messages.length - 1];
