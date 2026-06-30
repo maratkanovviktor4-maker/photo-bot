@@ -120,9 +120,15 @@
         body.light .message-row.assistant .message-content { background: #ffffff; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
         .message-row.user .message-content { background: rgba(0,203,245,0.15); border-radius: 18px; }
         body.light .message-row.user .message-content { background: #EDF3FE; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
-        .message-content pre { background: #1a1a2e; padding: 0 14px 14px 14px; border-radius: 10px; overflow-x: auto; overflow-y: visible; font-size: 14px; margin: 8px 0; border: none; white-space: pre-wrap; word-break: break-all; position: relative; }
-        body.light .message-content pre { background: #f8f8f8; border: none; color: #111; }
-        .message-content pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; border-radius: 0; display: block; color: inherit; padding-top: 34px; }
+        .message-content pre { display: none; }
+        .msg-code-block { width: calc(100% + 28px); margin: 8px -14px; box-sizing: border-box; background: #1a1a2e; border-radius: 10px; overflow-x: auto; font-size: 14px; border: none; position: relative; }
+        .msg-code-block pre { display: block; background: transparent; padding: 34px 14px 14px 14px; margin: 0; border-radius: 0; overflow: visible; white-space: pre; word-break: normal; position: static; }
+        .msg-code-block pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; display: block; color: inherit; }
+        body.light .msg-code-block { background: #f8f8f8; border: 1px solid rgba(0,0,0,0.08); }
+        body.light .msg-code-block pre { background: transparent; }
+        body.light .msg-code-block pre code { background: transparent; }
+        .floating-code-header { position: sticky; top: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; z-index: 5; display: flex; align-items: center; justify-content: space-between; line-height: 1; }
+        body.light .floating-code-header { background: #f8f8f8; color: #555; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; }
         body.light .message-content code { background: #f5f5f5; color: #111; }
         .floating-code-header { position: absolute; top: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; z-index: 5; display: flex; align-items: center; justify-content: space-between; line-height: 1; }
@@ -2368,7 +2374,7 @@
                 var part = parts[p];
                 if (part.type === 'code') {
                     var lang = part.lang || '';
-                    result += '<pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre>';
+                    result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
                 } else {
                     var text2 = escapeHtml(part.content);
                     for (var r = 0; r < _inlineRules.length; r++) {
@@ -2417,8 +2423,10 @@
         }
 
 
-        function _setupSingleCodeBlock(pre) {
-            if (pre.querySelector('.floating-code-header')) return;
+        function _setupSingleCodeBlock(block) {
+            if (block.querySelector('.floating-code-header')) return;
+            var pre = block.tagName === 'PRE' ? block : block.querySelector('pre');
+            if (!pre) return;
             var codeBlock = pre.querySelector('code');
             var lang = '';
             if (codeBlock) {
@@ -2435,10 +2443,7 @@
             }
             header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
             pre.insertBefore(header, pre.firstChild);
-            header.style.marginLeft = '-14px';
-            header.style.marginRight = '-14px';
-            header.style.width = 'calc(100% + 28px)';
-            pre._floatHeader = header;
+            block._floatHeader = header;
 
             var actions = header.querySelector('span:last-child');
             var copyBtn = _makeActionBtn('Copy', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy', function() {
@@ -2488,9 +2493,9 @@
         }
 
         function setupFloatingCopyButtons() {
-            var pres = document.querySelectorAll('.message-content pre');
-            for (var i = 0; i < pres.length; i++) {
-                _setupSingleCodeBlock(pres[i]);
+            var blocks = document.querySelectorAll('.msg-code-block');
+            for (var i = 0; i < blocks.length; i++) {
+                _setupSingleCodeBlock(blocks[i]);
             }
             _floatingHeaders = [];
             updateFloatingButtons();
@@ -2498,10 +2503,10 @@
 
         function setupFloatingCopyButtonsForMsg(msgEl) {
             if (!msgEl) return;
-            var pres = msgEl.querySelectorAll('pre');
-            for (var i = 0; i < pres.length; i++) {
-                if (pres[i].querySelector('.floating-code-header')) continue;
-                _setupSingleCodeBlock(pres[i]);
+            var blocks = msgEl.querySelectorAll('.msg-code-block');
+            for (var i = 0; i < blocks.length; i++) {
+                if (blocks[i].querySelector('.floating-code-header')) continue;
+                _setupSingleCodeBlock(blocks[i]);
             }
             _floatingHeaders = [];
             updateFloatingButtons();
@@ -2546,9 +2551,9 @@
 
         function _collectFloatingHeaders() {
             _floatingHeaders = [];
-            var pres = document.querySelectorAll('.message-content pre');
-            for (var i = 0; i < pres.length; i++) {
-                if (pres[i]._floatHeader) _floatingHeaders.push(pres[i]);
+            var blocks = document.querySelectorAll('.msg-code-block');
+            for (var i = 0; i < blocks.length; i++) {
+                if (blocks[i]._floatHeader) _floatingHeaders.push(blocks[i]);
             }
         }
 
@@ -2560,8 +2565,8 @@
             var bg = isLight ? '#f8f8f8' : '#1a1a2e';
             var clr = isLight ? '#555' : '#aaa';
             for (var i = 0; i < _floatingHeaders.length; i++) {
-                var pre = _floatingHeaders[i];
-                var header = pre._floatHeader;
+                var block = _floatingHeaders[i];
+                var header = block._floatHeader;
                 if (!header || !header.isConnected) { _floatingHeaders.splice(i, 1); i--; continue; }
                 header.style.background = bg;
                 header.style.color = clr;
@@ -2569,17 +2574,17 @@
                 for (var b = 0; b < btns.length; b++) {
                     btns[b].style.color = clr;
                 }
-                var preRect = pre.getBoundingClientRect();
+                var blockRect = block.getBoundingClientRect();
                 var headerHeight = header.offsetHeight || 34;
                 var stickyTop = 0;
-                if (preRect.top < tbBottom) {
-                    stickyTop = tbBottom - preRect.top;
+                if (blockRect.top < tbBottom) {
+                    stickyTop = tbBottom - blockRect.top;
                 }
-                var maxSticky = preRect.height - headerHeight;
+                var maxSticky = blockRect.height - headerHeight;
                 if (stickyTop > maxSticky) stickyTop = maxSticky;
                 if (stickyTop < 0) stickyTop = 0;
                 header.style.top = stickyTop + 'px';
-                header.style.display = (preRect.bottom > tbBottom && preRect.top < window.innerHeight) ? 'flex' : 'none';
+                header.style.display = (blockRect.bottom > tbBottom && blockRect.top < window.innerHeight) ? 'flex' : 'none';
             }
         }
 
