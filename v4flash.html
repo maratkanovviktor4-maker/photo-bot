@@ -1072,18 +1072,10 @@
                                         var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
-                                            var wasAtBottom = autoScroll;
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                            if (wasAtBottom) {
-                                                requestAnimationFrame(function() {
-                                                    var main = document.querySelector('.main');
-                                                    if (main) {
-                                                        main.style.scrollBehavior = 'auto';
-                                                        main.scrollTop = main.scrollHeight;
-                                                        main.style.scrollBehavior = 'smooth';
-                                                    }
-                                                });
-                                            }
+                                            msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                            setupFloatingCopyButtonsForMsg(msgEl);
+                                            updateFloatingButtons();
                                         }
                                         if (autoScroll) {
                                             var main = document.querySelector('.main');
@@ -1115,12 +1107,6 @@
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
-                    var lastMsgEl = document.getElementById('stream-' + streamMsgIndex);
-                    if (lastMsgEl) {
-                        lastMsgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                        setupFloatingCopyButtonsForMsg(lastMsgEl);
-                    }
-                    updateFloatingButtons();
                 } else {
                     var data = await resp.json();
                     if (data.success) {
@@ -1230,27 +1216,20 @@
                                             assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                         }
                                         var reasoningText = assistantMsg._reasoningBuffer || '';
-                                        var fullText = assistantMsg._fullBuffer || '';
-                                        assistantMsg.content = fullText;
+                                        var contentText = assistantMsg._fullBuffer || '';
+                                        assistantMsg._reasoningBuffer = reasoningText;
+                                        assistantMsg.content = contentText;
                                         var msgEl = document.getElementById('stream-' + newMsgIndex);
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
-                                            var wasAtBottom = autoScroll;
-                                            msgEl.innerHTML = reasoningBlock + formatMessage(fullText);
-                                            msgEl.querySelectorAll('pre code').forEach(function(block) {
-                                                delete block.dataset.highlighted;
-                                                if (typeof hljs !== 'undefined') hljs.highlightElement(block);
-                                            });
-                                            if (wasAtBottom) {
-                                                requestAnimationFrame(function() {
-                                                    var main = document.querySelector('.main');
-                                                    if (main) {
-                                                        main.style.scrollBehavior = 'auto';
-                                                        main.scrollTop = main.scrollHeight;
-                                                        main.style.scrollBehavior = 'smooth';
-                                                    }
-                                                });
-                                            }
+                                            msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                            msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                            setupFloatingCopyButtonsForMsg(msgEl);
+                                            updateFloatingButtons();
+                                        }
+                                        if (autoScroll) {
+                                            var main = document.querySelector('.main');
+                                            if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
                                         }
                                     }
                                 } catch (e) {}
@@ -1279,11 +1258,6 @@
                         isSending = false;
                         activeStreamId = null;
                         sendBtnArrow();
-                        var lastMsgEl2 = document.getElementById('stream-' + newMsgIndex);
-                        if (lastMsgEl2) {
-                            setupFloatingCopyButtonsForMsg(lastMsgEl2);
-                        }
-                        updateFloatingButtons();
                     } catch (e) {
                         if (e.name === 'AbortError') {
                             assistantMsg.interrupted = true;
@@ -1431,18 +1405,14 @@
                                 var msgEl = document.getElementById('stream-' + newMsgIndex);
                                 if (msgEl) {
                                     var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
-                                    var wasAtBottom = autoScroll;
                                     msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                    if (wasAtBottom) {
-                                        requestAnimationFrame(function() {
-                                            var main = document.querySelector('.main');
-                                            if (main) {
-                                                main.style.scrollBehavior = 'auto';
-                                                main.scrollTop = main.scrollHeight;
-                                                main.style.scrollBehavior = 'smooth';
-                                            }
-                                        });
-                                    }
+                                    msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                    setupFloatingCopyButtonsForMsg(msgEl);
+                                    updateFloatingButtons();
+                                }
+                                if (autoScroll) {
+                                    var main = document.querySelector('.main');
+                                    if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
                                 }
                             }
                         } catch (e) {}
@@ -1469,12 +1439,6 @@
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
-                var lastMsgEl3 = document.getElementById('stream-' + newMsgIndex);
-                if (lastMsgEl3) {
-                    lastMsgEl3.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                    setupFloatingCopyButtonsForMsg(lastMsgEl3);
-                }
-                updateFloatingButtons();
             } catch (e) {
                 if (e.name === 'AbortError') {
                     assistantMsg.interrupted = true;
@@ -1496,7 +1460,6 @@
         
 
         function renderMessages() {
-	    console.log('RENDER CALLED', new Error().stack);
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
@@ -1551,13 +1514,10 @@
                     if (m.role === 'assistant' && m._streaming && !contentToShow && !hasReasoning) {
                         contentHtml = '<div class="typing-dots"><span></span><span></span><span></span></div>';
                     }
-                    var truncatedHtml = '';
-                    if (m.truncated) {
-                        truncatedHtml = '<div style="margin-top:6px;"><button onclick="expandMessage(\'' + (m.msg_id || '') + '\', ' + i + ')" style="background:rgba(0,203,245,0.1);border:1px solid #00CBF5;color:#00CBF5;padding:4px 12px;border-radius:12px;cursor:pointer;font-size:12px;font-family:Inter,sans-serif;">Развернуть</button></div>';
-                    }
-                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + contentHtml + truncatedHtml + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
+            hljs.highlightAll();
             setupFloatingCopyButtons();
             updateFloatingButtons();
             buildNavContainer();
@@ -1570,20 +1530,6 @@
                     window._mainScrollListenerAdded = true;
                 }
             }
-        }
-        async function expandMessage(msgId, index) {
-            if (!msgId) return;
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            try {
-                var resp = await fetch(SERVER_URL + '/get_full_message?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&msg_id=' + msgId + '&session_token=' + sessionToken);
-                if (resp.ok) {
-                    var data = await resp.json();
-                    chat.messages[index].content = data.content;
-                    chat.messages[index].truncated = false;
-                    renderMessages();
-                }
-            } catch(e) {}
         }
 
         function copyMessage(index) {
@@ -2032,16 +1978,13 @@
                                                                 var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                                                 if (msgEl) {
                                                                         msgEl.innerHTML = formatMessage(assistantMsg.content);
+                                                                        msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                                                                        setupFloatingCopyButtonsForMsg(msgEl);
+                                                                        updateFloatingButtons();
                                                                 }
                                                                 if (autoScroll) {
-                                                                        requestAnimationFrame(function() {
-                                                                            var main = document.querySelector('.main');
-                                                                            if (main) {
-                                                                                main.style.scrollBehavior = 'auto';
-                                                                                main.scrollTop = main.scrollHeight;
-                                                                                main.style.scrollBehavior = 'smooth';
-                                                                            }
-                                                                        });
+                                                                        var main = document.querySelector('.main');
+                                                                        if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
                                                                 }
                                                         }
                                                 } catch(e) {}
@@ -2062,12 +2005,6 @@
                         isSending = false;
                         activeStreamId = null;
                         sendBtnArrow();
-                        var lastMsgEl4 = document.getElementById('stream-' + streamMsgIndex);
-                        if (lastMsgEl4) {
-                            lastMsgEl4.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                            setupFloatingCopyButtonsForMsg(lastMsgEl4);
-                        }
-                        updateFloatingButtons();
                 } catch(e) {
                         console.error('selfPlay error:', e);
                         showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
@@ -2162,6 +2099,8 @@
             chat.messages.push(assistantMsg);
             const msgIndex = chat.messages.length - 1;
             const streamId = 'stream_' + msgIndex;
+            activeStreamId = streamId;
+            renderMessages();
 
             const abortController = new AbortController();
             assistantMsg._abortController = abortController;
@@ -2224,20 +2163,6 @@
                 let buffer = '';
                 let finalMeta = null;
                 assistantMsg._fullBuffer = '';
-                var streamEl = document.getElementById('stream-' + msgIndex);
-                if (streamEl) {
-                    streamEl._incremental = true;
-                    streamEl._rawText = '';
-                    streamEl._reasoningRendered = false;
-                    streamEl._textNode = null;
-                    streamEl._codeBlock = null;
-                    streamEl._codeLang = '';
-                    streamEl._codeContent = '';
-                    streamEl._inCodeBlock = false;
-                    streamEl._lastHighlighted = 0;
-                    streamEl._lastHighlightTime = 0;
-	  	    console.log('INIT OK', 'msgIndex:', msgIndex, '_incremental:', streamEl._incremental);
-                }
                 var sendBtnRef = document.getElementById('sendBtn');
                 sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
                 sendBtnRef.onclick = function() { stopTyping(); };
@@ -2267,116 +2192,24 @@
                                 assistantMsg.content = contentText;
                                 const msgEl = document.getElementById('stream-' + msgIndex);
                                 if (msgEl) {
-                                    if (!msgEl._reasoningRendered && reasoningText) {
-                                        msgEl._reasoningRendered = true;
-                                        var reasoningDiv = document.createElement('div');
-                                        reasoningDiv.className = 'reasoning-block';
-                                        reasoningDiv.textContent = reasoningText;
-                                        msgEl.appendChild(reasoningDiv);
-                                    }
-                                    var newRaw = assistantMsg._fullBuffer || '';
-                                    var diff = newRaw.slice(msgEl._rawText.length);
-                                    if (diff.length === 0) continue;
-                                    msgEl._rawText = newRaw;
-                                    var i2 = 0;
-                                    while (i2 < diff.length) {
-                                        if (!msgEl._inCodeBlock) {
-                                            var tickIdx = diff.indexOf('```', i2);
-                                            if (tickIdx === -1) {
-                                                if (!msgEl._textNode) {
-                                                    msgEl._textNode = document.createTextNode('');
-                                                    msgEl.appendChild(msgEl._textNode);
-                                                }
-                                                msgEl._textNode.textContent += diff.slice(i2);
-                                                i2 = diff.length;
-                                            } else {
-                                                if (tickIdx > i2) {
-                                                    if (!msgEl._textNode) {
-                                                        msgEl._textNode = document.createTextNode('');
-                                                        msgEl.appendChild(msgEl._textNode);
-                                                    }
-                                                    msgEl._textNode.textContent += diff.slice(i2, tickIdx);
-                                                }
-                                                var langEnd = diff.indexOf('\n', tickIdx + 3);
-                                                if (langEnd === -1) {
-                                                    msgEl._inCodeBlock = true;
-                                                    msgEl._codeLang = diff.slice(tickIdx + 3);
-                                                    msgEl._codeContent = '';
-                                                    msgEl._textNode = null;
-                                                    msgEl._codeBlock = document.createElement('pre');
-                                                    var codeEl = document.createElement('code');
-                                                    if (msgEl._codeLang) codeEl.className = 'language-' + msgEl._codeLang;
-                                                    msgEl._codeBlock.appendChild(codeEl);
-                                                    msgEl.appendChild(msgEl._codeBlock);
-                                                    setupFloatingCopyButtonsForMsg(msgEl);
-                                                    i2 = diff.length;
-                                                } else {
-                                                    msgEl._inCodeBlock = true;
-                                                    msgEl._codeLang = diff.slice(tickIdx + 3, langEnd).trim();
-                                                    msgEl._codeContent = '';
-                                                    msgEl._textNode = null;
-                                                    msgEl._codeBlock = document.createElement('pre');
-                                                    var codeEl = document.createElement('code');
-                                                    if (msgEl._codeLang) codeEl.className = 'language-' + msgEl._codeLang;
-                                                    msgEl._codeBlock.appendChild(codeEl);
-                                                    msgEl.appendChild(msgEl._codeBlock);
-                                                    setupFloatingCopyButtonsForMsg(msgEl);
-                                                    i2 = langEnd + 1;
-                                                }
-                                            }
-                                        } else {
-                                            var endTick = diff.indexOf('```', i2);
-                                            if (endTick === -1) {
-                                                msgEl._codeContent += diff.slice(i2);
-                                                var livePre = msgEl.querySelector('pre:last-of-type');
-                                                if (livePre) {
-                                                    livePre.querySelector('code').textContent = msgEl._codeContent;
-                                                    var now = Date.now();
-                                                    if (msgEl._codeContent.length - (msgEl._lastHighlighted || 0) > 300 && (!msgEl._lastHighlightTime || now - msgEl._lastHighlightTime > 200)) {
-                                                        msgEl._lastHighlighted = msgEl._codeContent.length;
-                                                        msgEl._lastHighlightTime = now;
-                                                        if (typeof hljs !== 'undefined') {
-                                                            delete livePre.querySelector('code').dataset.highlighted;
-                                                            hljs.highlightElement(livePre.querySelector('code'));
-                                                        }
-                                                    }
-                                                }
-                                                i2 = diff.length;
-                                            } else {
-                                                msgEl._codeContent += diff.slice(i2, endTick);
-                                                var livePre2 = msgEl.querySelector('pre:last-of-type');
-                                                if (livePre2) {
-                                                    if (msgEl._highlightTimer) { clearTimeout(msgEl._highlightTimer); msgEl._highlightTimer = null; }
-                                                    livePre2.querySelector('code').textContent = msgEl._codeContent;
-                                                    if (typeof hljs !== 'undefined') {
-                                                        delete livePre2.querySelector('code').dataset.highlighted;
-                                                        hljs.highlightElement(livePre2.querySelector('code'));
-                                                    }
-                                                }
-                                                msgEl._inCodeBlock = false;
-                                                msgEl._codeBlock = null;
-                                                msgEl._codeContent = '';
-                                                msgEl._codeLang = '';
-                                                i2 = endTick + 3;
-                                                if (diff.charAt(endTick + 3) === '\n') i2++;
-                                            }
-                                        }
-                                    }
-                                    if (autoScroll) {
-                                        requestAnimationFrame(function() {
-                                            var main = document.querySelector('.main');
-                                            if (main) {
-                                                main.style.scrollBehavior = 'auto';
-                                                main.scrollTop = main.scrollHeight;
-                                                main.style.scrollBehavior = 'smooth';
-                                            }
-                                        });
-                                    }
+                                    const reasoningBlock = reasoningText
+                                        ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
+                                        : '';
+                                    msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                        if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+                                    });
+                                    setupFloatingCopyButtonsForMsg(msgEl);
+                                    updateFloatingButtons();
                                 }
                             }
                         } catch (e) {
                             console.warn('SSE parse error:', e, dataStr);
                         }
+                    }
+                    if (autoScroll) {
+                        var main = document.querySelector('.main');
+                        if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
                     }
                 }
 
@@ -2390,7 +2223,6 @@
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                 autoNameChat(chat);
-                renderMessages();
                 renderChatList();
                 updateBranchesFromServer();
                 updateBalance();
@@ -2401,9 +2233,13 @@
                 updateFileList();
                 var msgElFinal = document.getElementById('stream-' + msgIndex);
                 if (msgElFinal) {
+                    msgElFinal.querySelectorAll('pre code').forEach(function(block) {
+                        if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+                    });
                     setupFloatingCopyButtonsForMsg(msgElFinal);
+                    updateFloatingButtons();
                 }
-                updateFloatingButtons();
+                renderMessages();
                 buildNavContainer();
             } catch (e) {
                 if (e.name === 'AbortError') {
@@ -2782,6 +2618,7 @@
                 if (pre._editorToolbar) pre._editorToolbar.remove();
                 codeEl.style.display = '';
                 pre._editorActive = false; pre._textarea = null; pre._editorToolbar = null;
+                if (typeof hljs !== 'undefined' && hljs.highlightElement) hljs.highlightElement(codeEl);
             } else {
                 var originalCode = codeEl.textContent;
                 pre._originalCode = originalCode;
