@@ -381,6 +381,7 @@
         // ============== IncrementalRenderer v2 ==============
         var IncrementalRenderer = (function() {
             var states = {};
+            var rafId = null;
 
             function getState(msgIndex) {
                 if (!states[msgIndex]) {
@@ -391,13 +392,25 @@
                         codeBuffer: '',
                         textNode: null,
                         rawBuffer: '',
-                        highlightTimer: null
+                        lastProcessedLength: 0,
+                        highlightTimer: null,
+                        dirty: false
                     };
                 }
                 return states[msgIndex];
             }
 
-            function update(msgIndex) {
+            function scheduleRender() {
+                if (rafId) return;
+                rafId = requestAnimationFrame(function() {
+                    rafId = null;
+                    for (var idx in states) {
+                        if (states[idx].dirty) render(parseInt(idx));
+                    }
+                });
+            }
+
+            function render(msgIndex) {
                 var el = document.getElementById('stream-' + msgIndex);
                 if (!el) return;
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
@@ -407,6 +420,7 @@
 
                 var newRaw = (msg._reasoningBuffer || '') + '\n' + (msg._fullBuffer || '');
                 var state = getState(msgIndex);
+                state.dirty = false;
 
                 if (!state.container || state.container.parentNode !== el) {
                     el.innerHTML = '';
@@ -414,11 +428,14 @@
                     state.textNode = null;
                     state.codeBlock = null;
                     state.rawBuffer = '';
+                    state.lastProcessedLength = 0;
                     el.appendChild(state.container);
                 }
 
-                if (newRaw.length <= state.rawBuffer.length) return;
-                var newPart = newRaw.substring(state.rawBuffer.length);
+                if (newRaw.length <= state.lastProcessedLength) return;
+
+                var newPart = newRaw.substring(state.lastProcessedLength);
+                state.lastProcessedLength = newRaw.length;
                 state.rawBuffer = newRaw;
 
                 var B = '`';
@@ -527,16 +544,30 @@
                 state.textNode = null;
             }
 
+            function update(msgIndex) {
+                var state = getState(msgIndex);
+                state.dirty = true;
+                scheduleRender();
+            }
+
             function finalize(msgIndex) {
                 var state = getState(msgIndex);
-                if (state.codeBlock) {
-                    finishCodeBlock(state);
-                }
-                updateFloatingButtons();
+                state.dirty = true;
+                scheduleRender();
+                // Дополнительно гарантируем закрытие кода после отработки кадра
+                setTimeout(function() {
+                    var st = states[msgIndex];
+                    if (st && st.codeBlock) {
+                        render(msgIndex);
+                        finishCodeBlock(st);
+                    }
+                    updateFloatingButtons();
+                }, 50);
             }
 
             function reset() {
                 states = {};
+                if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
             }
 
             return { update: update, finalize: finalize, reset: reset };
