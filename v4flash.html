@@ -115,7 +115,7 @@
         .message-row { display: flex; gap: 12px; align-items: flex-start; max-width: 100%; }
         .message-row.user { align-self: flex-end; flex-direction: row-reverse; max-width: 75%; }
         .message-row.assistant { align-self: flex-start; }
-        .message-content { padding: 10px 14px; border-radius: 12px; font-size: 15px !important; line-height: 1.5; white-space: pre-wrap; word-break: break-word; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important; max-width: 100%; }
+        .message-content { padding: 10px 14px; border-radius: 12px; font-size: 15px !important; line-height: 1.5; white-space: pre-wrap; word-break: break-word; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important; max-width: 100%; overflow-x: hidden; }
         .message-row.assistant .message-content { background: transparent; backdrop-filter: none; border-radius: 4px; }
         body.light .message-row.assistant .message-content { background: #ffffff; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
         .message-row.user .message-content { background: rgba(0,203,245,0.15); border-radius: 18px; }
@@ -259,7 +259,6 @@
         #personalitySelect { border-radius: 24px !important; }
         #editCustomBtn:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
         body.light #editCustomBtn:hover { background: rgba(0,0,0,0.06); }
-        .msg-text { min-height: 1em; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
@@ -2116,50 +2115,17 @@
             btn.onclick = null;
         }
         var _streamTimers = {};
-        var _streamLastRender = {};
 
         function streamUpdateDOM(el, msg) {
             var id = el.id;
-            var now = Date.now();
-            if (_streamLastRender[id] && (now - _streamLastRender[id]) < 100) {
-                if (_streamTimers[id]) return;
-                _streamTimers[id] = setTimeout(function() {
-                    _streamTimers[id] = null;
-                    _streamLastRender[id] = Date.now();
-                    renderStreamContent(el, msg);
-                }, 100);
-                return;
-            }
-            _streamLastRender[id] = now;
-            if (_streamTimers[id]) {
-                clearTimeout(_streamTimers[id]);
+            if (_streamTimers[id]) return;
+            _streamTimers[id] = setTimeout(function() {
                 _streamTimers[id] = null;
-            }
-            renderStreamContent(el, msg);
-        }
-
-        function renderStreamContent(el, msg) {
-            if (!el._streamInit) {
-                el._streamInit = true;
-                el._reasoningEl = null;
-                el._contentEl = null;
-                el.innerHTML = '';
-                if (msg._reasoningBuffer) {
-                    var rDiv = document.createElement('div');
-                    rDiv.className = 'reasoning-block';
-                    el.appendChild(rDiv);
-                    el._reasoningEl = rDiv;
-                }
-                var cDiv = document.createElement('div');
-                el.appendChild(cDiv);
-                el._contentEl = cDiv;
-            }
-            if (el._reasoningEl && msg._reasoningBuffer) {
-                el._reasoningEl.innerHTML = formatMessage(msg._reasoningBuffer);
-            }
-            if (el._contentEl && msg.content !== undefined) {
-                el._contentEl.innerHTML = formatMessage(msg.content);
-                var codeBlocks = el._contentEl.querySelectorAll('pre code');
+                var reasoningHtml = (msg._reasoningBuffer)
+                    ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
+                    : '';
+                el.innerHTML = reasoningHtml + formatMessage(msg.content || '');
+                var codeBlocks = el.querySelectorAll('pre code');
                 for (var i = 0; i < codeBlocks.length; i++) {
                     var block = codeBlocks[i];
                     if (!block._highlighted && typeof hljs !== 'undefined') {
@@ -2167,9 +2133,13 @@
                         block._highlighted = true;
                     }
                 }
-                setupFloatingCopyButtonsForMsg(el._contentEl);
-            }
-            updateFloatingButtons();
+                setupFloatingCopyButtonsForMsg(el);
+                updateFloatingButtons();
+                if (autoScroll) {
+                    var main = document.querySelector('.main');
+                    if (main) { main.scrollTop = main.scrollHeight; }
+                }
+            }, 16);
         }
         async function sendMessage() {
             if (isSending) return;
@@ -2325,10 +2295,6 @@
                 updateFileList();
                 renderMessages();
                 buildNavContainer();
-                var mainFinal = document.querySelector('.main');
-                if (mainFinal) { mainFinal.scrollTop = mainFinal.scrollHeight; }
-                var btnFinal = document.getElementById('scrollBottomBtn');
-                if (btnFinal) { btnFinal.style.display = 'none'; btnFinal.style.pointerEvents = 'auto'; }
             } catch (e) {
                 if (e.name === 'AbortError') {
                     assistantMsg.interrupted = true;
@@ -2364,7 +2330,7 @@
             if (!_formatRegex) _formatRegex = new RegExp(B + B + B + '(\\w*)\\r?\\n([\\s\\S]*?)' + B + B + B, 'g');
             var regex = _formatRegex;
             regex.lastIndex = 0;
-            var match;
+            let match;
             while ((match = regex.exec(text)) !== null) {
                 if (match.index > lastIndex) parts.push({type: 'text', content: text.substring(lastIndex, match.index)});
                 parts.push({type: 'code', lang: match[1], content: match[2]});
@@ -2378,6 +2344,25 @@
                     parts.push({type: 'code', lang: openCode[2], content: openCode[3]});
                 } else { parts.push({type: 'text', content: remaining}); }
             }
+            var _inlineRules = [
+                [/`([^`]+)`/g, '<code>$1</code>'],
+                [/\*\*(.+?)\*\*/g, '<strong>$1</strong>'],
+                [/\*(.+?)\*/g, '<em>$1</em>'],
+                [/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>'],
+                [/^### (.+)$/gm, '<h3>$1</h3>'],
+                [/^#### (.+)$/gm, '<h4>$1</h4>'],
+                [/^## (.+)$/gm, '<h2>$1</h2>'],
+                [/^# (.+)$/gm, '<h1>$1</h1>'],
+                [/^---$/gm, '<hr>'],
+                [/^[-*]\s(.+)$/gm, '<li>$1</li>'],
+                [/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>'],
+                [/^\d+\.\s(.+)$/gm, '<li>$1</li>'],
+                [/((?:<li>.*<\/li>\s*)+)/g, '<ol>$1</ol>'],
+                [/~~(.+?)~~/g, '<del>$1</del>'],
+                [/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">'],
+                [/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>'],
+                [/\n/g, '<br>']
+            ];
             var result = '';
             for (var p = 0; p < parts.length; p++) {
                 var part = parts[p];
@@ -2389,7 +2374,7 @@
                     for (var r = 0; r < _inlineRules.length; r++) {
                         text2 = text2.replace(_inlineRules[r][0], _inlineRules[r][1]);
                     }
-                    result += '<div class="message-content">' + text2 + '</div>';
+                    result += text2;
                 }
             }
             return result;
