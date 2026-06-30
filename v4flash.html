@@ -2154,9 +2154,11 @@
             updateFloatingButtons();
             requestAnimationFrame(function() {
                 requestAnimationFrame(function() {
-                    var lastMsg = document.querySelector('.message-row.assistant:last-of-type');
-                    if (lastMsg) {
-                        lastMsg.scrollIntoView({ behavior: 'instant', block: 'end' });
+                    var bottom = document.querySelector('.bottom-container');
+                    var pad = bottom ? bottom.offsetHeight + 16 : 80;
+                    var main = document.querySelector('.main');
+                    if (main) {
+                        main.scrollTop = main.scrollHeight + pad;
                     }
                     var btn = document.getElementById('scrollBottomBtn');
                     if (btn) btn.style.display = 'none';
