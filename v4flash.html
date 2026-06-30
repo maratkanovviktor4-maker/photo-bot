@@ -103,7 +103,7 @@
         #branchIndicatorTop { font-size: 12px; color: #00CBF5; font-family: 'Inter', sans-serif; display: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; margin-left: 4px; }
         .chat-wrapper { width: 100%; max-width: 775px; display: flex; flex-direction: column; margin: 0 auto; position: relative; flex: 1 0 auto; }
         .chat-area { flex: 1 0 auto; padding: 20px 0 25px 0; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 0; }
-        .scroll-bottom-btn { position: sticky; bottom: 16px; float: right; margin-right: 16px; margin-top: -52px; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.1); color: #e0e0e0; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; display: none; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10002; }
+        .scroll-bottom-btn { position: absolute; bottom: calc(100% + 16px); right: 12px; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.1); color: #e0e0e0; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; display: none; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10002; }
         .scroll-bottom-btn:hover { background: rgba(255,255,255,0.2); }
         body.light .scroll-bottom-btn { background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.15); }
         body.light .scroll-bottom-btn:hover { background: #e0e0e0; }
@@ -503,7 +503,7 @@
                     ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css'
                     : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
             }
-            window._floatingHeaders = [];
+            _floatingHeaders = [];
             updateFloatingButtons();
         }
 
@@ -546,7 +546,9 @@
             autoScroll = true;
             var main = document.querySelector('.main');
             if (!main) return;
-            main.scrollTo({ top: main.scrollHeight, behavior: 'smooth' });
+            main.style.scrollBehavior = 'auto';
+            main.scrollTop = main.scrollHeight;
+            main.style.scrollBehavior = 'smooth';
             var btn = document.getElementById('scrollBottomBtn');
             if (btn) btn.style.display = 'none';
         }
@@ -557,7 +559,7 @@
             main.addEventListener('scroll', function() {
                 var btn = document.getElementById('scrollBottomBtn');
                 if (!btn) return;
-                var atBottom = main.scrollHeight - main.scrollTop - main.clientHeight < 80;
+                var atBottom = main.scrollHeight - main.scrollTop - main.clientHeight < 5;
                 if (atBottom) {
                     btn.style.display = 'none';
                     autoScroll = true;
@@ -688,7 +690,7 @@
             currentChatId = null;
             currentBranchId = 'main';
             localStorage.removeItem('photobot_active_chat');
-            window._floatingHeaders = [];
+            _floatingHeaders = [];
             renderChatList();
             var area = document.getElementById('chatArea');
             area.innerHTML = '<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display=\'none\'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>';
@@ -713,7 +715,7 @@
             if (!chat.messages || chat.messages.length === 0) {
                 loadChatMessages(currentChatId);
             }
-            window._floatingHeaders = [];
+            _floatingHeaders = [];
             renderChatList();
             renderBranchesPanel();
             renderMessages();
@@ -1040,6 +1042,7 @@
                                     currentBranchId = newBranchId;
                                     chat.activeBranch = newBranchId;
                                     chat.messages = branchMessages.slice();
+                                    // Присвоить msg_id из source_msg_id последнему user-сообщению
                                     if (parsed.source_msg_id) {
                                         for (var bm = chat.messages.length - 1; bm >= 0; bm--) {
                                             if (chat.messages[bm].role === 'user') {
@@ -1079,8 +1082,11 @@
                                         assistantMsg.content = assistantMsg._fullBuffer || '';
                                         var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                         if (msgEl) {
-                                            streamUpdateDOM(msgEl, assistantMsg);
+                                            requestAnimationFrame(function() {
+                                                streamUpdateDOM(msgEl, assistantMsg);
+                                            });
                                         }
+
                                     }
                                 }
                             } catch (parseErr) {}
@@ -1161,6 +1167,8 @@
                     assistantMsg._abortController = abortController;
 
                     try {
+			console.log('edit_msg_id:', msg.msg_id);
+			console.log('REGEN_USER body mode:', localStorage.getItem('photobot_mode'), 'currentMode:', currentMode);
                         var resp = await fetch(SERVER_URL + '/regenerate_user', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
@@ -1216,8 +1224,11 @@
                                         assistantMsg.content = assistantMsg._fullBuffer || '';
                                         var msgEl = document.getElementById('stream-' + newMsgIndex);
                                         if (msgEl) {
-                                            streamUpdateDOM(msgEl, assistantMsg);
+                                            requestAnimationFrame(function() {
+                                                streamUpdateDOM(msgEl, assistantMsg);
+                                            });
                                         }
+
                                     }
                                 } catch (e) {}
                             }
@@ -1331,6 +1342,7 @@
             assistantMsg._abortController = abortController;
 
             try {
+                console.log('REGEN_ASSISTANT body mode:', localStorage.getItem('photobot_mode'), 'currentMode:', currentMode);
                 var resp = await fetch(SERVER_URL + '/regenerate_assistant', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
@@ -1386,7 +1398,9 @@
                                 assistantMsg.content = assistantMsg._fullBuffer || '';
                                 var msgEl = document.getElementById('stream-' + newMsgIndex);
                                 if (msgEl) {
-                                    streamUpdateDOM(msgEl, assistantMsg);
+                                    requestAnimationFrame(function() {
+                                        streamUpdateDOM(msgEl, assistantMsg);
+                                    });
                                 }
                                 if (autoScroll) {
                                     var main = document.querySelector('.main');
@@ -1471,7 +1485,8 @@
                     } else if (m.reasoning) {
                         reasoningText = m.reasoning;
                         hasReasoning = true;
-                    } else if (m.content && m.content.indexOf('Размышление:\n') !== -1) {
+                    } else if (m.content && m.content.includes('Размышление:\n')) {
+                        // fallback: старый формат с reasoning внутри content
                         var splitIdx = m.content.indexOf('\n\nОтвет:\n');
                         if (splitIdx !== -1) {
                             reasoningText = m.content.substring('Размышление:\n'.length, splitIdx);
@@ -1489,12 +1504,12 @@
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
-            window._floatingHeaders = [];
+            _floatingHeaders = [];
             hljs.highlightAll();
             setupFloatingCopyButtons();
             updateFloatingButtons();
             buildNavContainer();
-            if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.scrollTo({ top: main2.scrollHeight, behavior: 'smooth' }); } }
+            if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
             updateBranchIndicator();
             if (!window._mainScrollListenerAdded) {
                 var mainEl3 = document.querySelector('.main');
@@ -2015,8 +2030,11 @@
                                                                 assistantMsg.content = assistantMsg._fullBuffer || '';
                                                                 var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                                                 if (msgEl) {
-                                                                        streamUpdateDOM(msgEl, assistantMsg);
+                                                                        requestAnimationFrame(function() {
+                                                                                streamUpdateDOM(msgEl, assistantMsg);
+                                                                        });
                                                                 }
+
                                                         }
                                                 } catch(e) {}
                                         }
@@ -2100,25 +2118,32 @@
             btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(32,31,40,0.3);border-top-color:#201F28;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
             btn.onclick = null;
         }
+        var _streamTimers = {};
+
         function streamUpdateDOM(el, msg) {
-            var reasoningHtml = (msg._reasoningBuffer)
-                ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
-                : '';
-            el.innerHTML = reasoningHtml + formatMessage(msg.content || '');
-            var codeBlocks = el.querySelectorAll('pre code');
-            for (var i = 0; i < codeBlocks.length; i++) {
-                var block = codeBlocks[i];
-                if (!block._highlighted && typeof hljs !== 'undefined') {
-                    hljs.highlightElement(block);
-                    block._highlighted = true;
+            var id = el.id;
+            if (_streamTimers[id]) return;
+            _streamTimers[id] = setTimeout(function() {
+                _streamTimers[id] = null;
+                var reasoningHtml = (msg._reasoningBuffer)
+                    ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
+                    : '';
+                el.innerHTML = reasoningHtml + formatMessage(msg.content || '');
+                var codeBlocks = el.querySelectorAll('pre code');
+                for (var i = 0; i < codeBlocks.length; i++) {
+                    var block = codeBlocks[i];
+                    if (!block._highlighted && typeof hljs !== 'undefined') {
+                        hljs.highlightElement(block);
+                        block._highlighted = true;
+                    }
                 }
-            }
-            setupFloatingCopyButtonsForMsg(el);
-            updateFloatingButtons();
-            if (autoScroll) {
-                var main = document.querySelector('.main');
-                if (main) { main.scrollTo({ top: main.scrollHeight, behavior: 'auto' }); }
-            }
+                setupFloatingCopyButtonsForMsg(el);
+                updateFloatingButtons();
+                if (autoScroll) {
+                    var main = document.querySelector('.main');
+                    if (main) { main.scrollTop = main.scrollHeight; }
+                }
+            }, 16);
         }
         async function sendMessage() {
             if (isSending) return;
@@ -2243,7 +2268,9 @@
                                 assistantMsg.content = assistantMsg._fullBuffer || '';
                                 var msgEl = document.getElementById('stream-' + msgIndex);
                                 if (msgEl) {
-                                    streamUpdateDOM(msgEl, assistantMsg);
+                                    requestAnimationFrame(function() {
+                                        streamUpdateDOM(msgEl, assistantMsg);
+                                    });
                                 }
                             }
                         } catch (e) {
@@ -2407,6 +2434,7 @@
             }
             var header = document.createElement('div');
             header.className = 'floating-code-header';
+            header.style.cssText = 'position:sticky;top:0;background:#1a1a2e;border-radius:10px 10px 0 0;padding:6px 14px;font-size:12px;color:#aaa;font-family:Inter,sans-serif;z-index:5;display:flex;align-items:center;justify-content:space-between;line-height:1;';
             if (document.body.classList.contains('light')) {
                 header.style.background = '#f8f8f8';
                 header.style.color = '#555';
@@ -2467,7 +2495,7 @@
             for (var i = 0; i < blocks.length; i++) {
                 _setupSingleCodeBlock(blocks[i]);
             }
-            window._floatingHeaders = [];
+            _floatingHeaders = [];
             updateFloatingButtons();
         }
 
@@ -2478,7 +2506,7 @@
                 if (blocks[i].querySelector('.floating-code-header')) continue;
                 _setupSingleCodeBlock(blocks[i]);
             }
-            window._floatingHeaders = [];
+            _floatingHeaders = [];
             updateFloatingButtons();
         }
 
@@ -2517,49 +2545,45 @@
             }
         }
 
-        var _floatingRafId = null;
+        var _floatingHeaders = [];
 
         function _collectFloatingHeaders() {
-            window._floatingHeaders = [];
+            _floatingHeaders = [];
             var blocks = document.querySelectorAll('.msg-code-block');
             for (var i = 0; i < blocks.length; i++) {
-                if (blocks[i]._floatHeader) window._floatingHeaders.push(blocks[i]);
+                if (blocks[i]._floatHeader) _floatingHeaders.push(blocks[i]);
             }
         }
 
         function updateFloatingButtons() {
-            if (_floatingRafId) return;
-            _floatingRafId = requestAnimationFrame(function() {
-                _floatingRafId = null;
-                if (!window._floatingHeaders || window._floatingHeaders.length === 0) _collectFloatingHeaders();
-                var topBar = document.querySelector('.top-bar');
-                var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
-                var isLight = document.body.classList.contains('light');
-                var bg = isLight ? '#f8f8f8' : '#1a1a2e';
-                var clr = isLight ? '#555' : '#aaa';
-                for (var i = 0; i < window._floatingHeaders.length; i++) {
-                    var block = window._floatingHeaders[i];
-                    var header = block._floatHeader;
-                    if (!header || !header.isConnected) { window._floatingHeaders.splice(i, 1); i--; continue; }
-                    header.style.background = bg;
-                    header.style.color = clr;
-                    var btns = header.querySelectorAll('button');
-                    for (var b = 0; b < btns.length; b++) {
-                        btns[b].style.color = clr;
-                    }
-                    var blockRect = block.getBoundingClientRect();
-                    var headerHeight = header.offsetHeight || 34;
-                    var stickyTop = 0;
-                    if (blockRect.top < tbBottom) {
-                        stickyTop = tbBottom - blockRect.top;
-                    }
-                    var maxSticky = blockRect.height - headerHeight;
-                    if (stickyTop > maxSticky) stickyTop = maxSticky;
-                    if (stickyTop < 0) stickyTop = 0;
-                    header.style.top = stickyTop + 'px';
-                    header.style.display = (blockRect.bottom > tbBottom && blockRect.top < window.innerHeight) ? 'flex' : 'none';
+            if (_floatingHeaders.length === 0) _collectFloatingHeaders();
+            var topBar = document.querySelector('.top-bar');
+            var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
+            var isLight = document.body.classList.contains('light');
+            var bg = isLight ? '#f8f8f8' : '#1a1a2e';
+            var clr = isLight ? '#555' : '#aaa';
+            for (var i = 0; i < _floatingHeaders.length; i++) {
+                var block = _floatingHeaders[i];
+                var header = block._floatHeader;
+                if (!header || !header.isConnected) { _floatingHeaders.splice(i, 1); i--; continue; }
+                header.style.background = bg;
+                header.style.color = clr;
+                var btns = header.querySelectorAll('button');
+                for (var b = 0; b < btns.length; b++) {
+                    btns[b].style.color = clr;
                 }
-            });
+                var blockRect = block.getBoundingClientRect();
+                var headerHeight = header.offsetHeight || 34;
+                var stickyTop = 0;
+                if (blockRect.top < tbBottom) {
+                    stickyTop = tbBottom - blockRect.top;
+                }
+                var maxSticky = blockRect.height - headerHeight;
+                if (stickyTop > maxSticky) stickyTop = maxSticky;
+                if (stickyTop < 0) stickyTop = 0;
+                header.style.top = stickyTop + 'px';
+                header.style.display = (blockRect.bottom > tbBottom && blockRect.top < window.innerHeight) ? 'flex' : 'none';
+            }
         }
 
         function buildNavContainer() {
@@ -2686,6 +2710,13 @@
             handle.style.right = '50%';
             document.querySelector('.main').classList.add('preview-open');
             updateFloatingButtons();
+            var main = document.querySelector('.main');
+            if (main) {
+                var rafId;
+                var tick = function() { updateFloatingButtons(); rafId = requestAnimationFrame(tick); };
+                rafId = requestAnimationFrame(tick);
+                main.addEventListener('transitionend', function() { cancelAnimationFrame(rafId); updateFloatingButtons(); }, { once: true });
+            }
             iframe.srcdoc = code;
         }
 
@@ -2695,7 +2726,13 @@
             if (panel) panel.classList.remove('active');
             if (handle) handle.classList.remove('active');
             document.querySelector('.main').classList.remove('preview-open');
-            updateFloatingButtons();
+            var main = document.querySelector('.main');
+            if (main) {
+                var rafId;
+                var tick = function() { updateFloatingButtons(); rafId = requestAnimationFrame(tick); };
+                rafId = requestAnimationFrame(tick);
+                main.addEventListener('transitionend', function() { cancelAnimationFrame(rafId); updateFloatingButtons(); }, { once: true });
+            }
         }
 
         window.addEventListener('load', function() { 
