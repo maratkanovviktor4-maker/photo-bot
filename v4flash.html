@@ -377,122 +377,6 @@
         let typingInterval = null;
         let pendingFile = null;
         let activeStreamId = null;
-        // ================== StreamEngine vFinal (без фризов) ==================
-        var StreamEngine = (function() {
-            var worker = new Worker(URL.createObjectURL(new Blob([`
-                importScripts('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js');
-                var B = '\`';
-                function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-                function fmt(t){t=esc(t);t=t.replace(/\`([^\`]+)\`/g,'<code>$1</code>');t=t.replace(/\\*\\*(.+?)\\*\\*/g,'<strong>$1</strong>');t=t.replace(/\\*(.+?)\\*/g,'<em>$1</em>');t=t.replace(/\\[(.+?)\\]\\((.+?)\\)/g,'<a href="$2" target="_blank">$1</a>');t=t.replace(/^### (.+)$/gm,'<h3>$1</h3>');t=t.replace(/^#### (.+)$/gm,'<h4>$1</h4>');t=t.replace(/^## (.+)$/gm,'<h2>$1</h2>');t=t.replace(/^# (.+)$/gm,'<h1>$1</h1>');t=t.replace(/^---$/gm,'<hr>');t=t.replace(/^[-*]\\s(.+)$/gm,'<li>$1</li>');t=t.replace(/((?:<li>.*<\\/li>\\s*)+)/g,'<ul>$1</ul>');t=t.replace(/^\\d+\\.\\s(.+)$/gm,'<li>$1</li>');t=t.replace(/~~(.+?)~~/g,'<del>$1</del>');t=t.replace(/^&gt;\\s(.+)$/gm,'<blockquote>$1</blockquote>');t=t.replace(/\\n/g,'<br>');return t;}
-                function highlight(code,lang){if(!lang)return esc(code);if(hljs.getLanguage(lang)){try{return hljs.highlight(code,{language:lang,ignoreIllegals:true}).value;}catch(e){return esc(code);}}try{return hljs.highlightAuto(code).value;}catch(e){return esc(code);}}
-                self.onmessage=function(e){
-                    var text=e.data.text,id=e.data.id,version=e.data.version;
-                    var result='',last=0;
-                    var regex=new RegExp(B+B+B+'(\\\\w*)\\\\r?\\\\n([\\\\s\\\\S]*?)'+B+B+B,'g'),m;
-                    while((m=regex.exec(text))!==null){
-                        if(m.index>last)result+=fmt(text.substring(last,m.index));
-                        result+='<pre><code class="hljs language-'+m[1]+'">'+highlight(m[2],m[1])+'</code></pre>';
-                        last=regex.lastIndex;
-                    }
-                    if(last<text.length)result+=fmt(text.substring(last));
-                    self.postMessage({id:id,html:result,version:version});
-                };
-            `],{type:'application/javascript'})));
-
-            var tasks = {}, taskId = 0;
-            worker.onmessage = function(e) {
-                var t = tasks[e.data.id]; if (t) t(e.data.html, e.data.version);
-                delete tasks[e.data.id];
-            };
-
-            var states = {};
-
-            function update(msgIndex) {
-                var el = document.getElementById('stream-' + msgIndex);
-                if (!el) return;
-                var chat = chats.find(function(c){return c.id === currentChatId;});
-                if (!chat) return;
-                var msg = chat.messages[msgIndex];
-                if (!msg) return;
-
-                var state = states[msgIndex];
-                if (!state) {
-                    el.innerHTML = '';
-                    state = { textNode: document.createTextNode(''), htmlActive: false, lastVersion: 0, lastRequestTime: 0, pending: false, lastScrollY: 0 };
-                    el.appendChild(state.textNode);
-                    states[msgIndex] = state;
-                }
-
-                if (state.textNode && state.textNode.parentNode && !state.htmlActive) {
-                    state.textNode.textContent = (msg._reasoningBuffer ? '=== Размышление ===\n' + msg._reasoningBuffer + '\n=== Ответ ===\n' : '') + (msg._fullBuffer || '');
-                }
-
-                // Плавный автоскролл без рывков
-                if (autoScroll) {
-                    var main = document.querySelector('.main');
-                    if (main) {
-                        var diff = main.scrollHeight - main.scrollTop - main.clientHeight;
-                        if (diff < 200) {
-                            state.lastScrollY = main.scrollHeight;
-                        }
-                    }
-                }
-
-                var now = Date.now();
-                if (state.pending) return;
-                if (now - state.lastRequestTime < 250 && !msg.finished) return;
-
-                state.pending = true;
-                state.lastRequestTime = now;
-                var version = ++state.lastVersion;
-                var reasoning = msg._reasoningBuffer || '';
-                var content = msg._fullBuffer || '';
-                var textToSend = (reasoning ? '%%REASONING%%' + reasoning + '%%ENDREASONING%%' : '') + content;
-                var id = ++taskId;
-                tasks[id] = function(html, workerVersion) {
-                    state.pending = false;
-                    if (workerVersion !== version) return;
-                    if (!el.isConnected) return;
-                    if (state.textNode && state.textNode.parentNode) {
-                        state.textNode.remove();
-                        state.textNode = null;
-                    }
-                    el.innerHTML = html.replace(/%%REASONING%%([\s\S]*?)%%ENDREASONING%%/g, '<div class="reasoning-block">$1</div>');
-                    state.htmlActive = true;
-                    setupFloatingCopyButtonsForMsg(el);
-                    updateFloatingButtons();
-                };
-                worker.postMessage({ id: id, text: textToSend, version: version });
-            }
-
-            function finalize(msgIndex) {
-                var el = document.getElementById('stream-' + msgIndex);
-                if (!el) return;
-                var chat = chats.find(function(c){return c.id === currentChatId;});
-                if (!chat) return;
-                var msg = chat.messages[msgIndex];
-                if (!msg) return;
-                var reasoning = msg._reasoningBuffer || '';
-                var content = msg._fullBuffer || '';
-                var textToSend = (reasoning ? '%%REASONING%%' + reasoning + '%%ENDREASONING%%' : '') + content;
-                var id = ++taskId;
-                tasks[id] = function(html) {
-                    if (!el.isConnected) return;
-                    el.innerHTML = html.replace(/%%REASONING%%([\s\S]*?)%%ENDREASONING%%/g, '<div class="reasoning-block">$1</div>');
-                    setupFloatingCopyButtonsForMsg(el);
-                    updateFloatingButtons();
-                };
-                worker.postMessage({ id: id, text: textToSend, version: 999999 });
-                delete states[msgIndex];
-            }
-
-            function reset() {
-                states = {};
-            }
-
-            return { update: update, finalize: finalize, reset: reset };
-        })();
-        // =====================================================================
         let allBranchesCache = {};
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
@@ -2321,8 +2205,21 @@
                                 if (parsed.content) {
                                     assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                 }
-                                assistantMsg.content = assistantMsg._fullBuffer || '';
-                                StreamEngine.update(msgIndex);
+                                const reasoningText = assistantMsg._reasoningBuffer || '';
+                                const contentText = assistantMsg._fullBuffer || '';
+                                assistantMsg.content = contentText;
+                                const msgEl = document.getElementById('stream-' + msgIndex);
+                                if (msgEl) {
+                                    const reasoningBlock = reasoningText
+                                        ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
+                                        : '';
+                                    msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                    msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                        if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+                                    });
+                                    setupFloatingCopyButtonsForMsg(msgEl);
+                                    updateFloatingButtons();
+                                }
                             }
                         } catch (e) {
                             console.warn('SSE parse error:', e, dataStr);
@@ -2352,7 +2249,14 @@
                 sendBtnArrow();
                 pendingFile = null;
                 updateFileList();
-                StreamEngine.finalize(msgIndex);
+                var msgElFinal = document.getElementById('stream-' + msgIndex);
+                if (msgElFinal) {
+                    msgElFinal.querySelectorAll('pre code').forEach(function(block) {
+                        if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+                    });
+                    setupFloatingCopyButtonsForMsg(msgElFinal);
+                    updateFloatingButtons();
+                }
                 renderMessages();
                 buildNavContainer();
             } catch (e) {
@@ -2457,7 +2361,6 @@
             if (activeStreamId) {
                 var oldStreamId = activeStreamId;
                 activeStreamId = null;
-                StreamEngine.reset();
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (chat && chat.messages.length > 0) {
                     var lastMsg = chat.messages[chat.messages.length - 1];
