@@ -2224,6 +2224,17 @@
                 let buffer = '';
                 let finalMeta = null;
                 assistantMsg._fullBuffer = '';
+                var streamEl = document.getElementById('stream-' + msgIndex);
+                if (streamEl) {
+                    streamEl._incremental = true;
+                    streamEl._rawText = '';
+                    streamEl._reasoningRendered = false;
+                    streamEl._textNode = null;
+                    streamEl._codeBlock = null;
+                    streamEl._codeLang = '';
+                    streamEl._codeContent = '';
+                    streamEl._inCodeBlock = false;
+                }
                 var sendBtnRef = document.getElementById('sendBtn');
                 sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
                 sendBtnRef.onclick = function() { stopTyping(); };
@@ -2253,16 +2264,6 @@
                                 assistantMsg.content = contentText;
                                 const msgEl = document.getElementById('stream-' + msgIndex);
                                 if (msgEl) {
-                                    if (!msgEl._incremental) {
-                                        msgEl._incremental = true;
-                                        msgEl._rawText = '';
-                                        msgEl._reasoningRendered = false;
-                                        msgEl._textNode = null;
-                                        msgEl._codeBlock = null;
-                                        msgEl._codeLang = '';
-                                        msgEl._codeContent = '';
-                                        msgEl._inCodeBlock = false;
-                                    }
                                     if (!msgEl._reasoningRendered && reasoningText) {
                                         msgEl._reasoningRendered = true;
                                         var reasoningDiv = document.createElement('div');
