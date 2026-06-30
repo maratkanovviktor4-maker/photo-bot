@@ -1555,7 +1555,6 @@
                     return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + contentHtml + truncatedHtml + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
                 }).join('');
             }
-            hljs.highlightAll();
             setupFloatingCopyButtons();
             updateFloatingButtons();
             buildNavContainer();
@@ -2394,9 +2393,6 @@
                 updateFileList();
                 var msgElFinal = document.getElementById('stream-' + msgIndex);
                 if (msgElFinal) {
-                    msgElFinal.querySelectorAll('pre code').forEach(function(block) {
-                        if (typeof hljs !== 'undefined') hljs.highlightElement(block);
-                    });
                     setupFloatingCopyButtonsForMsg(msgElFinal);
                 }
                 updateFloatingButtons();
@@ -2778,7 +2774,6 @@
                 if (pre._editorToolbar) pre._editorToolbar.remove();
                 codeEl.style.display = '';
                 pre._editorActive = false; pre._textarea = null; pre._editorToolbar = null;
-                if (typeof hljs !== 'undefined' && hljs.highlightElement) hljs.highlightElement(codeEl);
             } else {
                 var originalCode = codeEl.textContent;
                 pre._originalCode = originalCode;
