@@ -2253,12 +2253,89 @@
                                 assistantMsg.content = contentText;
                                 const msgEl = document.getElementById('stream-' + msgIndex);
                                 if (msgEl) {
-                                    const reasoningBlock = reasoningText
-                                        ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
-                                        : '';
-                                    const wasAtBottom = autoScroll;
-                                    msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                    if (wasAtBottom) {
+                                    if (!msgEl._incremental) {
+                                        msgEl._incremental = true;
+                                        msgEl._rawText = '';
+                                        msgEl._reasoningRendered = false;
+                                        msgEl._textNode = null;
+                                        msgEl._codeBlock = null;
+                                        msgEl._codeLang = '';
+                                        msgEl._codeContent = '';
+                                        msgEl._inCodeBlock = false;
+                                    }
+                                    if (!msgEl._reasoningRendered && reasoningText) {
+                                        msgEl._reasoningRendered = true;
+                                        var reasoningDiv = document.createElement('div');
+                                        reasoningDiv.className = 'reasoning-block';
+                                        reasoningDiv.textContent = reasoningText;
+                                        msgEl.appendChild(reasoningDiv);
+                                    }
+                                    var newRaw = assistantMsg._fullBuffer || '';
+                                    var diff = newRaw.slice(msgEl._rawText.length);
+                                    if (diff.length === 0) continue;
+                                    msgEl._rawText = newRaw;
+                                    var i2 = 0;
+                                    while (i2 < diff.length) {
+                                        if (!msgEl._inCodeBlock) {
+                                            var tickIdx = diff.indexOf('```', i2);
+                                            if (tickIdx === -1) {
+                                                if (!msgEl._textNode) {
+                                                    msgEl._textNode = document.createTextNode('');
+                                                    msgEl.appendChild(msgEl._textNode);
+                                                }
+                                                msgEl._textNode.textContent += diff.slice(i2);
+                                                i2 = diff.length;
+                                            } else {
+                                                if (tickIdx > i2) {
+                                                    if (!msgEl._textNode) {
+                                                        msgEl._textNode = document.createTextNode('');
+                                                        msgEl.appendChild(msgEl._textNode);
+                                                    }
+                                                    msgEl._textNode.textContent += diff.slice(i2, tickIdx);
+                                                }
+                                                var langEnd = diff.indexOf('\n', tickIdx + 3);
+                                                if (langEnd === -1) {
+                                                    msgEl._inCodeBlock = true;
+                                                    msgEl._codeLang = diff.slice(tickIdx + 3);
+                                                    msgEl._codeContent = '';
+                                                    msgEl._textNode = null;
+                                                    i2 = diff.length;
+                                                } else {
+                                                    msgEl._inCodeBlock = true;
+                                                    msgEl._codeLang = diff.slice(tickIdx + 3, langEnd).trim();
+                                                    msgEl._codeContent = '';
+                                                    msgEl._textNode = null;
+                                                    msgEl._codeBlock = document.createElement('pre');
+                                                    var codeEl = document.createElement('code');
+                                                    if (msgEl._codeLang) codeEl.className = 'language-' + msgEl._codeLang;
+                                                    msgEl._codeBlock.appendChild(codeEl);
+                                                    msgEl.appendChild(msgEl._codeBlock);
+                                                    setupFloatingCopyButtonsForMsg(msgEl);
+                                                    i2 = langEnd + 1;
+                                                }
+                                            }
+                                        } else {
+                                            var endTick = diff.indexOf('```', i2);
+                                            if (endTick === -1) {
+                                                msgEl._codeContent += diff.slice(i2);
+                                                if (msgEl._codeBlock) msgEl._codeBlock.querySelector('code').textContent = msgEl._codeContent;
+                                                i2 = diff.length;
+                                            } else {
+                                                msgEl._codeContent += diff.slice(i2, endTick);
+                                                if (msgEl._codeBlock) {
+                                                    msgEl._codeBlock.querySelector('code').textContent = msgEl._codeContent;
+                                                    if (typeof hljs !== 'undefined') hljs.highlightElement(msgEl._codeBlock.querySelector('code'));
+                                                }
+                                                msgEl._inCodeBlock = false;
+                                                msgEl._codeBlock = null;
+                                                msgEl._codeContent = '';
+                                                msgEl._codeLang = '';
+                                                i2 = endTick + 3;
+                                                if (diff.charAt(endTick + 3) === '\n') i2++;
+                                            }
+                                        }
+                                    }
+                                    if (autoScroll) {
                                         requestAnimationFrame(function() {
                                             var main = document.querySelector('.main');
                                             if (main) {
@@ -2273,16 +2350,6 @@
                         } catch (e) {
                             console.warn('SSE parse error:', e, dataStr);
                         }
-                    }
-                    if (autoScroll) {
-                        requestAnimationFrame(function() {
-                            var main = document.querySelector('.main');
-                            if (main) {
-                                main.style.scrollBehavior = 'auto';
-                                main.scrollTop = main.scrollHeight;
-                                main.style.scrollBehavior = 'smooth';
-                            }
-                        });
                     }
                 }
 
