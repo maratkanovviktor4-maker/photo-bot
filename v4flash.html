@@ -1230,14 +1230,17 @@
                                             assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                         }
                                         var reasoningText = assistantMsg._reasoningBuffer || '';
-                                        var contentText = assistantMsg._fullBuffer || '';
-                                        assistantMsg._reasoningBuffer = reasoningText;
-                                        assistantMsg.content = contentText;
+                                        var fullText = assistantMsg._fullBuffer || '';
+                                        assistantMsg.content = fullText;
                                         var msgEl = document.getElementById('stream-' + newMsgIndex);
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                             var wasAtBottom = autoScroll;
-                                            msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                            msgEl.innerHTML = reasoningBlock + formatMessage(fullText);
+                                            msgEl.querySelectorAll('pre code').forEach(function(block) {
+                                                delete block.dataset.highlighted;
+                                                if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+                                            });
                                             if (wasAtBottom) {
                                                 requestAnimationFrame(function() {
                                                     var main = document.querySelector('.main');
@@ -1278,7 +1281,6 @@
                         sendBtnArrow();
                         var lastMsgEl2 = document.getElementById('stream-' + newMsgIndex);
                         if (lastMsgEl2) {
-                            lastMsgEl2.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
                             setupFloatingCopyButtonsForMsg(lastMsgEl2);
                         }
                         updateFloatingButtons();
