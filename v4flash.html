@@ -415,46 +415,52 @@
                 var msg = chat.messages[msgIndex];
                 if (!msg) return;
 
-                var reasoning = msg._reasoningBuffer || '';
-                var content = msg._fullBuffer || '';
-                var rawText = (reasoning ? '=== Размышление ===\n' + reasoning + '\n=== Ответ ===\n' : '') + content;
-
                 var state = states[msgIndex];
                 if (!state) {
                     el.innerHTML = '';
-                    state = { textNode: document.createTextNode(''), lastVersion: 0, lastRequestTime: 0, pending: false };
+                    state = { textNode: document.createTextNode(''), lastVersion: 0, lastRequestTime: 0, pending: false, raf: null };
                     el.appendChild(state.textNode);
                     states[msgIndex] = state;
                 }
 
-                if (!state.textNode || !state.textNode.parentNode) {
-                    el.innerHTML = '';
-                    state.textNode = document.createTextNode('');
-                    el.appendChild(state.textNode);
-                }
+                state.latestRaw = (msg._reasoningBuffer ? '=== Размышление ===\n' + msg._reasoningBuffer + '\n=== Ответ ===\n' : '') + (msg._fullBuffer || '');
+                state.latestReasoning = msg._reasoningBuffer || '';
+                state.latestContent = msg._fullBuffer || '';
 
-                state.textNode.textContent = rawText;
+                if (state.raf) return;
+                state.raf = requestAnimationFrame(function() {
+                    state.raf = null;
+                    var currentRaw = (msg._reasoningBuffer ? '=== Размышление ===\n' + msg._reasoningBuffer + '\n=== Ответ ===\n' : '') + (msg._fullBuffer || '');
+                    if (!state.textNode || !state.textNode.parentNode) {
+                        el.innerHTML = '';
+                        state.textNode = document.createTextNode('');
+                        el.appendChild(state.textNode);
+                    }
+                    state.textNode.textContent = currentRaw;
 
-                var now = Date.now();
-                if (state.pending) return;
-                if (now - state.lastRequestTime < 150 && !msg.finished) return;
+                    var now = Date.now();
+                    if (state.pending) return;
+                    if (now - state.lastRequestTime < 150 && !msg.finished) return;
 
-                state.pending = true;
-                state.lastRequestTime = now;
-                var version = ++state.lastVersion;
-                var textToSend = (reasoning ? '%%REASONING%%' + reasoning + '%%ENDREASONING%%' : '') + content;
-                var id = ++taskId;
-                tasks[id] = function(html, workerVersion) {
-                    state.pending = false;
-                    if (workerVersion !== version) return; // игнорируем устаревший ответ
-                    if (!el.isConnected) return;
-                    if (state.textNode && state.textNode.parentNode) state.textNode.remove();
-                    el.innerHTML = html.replace(/%%REASONING%%([\s\S]*?)%%ENDREASONING%%/g, '<div class="reasoning-block">$1</div>');
-                    setupFloatingCopyButtonsForMsg(el);
-                    updateFloatingButtons();
-                    state.textNode = null;
-                };
-                worker.postMessage({ id: id, text: textToSend, version: version });
+                    state.pending = true;
+                    state.lastRequestTime = now;
+                    var version = ++state.lastVersion;
+                    var reasoning = msg._reasoningBuffer || '';
+                    var content = msg._fullBuffer || '';
+                    var textToSend = (reasoning ? '%%REASONING%%' + reasoning + '%%ENDREASONING%%' : '') + content;
+                    var id = ++taskId;
+                    tasks[id] = function(html, workerVersion) {
+                        state.pending = false;
+                        if (workerVersion !== version) return;
+                        if (!el.isConnected) return;
+                        if (state.textNode && state.textNode.parentNode) state.textNode.remove();
+                        el.innerHTML = html.replace(/%%REASONING%%([\s\S]*?)%%ENDREASONING%%/g, '<div class="reasoning-block">$1</div>');
+                        setupFloatingCopyButtonsForMsg(el);
+                        updateFloatingButtons();
+                        state.textNode = null;
+                    };
+                    worker.postMessage({ id: id, text: textToSend, version: version });
+                });
             }
 
             function finalize(msgIndex) {
