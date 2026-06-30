@@ -2580,8 +2580,10 @@
                 }
                 var blockRect = block.getBoundingClientRect();
                 var headerHeight = header.offsetHeight || 34;
+                var preEl = block.querySelector('pre');
+                var codeTop = preEl ? preEl.getBoundingClientRect().top : blockRect.top;
                 var stickyTop = 0;
-                if (blockRect.top < tbBottom) {
+                if (codeTop < tbBottom && blockRect.bottom > tbBottom + headerHeight) {
                     stickyTop = tbBottom - blockRect.top;
                 }
                 var maxSticky = blockRect.height - headerHeight;
