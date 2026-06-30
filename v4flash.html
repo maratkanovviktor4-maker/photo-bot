@@ -427,6 +427,12 @@
                     states[msgIndex] = state;
                 }
 
+                if (!state.textNode || !state.textNode.parentNode) {
+                    el.innerHTML = '';
+                    state.textNode = document.createTextNode('');
+                    el.appendChild(state.textNode);
+                }
+
                 state.textNode.textContent = rawText;
 
                 var now = Date.now();
