@@ -2337,7 +2337,10 @@
                                                 msgEl._codeContent += diff.slice(i2, endTick);
                                                 if (msgEl._codeBlock) {
                                                     msgEl._codeBlock.querySelector('code').textContent = msgEl._codeContent;
-                                                    if (typeof hljs !== 'undefined') hljs.highlightElement(msgEl._codeBlock.querySelector('code'));
+                                                    if (typeof hljs !== 'undefined') {
+                                                        delete msgEl._codeBlock.querySelector('code').dataset.highlighted;
+                                                        hljs.highlightElement(msgEl._codeBlock.querySelector('code'));
+                                                    }
                                                 }
                                                 msgEl._inCodeBlock = false;
                                                 msgEl._codeBlock = null;
