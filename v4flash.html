@@ -2325,7 +2325,13 @@
                                             var endTick = diff.indexOf('```', i2);
                                             if (endTick === -1) {
                                                 msgEl._codeContent += diff.slice(i2);
-                                                if (msgEl._codeBlock) msgEl._codeBlock.querySelector('code').textContent = msgEl._codeContent;
+                                                if (msgEl._codeBlock) {
+                                                    msgEl._codeBlock.querySelector('code').textContent = msgEl._codeContent;
+                                                    if (msgEl._codeContent.length - (msgEl._lastHighlighted || 0) > 500) {
+                                                        msgEl._lastHighlighted = msgEl._codeContent.length;
+                                                        if (typeof hljs !== 'undefined') hljs.highlightElement(msgEl._codeBlock.querySelector('code'));
+                                                    }
+                                                }
                                                 i2 = diff.length;
                                             } else {
                                                 msgEl._codeContent += diff.slice(i2, endTick);
