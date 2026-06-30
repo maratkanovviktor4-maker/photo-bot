@@ -405,7 +405,7 @@
                 delete tasks[e.data.id];
             };
 
-            var states = {}; // msgIndex -> { textNode, lastVersion, lastRequestTime, pending }
+            var states = {};
 
             function update(msgIndex) {
                 var el = document.getElementById('stream-' + msgIndex);
@@ -417,23 +417,30 @@
 
                 var state = states[msgIndex];
                 if (!state) {
-                    state = { textNode: null, lastVersion: 0, lastRequestTime: 0, pending: false, raf: null, htmlActive: false };
+                    el.innerHTML = '';
+                    state = { textNode: document.createTextNode(''), htmlActive: false, lastVersion: 0, lastRequestTime: 0, pending: false, lastScrollY: 0 };
+                    el.appendChild(state.textNode);
                     states[msgIndex] = state;
                 }
 
-                if (!state.textNode && !state.htmlActive) {
-                    el.innerHTML = '';
-                    state.textNode = document.createTextNode('');
-                    el.appendChild(state.textNode);
+                if (state.textNode && state.textNode.parentNode && !state.htmlActive) {
+                    state.textNode.textContent = (msg._reasoningBuffer ? '=== Размышление ===\n' + msg._reasoningBuffer + '\n=== Ответ ===\n' : '') + (msg._fullBuffer || '');
                 }
 
-                if (state.textNode && state.textNode.parentNode) {
-                    state.textNode.textContent = (msg._reasoningBuffer ? '=== Размышление ===\n' + msg._reasoningBuffer + '\n=== Ответ ===\n' : '') + (msg._fullBuffer || '');
+                // Плавный автоскролл без рывков
+                if (autoScroll) {
+                    var main = document.querySelector('.main');
+                    if (main) {
+                        var diff = main.scrollHeight - main.scrollTop - main.clientHeight;
+                        if (diff < 200) {
+                            state.lastScrollY = main.scrollHeight;
+                        }
+                    }
                 }
 
                 var now = Date.now();
                 if (state.pending) return;
-                if (now - state.lastRequestTime < 200 && !msg.finished) return;
+                if (now - state.lastRequestTime < 250 && !msg.finished) return;
 
                 state.pending = true;
                 state.lastRequestTime = now;
@@ -442,12 +449,10 @@
                 var content = msg._fullBuffer || '';
                 var textToSend = (reasoning ? '%%REASONING%%' + reasoning + '%%ENDREASONING%%' : '') + content;
                 var id = ++taskId;
-                var self = this;
                 tasks[id] = function(html, workerVersion) {
                     state.pending = false;
                     if (workerVersion !== version) return;
                     if (!el.isConnected) return;
-                    // Удаляем textNode только если он всё ещё там
                     if (state.textNode && state.textNode.parentNode) {
                         state.textNode.remove();
                         state.textNode = null;
@@ -477,7 +482,7 @@
                     setupFloatingCopyButtonsForMsg(el);
                     updateFloatingButtons();
                 };
-                worker.postMessage({ id: id, text: textToSend, version: 1 });
+                worker.postMessage({ id: id, text: textToSend, version: 999999 });
                 delete states[msgIndex];
             }
 
