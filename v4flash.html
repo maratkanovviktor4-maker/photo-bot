@@ -2582,15 +2582,14 @@
                 var headerHeight = header.offsetHeight || 34;
                 var preEl = block.querySelector('pre');
                 var codeTop = preEl ? preEl.getBoundingClientRect().top : blockRect.top;
+                var codeBottom = preEl ? preEl.getBoundingClientRect().bottom : blockRect.bottom;
                 var stickyTop = 0;
-                if (codeTop < tbBottom && blockRect.bottom > tbBottom + headerHeight) {
+                if (codeTop < tbBottom && codeBottom > tbBottom) {
                     stickyTop = tbBottom - blockRect.top;
                 }
-                var maxSticky = blockRect.height - headerHeight;
-                if (stickyTop > maxSticky) stickyTop = maxSticky;
                 if (stickyTop < 0) stickyTop = 0;
                 header.style.top = stickyTop + 'px';
-                header.style.display = (blockRect.bottom > tbBottom && blockRect.top < window.innerHeight) ? 'flex' : 'none';
+                header.style.display = (stickyTop > 0) ? 'flex' : 'none';
             }
         }
 
