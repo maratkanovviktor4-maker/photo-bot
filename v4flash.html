@@ -452,33 +452,24 @@
             }
 
             function finalize(msgIndex) {
-                var state = states[msgIndex];
-                if (!state) { update(msgIndex); return; }
-                // Принудительно отправляем последний запрос без троттлинга
-                state.lastRequestTime = 0;
-                update(msgIndex);
-                // Дополнительная гарантия через 250 мс
-                setTimeout(function() {
-                    var el = document.getElementById('stream-' + msgIndex);
-                    if (!el) return;
-                    var chat = chats.find(function(c){return c.id === currentChatId;});
-                    if (!chat) return;
-                    var msg = chat.messages[msgIndex];
-                    if (!msg) return;
-                    var reasoning = msg._reasoningBuffer || '';
-                    var content = msg._fullBuffer || '';
-                    var textToSend = (reasoning ? '%%REASONING%%' + reasoning + '%%ENDREASONING%%' : '') + content;
-                    var version = ++state.lastVersion;
-                    var id = ++taskId;
-                    tasks[id] = function(html, workerVersion) {
-                        if (workerVersion !== version) return;
-                        if (!el.isConnected) return;
-                        el.innerHTML = html.replace(/%%REASONING%%([\s\S]*?)%%ENDREASONING%%/g, '<div class="reasoning-block">$1</div>');
-                        setupFloatingCopyButtonsForMsg(el);
-                        updateFloatingButtons();
-                    };
-                    worker.postMessage({ id: id, text: textToSend, version: version });
-                }, 250);
+                var el = document.getElementById('stream-' + msgIndex);
+                if (!el) return;
+                var chat = chats.find(function(c){return c.id === currentChatId;});
+                if (!chat) return;
+                var msg = chat.messages[msgIndex];
+                if (!msg) return;
+                var reasoning = msg._reasoningBuffer || '';
+                var content = msg._fullBuffer || '';
+                var textToSend = (reasoning ? '%%REASONING%%' + reasoning + '%%ENDREASONING%%' : '') + content;
+                var id = ++taskId;
+                tasks[id] = function(html) {
+                    if (!el.isConnected) return;
+                    el.innerHTML = html.replace(/%%REASONING%%([\s\S]*?)%%ENDREASONING%%/g, '<div class="reasoning-block">$1</div>');
+                    setupFloatingCopyButtonsForMsg(el);
+                    updateFloatingButtons();
+                };
+                worker.postMessage({ id: id, text: textToSend, version: 1 });
+                delete states[msgIndex];
             }
 
             function reset() {
