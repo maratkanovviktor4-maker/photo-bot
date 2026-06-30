@@ -1073,9 +1073,6 @@
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                            msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                                            setupFloatingCopyButtonsForMsg(msgEl);
-                                            updateFloatingButtons();
                                         }
                                         if (autoScroll) {
                                             var main = document.querySelector('.main');
@@ -1107,6 +1104,12 @@
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
+                    var lastMsgEl = document.getElementById('stream-' + streamMsgIndex);
+                    if (lastMsgEl) {
+                        lastMsgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                        setupFloatingCopyButtonsForMsg(lastMsgEl);
+                    }
+                    updateFloatingButtons();
                 } else {
                     var data = await resp.json();
                     if (data.success) {
@@ -1223,9 +1226,6 @@
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                            msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                                            setupFloatingCopyButtonsForMsg(msgEl);
-                                            updateFloatingButtons();
                                         }
                                         if (autoScroll) {
                                             var main = document.querySelector('.main');
@@ -1258,6 +1258,12 @@
                         isSending = false;
                         activeStreamId = null;
                         sendBtnArrow();
+                        var lastMsgEl2 = document.getElementById('stream-' + newMsgIndex);
+                        if (lastMsgEl2) {
+                            lastMsgEl2.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                            setupFloatingCopyButtonsForMsg(lastMsgEl2);
+                        }
+                        updateFloatingButtons();
                     } catch (e) {
                         if (e.name === 'AbortError') {
                             assistantMsg.interrupted = true;
@@ -1406,9 +1412,6 @@
                                 if (msgEl) {
                                     var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
                                     msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                    msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                                    setupFloatingCopyButtonsForMsg(msgEl);
-                                    updateFloatingButtons();
                                 }
                                 if (autoScroll) {
                                     var main = document.querySelector('.main');
@@ -1439,6 +1442,12 @@
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
+                var lastMsgEl3 = document.getElementById('stream-' + newMsgIndex);
+                if (lastMsgEl3) {
+                    lastMsgEl3.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                    setupFloatingCopyButtonsForMsg(lastMsgEl3);
+                }
+                updateFloatingButtons();
             } catch (e) {
                 if (e.name === 'AbortError') {
                     assistantMsg.interrupted = true;
@@ -1996,9 +2005,6 @@
                                                                 var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                                                 if (msgEl) {
                                                                         msgEl.innerHTML = formatMessage(assistantMsg.content);
-                                                                        msgEl.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
-                                                                        setupFloatingCopyButtonsForMsg(msgEl);
-                                                                        updateFloatingButtons();
                                                                 }
                                                                 if (autoScroll) {
                                                                         var main = document.querySelector('.main');
@@ -2023,6 +2029,12 @@
                         isSending = false;
                         activeStreamId = null;
                         sendBtnArrow();
+                        var lastMsgEl4 = document.getElementById('stream-' + streamMsgIndex);
+                        if (lastMsgEl4) {
+                            lastMsgEl4.querySelectorAll('pre code').forEach(function(block) { if (typeof hljs !== 'undefined') hljs.highlightElement(block); });
+                            setupFloatingCopyButtonsForMsg(lastMsgEl4);
+                        }
+                        updateFloatingButtons();
                 } catch(e) {
                         console.error('selfPlay error:', e);
                         showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
