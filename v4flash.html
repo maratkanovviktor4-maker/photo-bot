@@ -2152,8 +2152,12 @@
             }
             setupFloatingCopyButtonsForMsg(el);
             updateFloatingButtons();
-            var main = document.querySelector('.main');
-            if (main) { main.scrollTop = main.scrollHeight; }
+            var lastMsg = document.querySelector('.message-row.assistant:last-of-type');
+            if (lastMsg) {
+                lastMsg.scrollIntoView({ behavior: 'instant', block: 'end' });
+            }
+            var btn = document.getElementById('scrollBottomBtn');
+            if (btn) btn.style.display = 'none';
         }
         async function sendMessage() {
             if (isSending) return;
@@ -2309,8 +2313,12 @@
                 updateFileList();
                 renderMessages();
                 buildNavContainer();
-                var mainFinal = document.querySelector('.main');
-                if (mainFinal) { mainFinal.scrollTop = mainFinal.scrollHeight; }
+                var lastMsgFinal = document.querySelector('.message-row.assistant:last-of-type');
+                if (lastMsgFinal) {
+                    lastMsgFinal.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+                var btnFinal = document.getElementById('scrollBottomBtn');
+                if (btnFinal) btnFinal.style.display = 'none';
             } catch (e) {
                 if (e.name === 'AbortError') {
                     assistantMsg.interrupted = true;
