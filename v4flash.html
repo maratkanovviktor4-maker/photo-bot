@@ -2115,29 +2115,45 @@
             btn.onclick = null;
         }
         var _streamTimers = {};
+        var _streamLastRender = {};
 
         function streamUpdateDOM(el, msg) {
             var id = el.id;
-            if (_streamTimers[id]) return;
-            _streamTimers[id] = setTimeout(function() {
+            var now = Date.now();
+            if (_streamLastRender[id] && (now - _streamLastRender[id]) < 100) {
+                if (_streamTimers[id]) return;
+                _streamTimers[id] = setTimeout(function() {
+                    _streamTimers[id] = null;
+                    _streamLastRender[id] = Date.now();
+                    renderStreamContent(el, msg);
+                }, 100);
+                return;
+            }
+            _streamLastRender[id] = now;
+            if (_streamTimers[id]) {
+                clearTimeout(_streamTimers[id]);
                 _streamTimers[id] = null;
-                var reasoningHtml = (msg._reasoningBuffer)
-                    ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
-                    : '';
-                el.innerHTML = reasoningHtml + formatMessage(msg.content || '');
-                var codeBlocks = el.querySelectorAll('pre code');
-                for (var i = 0; i < codeBlocks.length; i++) {
-                    var block = codeBlocks[i];
-                    if (!block._highlighted && typeof hljs !== 'undefined') {
-                        hljs.highlightElement(block);
-                        block._highlighted = true;
-                    }
+            }
+            renderStreamContent(el, msg);
+        }
+
+        function renderStreamContent(el, msg) {
+            var reasoningHtml = (msg._reasoningBuffer)
+                ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
+                : '';
+            el.innerHTML = reasoningHtml + formatMessage(msg.content || '');
+            var codeBlocks = el.querySelectorAll('pre code');
+            for (var i = 0; i < codeBlocks.length; i++) {
+                var block = codeBlocks[i];
+                if (!block._highlighted && typeof hljs !== 'undefined') {
+                    hljs.highlightElement(block);
+                    block._highlighted = true;
                 }
-                setupFloatingCopyButtonsForMsg(el);
-                updateFloatingButtons();
-                var main = document.querySelector('.main');
-                if (main) { main.scrollTop = main.scrollHeight; }
-            }, 16);
+            }
+            setupFloatingCopyButtonsForMsg(el);
+            updateFloatingButtons();
+            var main = document.querySelector('.main');
+            if (main) { main.scrollTop = main.scrollHeight; }
         }
         async function sendMessage() {
             if (isSending) return;
