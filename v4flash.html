@@ -2327,14 +2327,15 @@
                                                 msgEl._codeContent += diff.slice(i2);
                                                 if (msgEl._codeBlock) {
                                                     msgEl._codeBlock.querySelector('code').textContent = msgEl._codeContent;
-                                                    if (msgEl._highlightTimer) clearTimeout(msgEl._highlightTimer);
-                                                    msgEl._highlightTimer = setTimeout(function() {
-                                                        msgEl._highlightTimer = null;
-                                                        if (msgEl._codeBlock && typeof hljs !== 'undefined') {
+                                                    var now = Date.now();
+                                                    if (msgEl._codeContent.length - (msgEl._lastHighlighted || 0) > 300 && (!msgEl._lastHighlightTime || now - msgEl._lastHighlightTime > 200)) {
+                                                        msgEl._lastHighlighted = msgEl._codeContent.length;
+                                                        msgEl._lastHighlightTime = now;
+                                                        if (typeof hljs !== 'undefined') {
                                                             delete msgEl._codeBlock.querySelector('code').dataset.highlighted;
                                                             hljs.highlightElement(msgEl._codeBlock.querySelector('code'));
                                                         }
-                                                    }, 300);
+                                                    }
                                                 }
                                                 i2 = diff.length;
                                             } else {
