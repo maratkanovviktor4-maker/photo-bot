@@ -2152,16 +2152,14 @@
             }
             setupFloatingCopyButtonsForMsg(el);
             updateFloatingButtons();
+            var btn = document.getElementById('scrollBottomBtn');
+            if (btn) { btn.style.display = 'none'; btn.style.pointerEvents = 'none'; }
             requestAnimationFrame(function() {
                 requestAnimationFrame(function() {
-                    var bottom = document.querySelector('.bottom-container');
-                    var pad = bottom ? bottom.offsetHeight + 16 : 80;
                     var main = document.querySelector('.main');
                     if (main) {
-                        main.scrollTop = main.scrollHeight + pad;
+                        main.scrollTop = main.scrollHeight;
                     }
-                    var btn = document.getElementById('scrollBottomBtn');
-                    if (btn) btn.style.display = 'none';
                 });
             });
         }
@@ -2319,12 +2317,10 @@
                 updateFileList();
                 renderMessages();
                 buildNavContainer();
-                var lastMsgFinal = document.querySelector('.message-row.assistant:last-of-type');
-                if (lastMsgFinal) {
-                    lastMsgFinal.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                }
+                var mainFinal = document.querySelector('.main');
+                if (mainFinal) { mainFinal.scrollTop = mainFinal.scrollHeight; }
                 var btnFinal = document.getElementById('scrollBottomBtn');
-                if (btnFinal) btnFinal.style.display = 'none';
+                if (btnFinal) { btnFinal.style.display = 'none'; btnFinal.style.pointerEvents = 'auto'; }
             } catch (e) {
                 if (e.name === 'AbortError') {
                     assistantMsg.interrupted = true;
