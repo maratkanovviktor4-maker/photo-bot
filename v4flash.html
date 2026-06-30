@@ -115,19 +115,20 @@
         .message-row { display: flex; gap: 12px; align-items: flex-start; max-width: 100%; }
         .message-row.user { align-self: flex-end; flex-direction: row-reverse; max-width: 75%; }
         .message-row.assistant { align-self: flex-start; }
-        .message-content { padding: 10px 14px; border-radius: 12px; font-size: 15px !important; line-height: 1.5; white-space: pre-wrap; word-break: break-word; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important; max-width: 100%; }
+        .message-content { padding: 10px 14px; border-radius: 12px; font-size: 15px !important; line-height: 1.5; white-space: pre-wrap; word-break: break-word; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important; max-width: 100%; overflow-x: hidden; }
         .message-row.assistant .message-content { background: transparent; backdrop-filter: none; border-radius: 4px; }
         body.light .message-row.assistant .message-content { background: #ffffff; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
         .message-row.user .message-content { background: rgba(0,203,245,0.15); border-radius: 18px; }
         body.light .message-row.user .message-content { background: #EDF3FE; color: #111; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; }
         .message-content pre { display: none; }
-        .msg-code-block-wrap { position: sticky; top: 56px; width: 100%; min-width: 100%; margin: 8px 0; box-sizing: border-box; background: #1a1a2e; border-radius: 10px; overflow: hidden; font-size: 14px; border: none; z-index: 5; }
-        .msg-code-block-wrap .floating-code-header { background: #1a1a2e; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: space-between; line-height: 1; }
-        .msg-code-block { background: transparent; overflow-x: hidden; }
-        .msg-code-block pre { display: block; background: transparent; padding: 0 14px 14px 14px; margin: 0; border-radius: 0; overflow: visible; white-space: pre-wrap; word-break: break-all; }
+        .msg-code-block { width: 775px; max-width: 100%; margin: 8px -14px; box-sizing: border-box; background: #1a1a2e; border-radius: 10px; overflow-x: hidden; font-size: 14px; border: none; position: relative; }
+        .msg-code-block pre { display: block; background: transparent; padding: 34px 14px 14px 14px; margin: 0; border-radius: 0; overflow: visible; white-space: pre-wrap; word-break: break-all; position: static; }
         .msg-code-block pre code { font-family: 'Courier New', monospace; font-size: 14px; background: transparent; padding: 0; display: block; color: inherit; white-space: pre-wrap; word-break: break-all; }
-        body.light .msg-code-block-wrap { background: #f8f8f8; border: 1px solid rgba(0,0,0,0.08); }
-        body.light .msg-code-block-wrap .floating-code-header { background: #f8f8f8; color: #555; }
+        body.light .msg-code-block { background: #f8f8f8; border: 1px solid rgba(0,0,0,0.08); }
+        body.light .msg-code-block pre { background: transparent; }
+        body.light .msg-code-block pre code { background: transparent; }
+        .floating-code-header { position: sticky; top: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 10px 10px 0 0; padding: 6px 14px; font-size: 12px; color: #aaa; font-family: 'Inter', sans-serif; z-index: 5; display: flex; align-items: center; justify-content: space-between; line-height: 1; }
+        body.light .floating-code-header { background: #f8f8f8; color: #555; }
         .message-content code { font-family: 'Courier New', monospace; font-size: 14px; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; }
         body.light .message-content code { background: #f5f5f5; color: #111; }
         .message-actions { display: flex; gap: 6px; margin-top: 6px; }
@@ -1446,19 +1447,15 @@
         
 
         function renderMessages() {
-            var oldBtns = document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header');
-            for (var b = 0; b < oldBtns.length; b++) { oldBtns[b].remove(); }
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            var area = document.getElementById('chatArea');
+            document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
+            const chat = chats.find(c => c.id === currentChatId);
+            const area = document.getElementById('chatArea');
             if (!chat || chat.messages.length === 0) {
                 area.innerHTML = '<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display=\'none\'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>';
             } else {
-                var html = '';
-                for (var i = 0; i < chat.messages.length; i++) {
-                    var m = chat.messages[i];
+                area.innerHTML = chat.messages.map((m, i) => {
                     if (m.role === 'system') {
-                        html += '<div class="message-row system" data-msg-index="' + i + '"><div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">' + escapeHtml(m.content) + '</div></div></div>';
-                        continue;
+                        return '<div class="message-row system" data-msg-index="' + i + '"><div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">' + escapeHtml(m.content) + '</div></div></div>';
                     }
                     var actionsHtml = '';
                     if (m.role === 'assistant' && m._streaming && !m.content && !m._reasoningBuffer && !m.reasoning) {
@@ -1477,6 +1474,7 @@
                         if (m.interrupted) actionsHtml += '<button onclick="continueMessage(' + i + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                         actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + i + ')" title="Self-Play диалог" style="color:#00CBF5;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
                     }
+                    var dataAttr = ' data-msg-index="' + i + '"';
                     var reasoningHtml = '';
                     var contentToShow = m.content || '';
                     var hasReasoning = false;
@@ -1487,7 +1485,8 @@
                     } else if (m.reasoning) {
                         reasoningText = m.reasoning;
                         hasReasoning = true;
-                    } else if (m.content && m.content.indexOf('Размышление:\n') !== -1) {
+                    } else if (m.content && m.content.includes('Размышление:\n')) {
+                        // fallback: старый формат с reasoning внутри content
                         var splitIdx = m.content.indexOf('\n\nОтвет:\n');
                         if (splitIdx !== -1) {
                             reasoningText = m.content.substring('Размышление:\n'.length, splitIdx);
@@ -1502,9 +1501,8 @@
                     if (m.role === 'assistant' && m._streaming && !contentToShow && !hasReasoning) {
                         contentHtml = '<div class="typing-dots"><span></span><span></span><span></span></div>';
                     }
-                    html += '<div class="message-row ' + m.role + '" data-msg-index="' + i + '"><div style="width:100%;" id="stream-' + i + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div>';
-                }
-                area.innerHTML = html;
+                    return '<div class="message-row ' + m.role + '"' + dataAttr + '><div><div class="message-content" id="stream-' + i + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + i + '">' + actionsHtml + '</div></div></div>';
+                }).join('');
             }
             _floatingHeaders = [];
             hljs.highlightAll();
@@ -2374,7 +2372,7 @@
                 var part = parts[p];
                 if (part.type === 'code') {
                     var lang = part.lang || '';
-                    result += '<div class="msg-code-block-wrap"><div class="floating-code-header"><span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span></div><div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div></div>';
+                    result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
                 } else {
                     var text2 = escapeHtml(part.content);
                     for (var r = 0; r < _inlineRules.length; r++) {
@@ -2423,15 +2421,29 @@
         }
 
 
-        function _setupSingleCodeBlock(wrap) {
-            if (!wrap || wrap.querySelector('.floating-copy-btn')) return;
-            var header = wrap.querySelector('.floating-code-header');
-            if (!header) return;
-            var pre = wrap.querySelector('pre');
+        function _setupSingleCodeBlock(block) {
+            if (block.querySelector('.floating-code-header')) return;
+            var pre = block.tagName === 'PRE' ? block : block.querySelector('pre');
             if (!pre) return;
-            var actions = header.querySelector('span:last-child');
-            if (!actions || actions.querySelector('.floating-copy-btn')) return;
+            var codeBlock = pre.querySelector('code');
+            var lang = '';
+            if (codeBlock) {
+                var cls = codeBlock.className || '';
+                var m = cls.match(/language-(\w+)/);
+                if (m) lang = m[1];
+            }
+            var header = document.createElement('div');
+            header.className = 'floating-code-header';
+            header.style.cssText = 'position:sticky;top:0;background:#1a1a2e;border-radius:10px 10px 0 0;padding:6px 14px;font-size:12px;color:#aaa;font-family:Inter,sans-serif;z-index:5;display:flex;align-items:center;justify-content:space-between;line-height:1;';
+            if (document.body.classList.contains('light')) {
+                header.style.background = '#f8f8f8';
+                header.style.color = '#555';
+            }
+            header.innerHTML = '<span style="font-weight:600;">' + (lang || 'code') + '</span><span style="display:flex;gap:6px;"></span>';
+            pre.insertBefore(header, pre.firstChild);
+            block._floatHeader = header;
 
+            var actions = header.querySelector('span:last-child');
             var copyBtn = _makeActionBtn('Copy', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy', function() {
                 var code = pre._editorActive && pre._textarea ? pre._textarea.value : (pre.querySelector('code') ? pre.querySelector('code').textContent : '');
                 navigator.clipboard.writeText(code);
@@ -2452,9 +2464,7 @@
             });
             actions.appendChild(downloadBtn);
 
-            var codeEl = pre.querySelector('code');
-            var lang = codeEl ? (codeEl.className.match(/language-(\w+)/) || [])[1] || '' : '';
-            var isHtml = lang === 'html' || lang === 'htm' || /^\s*<(!DOCTYPE|html)/i.test(codeEl ? codeEl.textContent : '');
+            var isHtml = lang === 'html' || lang === 'htm' || /^\s*<(!DOCTYPE|html)/i.test((pre.querySelector('code') ? pre.querySelector('code').textContent : ''));
             if (isHtml) {
                 var previewBtn = _makeActionBtn('Предпросмотр', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Предпросмотр', function() {
                     var code = pre._editorActive && pre._textarea ? pre._textarea.value : (pre.querySelector('code') ? pre.querySelector('code').textContent : '');
@@ -2481,9 +2491,9 @@
         }
 
         function setupFloatingCopyButtons() {
-            var wraps = document.querySelectorAll('.msg-code-block-wrap');
-            for (var i = 0; i < wraps.length; i++) {
-                _setupSingleCodeBlock(wraps[i]);
+            var blocks = document.querySelectorAll('.msg-code-block');
+            for (var i = 0; i < blocks.length; i++) {
+                _setupSingleCodeBlock(blocks[i]);
             }
             _floatingHeaders = [];
             updateFloatingButtons();
@@ -2491,10 +2501,10 @@
 
         function setupFloatingCopyButtonsForMsg(msgEl) {
             if (!msgEl) return;
-            var wraps = msgEl.querySelectorAll('.msg-code-block-wrap');
-            for (var i = 0; i < wraps.length; i++) {
-                if (wraps[i].querySelector('.floating-copy-btn')) continue;
-                _setupSingleCodeBlock(wraps[i]);
+            var blocks = msgEl.querySelectorAll('.msg-code-block');
+            for (var i = 0; i < blocks.length; i++) {
+                if (blocks[i].querySelector('.floating-code-header')) continue;
+                _setupSingleCodeBlock(blocks[i]);
             }
             _floatingHeaders = [];
             updateFloatingButtons();
@@ -2539,24 +2549,22 @@
 
         function _collectFloatingHeaders() {
             _floatingHeaders = [];
-            var wraps = document.querySelectorAll('.msg-code-block-wrap');
-            for (var i = 0; i < wraps.length; i++) {
-                if (wraps[i].querySelector('.floating-code-header')) {
-                    _floatingHeaders.push(wraps[i]);
-                }
+            var blocks = document.querySelectorAll('.msg-code-block');
+            for (var i = 0; i < blocks.length; i++) {
+                if (blocks[i]._floatHeader) _floatingHeaders.push(blocks[i]);
             }
         }
 
         function updateFloatingButtons() {
             if (_floatingHeaders.length === 0) _collectFloatingHeaders();
             var topBar = document.querySelector('.top-bar');
-            var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 56;
+            var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
             var isLight = document.body.classList.contains('light');
             var bg = isLight ? '#f8f8f8' : '#1a1a2e';
             var clr = isLight ? '#555' : '#aaa';
             for (var i = 0; i < _floatingHeaders.length; i++) {
-                var wrap = _floatingHeaders[i];
-                var header = wrap.querySelector('.floating-code-header');
+                var block = _floatingHeaders[i];
+                var header = block._floatHeader;
                 if (!header || !header.isConnected) { _floatingHeaders.splice(i, 1); i--; continue; }
                 header.style.background = bg;
                 header.style.color = clr;
@@ -2564,8 +2572,17 @@
                 for (var b = 0; b < btns.length; b++) {
                     btns[b].style.color = clr;
                 }
-                var wrapRect = wrap.getBoundingClientRect();
-                header.style.display = (wrapRect.bottom > tbBottom && wrapRect.top < window.innerHeight) ? 'flex' : 'none';
+                var blockRect = block.getBoundingClientRect();
+                var headerHeight = header.offsetHeight || 34;
+                var stickyTop = 0;
+                if (blockRect.top < tbBottom) {
+                    stickyTop = tbBottom - blockRect.top;
+                }
+                var maxSticky = blockRect.height - headerHeight;
+                if (stickyTop > maxSticky) stickyTop = maxSticky;
+                if (stickyTop < 0) stickyTop = 0;
+                header.style.top = stickyTop + 'px';
+                header.style.display = (blockRect.bottom > tbBottom && blockRect.top < window.innerHeight) ? 'flex' : 'none';
             }
         }
 
