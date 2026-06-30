@@ -2152,12 +2152,16 @@
             }
             setupFloatingCopyButtonsForMsg(el);
             updateFloatingButtons();
-            var lastMsg = document.querySelector('.message-row.assistant:last-of-type');
-            if (lastMsg) {
-                lastMsg.scrollIntoView({ behavior: 'instant', block: 'end' });
-            }
-            var btn = document.getElementById('scrollBottomBtn');
-            if (btn) btn.style.display = 'none';
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    var lastMsg = document.querySelector('.message-row.assistant:last-of-type');
+                    if (lastMsg) {
+                        lastMsg.scrollIntoView({ behavior: 'instant', block: 'end' });
+                    }
+                    var btn = document.getElementById('scrollBottomBtn');
+                    if (btn) btn.style.display = 'none';
+                });
+            });
         }
         async function sendMessage() {
             if (isSending) return;
