@@ -1072,7 +1072,18 @@
                                         var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
+                                            var wasAtBottom = autoScroll;
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
+                                            if (wasAtBottom) {
+                                                requestAnimationFrame(function() {
+                                                    var main = document.querySelector('.main');
+                                                    if (main) {
+                                                        main.style.scrollBehavior = 'auto';
+                                                        main.scrollTop = main.scrollHeight;
+                                                        main.style.scrollBehavior = 'smooth';
+                                                    }
+                                                });
+                                            }
                                         }
                                         if (autoScroll) {
                                             var main = document.querySelector('.main');
@@ -1225,11 +1236,18 @@
                                         var msgEl = document.getElementById('stream-' + newMsgIndex);
                                         if (msgEl) {
                                             var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
+                                            var wasAtBottom = autoScroll;
                                             msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                        }
-                                        if (autoScroll) {
-                                            var main = document.querySelector('.main');
-                                            if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+                                            if (wasAtBottom) {
+                                                requestAnimationFrame(function() {
+                                                    var main = document.querySelector('.main');
+                                                    if (main) {
+                                                        main.style.scrollBehavior = 'auto';
+                                                        main.scrollTop = main.scrollHeight;
+                                                        main.style.scrollBehavior = 'smooth';
+                                                    }
+                                                });
+                                            }
                                         }
                                     }
                                 } catch (e) {}
@@ -1411,11 +1429,18 @@
                                 var msgEl = document.getElementById('stream-' + newMsgIndex);
                                 if (msgEl) {
                                     var reasoningBlock = reasoningText ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>' : '';
+                                    var wasAtBottom = autoScroll;
                                     msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                }
-                                if (autoScroll) {
-                                    var main = document.querySelector('.main');
-                                    if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+                                    if (wasAtBottom) {
+                                        requestAnimationFrame(function() {
+                                            var main = document.querySelector('.main');
+                                            if (main) {
+                                                main.style.scrollBehavior = 'auto';
+                                                main.scrollTop = main.scrollHeight;
+                                                main.style.scrollBehavior = 'smooth';
+                                            }
+                                        });
+                                    }
                                 }
                             }
                         } catch (e) {}
@@ -2007,8 +2032,14 @@
                                                                         msgEl.innerHTML = formatMessage(assistantMsg.content);
                                                                 }
                                                                 if (autoScroll) {
-                                                                        var main = document.querySelector('.main');
-                                                                        if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+                                                                        requestAnimationFrame(function() {
+                                                                            var main = document.querySelector('.main');
+                                                                            if (main) {
+                                                                                main.style.scrollBehavior = 'auto';
+                                                                                main.scrollTop = main.scrollHeight;
+                                                                                main.style.scrollBehavior = 'smooth';
+                                                                            }
+                                                                        });
                                                                 }
                                                         }
                                                 } catch(e) {}
