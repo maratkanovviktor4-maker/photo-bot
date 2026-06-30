@@ -1904,14 +1904,21 @@
         }
 
 
-        document.getElementById('selfPlayPrompt').addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') { closeSelfPlayModal(); }
-        });
-        document.getElementById('selfPlayPrompt').addEventListener('input', updateSelfPlayForm);
-
-        document.getElementById('selfPlayModal').addEventListener('click', function(e) {
-                if (e.target === this) closeSelfPlayModal();
-        });
+        (function() {
+            var prompt = document.getElementById('selfPlayPrompt');
+            if (prompt) {
+                prompt.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') { closeSelfPlayModal(); }
+                });
+                prompt.addEventListener('input', updateSelfPlayForm);
+            }
+            var modal = document.getElementById('selfPlayModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) closeSelfPlayModal();
+                });
+            }
+        })();
 
         async function selfPlay(msgIndex, promptText, selectedRoles, consensusRole, temperature) {
                 if (isSending) return;
