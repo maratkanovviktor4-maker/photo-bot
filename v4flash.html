@@ -377,6 +377,7 @@
         let typingInterval = null;
         let pendingFile = null;
         let activeStreamId = null;
+        var _virtualCodeBlocks = {};
         let allBranchesCache = {};
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
@@ -1453,6 +1454,48 @@
                 }
             }
         }
+        function streamRenderVirtual(msgIndex) {
+            var msgEl = document.getElementById('stream-' + msgIndex);
+            if (!msgEl) return;
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[msgIndex];
+            if (!msg) return;
+
+            var reasoning = msg._reasoningBuffer || '';
+            var content = msg._fullBuffer || '';
+
+            if (!_virtualCodeBlocks[msgIndex]) {
+                msgEl.innerHTML = (reasoning ? '<div class="reasoning-block">' + formatMessage(reasoning) + '</div>' : '') + formatMessage(content);
+                _virtualCodeBlocks[msgIndex] = true;
+            } else {
+                var pre = msgEl.querySelector('pre');
+                if (!pre) {
+                    msgEl.innerHTML = (reasoning ? '<div class="reasoning-block">' + formatMessage(reasoning) + '</div>' : '') + formatMessage(content);
+                } else {
+                    var code = pre.querySelector('code');
+                    if (code) {
+                        var newContent = content;
+                        var codeMatch = newContent.match(/```[\s\S]*?\n([\s\S]*?)```/);
+                        if (codeMatch) {
+                            code.textContent = codeMatch[1];
+                        } else {
+                            var lastBacktick = newContent.lastIndexOf('```');
+                            if (lastBacktick !== -1) {
+                                var codeStart = newContent.indexOf('\n', newContent.indexOf('```')) + 1;
+                                if (codeStart > 0) {
+                                    code.textContent = newContent.substring(codeStart, lastBacktick);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (autoScroll) {
+                var main = document.querySelector('.main');
+                if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
+            }
+        }
 
         
 
@@ -2204,15 +2247,7 @@
                                 const reasoningText = assistantMsg._reasoningBuffer || '';
                                 const contentText = assistantMsg._fullBuffer || '';
                                 assistantMsg.content = contentText;
-                                const msgEl = document.getElementById('stream-' + msgIndex);
-                                if (msgEl) {
-                                    const reasoningBlock = reasoningText
-                                        ? '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>'
-                                        : '';
-                                    msgEl.innerHTML = reasoningBlock + formatMessage(contentText);
-                                    setupFloatingCopyButtonsForMsg(msgEl);
-                                    updateFloatingButtons();
-                                }
+                                streamRenderVirtual(msgIndex);
                             }
                         } catch (e) {
                             console.warn('SSE parse error:', e, dataStr);
@@ -2242,14 +2277,7 @@
                 sendBtnArrow();
                 pendingFile = null;
                 updateFileList();
-                var msgElFinal = document.getElementById('stream-' + msgIndex);
-                if (msgElFinal) {
-                    msgElFinal.querySelectorAll('pre code').forEach(function(block) {
-                        if (typeof hljs !== 'undefined') hljs.highlightElement(block);
-                    });
-                    setupFloatingCopyButtonsForMsg(msgElFinal);
-                    updateFloatingButtons();
-                }
+                streamFinalRender(msgIndex);
                 renderMessages();
                 buildNavContainer();
             } catch (e) {
@@ -2348,12 +2376,30 @@
             }
             return result;
         }
+        function streamFinalRender(msgIndex) {
+            var msgEl = document.getElementById('stream-' + msgIndex);
+            if (!msgEl) return;
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[msgIndex];
+            if (!msg) return;
+            var reasoning = msg._reasoningBuffer || '';
+            var content = msg._fullBuffer || '';
+            msgEl.innerHTML = (reasoning ? '<div class="reasoning-block">' + formatMessage(reasoning) + '</div>' : '') + formatMessage(content);
+            msgEl.querySelectorAll('pre code').forEach(function(block) {
+                if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+            });
+            setupFloatingCopyButtonsForMsg(msgEl);
+            updateFloatingButtons();
+            delete _virtualCodeBlocks[msgIndex];
+        }
 
         function stopTyping() {
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             if (activeStreamId) {
                 var oldStreamId = activeStreamId;
                 activeStreamId = null;
+                _virtualCodeBlocks = {};
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (chat && chat.messages.length > 0) {
                     var lastMsg = chat.messages[chat.messages.length - 1];
