@@ -265,7 +265,22 @@
         #personalitySelect { border-radius: 24px !important; }
         #editCustomBtn:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
         body.light #editCustomBtn:hover { background: rgba(0,0,0,0.06); }
+
+        /* ===== BG PICKER ===== */
+        .bg-preview-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 16px 0; }
+        .bg-preview-item {
+            width: 56px; height: 56px; border-radius: 12px;
+            border: 3px solid transparent; cursor: pointer;
+            transition: border-color 0.2s, transform 0.15s;
+            background-size: cover; background-position: center;
+        }
+        .bg-preview-item.active { border-color: #00CBF5; transform: scale(1.05); }
+        .bg-preview-item:hover { border-color: rgba(255,255,255,0.3); transform: scale(1.08); }
+        body.light .bg-preview-item.active { border-color: #005f7a; }
+        body.light .bg-preview-item:hover { border-color: rgba(0,0,0,0.2); }
+        /* ===== END BG PICKER ===== */
     </style>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="config.js"></script>
 </head>
@@ -378,7 +393,9 @@
                 <option value="xcode">☀️ xcode</option>
                 <option value="xt256">🌙 xt256</option>
             </select>
+            <button class="theme-btn" onclick="showBgModal()" title="Фон чата" style="margin-left:4px;">🎨</button>
             <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
+
         </div>
         <div class="chat-wrapper">
             <div class="chat-area" id="chatArea">
@@ -448,7 +465,76 @@
         let pendingFile = null;
         let activeStreamId = null;
 
+        // ===== BG PICKER =====
+        const BG_PRESETS = [
+            { name: 'Стандарт',          css: '' },
+            { name: 'Тёмная волна',       css: 'linear-gradient(135deg, #0b0f1e, #1a1a2e, #16213e)' },
+            { name: 'Космос',             css: 'radial-gradient(ellipse at 20% 50%, #0d0d2b, #000000)' },
+            { name: 'Лес',                css: 'linear-gradient(180deg, #0a1f0e, #1a3c2a, #0d2818)' },
+            { name: 'Океан',              css: 'linear-gradient(135deg, #0a1628, #0f2b4a, #1a3c5e)' },
+            { name: 'Закат',              css: 'linear-gradient(135deg, #2b1b3d, #4a2c5e, #6b3a5e)' },
+            { name: 'Мятный',             css: 'linear-gradient(135deg, #0f2b1e, #1a4a3a, #2a6b4a)' },
+            { name: 'Лаванда',            css: 'linear-gradient(135deg, #1f1a3e, #3a2a5e, #5a3a7e)' },
+            { name: 'Янтарь',             css: 'linear-gradient(135deg, #2b1f0a, #4a3a1a, #6b4a2a)' },
+            { name: 'Снежная вершина',    css: 'linear-gradient(135deg, #1a2b3e, #3a5a7e, #5a8aae)' },
+        ];
+        function loadChatBg() {
+            const saved = localStorage.getItem('photobot_chat_bg');
+            if (saved) {
+                const main = document.querySelector('.main');
+                if (main) main.style.background = saved;
+            }
+        }
+        function saveChatBg(css) {
+            localStorage.setItem('photobot_chat_bg', css);
+            const main = document.querySelector('.main');
+            if (main) main.style.background = css || '';
+        }
+        function showBgModal() {
+            const currentBg = localStorage.getItem('photobot_chat_bg') || '';
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.style.display = 'flex';
+            overlay.id = 'bgModal';
+            const box = document.createElement('div');
+            box.className = 'modal-box';
+            box.style.maxWidth = '480px';
+            box.innerHTML = `
+                <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;">🎨</div>
+                <div class="modal-title" style="margin-bottom:12px;">Фон чата</div>
+                <div class="bg-preview-grid">
+                    ${BG_PRESETS.map((bg, i) => `
+                        <div class="bg-preview-item ${bg.css === currentBg ? 'active' : ''}"
+                             data-index="${i}"
+                             style="background:${bg.css || '#1a1a2e'}; ${bg.css ? '' : 'border:2px dashed rgba(255,255,255,0.2);'}"
+                             title="${bg.name}">
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="modal-actions" style="gap:12px;">
+                    <button class="modal-btn-secondary" onclick="document.getElementById('bgModal').remove()" style="flex:1;padding:12px;">Закрыть</button>
+                </div>
+            `;
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+            box.querySelectorAll('.bg-preview-item').forEach(el => {
+                el.addEventListener('click', function() {
+                    const idx = parseInt(this.dataset.index);
+                    const bg = BG_PRESETS[idx];
+                    box.querySelectorAll('.bg-preview-item').forEach(p => p.classList.remove('active'));
+                    this.classList.add('active');
+                    saveChatBg(bg.css);
+                });
+            });
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) this.remove();
+            });
+        }
+        // ===== END BG PICKER =====
+
+
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
+
         window.addEventListener('drop', function(e) { e.preventDefault(); e.stopPropagation(); });
 
         async function loadPersonalities() {
@@ -662,6 +748,7 @@
                 loadChatsFromServer();
                 updateBalance();
                 loadPersonalities();
+                loadChatBg();
             }
         } else {
             showAlertModal('Требуется авторизация', 'Авторизуйтесь на главной странице', '❌');
