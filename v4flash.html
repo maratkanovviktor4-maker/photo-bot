@@ -480,17 +480,21 @@
         ];
         function loadChatBg() {
             const saved = localStorage.getItem('photobot_chat_bg');
+            const inputWrapper = document.querySelector('.input-row-wrapper');
             if (saved) {
                 const main = document.querySelector('.main');
                 const bottom = document.querySelector('.bottom-container');
-                const inputWrapper = document.querySelector('.input-row-wrapper');
                 const inputArea = document.querySelector('.input-area');
                 if (main) main.style.background = saved;
                 if (bottom) bottom.style.background = saved;
                 if (inputWrapper) inputWrapper.style.background = saved;
                 if (inputArea) inputArea.style.background = saved;
+                if (inputWrapper) inputWrapper.style.boxShadow = 'none';
+            } else {
+                if (inputWrapper) inputWrapper.style.boxShadow = '';
             }
         }
+
 
         function saveChatBg(css) {
             localStorage.setItem('photobot_chat_bg', css);
@@ -503,7 +507,17 @@
             if (bottom) bottom.style.background = val;
             if (inputWrapper) inputWrapper.style.background = val;
             if (inputArea) inputArea.style.background = val;
+
+            // Управление тенью: при кастомном фоне — убрать, при стандартном — вернуть
+            if (inputWrapper) {
+                if (css) {
+                    inputWrapper.style.boxShadow = 'none';
+                } else {
+                    inputWrapper.style.boxShadow = '';
+                }
+            }
         }
+
 
 
         function showBgModal() {
