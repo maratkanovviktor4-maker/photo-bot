@@ -665,6 +665,35 @@
                     customOpt.textContent = '\uD83C\uDFAD Кастомная...';
                     if (currentPersonality === 'custom') customOpt.selected = true;
                     select.appendChild(customOpt);
+                    var wrapper = select.closest('.custom-dropdown');
+                    if (wrapper) {
+                        var menu = wrapper.querySelector('.custom-dropdown-menu');
+                        if (menu) {
+                            menu.innerHTML = '';
+                            var opts = select.options;
+                            for (var i = 0; i < opts.length; i++) {
+                                var div = document.createElement('div');
+                                div.className = 'custom-dropdown-option' + (opts[i].selected ? ' active' : '');
+                                div.textContent = opts[i].textContent;
+                                div.dataset.value = opts[i].value;
+                                div.addEventListener('click', function(e) {
+                                    e.stopPropagation();
+                                    select.value = this.dataset.value;
+                                    select.dispatchEvent(new Event('change'));
+                                    var trig = wrapper.querySelector('.trigger-text');
+                                    if (trig) trig.textContent = this.textContent;
+                                    var allOpts = menu.querySelectorAll('.custom-dropdown-option');
+                                    for (var j = 0; j < allOpts.length; j++) {
+                                        allOpts[j].classList.toggle('active', allOpts[j].dataset.value === select.value);
+                                    }
+                                });
+                                menu.appendChild(div);
+                            }
+                            var trig = wrapper.querySelector('.trigger-text');
+                            var selOpt = select.options[select.selectedIndex];
+                            if (trig && selOpt) trig.textContent = selOpt.textContent;
+                        }
+                    }
                     updatePersonalityPrompt(currentPersonality);
                     document.getElementById('editCustomBtn').style.display = currentPersonality === 'custom' ? 'inline-flex' : 'none';
                     if (currentPersonality === 'custom') {
@@ -674,7 +703,6 @@
                             document.getElementById('customPersonalityInput').value = customData.custom_prompt || '';
                         }
                     }
-                    if (typeof initCustomDropdowns === 'function') initCustomDropdowns();
                 }
             } catch(e) { console.error('loadPersonalities:', e); }
         }
@@ -752,8 +780,6 @@
         }
         function initCustomDropdowns() {
             document.querySelectorAll('.top-select').forEach(function(select) {
-            document.querySelectorAll('.custom-dropdown').forEach(function(d) { d.remove(); });
-            document.querySelectorAll('.top-select').forEach(function(s) { s.style.display = ''; });
                 var wrapper = document.createElement('div');
                 wrapper.className = 'custom-dropdown';
                 select.parentNode.insertBefore(wrapper, select);
