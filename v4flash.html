@@ -483,13 +483,20 @@
             const saved = localStorage.getItem('photobot_chat_bg');
             const inputWrapper = document.querySelector('.input-row-wrapper');
             if (saved) {
+                const val = getBgByTheme(saved);
                 const main = document.querySelector('.main');
                 const bottom = document.querySelector('.bottom-container');
                 const inputArea = document.querySelector('.input-area');
-                if (main) main.style.background = saved;
-                if (bottom) bottom.style.background = saved;
-                if (inputWrapper) inputWrapper.style.background = saved;
-                if (inputArea) inputArea.style.background = saved;
+                if (main) main.style.background = val;
+                if (bottom) {
+                    bottom.style.background = val;
+                    bottom.style.backdropFilter = 'blur(16px)';
+                    bottom.style.webkitBackdropFilter = 'blur(16px)';
+                    bottom.style.backgroundColor = 'rgba(32,31,40,0.75)';
+                    bottom.style.borderTop = '1px solid rgba(255,255,255,0.08)';
+                }
+                if (inputWrapper) inputWrapper.style.background = val;
+                if (inputArea) inputArea.style.background = val;
                 if (inputWrapper) inputWrapper.style.boxShadow = 'none';
             } else {
                 if (inputWrapper) inputWrapper.style.boxShadow = '';
@@ -497,19 +504,39 @@
         }
 
 
+        function getBgByTheme(css) {
+            if (!css) return '';
+            const isLight = document.body.classList.contains('light');
+            const preset = BG_PRESETS.find(function(p) { return p.css === css; });
+            if (preset && isLight && preset.light) return preset.light;
+            return css;
+        }
+
         function saveChatBg(css) {
             localStorage.setItem('photobot_chat_bg', css);
             const main = document.querySelector('.main');
             const bottom = document.querySelector('.bottom-container');
             const inputWrapper = document.querySelector('.input-row-wrapper');
             const inputArea = document.querySelector('.input-area');
-            const val = css || '';
+            const val = getBgByTheme(css);
             if (main) main.style.background = val;
-            if (bottom) bottom.style.background = val;
+            if (bottom) {
+                bottom.style.background = val;
+                if (css) {
+                    bottom.style.backdropFilter = 'blur(16px)';
+                    bottom.style.webkitBackdropFilter = 'blur(16px)';
+                    bottom.style.backgroundColor = 'rgba(32,31,40,0.75)';
+                    bottom.style.borderTop = '1px solid rgba(255,255,255,0.08)';
+                } else {
+                    bottom.style.backdropFilter = '';
+                    bottom.style.webkitBackdropFilter = '';
+                    bottom.style.backgroundColor = '';
+                    bottom.style.borderTop = '';
+                }
+            }
             if (inputWrapper) inputWrapper.style.background = val;
             if (inputArea) inputArea.style.background = val;
 
-            // Управление тенью: при кастомном фоне — убрать, при стандартном — вернуть
             if (inputWrapper) {
                 if (css) {
                     inputWrapper.style.boxShadow = 'none';
@@ -689,6 +716,7 @@
             }
             _floatingHeaders = [];
             updateFloatingButtons();
+            loadChatBg();
         }
         function changeHighlight() {
             var theme = document.getElementById('highlightSelect').value;
