@@ -12,6 +12,42 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
+        .top-select {
+            height: 34px;
+            min-width: 130px;
+            padding: 0 32px 0 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(34,34,34,0.6);
+            backdrop-filter: blur(10px);
+            color: #e0e0e0;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .top-select:hover {
+            border-color: #00CBF5;
+        }
+        .top-select:focus {
+            border-color: #00CBF5;
+            box-shadow: 0 0 0 3px rgba(0,203,245,0.15);
+        }
+        body.light .top-select {
+            background: rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.1);
+            color: #111;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+        }
+        body.light .top-select:focus {
+            box-shadow: 0 0 0 3px rgba(0,203,245,0.2);
+        }
         #balanceDisplay { display: inline-block; min-width: 80px; }
         #branchIndicatorTop { display: inline-block; min-width: 200px; }
         .typing-dots { display: inline-flex; gap: 4px; padding: 4px 0; }
@@ -258,11 +294,6 @@
         .regenerate-popup button { display: block; width: 100%; padding: 8px 12px; border: none; background: transparent; color: #e0e0e0; font-size: 12px; cursor: pointer; text-align: left; border-radius: 6px; font-family: 'Inter', sans-serif; }
         body.light .regenerate-popup button { color: #333; }
         .regenerate-popup button:hover { background: rgba(0,203,245,0.15); }
-        body.light #personalitySelect { background: rgba(255,255,255,0.9); color: #111; border: 2px solid rgba(0,0,0,0.1); box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-        #personalitySelect:hover { border-color: #00CBF5; }
-        #personalitySelect:focus { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
-        #personalitySelect option { background: #1a1a2e; color: #e0e0e0; padding: 8px 12px; border-radius: 8px; font-family: 'Inter', sans-serif; }
-        body.light #personalitySelect option { background: #ffffff; color: #111; }
         #personalityPrompt { max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #personalityPrompt:hover { max-width: none; white-space: normal; overflow: visible; }
 	#personalitySelect, #highlightSelect { height: 34px; width: 140px; border-radius: 8px !important; }
@@ -281,6 +312,48 @@
         .bg-preview-item:hover { border-color: rgba(255,255,255,0.3); transform: scale(1.08); }
         body.light .bg-preview-item.active { border-color: #005f7a; }
         body.light .bg-preview-item:hover { border-color: rgba(0,0,0,0.2); }
+        .custom-dropdown { position: relative; display: inline-block; }
+        .custom-dropdown-trigger {
+            height: 34px; min-width: 130px; padding: 0 32px 0 12px;
+            border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(34,34,34,0.6); backdrop-filter: blur(10px);
+            color: #e0e0e0; font-size: 12px; font-family: 'Inter', sans-serif;
+            cursor: pointer; outline: none; display: flex; align-items: center;
+            transition: border-color 0.2s, box-shadow 0.2s; user-select: none;
+        }
+        .custom-dropdown-trigger:hover { border-color: #00CBF5; }
+        .custom-dropdown.open .custom-dropdown-trigger { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
+        .custom-dropdown-trigger .arrow {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            transition: transform 0.2s; width: 12px; height: 12px;
+        }
+        .custom-dropdown.open .custom-dropdown-trigger .arrow { transform: translateY(-50%) rotate(180deg); }
+        .custom-dropdown-menu {
+            position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%;
+            background: rgba(26,26,46,0.98); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+            padding: 4px; z-index: 10001; opacity: 0; transform: translateY(-8px);
+            pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+        }
+        .custom-dropdown.open .custom-dropdown-menu { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .custom-dropdown-option {
+            padding: 8px 12px; border-radius: 6px; font-size: 12px;
+            font-family: 'Inter', sans-serif; color: #a0a0b0; cursor: pointer;
+            transition: background 0.15s; white-space: nowrap;
+        }
+        .custom-dropdown-option:hover { background: rgba(0,203,245,0.15); color: #e0e0e0; }
+        .custom-dropdown-option.active { background: rgba(0,203,245,0.2); color: #00CBF5; font-weight: 600; }
+
+        body.light .custom-dropdown-trigger {
+            background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); color: #111;
+        }
+        body.light .custom-dropdown.open .custom-dropdown-trigger { box-shadow: 0 0 0 3px rgba(0,203,245,0.2); }
+        body.light .custom-dropdown-menu {
+            background: rgba(255,255,255,0.98); border: 1px solid rgba(0,0,0,0.1);
+        }
+        body.light .custom-dropdown-option { color: #555; }
+        body.light .custom-dropdown-option:hover { background: rgba(0,0,0,0.05); color: #111; }
+        body.light .custom-dropdown-option.active { background: rgba(0,0,0,0.08); color: #0077aa; }
         /* ===== END BG PICKER ===== */
     </style>
 
@@ -327,11 +400,11 @@
         <div class="top-bar">
             <span id="balanceDisplay"></span>
             <span id="branchIndicatorTop"></span>
-            <select id="personalitySelect" onchange="changePersonality()" style="padding:8px 14px;border-radius:24px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:2px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;margin-right:4px;transition:all 0.2s ease;font-weight:500;backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(0,0,0,0.2);">
+            <select id="personalitySelect" class="top-select" onchange="changePersonality()">
                 <option value="default">🤖 Ассистент</option>
             </select>
             <button onclick="showCustomPersonalityModal()" id="editCustomBtn" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;padding:6px 8px;border-radius:8px;font-family:Inter,sans-serif;transition:background 0.15s;line-height:1;" title="Редактировать кастомную"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-            <select id="highlightSelect" onchange="changeHighlight()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
+            <select id="highlightSelect" class="top-select" onchange="changeHighlight()">
                 <option value="atom-one-dark">🌙 atom-one-dark</option>
                 <option value="atom-one-light">☀️ atom-one-light</option>
                 <option value="monokai">🌙 monokai</option>
@@ -675,6 +748,70 @@
                 localStorage.setItem('photobot_personality', 'custom');
                 document.getElementById('personalitySelect').value = 'custom';
             } catch(e) { console.error(e); }
+        }
+        function initCustomDropdowns() {
+            document.querySelectorAll('.top-select').forEach(function(select) {
+                var wrapper = document.createElement('div');
+                wrapper.className = 'custom-dropdown';
+                select.parentNode.insertBefore(wrapper, select);
+                wrapper.appendChild(select);
+                select.style.display = 'none';
+
+                var trigger = document.createElement('div');
+                trigger.className = 'custom-dropdown-trigger';
+                trigger.innerHTML = '<span class="trigger-text"></span><svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+                wrapper.appendChild(trigger);
+
+                var menu = document.createElement('div');
+                menu.className = 'custom-dropdown-menu';
+                wrapper.appendChild(menu);
+
+                function buildOptions() {
+                    menu.innerHTML = '';
+                    var opts = select.options;
+                    for (var i = 0; i < opts.length; i++) {
+                        var div = document.createElement('div');
+                        div.className = 'custom-dropdown-option' + (opts[i].selected ? ' active' : '');
+                        div.textContent = opts[i].textContent;
+                        div.dataset.value = opts[i].value;
+                        div.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            select.value = this.dataset.value;
+                            select.dispatchEvent(new Event('change'));
+                            updateTrigger();
+                            wrapper.classList.remove('open');
+                        });
+                        menu.appendChild(div);
+                    }
+                }
+
+                function updateTrigger() {
+                    var sel = select.options[select.selectedIndex];
+                    trigger.querySelector('.trigger-text').textContent = sel ? sel.textContent : '';
+                    var opts2 = menu.querySelectorAll('.custom-dropdown-option');
+                    for (var j = 0; j < opts2.length; j++) {
+                        opts2[j].classList.toggle('active', opts2[j].dataset.value === select.value);
+                    }
+                }
+
+                trigger.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var wasOpen = wrapper.classList.contains('open');
+                    document.querySelectorAll('.custom-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
+                    if (!wasOpen) {
+                        buildOptions();
+                        wrapper.classList.add('open');
+                    }
+                });
+
+                document.addEventListener('click', function() {
+                    wrapper.classList.remove('open');
+                });
+
+                select.addEventListener('change', updateTrigger);
+                buildOptions();
+                updateTrigger();
+            });
         }
 
         function toggleTheme() {
@@ -2951,7 +3088,8 @@
         }
 
         window.addEventListener('load', function() { 
-            setupFloatingCopyButtons(); 
+            setupFloatingCopyButtons();
+            initCustomDropdowns(); 
             var mainEl3 = document.querySelector('.main');
             if (mainEl3) mainEl3.addEventListener('scroll', updateFloatingButtons);
         });
