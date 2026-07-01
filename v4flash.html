@@ -587,7 +587,12 @@
                 document.getElementById('themeToggle').textContent = '🌙';
             }
             var hlTheme = document.getElementById('highlightTheme');
-            if (hlTheme) {
+            var savedHL = localStorage.getItem('photobot_highlight_theme');
+            if (hlTheme && savedHL) {
+                hlTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/' + savedHL + '.min.css';
+                var hlSelect = document.getElementById('highlightSelect');
+                if (hlSelect) hlSelect.value = savedHL;
+            } else if (hlTheme) {
                 hlTheme.href = isLight 
                     ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css'
                     : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
