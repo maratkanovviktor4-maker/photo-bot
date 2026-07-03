@@ -283,8 +283,11 @@
     </style>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.15/dist/vad.web.js"></script>
     <script src="config.js"></script>
+    <script type="module">
+        import { MicVAD } from "https://esm.sh/@ricky0123/vad-web@0.0.9";
+        window.MicVAD = MicVAD;
+    </script>
 </head>
 <body>
     <div id="customPersonalityModal" class="modal-overlay">
@@ -558,7 +561,7 @@
 
         async function startVAD() {
             try {
-                vadInstance = await vad.MicVAD.new({
+                vadInstance = await window.MicVAD.new({
                     onSpeechStart: function() {
                         console.log('VAD: пользователь начал говорить');
                         // Прерываем озвучку, если она идёт
