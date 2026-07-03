@@ -2764,20 +2764,18 @@
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                 autoNameChat(chat);
-                renderChatList();
-                updateBranchesFromServer();
-                updateBalance();
+                //renderChatList(); // временно отключено для диагностики
+                //updateBranchesFromServer(); // временно отключено для диагностики
+                //updateBalance(); // временно отключено для диагностики
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
                 pendingFile = null;
                 updateFileList();
-                // Точечное обновление последнего сообщения
                 var lastMsgEl = document.getElementById('stream-' + msgIndex);
                 if (lastMsgEl) {
                     streamUpdateDOM(lastMsgEl, assistantMsg);
                 }
-                // Точечное обновление кнопок для последних двух сообщений
                 var userIdx = chat.messages.length - 2;
                 if (userIdx >= 0) {
                     var userActionsEl = document.getElementById('actions-' + userIdx);
@@ -2809,6 +2807,7 @@
                 }
             }
         }
+
 
 
 
