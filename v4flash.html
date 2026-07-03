@@ -1865,12 +1865,11 @@
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
             const area = document.getElementById('chatArea');
-            var existingCount = area.querySelectorAll('.message-row').length;
-            var totalCount = chat.messages.length;
             
-            if (totalCount <= existingCount) return;
-            
-            for (var i = existingCount; i < totalCount; i++) {
+            for (var i = 0; i < chat.messages.length; i++) {
+                // Если элемент с таким index уже есть в DOM — пропускаем
+                if (area.querySelector('[data-msg-index="' + i + '"]')) continue;
+                
                 var m = chat.messages[i];
                 var actionsHtml = '';
                 if (m.role === 'user') {
@@ -1916,11 +1915,16 @@
                 area.insertAdjacentHTML('beforeend', rowHtml);
             }
             
+            hljs.highlightAll();
+            setupFloatingCopyButtons();
+            updateFloatingButtons();
+            
             if (autoScroll) {
                 var main2 = document.querySelector('.main');
                 if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; }
             }
         }
+
 
         function retryMessage(userIndex) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
