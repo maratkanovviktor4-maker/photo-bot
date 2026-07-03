@@ -1847,7 +1847,11 @@
                 }).join('');
             }
             _floatingHeaders = [];
-            hljs.highlightAll();
+            // Подсвечиваем только новые блоки кода, не все 2000
+            var newCodeBlocks = document.querySelectorAll('.msg-code-block pre code:not(.hljs)');
+            for (var h = 0; h < newCodeBlocks.length; h++) {
+                hljs.highlightElement(newCodeBlocks[h]);
+            }
             setupFloatingCopyButtons();
             updateFloatingButtons();
             buildNavContainer();
