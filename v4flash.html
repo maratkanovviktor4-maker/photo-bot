@@ -2772,7 +2772,11 @@
                 sendBtnArrow();
                 pendingFile = null;
                 updateFileList();
-                renderMessages();
+                // Точечное обновление последнего сообщения вместо полного ререндера
+                var lastMsgEl = document.getElementById('stream-' + msgIndex);
+                if (lastMsgEl) {
+                    streamUpdateDOM(lastMsgEl, assistantMsg);
+                }
                 buildNavContainer();
             } catch (e) {
                 if (e.name === 'AbortError') {
