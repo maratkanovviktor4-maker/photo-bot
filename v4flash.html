@@ -661,6 +661,12 @@
         function synthesizeAndPlay(text) {
             if (!voiceChatActive) return;
             
+            // Останавливаем микрофон на время озвучки
+            if (voiceRecognition) {
+                voiceRecognition.stop();
+                voiceRecognition = null;
+            }
+            
             var indicator = document.getElementById('voiceChatIndicator');
             if (indicator) {
                 indicator.innerHTML = '<div style="font-size:48px;">🔊</div><div style="font-size:18px;color:#888;">Озвучиваю ответ...</div><div style="font-size:14px;color:#666;">Слушайте</div>';
@@ -697,6 +703,7 @@
                 }
             });
         }
+
 
         function stopVoicePlayback() {
             if (voiceAudio) {
