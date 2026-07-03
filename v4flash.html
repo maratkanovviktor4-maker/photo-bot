@@ -2889,8 +2889,8 @@
                 var data = await resp.json();
                 
                 if (data.ready) {
-                    // Ответ уже готов — выдаём простынёй
-                    msg._reasoningBuffer = '';  // очищаем буфер, чтобы не перекрывал reasoning
+                    msg._reasoningBuffer = '';
+                    msg.msg_id = data.msg_id;  // берём msg_id из ответа сервера
                     msg.content = data.content || '';
                     msg.reasoning = data.reasoning || '';
                     msg.finished = true;
@@ -2907,7 +2907,8 @@
                 var data2 = await resp2.json();
                 
                 if (data2.ready) {
-                    msg._reasoningBuffer = '';  // очищаем буфер
+                    msg._reasoningBuffer = '';
+                    msg.msg_id = data2.msg_id;  // берём msg_id из ответа сервера
                     msg.content = data2.content || '';
                     msg.reasoning = data2.reasoning || '';
                     msg.finished = true;
