@@ -421,6 +421,8 @@
                             <span class="file-name-inline" id="fileNameInline"></span>
                             <button id="micBtn" class="attach-btn" onclick="toggleVoiceInput()" title="Голосовой ввод" style="color:#888;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                            <button id="voiceChatBtn" onclick="toggleVoiceChat()" title="Голосовой чат" style="background:transparent;border:none;color:#888;cursor:pointer;font-size:18px;padding:8px;border-radius:10px;font-family:Inter,sans-serif;transition:0.3s ease;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                🎤
                             </button>
                             <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" transform="rotate(-45 12 12)"/></svg></button>
                             <button id="sendBtn" onclick="sendMessage()" title="Отправить"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
@@ -518,6 +520,196 @@
                 }
             }
         }
+        var voiceChatActive = false;
+
+        function toggleVoiceChat() {
+            if (voiceChatActive) {
+                stopVoiceChat();
+                return;
+            }
+            startVoiceChat();
+        }
+
+        function startVoiceChat() {
+            voiceChatActive = true;
+            document.getElementById('voiceChatBtn').textContent = '⏹';
+            document.getElementById('voiceChatBtn').style.color = '#e74c3c';
+            
+            // Скрываем чат
+            var chatArea = document.getElementById('chatArea');
+            chatArea.style.display = 'none';
+            
+            // Показываем индикатор голосового режима
+            var indicator = document.getElementById('voiceChatIndicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'voiceChatIndicator';
+                indicator.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:40px;';
+                chatArea.parentNode.insertBefore(indicator, chatArea);
+            }
+            indicator.style.display = 'flex';
+            indicator.innerHTML = '<div style="font-size:48px;">🎤</div><div style="font-size:18px;color:#888;">Голосовой чат активен</div><div style="font-size:14px;color:#666;">Говорите, я слушаю...</div>';
+            
+            // Запускаем цикл
+            setTimeout(startVoiceCycle, 500);
+        }
+
+
+        function stopVoiceChat() {
+            stopVoicePlayback();
+            voiceChatActive = false;
+            document.getElementById('voiceChatBtn').textContent = '🎤';
+            document.getElementById('voiceChatBtn').style.color = '#888';
+            
+            // Показываем чат
+            var chatArea = document.getElementById('chatArea');
+            chatArea.style.display = '';
+            
+            // Скрываем индикатор
+            var indicator = document.getElementById('voiceChatIndicator');
+            if (indicator) {
+                indicator.style.display = 'none';
+            }
+            
+            // Рендерим сообщения, чтобы показать историю голосового диалога
+            renderMessages();
+        }
+
+        var voiceRecognition = null;
+        var voiceAudio = null;
+        var isVoiceProcessing = false;
+
+        function startVoiceCycle() {
+            if (!voiceChatActive) return;
+            if (isVoiceProcessing) return;
+            
+            // Обновляем индикатор
+            var indicator = document.getElementById('voiceChatIndicator');
+            if (indicator) {
+                indicator.innerHTML = '<div style="font-size:48px;">🎤</div><div style="font-size:18px;color:#888;">Слушаю...</div><div style="font-size:14px;color:#666;">Говорите</div>';
+            }
+            
+            isVoiceProcessing = true;
+            
+            // Запускаем распознавание речи
+            var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                showAlertModal('Ошибка', 'Голосовой ввод не поддерживается вашим браузером.', '❌');
+                stopVoiceChat();
+                return;
+            }
+            
+            voiceRecognition = new SpeechRecognition();
+            voiceRecognition.lang = 'ru-RU';
+            voiceRecognition.interimResults = false;
+            voiceRecognition.continuous = false;
+            
+            voiceRecognition.onresult = function(event) {
+                var text = event.results[0][0].transcript;
+                if (!text.trim()) {
+                    isVoiceProcessing = false;
+                    startVoiceCycle();
+                    return;
+                }
+                
+                // Отправляем текст в DeepSeek через sendMessage
+                var input = document.getElementById('userInput');
+                input.value = text;
+                input.dispatchEvent(new Event('input'));
+                
+                // Обновляем индикатор
+                if (indicator) {
+                    indicator.innerHTML = '<div style="font-size:48px;">🤖</div><div style="font-size:18px;color:#888;">DeepSeek отвечает...</div><div style="font-size:14px;color:#666;">Подождите</div>';
+                }
+                
+                // Отправляем сообщение
+                var originalSendMessage = sendMessage;  // сохраняем оригинал
+                sendMessage();  // отправляем
+                
+                // После отправки возвращаем всё как было
+                isVoiceProcessing = false;
+                // Ждём завершения стрима и запускаем синтез
+                var checkInterval = setInterval(function() {
+                    var chat = chats.find(c => c.id === currentChatId);
+                    if (chat && chat.messages.length > 0) {
+                        var lastMsg = chat.messages[chat.messages.length - 1];
+                        if (lastMsg && lastMsg.role === 'assistant' && lastMsg.finished && lastMsg.content) {
+                            clearInterval(checkInterval);
+                            synthesizeAndPlay(lastMsg.content);
+                        }
+                    }
+                }, 500);
+            };
+            
+            voiceRecognition.onerror = function() {
+                isVoiceProcessing = false;
+                if (voiceChatActive) {
+                    setTimeout(startVoiceCycle, 1000);
+                }
+            };
+            
+            voiceRecognition.onend = function() {
+                isVoiceProcessing = false;
+                if (voiceChatActive) {
+                    setTimeout(startVoiceCycle, 500);
+                }
+            };
+            
+            voiceRecognition.start();
+        }
+
+        function synthesizeAndPlay(text) {
+            if (!voiceChatActive) return;
+            
+            var indicator = document.getElementById('voiceChatIndicator');
+            if (indicator) {
+                indicator.innerHTML = '<div style="font-size:48px;">🔊</div><div style="font-size:18px;color:#888;">Озвучиваю ответ...</div><div style="font-size:14px;color:#666;">Слушайте</div>';
+            }
+            
+            // Отправляем текст в TTS
+            fetch(SERVER_URL + '/text_to_speech', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                body: JSON.stringify({ text: text })
+            })
+            .then(function(resp) {
+                if (!resp.ok) {
+                    throw new Error('TTS error');
+                }
+                return resp.blob();
+            })
+            .then(function(blob) {
+                var url = URL.createObjectURL(blob);
+                voiceAudio = new Audio(url);
+                voiceAudio.onended = function() {
+                    URL.revokeObjectURL(url);
+                    // После окончания озвучки снова слушаем
+                    if (voiceChatActive) {
+                        startVoiceCycle();
+                    }
+                };
+                voiceAudio.play();
+            })
+            .catch(function(err) {
+                console.error('synthesizeAndPlay error:', err);
+                if (voiceChatActive) {
+                    startVoiceCycle();
+                }
+            });
+        }
+
+        function stopVoicePlayback() {
+            if (voiceAudio) {
+                voiceAudio.pause();
+                voiceAudio = null;
+            }
+            if (voiceRecognition) {
+                voiceRecognition.stop();
+                voiceRecognition = null;
+            }
+            isVoiceProcessing = false;
+        }
+
 
 
 
