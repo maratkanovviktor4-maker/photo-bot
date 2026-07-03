@@ -1217,7 +1217,9 @@
                     } else if (errData.error_type === 'deepseek_overloaded') {
                         errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                     }
-                    chat.messages.push({ role: 'assistant', content: errorMessage, finished: true, _streaming: false });
+                    var errAssistantMsg = { role: 'assistant', content: errorMessage, finished: true, _streaming: false };
+                    errAssistantMsg._error_type = errData.error_type || null;
+                    chat.messages.push(errAssistantMsg);
                     renderMessages();
                     isSending = false;
                     sendBtnArrow();
@@ -1262,6 +1264,7 @@
                                         assistantMsg.content = errorMessage;
                                         assistantMsg.finished = true;
                                         assistantMsg._streaming = false;
+                                        assistantMsg._error_type = parsed.error_type;
                                     }
                                     renderMessages();
                                     isSending = false;
@@ -1369,7 +1372,9 @@
                         } else if (data.error_type === 'deepseek_overloaded') {
                             errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                         }
-                        chat.messages.push({ role: 'assistant', content: errorMessage, finished: true, _streaming: false });
+                        var errAssistantMsg = { role: 'assistant', content: errorMessage, finished: true, _streaming: false };
+                        errAssistantMsg._error_type = data.error_type || null;
+                        chat.messages.push(errAssistantMsg);
                         renderMessages();
                         showAlertModal('Ошибка', errorMessage, '❌');
                     }
@@ -1430,6 +1435,7 @@
                             } else if (errData.error_type === 'deepseek_overloaded') {
                                 errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                             }
+                            assistantMsg._error_type = errData.error_type || null;
                             assistantMsg.content = errorMessage;
                             assistantMsg.finished = true;
                             assistantMsg._streaming = false;
@@ -1451,6 +1457,7 @@
                             } else if (errJson.error_type === 'deepseek_overloaded') {
                                 errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                             }
+                            assistantMsg._error_type = errJson.error_type || null;
                             assistantMsg.content = errorMessage;
                             assistantMsg.finished = true;
                             renderMessages();
@@ -1488,6 +1495,7 @@
                                         } else if (parsed.error_type === 'deepseek_overloaded') {
                                             errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                                         }
+                                        assistantMsg._error_type = parsed.error_type;
                                         assistantMsg.content = errorMessage;
                                         assistantMsg.finished = true;
                                         assistantMsg._streaming = false;
@@ -1646,6 +1654,7 @@
                     } else if (errData.error_type === 'deepseek_overloaded') {
                         errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                     }
+                    assistantMsg._error_type = errData.error_type || null;
                     assistantMsg.content = errorMessage;
                     assistantMsg.finished = true;
                     assistantMsg._streaming = false;
@@ -1667,6 +1676,7 @@
                     } else if (errJson.error_type === 'deepseek_overloaded') {
                         errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                     }
+                    assistantMsg._error_type = errJson.error_type || null;
                     assistantMsg.content = errorMessage;
                     assistantMsg.finished = true;
                     renderMessages();
@@ -1704,6 +1714,7 @@
                                 } else if (parsed.error_type === 'deepseek_overloaded') {
                                     errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                                 }
+                                assistantMsg._error_type = parsed.error_type;
                                 assistantMsg.content = errorMessage;
                                 assistantMsg.finished = true;
                                 assistantMsg._streaming = false;
@@ -1771,9 +1782,6 @@
             }
         }
 
-
-        
-
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
             const chat = chats.find(c => c.id === currentChatId);
@@ -1792,10 +1800,10 @@
                         actionsHtml += '<button onclick="copyMessage(' + i + ')" id="copy-btn-' + i + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
                         actionsHtml += '<button onclick="regenerateUserMessage(' + i + ')" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>';
                         actionsHtml += '<button class="branch-btn" onclick="createBranchFromMessage(' + i + ')" title="Ответвить от этого сообщения"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>';
-                        // Кнопка "Повторить" для user, если следующее сообщение — 503
-                        if (i < chat.messages.length - 1) {
+                        // Кнопка "Повторить" только под крайним user, если следующее сообщение ассистента содержит _error_type === "deepseek_overloaded"
+                        if (i === chat.messages.length - 2 && chat.messages.length > i + 1) {
                             var nextMsg = chat.messages[i + 1];
-                            if (nextMsg && nextMsg.role === 'assistant' && nextMsg.content && nextMsg.content.indexOf('DeepSeek перегружен') !== -1) {
+                            if (nextMsg && nextMsg.role === 'assistant' && nextMsg._error_type === 'deepseek_overloaded') {
                                 actionsHtml += '<button onclick="retryMessage(' + i + ')" title="Повторить" style="background:transparent;border:none;color:#888;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;padding:4px 8px;border-radius:4px;">Повторить</button>';
                             }
                         }
@@ -1857,26 +1865,19 @@
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             
-            // Удаляем оба сообщения: user и ассистента с 503
+            // Удаляем только сообщение ассистента с ошибкой (следующее после user)
             if (userIndex < chat.messages.length - 1) {
-                chat.messages.splice(userIndex, 2);
-            } else {
-                chat.messages.splice(userIndex, 1);
+                chat.messages.splice(userIndex + 1, 1);
             }
             
             renderMessages();
-            renderChatList();
             
-            // Отправляем сообщение заново
-            var input = document.getElementById('userInput');
-            var userMsg = chat.messages[userIndex] || chat.messages[chat.messages.length - 1];
-            if (userMsg && userMsg.role === 'user') {
+            // Берем текст из сообщения пользователя и отправляем заново
+            var userMsg = chat.messages[userIndex];
+            if (userMsg && userMsg.role === 'user' && userMsg.content) {
+                var input = document.getElementById('userInput');
                 input.value = userMsg.content;
                 input.dispatchEvent(new Event('input'));
-                sendMessage();
-            } else {
-                // Если не нашли сообщение пользователя — просто запускаем sendMessage с пустым input
-                // (пользователь должен был ввести текст до этого)
                 sendMessage();
             }
         }
@@ -2336,6 +2337,7 @@
                             } else if (errData.error_type === 'deepseek_overloaded') {
                                 errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                             }
+                            assistantMsg._error_type = errData.error_type || null;
                             assistantMsg.content = errorMessage;
                             assistantMsg.finished = true;
                             assistantMsg._streaming = false;
@@ -2381,6 +2383,7 @@
                                                             } else if (parsed.error_type === 'deepseek_overloaded') {
                                                                 errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                                                             }
+                                                            assistantMsg._error_type = parsed.error_type;
                                                             assistantMsg.content = errorMessage;
                                                             assistantMsg.finished = true;
                                                             assistantMsg._streaming = false;
@@ -2639,6 +2642,7 @@
                     } else if (errData.error_type === 'deepseek_overloaded') {
                         errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                     }
+                    chat.messages[msgIndex]._error_type = errData.error_type || null;
                     chat.messages[msgIndex].content = errorMessage;
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex]._streaming = false;
@@ -2660,6 +2664,7 @@
                     } else if (err.error_type === 'deepseek_overloaded') {
                         errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                     }
+                    chat.messages[msgIndex]._error_type = err.error_type || null;
                     chat.messages[msgIndex].content = errorMessage;
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex]._streaming = false;
@@ -2699,6 +2704,7 @@
                                 } else if (parsed.error_type === 'deepseek_overloaded') {
                                     errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                                 }
+                                chat.messages[msgIndex]._error_type = parsed.error_type;
                                 chat.messages[msgIndex].content = errorMessage;
                                 chat.messages[msgIndex].finished = true;
                                 chat.messages[msgIndex]._streaming = false;
@@ -2867,12 +2873,6 @@
             var msg = chat.messages[index];
             if (!msg || msg.role !== 'assistant' || !msg.interrupted) return;
             
-            var msgId = msg.msg_id;
-            if (!msgId) {
-                showAlertModal('Ошибка', 'Не удалось определить сообщение для продолжения.', '❌');
-                return;
-            }
-            
             // Показываем три точки
             msg.content = '';
             msg._streaming = true;
@@ -2880,7 +2880,11 @@
             renderMessages();
             
             try {
-                var resp = await fetch(SERVER_URL + '/check_full_response?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + currentBranchId + '&msg_id=' + msgId + '&session_token=' + sessionToken);
+                var url = SERVER_URL + '/check_full_response?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + currentBranchId + '&session_token=' + sessionToken;
+                if (msg.msg_id) {
+                    url += '&msg_id=' + msg.msg_id;
+                }
+                var resp = await fetch(url);
                 var data = await resp.json();
                 
                 if (data.ready) {
@@ -2897,7 +2901,7 @@
                 // Ответ ещё не готов — ждём 5 секунд
                 await new Promise(function(resolve) { setTimeout(resolve, 5000); });
                 
-                var resp2 = await fetch(SERVER_URL + '/check_full_response?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + currentBranchId + '&msg_id=' + msgId + '&session_token=' + sessionToken);
+                var resp2 = await fetch(url);
                 var data2 = await resp2.json();
                 
                 if (data2.ready) {
