@@ -1865,10 +1865,13 @@
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
             const area = document.getElementById('chatArea');
-            // Удаляем старые сообщения без data-msg-index (были добавлены до appendNewMessages)
-            var oldRows = area.querySelectorAll('.message-row:not([data-msg-index])');
-            for (var r = 0; r < oldRows.length; r++) {
-                oldRows[r].remove();
+            // Удаляем старые сообщения без data-msg-index (только один раз)
+            if (!window._cleanedOld) {
+                var oldRows = area.querySelectorAll('.message-row:not([data-msg-index])');
+                for (var r = 0; r < oldRows.length; r++) {
+                    oldRows[r].remove();
+                }
+                window._cleanedOld = true;
             }
             
             for (var i = 0; i < chat.messages.length; i++) {
