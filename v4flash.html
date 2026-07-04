@@ -2372,8 +2372,10 @@
                     closeCopyHistoryModal();
                     currentBranchId = targetBranchId;
                     chat.activeBranch = targetBranchId;
-                    // Принудительно загружаем свежие сообщения с сервера
-                    await loadChatMessages(currentChatId);
+                    await updateBranchesFromServer();
+                    var targetBranch = chat.allBranches && chat.allBranches[targetBranchId];
+                    if (targetBranch) chat.messages = targetBranch.messages || [];
+                    renderMessages();
                     renderBranchesPanel();
                     var main = document.querySelector('.main');
                     if (main) { main.scrollTop = main.scrollHeight; }
@@ -2387,6 +2389,7 @@
             btn.disabled = false;
             btn.textContent = 'Перенести';
         }
+
 
 
         var selfPlayIndex = -1;
