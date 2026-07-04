@@ -921,6 +921,17 @@
             }
             if (!chat.messages || chat.messages.length === 0) {
                 loadChatMessages(currentChatId);
+            } else {
+                // Чат уже загружен — оставляем существующий DOM
+                _floatingHeaders = [];
+                renderChatList();
+                renderBranchesPanel();
+                buildNavContainer();
+                updateFloatingButtons();
+                hljs.highlightAll();
+                scrollToBottom();
+                updateBranchIndicator();
+                return;
             }
             _floatingHeaders = [];
             renderChatList();
@@ -940,6 +951,7 @@
             scrollToBottom();
             updateBranchIndicator();
         }
+
 
         function toggleChatMenu(e, id) {
             e.stopPropagation();
@@ -1316,11 +1328,8 @@
                                             }
                                         }
                                     }
-                                    // Удаляем старый placeholder и рендерим свежие сообщения ветки
-                                    area.innerHTML = '';
-                                    for (var mi = 0; mi < chat.messages.length; mi++) {
-                                        appendMessageToDOM(chat.messages[mi], mi);
-                                    }
+                                    // Удаляем старый placeholder — сообщения ветки уже в DOM
+                                    if (placeholderId) { var el2 = document.getElementById(placeholderId); if (el2) el2.remove(); }
                                     renderChatList();
                                     var assistantMsgObj = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                                     chat.messages.push(assistantMsgObj);
@@ -1368,10 +1377,37 @@
                     if (chat.allBranches && chat.allBranches[currentBranchId]) {
                         chat.messages = chat.allBranches[currentBranchId].messages || [];
                     }
-                    // Полностью перерисовываем чат из-за смены ветки
-                    area.innerHTML = '';
-                    for (var mi2 = 0; mi2 < chat.messages.length; mi2++) {
-                        appendMessageToDOM(chat.messages[mi2], mi2);
+                    // Обновляем последнее сообщение в DOM
+                    var finalMsgEl = document.getElementById('stream-' + streamMsgIndex);
+                    if (finalMsgEl) {
+                        if (assistantMsg) {
+                            var reasoningHtml = '';
+                            var contentToShow = assistantMsg.content || '';
+                            var hasReasoning = false;
+                            var reasoningText = '';
+                            if (assistantMsg._reasoningBuffer) {
+                                reasoningText = assistantMsg._reasoningBuffer;
+                                hasReasoning = true;
+                            } else if (assistantMsg.reasoning) {
+                                reasoningText = assistantMsg.reasoning;
+                                hasReasoning = true;
+                            } else if (assistantMsg.content && assistantMsg.content.includes('Размышление:\n')) {
+                                var splitIdx = assistantMsg.content.indexOf('\n\nОтвет:\n');
+                                if (splitIdx !== -1) {
+                                    reasoningText = assistantMsg.content.substring('Размышление:\n'.length, splitIdx);
+                                    contentToShow = assistantMsg.content.substring(splitIdx + '\n\nОтвет:\n'.length);
+                                    hasReasoning = true;
+                                }
+                            }
+                            if (hasReasoning) {
+                                reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
+                            }
+                            finalMsgEl.innerHTML = reasoningHtml + formatMessage(contentToShow);
+                            var actionsEl = document.getElementById('actions-' + streamMsgIndex);
+                            if (actionsEl) actionsEl.innerHTML = buildActionsHtml(streamMsgIndex, assistantMsg);
+                            setupFloatingCopyButtonsForMsg(finalMsgEl);
+                            hljs.highlightAll();
+                        }
                     }
                     renderChatList();
                     renderBranchesPanel();
@@ -1424,6 +1460,7 @@
                 sendBtnArrow();
             }
         }
+
 
 
 
@@ -1628,7 +1665,6 @@
                                 var actionsEl = document.getElementById('actions-' + newMsgIndex);
                                 if (actionsEl) actionsEl.innerHTML = buildActionsHtml(newMsgIndex, assistantMsgFinal);
                                 setupFloatingCopyButtonsForMsg(finalMsgEl);
-                                hljs.highlightAll();
                             }
                         }
                         buildNavContainer();
@@ -1651,6 +1687,7 @@
                 })();
             });
         }
+
 
 
 
@@ -1888,7 +1925,6 @@
                         var actionsEl = document.getElementById('actions-' + newMsgIndex);
                         if (actionsEl) actionsEl.innerHTML = buildActionsHtml(newMsgIndex, assistantMsgFinal);
                         setupFloatingCopyButtonsForMsg(finalMsgEl);
-                        hljs.highlightAll();
                     }
                 }
                 buildNavContainer();
@@ -1909,6 +1945,7 @@
                 }
             }
         }
+
 
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
@@ -2632,12 +2669,6 @@
                         chat.lastMessageTime = Date.now();
                         chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                         autoNameChat(chat);
-                        // Перерисовываем из-за смены ветки
-                        var area2 = document.getElementById('chatArea');
-                        area2.innerHTML = '';
-                        for (var mi = 0; mi < chat.messages.length; mi++) {
-                                appendMessageToDOM(chat.messages[mi], mi);
-                        }
                         renderChatList();
                         renderBranchesPanel();
                         updateBalance();
@@ -2982,7 +3013,6 @@
                     var actionsEl = document.getElementById('actions-' + msgIndex);
                     if (actionsEl) actionsEl.innerHTML = buildActionsHtml(msgIndex, assistantMsg);
                     setupFloatingCopyButtonsForMsg(finalMsgEl);
-                    hljs.highlightAll();
                 }
                 buildNavContainer();
                 if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
@@ -3005,6 +3035,7 @@
                 }
             }
         }
+
 
 
         async function updateBranchesFromServer() {
@@ -3117,7 +3148,6 @@
                             var actionsEl = document.getElementById('actions-' + lastIndex);
                             if (actionsEl) actionsEl.innerHTML = buildActionsHtml(lastIndex, lastMsg);
                             setupFloatingCopyButtonsForMsg(msgEl);
-                            hljs.highlightAll();
                         }
                     }
                 }
@@ -3125,6 +3155,7 @@
             isSending = false;
             sendBtnArrow();
         }
+
 
 
         async function continueMessage(index) {
@@ -3183,7 +3214,6 @@
                         var actionsEl = document.getElementById('actions-' + index);
                         if (actionsEl) actionsEl.innerHTML = buildActionsHtml(index, msg);
                         setupFloatingCopyButtonsForMsg(msgEl);
-                        hljs.highlightAll();
                     }
                     return;
                 }
@@ -3229,7 +3259,6 @@
                         var actionsEl2 = document.getElementById('actions-' + index);
                         if (actionsEl2) actionsEl2.innerHTML = buildActionsHtml(index, msg);
                         setupFloatingCopyButtonsForMsg(msgEl2);
-                        hljs.highlightAll();
                     }
                 } else {
                     // Через 5 секунд всё ещё не готов
@@ -3246,6 +3275,7 @@
                 renderMessages();
             }
         }
+
 
 
         function _setupSingleCodeBlock(block) {
