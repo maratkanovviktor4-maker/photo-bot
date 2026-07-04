@@ -1867,8 +1867,10 @@
             const area = document.getElementById('chatArea');
             
             for (var i = 0; i < chat.messages.length; i++) {
-                // Если элемент с таким index уже есть в DOM — пропускаем
-                if (area.querySelector('[data-msg-index="' + i + '"]')) continue;
+                // Если элемент с таким index уже есть в DOM — удаляем его перед вставкой нового
+                var oldEl = area.querySelector('[data-msg-index="' + i + '"]');
+                if (oldEl) oldEl.remove();
+
                 
                 var m = chat.messages[i];
                 var actionsHtml = '';
