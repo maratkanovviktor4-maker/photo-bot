@@ -1222,21 +1222,19 @@
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
             chat.messages = chat.messages.slice(0, msgIndex + 1);
-            // Удаляем DOM-элементы после создаваемой ветки
-            var area = document.getElementById('chatArea');
-            var rows = area.querySelectorAll('.message-row[data-msg-index]');
-            for (var r = rows.length - 1; r >= 0; r--) {
-                var idx = parseInt(rows[r].getAttribute('data-msg-index'));
-                if (idx >= msgIndex + 1) rows[r].remove();
-            }
+            renderMessages();
             var placeholderId = null;
             var isAssistantBranch = (msg.role === 'assistant');
             if (!isAssistantBranch) {
                 placeholderId = 'branch_' + Date.now();
-                var loadingMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null };
-                chat.messages.push(loadingMsg);
-                var loadingIndex = chat.messages.length - 1;
-                appendMessageToDOM(loadingMsg, loadingIndex);
+                var area = document.getElementById('chatArea');
+                var loadingRow = document.createElement('div');
+                loadingRow.className = 'message-row assistant';
+                loadingRow.id = placeholderId;
+                loadingRow.innerHTML = '<div><div class="message-content"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
+                area.appendChild(loadingRow);
+                var main = document.querySelector('.main');
+                if (main) { main.scrollTop = main.scrollHeight; }
             }
             try {
                 var resp = await fetch(SERVER_URL + '/create_branch', {
@@ -1260,8 +1258,7 @@
                     var errAssistantMsg = { role: 'assistant', content: errorMessage, finished: true, _streaming: false };
                     errAssistantMsg._error_type = errData.error_type || null;
                     chat.messages.push(errAssistantMsg);
-                    var errIndex = chat.messages.length - 1;
-                    appendMessageToDOM(errAssistantMsg, errIndex);
+                    renderMessages();
                     isSending = false;
                     sendBtnArrow();
                     return;
@@ -1307,8 +1304,7 @@
                                         assistantMsg._streaming = false;
                                         assistantMsg._error_type = parsed.error_type;
                                     }
-                                    var msgEl = document.getElementById('stream-' + streamMsgIndex);
-                                    if (msgEl) msgEl.innerHTML = formatMessage(errorMessage);
+                                    renderMessages();
                                     isSending = false;
                                     activeStreamId = null;
                                     sendBtnArrow();
@@ -1328,25 +1324,25 @@
                                             }
                                         }
                                     }
-                                    // Полная перерисовка чата из-за смены ветки (новые msg_id, индексы)
-                                    area.innerHTML = '';
-                                    for (var mi = 0; mi < chat.messages.length; mi++) {
-                                        appendMessageToDOM(chat.messages[mi], mi);
-                                    }
-                                    renderChatList();
-                                    renderBranchesPanel();
-                                    var assistantMsgObj = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
-                                    chat.messages.push(assistantMsgObj);
+                                    assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
+                                    chat.messages.push(assistantMsg);
                                     streamMsgIndex = chat.messages.length - 1;
-                                    activeStreamId = 'branch_stream_' + streamMsgIndex;
-                                    appendMessageToDOM(assistantMsgObj, streamMsgIndex);
-                                    assistantMsg = assistantMsgObj;
+                                    var streamId = 'branch_stream_' + streamMsgIndex;
+                                    activeStreamId = streamId;
+                                    renderMessages();
+                                    renderChatList();
                                     branchMetaReceived = true;
                                 } else if (parsed.assistant_msg_id) {
                                     if (assistantMsg) {
                                         assistantMsg.msg_id = parsed.assistant_msg_id;
                                         assistantMsg.finished = true;
                                         assistantMsg._streaming = false;
+                                    }
+                                    if (parsed.source_msg_id && branchMessages.length > 0) {
+                                        var lastUserMsg = branchMessages[branchMessages.length - 1];
+                                        if (lastUserMsg && lastUserMsg.role === 'user') {
+                                            lastUserMsg.msg_id = parsed.source_msg_id;
+                                        }
                                     }
                                 } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
                                     if (assistantMsg) {
@@ -1357,12 +1353,13 @@
                                             assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                         }
                                         assistantMsg.content = assistantMsg._fullBuffer || '';
-                                        var msgEl5 = document.getElementById('stream-' + streamMsgIndex);
-                                        if (msgEl5) {
+                                        var msgEl = document.getElementById('stream-' + streamMsgIndex);
+                                        if (msgEl) {
                                             requestAnimationFrame(function() {
-                                                streamUpdateDOM(msgEl5, assistantMsg);
+                                                streamUpdateDOM(msgEl, assistantMsg);
                                             });
                                         }
+
                                     }
                                 }
                             } catch (parseErr) {}
@@ -1378,14 +1375,11 @@
                     chat.lastMessageTime = Date.now();
                     chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                     autoNameChat(chat);
+                    await updateBranchesFromServer();
                     if (chat.allBranches && chat.allBranches[currentBranchId]) {
                         chat.messages = chat.allBranches[currentBranchId].messages || [];
                     }
-                    // Перерисовываем после стрима
-                    area.innerHTML = '';
-                    for (var mi2 = 0; mi2 < chat.messages.length; mi2++) {
-                        appendMessageToDOM(chat.messages[mi2], mi2);
-                    }
+                    renderMessages();
                     renderChatList();
                     renderBranchesPanel();
                     updateBalance();
@@ -1397,13 +1391,11 @@
                     if (data.success) {
                         currentBranchId = data.branch_id;
                         chat.activeBranch = data.branch_id;
+                        await updateBranchesFromServer();
                         if (chat.allBranches && chat.allBranches[currentBranchId]) {
                             chat.messages = chat.allBranches[currentBranchId].messages || [];
                         }
-                        area.innerHTML = '';
-                        for (var mi3 = 0; mi3 < chat.messages.length; mi3++) {
-                            appendMessageToDOM(chat.messages[mi3], mi3);
-                        }
+                        renderMessages();
                         renderChatList();
                         renderBranchesPanel();
                         updateBalance();
@@ -1418,11 +1410,10 @@
                         } else if (data.error_type === 'deepseek_overloaded') {
                             errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                         }
-                        var errAssistantMsg2 = { role: 'assistant', content: errorMessage, finished: true, _streaming: false };
-                        errAssistantMsg2._error_type = data.error_type || null;
-                        chat.messages.push(errAssistantMsg2);
-                        var errIndex2 = chat.messages.length - 1;
-                        appendMessageToDOM(errAssistantMsg2, errIndex2);
+                        var errAssistantMsg = { role: 'assistant', content: errorMessage, finished: true, _streaming: false };
+                        errAssistantMsg._error_type = data.error_type || null;
+                        chat.messages.push(errAssistantMsg);
+                        renderMessages();
                         showAlertModal('Ошибка', errorMessage, '❌');
                     }
                     isSending = false;
@@ -1437,9 +1428,6 @@
                 sendBtnArrow();
             }
         }
-
-
-
 
 
         async function regenerateUserMessage(msgIndex) {
@@ -2512,7 +2500,7 @@
                 var streamMsgIndex = chat.messages.length - 1;
                 var streamId = 'selfplay_stream_' + streamMsgIndex;
                 activeStreamId = streamId;
-                appendMessageToDOM(assistantMsg, streamMsgIndex);
+                renderMessages();
 
                 try {
                         const resp = await fetch(SERVER_URL + '/selfplay', {
@@ -2547,8 +2535,7 @@
                             assistantMsg.content = errorMessage;
                             assistantMsg.finished = true;
                             assistantMsg._streaming = false;
-                            var msgEl = document.getElementById('stream-' + streamMsgIndex);
-                            if (msgEl) msgEl.innerHTML = formatMessage(errorMessage);
+                            renderMessages();
                             isSending = false;
                             sendBtnArrow();
                             return;
@@ -2594,8 +2581,7 @@
                                                             assistantMsg.content = errorMessage;
                                                             assistantMsg.finished = true;
                                                             assistantMsg._streaming = false;
-                                                            var msgEl2 = document.getElementById('stream-' + streamMsgIndex);
-                                                            if (msgEl2) msgEl2.innerHTML = formatMessage(errorMessage);
+                                                            renderMessages();
                                                             isSending = false;
                                                             activeStreamId = null;
                                                             sendBtnArrow();
@@ -2612,17 +2598,27 @@
                                                                 area.innerHTML = '';
                                                                 for (var om = 0; om < oldMessages.length; om++) {
                                                                         chat.messages.push(oldMessages[om]);
-                                                                        appendMessageToDOM(oldMessages[om], om);
+                                                                        var oldMsg = oldMessages[om];
+                                                                        var cls = 'message-row ' + (oldMsg.role === 'user' ? 'user' : (oldMsg.role === 'system' ? 'system' : 'assistant'));
+                                                                        var contentHtml = '';
+                                                                        if (oldMsg.role === 'system') {
+                                                                                contentHtml = '<div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">' + escapeHtml(oldMsg.content) + '</div></div>';
+                                                                        } else {
+                                                                                contentHtml = '<div><div class="message-content">' + formatMessage(oldMsg.content || '') + '</div></div>';
+                                                                        }
+                                                                        area.innerHTML += '<div class="' + cls + '">' + contentHtml + '</div>';
                                                                 }
                                                                 if (parsed.placeholder_id) {
-                                                                        var sysMsg = { role: 'system', content: '🧠 Self-Play начат: ' + (promptText ? promptText.substring(0, 80) : '') };
-                                                                        chat.messages.push(sysMsg);
-                                                                        area.innerHTML += '<div class="message-row system"><div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">🧠 Self-Play начат: ' + escapeHtml(promptText ? promptText.substring(0, 80) : '') + '</div></div></div>';
+                                                                        chat.messages.push({ role: 'system', content: '🧠 Self-Play начат: ' + (promptText ? promptText.substring(0, 80) : ''), msg_id: parsed.placeholder_id });
+                                                                        area.innerHTML = '<div class="message-row system"><div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">🧠 Self-Play начат: ' + escapeHtml(promptText ? promptText.substring(0, 80) : '') + '</div></div></div>';
                                                                 }
                                                                 assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                                                                 chat.messages.push(assistantMsg);
                                                                 streamMsgIndex = chat.messages.length - 1;
-                                                                appendMessageToDOM(assistantMsg, streamMsgIndex);
+                                                                var row = document.createElement('div');
+                                                                row.className = 'message-row assistant';
+                                                                row.innerHTML = '<div><div class="message-content" id="stream-' + streamMsgIndex + '"></div></div>';
+                                                                area.appendChild(row);
                                                                 renderBranchesPanel();
                                                         }
                                                         if (parsed.content !== undefined) {
@@ -2630,29 +2626,26 @@
                                                                         assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                                                 }
                                                                 assistantMsg.content = assistantMsg._fullBuffer || '';
-                                                                var msgEl3 = document.getElementById('stream-' + streamMsgIndex);
-                                                                if (msgEl3) {
+                                                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
+                                                                if (msgEl) {
                                                                         requestAnimationFrame(function() {
-                                                                                streamUpdateDOM(msgEl3, assistantMsg);
+                                                                                streamUpdateDOM(msgEl, assistantMsg);
                                                                         });
                                                                 }
+
                                                         }
                                                 } catch(e) {}
                                         }
                                 }
                         }
+                        await updateBranchesFromServer();
                         if (chat.allBranches && chat.allBranches[currentBranchId]) {
                                 chat.messages = chat.allBranches[currentBranchId].messages || [];
-                        }
-                        // Полная перерисовка после стрима из-за смены ветки
-                        var area2 = document.getElementById('chatArea');
-                        area2.innerHTML = '';
-                        for (var mi = 0; mi < chat.messages.length; mi++) {
-                            appendMessageToDOM(chat.messages[mi], mi);
                         }
                         chat.lastMessageTime = Date.now();
                         chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                         autoNameChat(chat);
+                        renderMessages();
                         renderChatList();
                         renderBranchesPanel();
                         updateBalance();
@@ -2666,8 +2659,6 @@
                         sendBtnArrow();
                 }
         }
-
-
 
         var voiceInputActive = false;
         var recognition = null;
