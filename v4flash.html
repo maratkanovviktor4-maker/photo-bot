@@ -2372,9 +2372,10 @@
                     closeCopyHistoryModal();
                     currentBranchId = targetBranchId;
                     chat.activeBranch = targetBranchId;
-                    var targetBranch = chat.allBranches && chat.allBranches[targetBranchId];
-                    if (targetBranch) chat.messages = targetBranch.messages || [];
-                    renderMessages();
+
+                    // Загружаем актуальные ветки и сообщения с сервера для текущего чата
+                    await loadChatMessages(currentChatId);
+
                     renderBranchesPanel();
                     var main = document.querySelector('.main');
                     if (main) { main.scrollTop = main.scrollHeight; }
@@ -2388,6 +2389,7 @@
             btn.disabled = false;
             btn.textContent = 'Перенести';
         }
+
         var selfPlayIndex = -1;
 
         function showSelfPlayModal(index) {
