@@ -1328,9 +1328,13 @@
                                             }
                                         }
                                     }
-                                    // Удаляем старый placeholder — сообщения ветки уже в DOM
-                                    if (placeholderId) { var el2 = document.getElementById(placeholderId); if (el2) el2.remove(); }
+                                    // Полная перерисовка чата из-за смены ветки (новые msg_id, индексы)
+                                    area.innerHTML = '';
+                                    for (var mi = 0; mi < chat.messages.length; mi++) {
+                                        appendMessageToDOM(chat.messages[mi], mi);
+                                    }
                                     renderChatList();
+                                    renderBranchesPanel();
                                     var assistantMsgObj = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                                     chat.messages.push(assistantMsgObj);
                                     streamMsgIndex = chat.messages.length - 1;
@@ -1377,37 +1381,10 @@
                     if (chat.allBranches && chat.allBranches[currentBranchId]) {
                         chat.messages = chat.allBranches[currentBranchId].messages || [];
                     }
-                    // Обновляем последнее сообщение в DOM
-                    var finalMsgEl = document.getElementById('stream-' + streamMsgIndex);
-                    if (finalMsgEl) {
-                        if (assistantMsg) {
-                            var reasoningHtml = '';
-                            var contentToShow = assistantMsg.content || '';
-                            var hasReasoning = false;
-                            var reasoningText = '';
-                            if (assistantMsg._reasoningBuffer) {
-                                reasoningText = assistantMsg._reasoningBuffer;
-                                hasReasoning = true;
-                            } else if (assistantMsg.reasoning) {
-                                reasoningText = assistantMsg.reasoning;
-                                hasReasoning = true;
-                            } else if (assistantMsg.content && assistantMsg.content.includes('Размышление:\n')) {
-                                var splitIdx = assistantMsg.content.indexOf('\n\nОтвет:\n');
-                                if (splitIdx !== -1) {
-                                    reasoningText = assistantMsg.content.substring('Размышление:\n'.length, splitIdx);
-                                    contentToShow = assistantMsg.content.substring(splitIdx + '\n\nОтвет:\n'.length);
-                                    hasReasoning = true;
-                                }
-                            }
-                            if (hasReasoning) {
-                                reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
-                            }
-                            finalMsgEl.innerHTML = reasoningHtml + formatMessage(contentToShow);
-                            var actionsEl = document.getElementById('actions-' + streamMsgIndex);
-                            if (actionsEl) actionsEl.innerHTML = buildActionsHtml(streamMsgIndex, assistantMsg);
-                            setupFloatingCopyButtonsForMsg(finalMsgEl);
-                            hljs.highlightAll();
-                        }
+                    // Перерисовываем после стрима
+                    area.innerHTML = '';
+                    for (var mi2 = 0; mi2 < chat.messages.length; mi2++) {
+                        appendMessageToDOM(chat.messages[mi2], mi2);
                     }
                     renderChatList();
                     renderBranchesPanel();
@@ -1460,6 +1437,7 @@
                 sendBtnArrow();
             }
         }
+
 
 
 
@@ -2666,6 +2644,12 @@
                         if (chat.allBranches && chat.allBranches[currentBranchId]) {
                                 chat.messages = chat.allBranches[currentBranchId].messages || [];
                         }
+                        // Полная перерисовка после стрима из-за смены ветки
+                        var area2 = document.getElementById('chatArea');
+                        area2.innerHTML = '';
+                        for (var mi = 0; mi < chat.messages.length; mi++) {
+                            appendMessageToDOM(chat.messages[mi], mi);
+                        }
                         chat.lastMessageTime = Date.now();
                         chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                         autoNameChat(chat);
@@ -2682,6 +2666,7 @@
                         sendBtnArrow();
                 }
         }
+
 
 
         var voiceInputActive = false;
