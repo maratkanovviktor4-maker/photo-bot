@@ -1365,7 +1365,6 @@
                     chat.lastMessageTime = Date.now();
                     chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                     autoNameChat(chat);
-                    await updateBranchesFromServer();
                     if (chat.allBranches && chat.allBranches[currentBranchId]) {
                         chat.messages = chat.allBranches[currentBranchId].messages || [];
                     }
@@ -1385,7 +1384,6 @@
                     if (data.success) {
                         currentBranchId = data.branch_id;
                         chat.activeBranch = data.branch_id;
-                        await updateBranchesFromServer();
                         if (chat.allBranches && chat.allBranches[currentBranchId]) {
                             chat.messages = chat.allBranches[currentBranchId].messages || [];
                         }
@@ -1582,7 +1580,6 @@
                         assistantMsg.finished = true;
                         assistantMsg._streaming = false;
                         assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
-                        await updateBranchesFromServer();
                         if (chat.allBranches && chat.allBranches[currentBranchId]) {
                             var branchMsgs = chat.allBranches[currentBranchId].messages || [];
                             var lastMsg = branchMsgs[branchMsgs.length - 1];
@@ -1849,7 +1846,6 @@
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
-                await updateBranchesFromServer();
                 if (chat.allBranches && chat.allBranches[currentBranchId]) {
                     chat.messages = chat.allBranches[currentBranchId].messages || [];
                 }
@@ -2373,7 +2369,6 @@
                     closeCopyHistoryModal();
                     currentBranchId = targetBranchId;
                     chat.activeBranch = targetBranchId;
-                    await updateBranchesFromServer();
                     var targetBranch = chat.allBranches && chat.allBranches[targetBranchId];
                     if (targetBranch) chat.messages = targetBranch.messages || [];
                     renderMessages();
@@ -2631,7 +2626,6 @@
                                         }
                                 }
                         }
-                        await updateBranchesFromServer();
                         if (chat.allBranches && chat.allBranches[currentBranchId]) {
                                 chat.messages = chat.allBranches[currentBranchId].messages || [];
                         }
