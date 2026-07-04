@@ -1865,6 +1865,11 @@
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
             const area = document.getElementById('chatArea');
+            // Удаляем старые сообщения без data-msg-index (были добавлены до appendNewMessages)
+            var oldRows = area.querySelectorAll('.message-row:not([data-msg-index])');
+            for (var r = 0; r < oldRows.length; r++) {
+                oldRows[r].remove();
+            }
             
             for (var i = 0; i < chat.messages.length; i++) {
                 // Если элемент с таким index уже есть в DOM — удаляем его перед вставкой нового
