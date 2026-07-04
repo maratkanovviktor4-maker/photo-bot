@@ -867,15 +867,7 @@
                 var activeBid = chat.activeBranch || 'main';
                 if (branches[activeBid]) chat.messages = branches[activeBid].messages || [];
                 renderBranchesPanel();
-                // Инкрементальный рендер сообщений
-                var area = document.getElementById('chatArea');
-                area.innerHTML = '';
-                for (var mi = 0; mi < chat.messages.length; mi++) {
-                    appendMessageToDOM(chat.messages[mi], mi);
-                }
-                buildNavContainer();
-                updateFloatingButtons();
-                hljs.highlightAll();
+                renderMessages();
             } catch(e) { console.error('loadChatMessages error:', e); }
         }
 
@@ -921,37 +913,14 @@
             }
             if (!chat.messages || chat.messages.length === 0) {
                 loadChatMessages(currentChatId);
-            } else {
-                // Чат уже загружен — оставляем существующий DOM
-                _floatingHeaders = [];
-                renderChatList();
-                renderBranchesPanel();
-                buildNavContainer();
-                updateFloatingButtons();
-                hljs.highlightAll();
-                scrollToBottom();
-                updateBranchIndicator();
-                return;
             }
             _floatingHeaders = [];
             renderChatList();
             renderBranchesPanel();
-            var area = document.getElementById('chatArea');
-            area.innerHTML = '';
-            if (chat && chat.messages) {
-                for (var mi = 0; mi < chat.messages.length; mi++) {
-                    appendMessageToDOM(chat.messages[mi], mi);
-                }
-            } else {
-                area.innerHTML = '<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display=\'none\'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>';
-            }
-            buildNavContainer();
-            updateFloatingButtons();
-            hljs.highlightAll();
+            renderMessages();
             scrollToBottom();
             updateBranchIndicator();
         }
-
 
         function toggleChatMenu(e, id) {
             e.stopPropagation();
@@ -1149,15 +1118,8 @@
                     chat.activeBranch = branchId;
                     chat.messages = data.messages || [];
                     renderBranchesPanel();
-                    var area = document.getElementById('chatArea');
-                    area.innerHTML = '';
-                    for (var mi = 0; mi < chat.messages.length; mi++) {
-                        appendMessageToDOM(chat.messages[mi], mi);
-                    }
-                    buildNavContainer();
-                    updateFloatingButtons();
-                    hljs.highlightAll();
-                    updateBranchIndicator();А
+                    renderMessages();
+                    updateBranchIndicator();
                 }
             } catch(e) { console.error('switchBranch error:', e); }
             hideLoading();
@@ -1443,27 +1405,13 @@
                     if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
                     sendBtnStop();
                     msg.content = newText;
-                    var removeFrom = msgIndex + 1;
-                    while (chat.messages.length > removeFrom) { chat.messages.pop(); }
-                    // Удаляем DOM-элементы после редактируемого сообщения
-                    var area = document.getElementById('chatArea');
-                    var rows = area.querySelectorAll('.message-row[data-msg-index]');
-                    for (var r = rows.length - 1; r >= 0; r--) {
-                        var idx = parseInt(rows[r].getAttribute('data-msg-index'));
-                        if (idx >= removeFrom) rows[r].remove();
-                    }
-                    // Обновляем текст редактируемого сообщения в DOM
-                    var userRow = area.querySelector('.message-row[data-msg-index="' + msgIndex + '"]');
-                    if (userRow) {
-                        var contentEl = userRow.querySelector('.message-content');
-                        if (contentEl) contentEl.textContent = newText;
-                    }
+                    chat.messages = chat.messages.slice(0, msgIndex + 1);
                     var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                     chat.messages.push(assistantMsg);
                     var newMsgIndex = chat.messages.length - 1;
                     var streamId = 'regen_user_stream_' + newMsgIndex;
                     activeStreamId = streamId;
-                    appendMessageToDOM(assistantMsg, newMsgIndex);
+                    renderMessages();
 
                     var abortController = new AbortController();
                     assistantMsg._abortController = abortController;
@@ -1491,8 +1439,7 @@
                             assistantMsg.content = errorMessage;
                             assistantMsg.finished = true;
                             assistantMsg._streaming = false;
-                            var msgEl = document.getElementById('stream-' + newMsgIndex);
-                            if (msgEl) msgEl.innerHTML = formatMessage(errorMessage);
+                            renderMessages();
                             isSending = false;
                             sendBtnArrow();
                             return;
@@ -1513,8 +1460,7 @@
                             assistantMsg._error_type = errJson.error_type || null;
                             assistantMsg.content = errorMessage;
                             assistantMsg.finished = true;
-                            var msgEl2 = document.getElementById('stream-' + newMsgIndex);
-                            if (msgEl2) msgEl2.innerHTML = formatMessage(errorMessage);
+                            renderMessages();
                             isSending = false;
                             sendBtnArrow();
                             return;
@@ -1553,8 +1499,7 @@
                                         assistantMsg.content = errorMessage;
                                         assistantMsg.finished = true;
                                         assistantMsg._streaming = false;
-                                        var msgEl3 = document.getElementById('stream-' + newMsgIndex);
-                                        if (msgEl3) msgEl3.innerHTML = formatMessage(errorMessage);
+                                        renderMessages();
                                         isSending = false;
                                         activeStreamId = null;
                                         sendBtnArrow();
@@ -1570,12 +1515,13 @@
                                             assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                         }
                                         assistantMsg.content = assistantMsg._fullBuffer || '';
-                                        var msgEl4 = document.getElementById('stream-' + newMsgIndex);
-                                        if (msgEl4) {
+                                        var msgEl = document.getElementById('stream-' + newMsgIndex);
+                                        if (msgEl) {
                                             requestAnimationFrame(function() {
-                                                streamUpdateDOM(msgEl4, assistantMsg);
+                                                streamUpdateDOM(msgEl, assistantMsg);
                                             });
                                         }
+
                                     }
                                 } catch (e) {}
                             }
@@ -1583,6 +1529,7 @@
                         assistantMsg.finished = true;
                         assistantMsg._streaming = false;
                         assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
+                        await updateBranchesFromServer();
                         if (chat.allBranches && chat.allBranches[currentBranchId]) {
                             var branchMsgs = chat.allBranches[currentBranchId].messages || [];
                             var lastMsg = branchMsgs[branchMsgs.length - 1];
@@ -1595,46 +1542,13 @@
                         chat.lastMessageTime = Date.now();
                         chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                         autoNameChat(chat);
+                        renderMessages();
                         renderChatList();
                         renderBranchesPanel();
                         updateBalance();
                         isSending = false;
                         activeStreamId = null;
                         sendBtnArrow();
-                        // Обновляем последнее сообщение в DOM
-                        var finalMsgEl = document.getElementById('stream-' + newMsgIndex);
-                        if (finalMsgEl) {
-                            var assistantMsgFinal = chat.messages[newMsgIndex];
-                            if (assistantMsgFinal) {
-                                var reasoningHtml = '';
-                                var contentToShow = assistantMsgFinal.content || '';
-                                var hasReasoning = false;
-                                var reasoningText = '';
-                                if (assistantMsgFinal._reasoningBuffer) {
-                                    reasoningText = assistantMsgFinal._reasoningBuffer;
-                                    hasReasoning = true;
-                                } else if (assistantMsgFinal.reasoning) {
-                                    reasoningText = assistantMsgFinal.reasoning;
-                                    hasReasoning = true;
-                                } else if (assistantMsgFinal.content && assistantMsgFinal.content.includes('Размышление:\n')) {
-                                    var splitIdx = assistantMsgFinal.content.indexOf('\n\nОтвет:\n');
-                                    if (splitIdx !== -1) {
-                                        reasoningText = assistantMsgFinal.content.substring('Размышление:\n'.length, splitIdx);
-                                        contentToShow = assistantMsgFinal.content.substring(splitIdx + '\n\nОтвет:\n'.length);
-                                        hasReasoning = true;
-                                    }
-                                }
-                                if (hasReasoning) {
-                                    reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
-                                }
-                                finalMsgEl.innerHTML = reasoningHtml + formatMessage(contentToShow);
-                                var actionsEl = document.getElementById('actions-' + newMsgIndex);
-                                if (actionsEl) actionsEl.innerHTML = buildActionsHtml(newMsgIndex, assistantMsgFinal);
-                                setupFloatingCopyButtonsForMsg(finalMsgEl);
-                            }
-                        }
-                        buildNavContainer();
-                        if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
                     } catch (e) {
                         if (e.name === 'AbortError') {
                             assistantMsg.interrupted = true;
@@ -1653,8 +1567,6 @@
                 })();
             });
         }
-
-
 
 
         function showRegeneratePopup(msgIndex, btnElement) {
@@ -1713,19 +1625,12 @@
             sendBtnStop();
             var removeFrom = msgIndex;
             while (chat.messages.length > removeFrom) { chat.messages.pop(); }
-            // Удаляем DOM-элементы после редактируемого сообщения
-            var area = document.getElementById('chatArea');
-            var rows = area.querySelectorAll('.message-row[data-msg-index]');
-            for (var r = rows.length - 1; r >= 0; r--) {
-                var idx = parseInt(rows[r].getAttribute('data-msg-index'));
-                if (idx >= removeFrom) rows[r].remove();
-            }
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
             chat.messages.push(assistantMsg);
             var newMsgIndex = chat.messages.length - 1;
             var streamId = 'regen_stream_' + newMsgIndex;
             activeStreamId = streamId;
-            appendMessageToDOM(assistantMsg, newMsgIndex);
+            renderMessages();
 
             var abortController = new AbortController();
             assistantMsg._abortController = abortController;
@@ -1753,8 +1658,7 @@
                     assistantMsg.content = errorMessage;
                     assistantMsg.finished = true;
                     assistantMsg._streaming = false;
-                    var msgEl = document.getElementById('stream-' + newMsgIndex);
-                    if (msgEl) msgEl.innerHTML = formatMessage(errorMessage);
+                    renderMessages();
                     isSending = false;
                     sendBtnArrow();
                     return;
@@ -1775,8 +1679,7 @@
                     assistantMsg._error_type = errJson.error_type || null;
                     assistantMsg.content = errorMessage;
                     assistantMsg.finished = true;
-                    var msgEl2 = document.getElementById('stream-' + newMsgIndex);
-                    if (msgEl2) msgEl2.innerHTML = formatMessage(errorMessage);
+                    renderMessages();
                     isSending = false;
                     sendBtnArrow();
                     return;
@@ -1815,8 +1718,7 @@
                                 assistantMsg.content = errorMessage;
                                 assistantMsg.finished = true;
                                 assistantMsg._streaming = false;
-                                var msgEl3 = document.getElementById('stream-' + newMsgIndex);
-                                if (msgEl3) msgEl3.innerHTML = formatMessage(errorMessage);
+                                renderMessages();
                                 isSending = false;
                                 activeStreamId = null;
                                 sendBtnArrow();
@@ -1832,10 +1734,10 @@
                                     assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                 }
                                 assistantMsg.content = assistantMsg._fullBuffer || '';
-                                var msgEl4 = document.getElementById('stream-' + newMsgIndex);
-                                if (msgEl4) {
+                                var msgEl = document.getElementById('stream-' + newMsgIndex);
+                                if (msgEl) {
                                     requestAnimationFrame(function() {
-                                        streamUpdateDOM(msgEl4, assistantMsg);
+                                        streamUpdateDOM(msgEl, assistantMsg);
                                     });
                                 }
                                 if (autoScroll) {
@@ -1849,52 +1751,20 @@
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
+                await updateBranchesFromServer();
                 if (chat.allBranches && chat.allBranches[currentBranchId]) {
                     chat.messages = chat.allBranches[currentBranchId].messages || [];
                 }
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                 autoNameChat(chat);
+                renderMessages();
                 renderChatList();
                 renderBranchesPanel();
                 updateBalance();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
-                // Обновляем последнее сообщение в DOM
-                var finalMsgEl = document.getElementById('stream-' + newMsgIndex);
-                if (finalMsgEl) {
-                    var assistantMsgFinal = chat.messages[newMsgIndex];
-                    if (assistantMsgFinal) {
-                        var reasoningHtml = '';
-                        var contentToShow = assistantMsgFinal.content || '';
-                        var hasReasoning = false;
-                        var reasoningText = '';
-                        if (assistantMsgFinal._reasoningBuffer) {
-                            reasoningText = assistantMsgFinal._reasoningBuffer;
-                            hasReasoning = true;
-                        } else if (assistantMsgFinal.reasoning) {
-                            reasoningText = assistantMsgFinal.reasoning;
-                            hasReasoning = true;
-                        } else if (assistantMsgFinal.content && assistantMsgFinal.content.includes('Размышление:\n')) {
-                            var splitIdx = assistantMsgFinal.content.indexOf('\n\nОтвет:\n');
-                            if (splitIdx !== -1) {
-                                reasoningText = assistantMsgFinal.content.substring('Размышление:\n'.length, splitIdx);
-                                contentToShow = assistantMsgFinal.content.substring(splitIdx + '\n\nОтвет:\n'.length);
-                                hasReasoning = true;
-                            }
-                        }
-                        if (hasReasoning) {
-                            reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
-                        }
-                        finalMsgEl.innerHTML = reasoningHtml + formatMessage(contentToShow);
-                        var actionsEl = document.getElementById('actions-' + newMsgIndex);
-                        if (actionsEl) actionsEl.innerHTML = buildActionsHtml(newMsgIndex, assistantMsgFinal);
-                        setupFloatingCopyButtonsForMsg(finalMsgEl);
-                    }
-                }
-                buildNavContainer();
-                if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
             } catch (e) {
                 if (e.name === 'AbortError') {
                     assistantMsg.interrupted = true;
@@ -1911,7 +1781,6 @@
                 }
             }
         }
-
 
         function renderMessages() {
             document.querySelectorAll('.floating-copy-btn, .floating-download-btn, .floating-preview-btn, .floating-code-header').forEach(function(btn) { btn.remove(); });
@@ -2251,70 +2120,6 @@
         updateSendBtn();
 
         var copyHistorySourceIndex = -1;
-        function appendMessageToDOM(msg, index) {
-            if (!msg || msg.role === 'system') return;
-            var area = document.getElementById('chatArea');
-            var emptyState = area.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
-            var wrapper = document.createElement('div');
-            wrapper.className = 'message-row ' + msg.role;
-            wrapper.setAttribute('data-msg-index', index);
-            var actionsHtml = buildActionsHtml(index, msg);
-            var reasoningHtml = '';
-            var contentToShow = msg.content || '';
-            var hasReasoning = false;
-            var reasoningText = '';
-            if (msg._reasoningBuffer) {
-                reasoningText = msg._reasoningBuffer;
-                hasReasoning = true;
-            } else if (msg.reasoning) {
-                reasoningText = msg.reasoning;
-                hasReasoning = true;
-            } else if (msg.content && msg.content.includes('Размышление:\n')) {
-                var splitIdx = msg.content.indexOf('\n\nОтвет:\n');
-                if (splitIdx !== -1) {
-                    reasoningText = msg.content.substring('Размышление:\n'.length, splitIdx);
-                    contentToShow = msg.content.substring(splitIdx + '\n\nОтвет:\n'.length);
-                    hasReasoning = true;
-                }
-            }
-            if (hasReasoning) {
-                reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
-            }
-            var contentHtml = formatMessage(contentToShow);
-            if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
-                contentHtml = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-            }
-            wrapper.innerHTML = '<div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div>';
-            area.appendChild(wrapper);
-            scrollToBottom();
-        }
-        function buildActionsHtml(index, msg) {
-            if (msg.role === 'system') return '';
-            var html = '';
-            if (msg.role === 'user') {
-                html += '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
-                html += '<button onclick="regenerateUserMessage(' + index + ')" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>';
-                html += '<button class="branch-btn" onclick="createBranchFromMessage(' + index + ')" title="Ответвить от этого сообщения"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>';
-                var chat = chats.find(function(c) { return c.id === currentChatId; });
-                if (chat && index === chat.messages.length - 2 && chat.messages.length > index + 1) {
-                    var nextMsg = chat.messages[index + 1];
-                    if (nextMsg && nextMsg.role === 'assistant' && nextMsg._error_type === 'deepseek_overloaded') {
-                        html += '<button onclick="retryMessage(' + index + ')" title="Повторить" style="background:transparent;border:none;color:#888;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;padding:4px 8px;border-radius:4px;">Повторить</button>';
-                    }
-                }
-            } else {
-                html += '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
-                html += '<button onclick="downloadMessage(' + index + ')" id="download-btn-' + index + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
-                html += '<button class="roll-btn" onclick="showRegeneratePopup(' + index + ', this)" title="Регенерировать ответ"><svg width="14" height="14" viewBox="0 -1 16 16" fill="currentColor"><path d="M15.854,6.146a.5.5,0,0,0-.708,0L14,7.293V7a7,7,0,1,0-7,7,.5.5,0,0,0,0-1,6,6,0,1,1,6-6v.293L11.854,6.146a.5.5,0,0,0-.708.708l2,2a.518.518,0,0,0,.163.109.5.5,0,0,0,.382,0,.518.518,0,0,0,.163-.109l2-2A.5.5,0,0,0,15.854,6.146Z"/></svg></button>';
-                html += '<button class="branch-btn" onclick="createBranchFromMessage(' + index + ')" title="Ответвить от этого сообщения" style="color:#4caf50;"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="#4caf50"/></svg></button>';
-                html += '<button onclick="showCopyHistoryModal(' + index + ')" title="Перенести историю"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg></button>';
-                html += '<button onclick="shareChat(\'' + currentChatId + '\')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg></button>';
-                if (msg.interrupted) html += '<button onclick="continueMessage(' + index + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
-                html += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + index + ')" title="Self-Play диалог" style="color:#00CBF5;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
-            }
-            return html;
-        }
 
         function showCopyHistoryModal(msgIndex) {
             copyHistorySourceIndex = msgIndex;
@@ -2389,9 +2194,6 @@
             btn.disabled = false;
             btn.textContent = 'Перенести';
         }
-
-
-
         var selfPlayIndex = -1;
 
         function showSelfPlayModal(index) {
@@ -2770,7 +2572,13 @@
             // Мгновенное отображение сообщения пользователя
             let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
             chat.messages.push({ role: 'user', content: displayText });
-            appendMessageToDOM(chat.messages[chat.messages.length - 1], chat.messages.length - 1);
+            var area = document.getElementById('chatArea');
+            var emptyState = area.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+            var userRow = document.createElement('div');
+            userRow.className = 'message-row user';
+            userRow.innerHTML = '<div><div class="message-content">' + escapeHtml(displayText) + '</div></div>';
+            area.appendChild(userRow);
             chat.lastMessageTime = Date.now();
             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             renderChatList();
@@ -2793,7 +2601,10 @@
             const streamId = 'stream_' + msgIndex;
             activeStreamId = streamId;
             // Показываем три точки для ассистента
-            appendMessageToDOM(assistantMsg, msgIndex);
+            var assistantRow = document.createElement('div');
+            assistantRow.className = 'message-row assistant';
+            assistantRow.innerHTML = '<div><div class="message-content" id="stream-' + msgIndex + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
+            area.appendChild(assistantRow);
             scrollToBottom();
 
             const abortController = new AbortController();
@@ -2822,8 +2633,7 @@
                     chat.messages[msgIndex].content = 'Сессия устарела. Авторизуйтесь заново.';
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex]._streaming = false;
-                    var msgEl = document.getElementById('stream-' + msgIndex);
-                    if (msgEl) msgEl.innerHTML = formatMessage(chat.messages[msgIndex].content);
+                    renderMessages();
                     isSending = false; sendBtnArrow(); activeStreamId = null;
                     return;
                 }
@@ -2832,8 +2642,7 @@
                     chat.messages[msgIndex].content = 'Недостаточно средств.';
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex]._streaming = false;
-                    var msgEl2 = document.getElementById('stream-' + msgIndex);
-                    if (msgEl2) msgEl2.innerHTML = formatMessage(chat.messages[msgIndex].content);
+                    renderMessages();
                     updateBalance();
                     isSending = false; sendBtnArrow(); activeStreamId = null;
                     return;
@@ -2854,8 +2663,7 @@
                     chat.messages[msgIndex].content = errorMessage;
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex]._streaming = false;
-                    var msgEl3 = document.getElementById('stream-' + msgIndex);
-                    if (msgEl3) msgEl3.innerHTML = formatMessage(errorMessage);
+                    renderMessages();
                     isSending = false; sendBtnArrow(); activeStreamId = null;
                     return;
                 }
@@ -2877,8 +2685,7 @@
                     chat.messages[msgIndex].content = errorMessage;
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex]._streaming = false;
-                    var msgEl4 = document.getElementById('stream-' + msgIndex);
-                    if (msgEl4) msgEl4.innerHTML = formatMessage(errorMessage);
+                    renderMessages();
                     isSending = false; sendBtnArrow(); activeStreamId = null;
                     return;
                 }
@@ -2918,8 +2725,7 @@
                                 chat.messages[msgIndex].content = errorMessage;
                                 chat.messages[msgIndex].finished = true;
                                 chat.messages[msgIndex]._streaming = false;
-                                var msgEl5 = document.getElementById('stream-' + msgIndex);
-                                if (msgEl5) msgEl5.innerHTML = formatMessage(errorMessage);
+                                renderMessages();
                                 isSending = false;
                                 activeStreamId = null;
                                 sendBtnArrow();
@@ -2935,10 +2741,10 @@
                                     assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                 }
                                 assistantMsg.content = assistantMsg._fullBuffer || '';
-                                var msgEl6 = document.getElementById('stream-' + msgIndex);
-                                if (msgEl6) {
+                                var msgEl = document.getElementById('stream-' + msgIndex);
+                                if (msgEl) {
                                     requestAnimationFrame(function() {
-                                        streamUpdateDOM(msgEl6, assistantMsg);
+                                        streamUpdateDOM(msgEl, assistantMsg);
                                     });
                                 }
                             }
@@ -2959,43 +2765,15 @@
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                 autoNameChat(chat);
                 renderChatList();
+                updateBranchesFromServer();
                 updateBalance();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
                 pendingFile = null;
                 updateFileList();
-                // Обновляем последнее сообщение в DOM
-                var finalMsgEl = document.getElementById('stream-' + msgIndex);
-                if (finalMsgEl) {
-                    var reasoningHtml = '';
-                    var contentToShow = assistantMsg.content || '';
-                    var hasReasoning = false;
-                    var reasoningText = '';
-                    if (assistantMsg._reasoningBuffer) {
-                        reasoningText = assistantMsg._reasoningBuffer;
-                        hasReasoning = true;
-                    } else if (assistantMsg.reasoning) {
-                        reasoningText = assistantMsg.reasoning;
-                        hasReasoning = true;
-                    } else if (assistantMsg.content && assistantMsg.content.includes('Размышление:\n')) {
-                        var splitIdx = assistantMsg.content.indexOf('\n\nОтвет:\n');
-                        if (splitIdx !== -1) {
-                            reasoningText = assistantMsg.content.substring('Размышление:\n'.length, splitIdx);
-                            contentToShow = assistantMsg.content.substring(splitIdx + '\n\nОтвет:\n'.length);
-                            hasReasoning = true;
-                        }
-                    }
-                    if (hasReasoning) {
-                        reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
-                    }
-                    finalMsgEl.innerHTML = reasoningHtml + formatMessage(contentToShow);
-                    var actionsEl = document.getElementById('actions-' + msgIndex);
-                    if (actionsEl) actionsEl.innerHTML = buildActionsHtml(msgIndex, assistantMsg);
-                    setupFloatingCopyButtonsForMsg(finalMsgEl);
-                }
+                renderMessages();
                 buildNavContainer();
-                if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
             } catch (e) {
                 if (e.name === 'AbortError') {
                     assistantMsg.interrupted = true;
@@ -3015,7 +2793,6 @@
                 }
             }
         }
-
 
 
         async function updateBranchesFromServer() {
@@ -3099,44 +2876,13 @@
                         lastMsg.interrupted = true;
                         lastMsg.finished = true;
                         lastMsg._streaming = false;
-                        // Обновляем последнее сообщение в DOM
-                        var lastIndex = chat.messages.length - 1;
-                        var msgEl = document.getElementById('stream-' + lastIndex);
-                        if (msgEl) {
-                            var reasoningHtml = '';
-                            var contentToShow = lastMsg.content || '';
-                            var hasReasoning = false;
-                            var reasoningText = '';
-                            if (lastMsg._reasoningBuffer) {
-                                reasoningText = lastMsg._reasoningBuffer;
-                                hasReasoning = true;
-                            } else if (lastMsg.reasoning) {
-                                reasoningText = lastMsg.reasoning;
-                                hasReasoning = true;
-                            } else if (lastMsg.content && lastMsg.content.includes('Размышление:\n')) {
-                                var splitIdx = lastMsg.content.indexOf('\n\nОтвет:\n');
-                                if (splitIdx !== -1) {
-                                    reasoningText = lastMsg.content.substring('Размышление:\n'.length, splitIdx);
-                                    contentToShow = lastMsg.content.substring(splitIdx + '\n\nОтвет:\n'.length);
-                                    hasReasoning = true;
-                                }
-                            }
-                            if (hasReasoning) {
-                                reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
-                            }
-                            msgEl.innerHTML = reasoningHtml + formatMessage(contentToShow);
-                            var actionsEl = document.getElementById('actions-' + lastIndex);
-                            if (actionsEl) actionsEl.innerHTML = buildActionsHtml(lastIndex, lastMsg);
-                            setupFloatingCopyButtonsForMsg(msgEl);
-                        }
                     }
                 }
+                renderMessages();
             }
             isSending = false;
             sendBtnArrow();
         }
-
-
 
         async function continueMessage(index) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
@@ -3161,40 +2907,13 @@
                 
                 if (data.ready) {
                     msg._reasoningBuffer = '';
-                    msg.msg_id = data.msg_id;
+                    msg.msg_id = data.msg_id;  // берём msg_id из ответа сервера
                     msg.content = data.content || '';
                     msg.reasoning = data.reasoning || '';
                     msg.finished = true;
                     msg._streaming = false;
                     msg.interrupted = false;
-                    var msgEl = document.getElementById('stream-' + index);
-                    if (msgEl) {
-                        var reasoningHtml = '';
-                        var contentToShow = msg.content || '';
-                        var hasReasoning = false;
-                        var reasoningText = '';
-                        if (msg._reasoningBuffer) {
-                            reasoningText = msg._reasoningBuffer;
-                            hasReasoning = true;
-                        } else if (msg.reasoning) {
-                            reasoningText = msg.reasoning;
-                            hasReasoning = true;
-                        } else if (msg.content && msg.content.includes('Размышление:\n')) {
-                            var splitIdx = msg.content.indexOf('\n\nОтвет:\n');
-                            if (splitIdx !== -1) {
-                                reasoningText = msg.content.substring('Размышление:\n'.length, splitIdx);
-                                contentToShow = msg.content.substring(splitIdx + '\n\nОтвет:\n'.length);
-                                hasReasoning = true;
-                            }
-                        }
-                        if (hasReasoning) {
-                            reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
-                        }
-                        msgEl.innerHTML = reasoningHtml + formatMessage(contentToShow);
-                        var actionsEl = document.getElementById('actions-' + index);
-                        if (actionsEl) actionsEl.innerHTML = buildActionsHtml(index, msg);
-                        setupFloatingCopyButtonsForMsg(msgEl);
-                    }
+                    renderMessages();
                     return;
                 }
                 
@@ -3206,40 +2925,13 @@
                 
                 if (data2.ready) {
                     msg._reasoningBuffer = '';
-                    msg.msg_id = data2.msg_id;
+                    msg.msg_id = data2.msg_id;  // берём msg_id из ответа сервера
                     msg.content = data2.content || '';
                     msg.reasoning = data2.reasoning || '';
                     msg.finished = true;
                     msg._streaming = false;
                     msg.interrupted = false;
-                    var msgEl2 = document.getElementById('stream-' + index);
-                    if (msgEl2) {
-                        var reasoningHtml2 = '';
-                        var contentToShow2 = msg.content || '';
-                        var hasReasoning2 = false;
-                        var reasoningText2 = '';
-                        if (msg._reasoningBuffer) {
-                            reasoningText2 = msg._reasoningBuffer;
-                            hasReasoning2 = true;
-                        } else if (msg.reasoning) {
-                            reasoningText2 = msg.reasoning;
-                            hasReasoning2 = true;
-                        } else if (msg.content && msg.content.includes('Размышление:\n')) {
-                            var splitIdx2 = msg.content.indexOf('\n\nОтвет:\n');
-                            if (splitIdx2 !== -1) {
-                                reasoningText2 = msg.content.substring('Размышление:\n'.length, splitIdx2);
-                                contentToShow2 = msg.content.substring(splitIdx2 + '\n\nОтвет:\n'.length);
-                                hasReasoning2 = true;
-                            }
-                        }
-                        if (hasReasoning2) {
-                            reasoningHtml2 = '<div class="reasoning-block">' + formatMessage(reasoningText2) + '</div>';
-                        }
-                        msgEl2.innerHTML = reasoningHtml2 + formatMessage(contentToShow2);
-                        var actionsEl2 = document.getElementById('actions-' + index);
-                        if (actionsEl2) actionsEl2.innerHTML = buildActionsHtml(index, msg);
-                        setupFloatingCopyButtonsForMsg(msgEl2);
-                    }
+                    renderMessages();
                 } else {
                     // Через 5 секунд всё ещё не готов
                     msg.content = 'Ответ ещё формируется. Пожалуйста, обновите страницу через некоторое время.';
@@ -3255,7 +2947,6 @@
                 renderMessages();
             }
         }
-
 
 
         function _setupSingleCodeBlock(block) {
