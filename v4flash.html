@@ -914,23 +914,17 @@
                 }
                 currentBranchId = chat.activeBranch || 'main';
             }
-            if (!chat.messages || chat.messages.length === 0) {
-                loadChatMessages(currentChatId).then(function() {
-                    _floatingHeaders = [];
-                    renderChatList();
-                    renderBranchesPanel();
-                    fullRender();
-                    scrollToBottom();
-                    updateBranchIndicator();
-                    hideLoading();
-                });
-            } else {
+            loadChatMessages(currentChatId).then(function() {
+                _floatingHeaders = [];
                 renderChatList();
                 renderBranchesPanel();
+                fullRender();
+                scrollToBottom();
                 updateBranchIndicator();
-                setTimeout(function() { hideLoading(); }, 100);
-            }
+                hideLoading();
+            });
         }
+
 
 
 
@@ -1914,11 +1908,8 @@
             removeRedundantMessages(area, chat.messages.length);
             for (let i = 0; i < chat.messages.length; i++) {
                 const m = chat.messages[i];
-                const shouldUpdate = m._streaming || !area.children[i] || String(area.children[i].dataset.msgIndex) !== String(i);
-                if (shouldUpdate) {
-                    const newHtml = buildMessageHtml(i, m);
-                    patchMessageDom(area, i, newHtml);
-                }
+                const newHtml = buildMessageHtml(i, m);
+                patchMessageDom(area, i, newHtml);
             }
             _floatingHeaders = [];
             hljs.highlightAll();
