@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" id="highlightTheme">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         .hljs { background: #1a1a2e; border-radius: 10px; padding: 14px; font-size: 14px; font-family: 'Courier New', monospace; }
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
@@ -395,6 +396,7 @@
                 <option value="xt256">🌙 xt256</option>
             </select>
             <button class="theme-btn" onclick="showBgModal()" title="Фон чата" style="margin-left:4px;">🎨</button>
+            <span id="usageDisplay" onclick="showUsageModal()" style="cursor:pointer;font-size:12px;color:#00CBF5;font-family:Inter,sans-serif;white-space:nowrap;margin-left:8px;"></span>
             <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
 
         </div>
@@ -881,6 +883,152 @@
                     document.getElementById('balanceDisplay').textContent = `${data.flash.toFixed(1)} Stars`;
                 }
             } catch(e) { console.error(e); }
+        }
+        function showUsageModal() {
+            document.getElementById('usageModal').classList.add('active');
+            document.getElementById('usageModalBalance').textContent = 'Загрузка...';
+            document.getElementById('usageModalMonthCost').textContent = '';
+            
+            fetch(SERVER_URL + '/get_balance?user_id=' + currentUserId + '&session_token=' + sessionToken)
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    var flashBalance = data.flash || 0;
+                    var proBalance = data.pro || 0;
+                    document.getElementById('usageModalBalance').textContent = 
+                        'Баланс: Flash ' + flashBalance.toFixed(1) + ' Stars | Pro ' + proBalance.toFixed(1) + ' Stars';
+                });
+            
+            fetch(SERVER_URL + '/get_usage?user_id=' + currentUserId + '&session_token=' + sessionToken + '&days=30')
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    var usageData = data.usage || [];
+                    
+                    // Считаем стоимость за месяц
+                    var monthCost = 0;
+                    for (var i = 0; i < usageData.length; i++) {
+                        monthCost += usageData[i].cost || 0;
+                    }
+                    document.getElementById('usageModalMonthCost').textContent = 
+                        'Потрачено за месяц: ' + monthCost.toFixed(2) + ' Stars';
+                    
+                    // Рисуем график
+                    drawUsageChart(usageData);
+                })
+                .catch(function(e) {
+                    document.getElementById('usageModalBalance').textContent = 'Ошибка загрузки';
+                });
+        }
+        
+        function closeUsageModal() {
+            document.getElementById('usageModal').classList.remove('active');
+        }
+        
+        function drawUsageChart(usageData) {
+            var canvas = document.getElementById('usageChart');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            
+            if (window._usageChartInstance) {
+                window._usageChartInstance.destroy();
+            }
+            
+            var labels = [];
+            var promptData = [];
+            var completionData = [];
+            var cacheData = [];
+            
+            for (var i = usageData.length - 1; i >= 0; i--) {
+                var d = usageData[i];
+                var parts = d.date.split('-');
+                labels.push(parts[2] + '.' + parts[1]);
+                promptData.push(d.prompt_tokens || 0);
+                completionData.push(d.completion_tokens || 0);
+                cacheData.push(d.cache_hit_tokens || 0);
+            }
+            
+            window._usageChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Вход (prompt)',
+                            data: promptData,
+                            backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Выход (completion)',
+                            data: completionData,
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            borderColor: 'rgb(54, 162, 235)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Кэш (cache)',
+                            data: cacheData,
+                            backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                            borderColor: 'rgb(75, 192, 192)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: { color: '#aaa', font: { size: 10 } }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { color: '#aaa', font: { size: 10 } }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        },
+                        legend: {
+                            labels: { color: '#e0e0e0', font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateUsage() {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat || chat.messages.length === 0) return;
+            
+            // Берём последнее сообщение ассистента, которое содержит usage
+            var lastAssistant = null;
+            for (var i = chat.messages.length - 1; i >= 0; i--) {
+                if (chat.messages[i].role === 'assistant' && chat.messages[i]._usage) {
+                    lastAssistant = chat.messages[i]._usage;
+                    break;
+                }
+            }
+            
+            if (!lastAssistant) return;
+            
+            var prompt = lastAssistant.prompt_tokens || 0;
+            var completion = lastAssistant.completion_tokens || 0;
+            var cache = lastAssistant.cache_hit_tokens || 0;
+            
+            document.getElementById('usageDisplay').innerHTML = 
+                '<span title="Входные токены">📊 Prompt: ' + prompt.toLocaleString() + '</span> ' +
+                '<span title="Выходные токены">• Comp: ' + completion.toLocaleString() + '</span> ' +
+                '<span title="Кэш">• Cache: ' + cache.toLocaleString() + '</span>';
         }
 
         function escapeHtml(text) {
@@ -2679,7 +2827,7 @@
                 lastMsg.interrupted = false; lastMsg.finished = true;
             }
             
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _usage: null };
             chat.messages.push(assistantMsg);
             const msgIndex = chat.messages.length - 1;
             const streamId = 'stream_' + msgIndex;
@@ -2782,6 +2930,7 @@
                 var sendBtnRef = document.getElementById('sendBtn');
                 sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
                 sendBtnRef.onclick = function() { stopTyping(); };
+                var usageData = null;
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
@@ -2817,6 +2966,8 @@
                             }
                             if (parsed.assistant_msg_id) {
                                 finalMeta = parsed;
+                            } else if (parsed.usage) {
+                                usageData = parsed.usage;
                             } else {
                                 if (parsed.reasoning) {
                                     assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
@@ -2841,6 +2992,9 @@
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
+                if (usageData) {
+                    assistantMsg._usage = usageData;
+                }
                 if (finalMeta) {
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
                     chat.messages[chat.messages.length - 2].msg_id = finalMeta.user_msg_id;
@@ -2851,6 +3005,7 @@
                 renderChatList();
                 updateBranchesFromServer();
                 updateBalance();
+                updateUsage();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
@@ -2877,6 +3032,7 @@
                 }
             }
         }
+
 
 
         async function updateBranchesFromServer() {
@@ -3645,6 +3801,27 @@
             <div class="modal-actions" style="gap:12px;">
                 <button class="modal-btn-secondary" onclick="closeSelfPlayModal()" style="flex:1;padding:12px;">Отмена</button>
                 <button id="selfPlayConfirmBtn" class="modal-btn-primary" onclick="confirmSelfPlay()" style="flex:1;padding:12px;" disabled>Запустить</button>
+            </div>
+        </div>
+    </div>
+    <div id="usageModal" class="modal-overlay">
+        <div class="modal-box" style="max-width:700px;max-height:80vh;overflow-y:auto;">
+            <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;">📊</div>
+            <div class="modal-title" style="margin-bottom:16px;">Статистика использования</div>
+            
+            <div id="usageModalBalance" style="font-size:13px;color:#e0e0e0;font-family:Inter,sans-serif;margin-bottom:12px;text-align:center;"></div>
+            <div id="usageModalMonthCost" style="font-size:13px;color:#888;font-family:Inter,sans-serif;margin-bottom:16px;text-align:center;"></div>
+            
+            <div style="width:100%;height:300px;margin-bottom:16px;">
+                <canvas id="usageChart"></canvas>
+            </div>
+            
+            <div style="text-align:center;margin-bottom:16px;">
+                <a href="https://t.me/YourBotUsername" target="_blank" style="display:inline-block;padding:10px 24px;background:linear-gradient(90deg,#00CBF5,#14E9FC);color:#201F28;border-radius:12px;text-decoration:none;font-family:Inter,sans-serif;font-size:14px;font-weight:600;">Пополнить в Telegram</a>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="modal-btn-secondary" onclick="closeUsageModal()" style="flex:1;padding:12px;">Закрыть</button>
             </div>
         </div>
     </div>
