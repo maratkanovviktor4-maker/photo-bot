@@ -3171,8 +3171,14 @@
             msg.content = '';
             msg._streaming = true;
             msg._fullBuffer = '';
-            msg._reasoningBuffer = '';  // очищаем буфер размышления
-            renderMessages();
+            msg._reasoningBuffer = '';
+            
+            var area = document.getElementById('chatArea');
+            var row = area.querySelector('.message-row[data-msg-index="' + index + '"]');
+            if (row) {
+                var html = buildMessageHtml(index, msg);
+                row.outerHTML = html;
+            }
             
             try {
                 var url = SERVER_URL + '/check_full_response?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + currentBranchId + '&session_token=' + sessionToken;
@@ -3184,17 +3190,19 @@
                 
                 if (data.ready) {
                     msg._reasoningBuffer = '';
-                    msg.msg_id = data.msg_id;  // берём msg_id из ответа сервера
+                    msg.msg_id = data.msg_id;
                     msg.content = data.content || '';
                     msg.reasoning = data.reasoning || '';
                     msg.finished = true;
                     msg._streaming = false;
                     msg.interrupted = false;
-                    renderMessages();
+                    var row2 = area.querySelector('.message-row[data-msg-index="' + index + '"]');
+                    if (row2) {
+                        row2.outerHTML = buildMessageHtml(index, msg);
+                    }
                     return;
                 }
                 
-                // Ответ ещё не готов — ждём 5 секунд
                 await new Promise(function(resolve) { setTimeout(resolve, 5000); });
                 
                 var resp2 = await fetch(url);
@@ -3202,28 +3210,37 @@
                 
                 if (data2.ready) {
                     msg._reasoningBuffer = '';
-                    msg.msg_id = data2.msg_id;  // берём msg_id из ответа сервера
+                    msg.msg_id = data2.msg_id;
                     msg.content = data2.content || '';
                     msg.reasoning = data2.reasoning || '';
                     msg.finished = true;
                     msg._streaming = false;
                     msg.interrupted = false;
-                    renderMessages();
+                    var row3 = area.querySelector('.message-row[data-msg-index="' + index + '"]');
+                    if (row3) {
+                        row3.outerHTML = buildMessageHtml(index, msg);
+                    }
                 } else {
-                    // Через 5 секунд всё ещё не готов
                     msg.content = 'Ответ ещё формируется. Пожалуйста, обновите страницу через некоторое время.';
                     msg.finished = true;
                     msg._streaming = false;
-                    renderMessages();
+                    var row4 = area.querySelector('.message-row[data-msg-index="' + index + '"]');
+                    if (row4) {
+                        row4.outerHTML = buildMessageHtml(index, msg);
+                    }
                 }
             } catch (e) {
                 console.error('continueMessage error:', e);
                 msg.content = 'Ошибка при проверке ответа. Попробуйте обновить страницу.';
                 msg.finished = true;
                 msg._streaming = false;
-                renderMessages();
+                var row5 = area.querySelector('.message-row[data-msg-index="' + index + '"]');
+                if (row5) {
+                    row5.outerHTML = buildMessageHtml(index, msg);
+                }
             }
         }
+
 
 
         function _setupSingleCodeBlock(block) {
