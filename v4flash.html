@@ -1908,8 +1908,11 @@
             removeRedundantMessages(area, chat.messages.length);
             for (let i = 0; i < chat.messages.length; i++) {
                 const m = chat.messages[i];
-                const newHtml = buildMessageHtml(i, m);
-                patchMessageDom(area, i, newHtml);
+                const shouldUpdate = m._streaming || !area.children[i] || String(area.children[i].dataset.msgIndex) !== String(i);
+                if (shouldUpdate) {
+                    const newHtml = buildMessageHtml(i, m);
+                    patchMessageDom(area, i, newHtml);
+                }
             }
             _floatingHeaders = [];
             hljs.highlightAll();
@@ -1926,6 +1929,7 @@
                 }
             }
         }
+
 
 
         function retryMessage(userIndex) {
