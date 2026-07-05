@@ -915,16 +915,23 @@
                 currentBranchId = chat.activeBranch || 'main';
             }
             if (!chat.messages || chat.messages.length === 0) {
-                loadChatMessages(currentChatId);
+                loadChatMessages(currentChatId).then(function() {
+                    _floatingHeaders = [];
+                    renderChatList();
+                    renderBranchesPanel();
+                    fullRender();
+                    scrollToBottom();
+                    updateBranchIndicator();
+                    hideLoading();
+                });
+            } else {
+                renderChatList();
+                renderBranchesPanel();
+                updateBranchIndicator();
+                setTimeout(function() { hideLoading(); }, 100);
             }
-            _floatingHeaders = [];
-            renderChatList();
-            renderBranchesPanel();
-            fullRender();
-            scrollToBottom();
-            updateBranchIndicator();
-            hideLoading();
         }
+
 
 
         function toggleChatMenu(e, id) {
@@ -1230,6 +1237,7 @@
                     fullRender();
                     isSending = false;
                     sendBtnArrow();
+                    hideLoading();
                     return;
                 }
                 var contentType = resp.headers.get('content-type') || '';
@@ -1389,6 +1397,7 @@
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
+                    hideLoading();
                 }
             } catch (e) {
                 if (placeholderId) { var el2 = document.getElementById(placeholderId); if (el2) el2.remove(); }
@@ -1396,8 +1405,10 @@
                 showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
                 isSending = false;
                 sendBtnArrow();
+                hideLoading();
             }
         }
+
 
 
         async function regenerateUserMessage(msgIndex) {
