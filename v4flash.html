@@ -1424,8 +1424,9 @@
                     var area = document.getElementById('chatArea');
                     var userRow = area.querySelector('.message-row.user[data-msg-index="' + msgIndex + '"]');
                     if (userRow) {
-                        var newUserHtml = '<div class="message-row user" data-msg-index="' + msgIndex + '"><div><div class="message-content">' + escapeHtml(newText) + '</div></div></div>';
-                        userRow.outerHTML = newUserHtml;
+                        var temp = document.createElement('div');
+                        temp.innerHTML = '<div class="message-row user"><div><div class="message-content">' + escapeHtml(newText) + '</div></div></div>';
+                        userRow.parentNode.replaceChild(temp.firstElementChild, userRow);
                     }
                     
                     var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
