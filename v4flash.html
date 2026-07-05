@@ -780,6 +780,7 @@
             } else {
                 loadChatsFromServer();
                 updateBalance();
+		updateUsage();
                 loadPersonalities();
                 loadChatBg();
             }
@@ -1029,7 +1030,6 @@
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat || chat.messages.length === 0) return;
             
-            // Берём последнее сообщение ассистента, которое содержит usage
             var lastAssistant = null;
             for (var i = chat.messages.length - 1; i >= 0; i--) {
                 if (chat.messages[i].role === 'assistant' && chat.messages[i]._usage) {
@@ -1044,11 +1044,21 @@
             var completion = lastAssistant.completion_tokens || 0;
             var cache = lastAssistant.cache_hit_tokens || 0;
             
-            document.getElementById('usageDisplay').innerHTML =  
-                '<span title="Входные токены">Prompt: ' + prompt.toLocaleString() + '</span> ' +
-                '<span title="Выходные токены">• Comp: ' + completion.toLocaleString() + '</span> ' +
-                '<span title="Кэш">• Cache: ' + cache.toLocaleString() + '</span>';
+            var text = 'Prompt: ' + prompt.toLocaleString() + ' • Comp: ' + completion.toLocaleString() + ' • Cache: ' + cache.toLocaleString();
+            var el = document.getElementById('usageDisplay');
+            if (el) {
+                // Оставляем иконку, добавляем текст
+                var icon = el.querySelector('svg');
+                if (icon) {
+                    el.innerHTML = '';
+                    el.appendChild(icon);
+                    el.appendChild(document.createTextNode(' ' + text));
+                } else {
+                    el.innerHTML = text;
+                }
+            }
         }
+
 
         function escapeHtml(text) {
             return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1522,6 +1532,7 @@
                     renderBranchesPanel();
                     hideLoading();
                     updateBalance();
+		    updateUsage();
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
@@ -1538,6 +1549,7 @@
                         renderChatList();
                         renderBranchesPanel();
                         updateBalance();
+			updateUsage();
                     } else {
                         let errorMessage = data.error || 'Не удалось создать ветку';
                         if (data.error_type === 'bad_request') {
@@ -1736,6 +1748,7 @@
                         renderChatList();
                         renderBranchesPanel();
                         updateBalance();
+			updateUsage();
                         isSending = false;
                         activeStreamId = null;
                         sendBtnArrow();
@@ -1953,6 +1966,7 @@
                 renderChatList();
                 renderBranchesPanel();
                 updateBalance();
+		updateUsage();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
@@ -2704,6 +2718,7 @@
                         renderChatList();
                         renderBranchesPanel();
                         updateBalance();
+			updateUsage();
                         isSending = false;
                         activeStreamId = null;
                         sendBtnArrow();
@@ -2895,6 +2910,7 @@
                     chat.messages[msgIndex]._streaming = false;
                     renderMessages();
                     updateBalance();
+		    updateUsage();
                     isSending = false; sendBtnArrow(); activeStreamId = null;
                     return;
                 }
@@ -3024,6 +3040,7 @@
                 renderChatList();
                 updateBranchesFromServer();
                 updateBalance();
+		updateUsage();
                 updateUsage();
                 isSending = false;
                 activeStreamId = null;
