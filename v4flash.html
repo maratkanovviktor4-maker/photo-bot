@@ -899,6 +899,7 @@
         }
 
         function openChat(id) {
+            showLoading();
             closePreview();
             currentChatId = id;
             localStorage.setItem('photobot_active_chat', id);
@@ -922,7 +923,9 @@
             fullRender();
             scrollToBottom();
             updateBranchIndicator();
+            hideLoading();
         }
+
 
         function toggleChatMenu(e, id) {
             e.stopPropagation();
@@ -1199,6 +1202,8 @@
                 area.appendChild(loadingRow);
                 var main = document.querySelector('.main');
                 if (main) { main.scrollTop = main.scrollHeight; }
+            } else {
+                showLoading();
             }
             try {
                 var resp = await fetch(SERVER_URL + '/create_branch', {
@@ -1346,6 +1351,7 @@
                     renderMessages();
                     renderChatList();
                     renderBranchesPanel();
+                    hideLoading();
                     updateBalance();
                     isSending = false;
                     activeStreamId = null;
