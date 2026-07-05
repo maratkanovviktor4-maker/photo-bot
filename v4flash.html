@@ -1419,16 +1419,20 @@
                     sendBtnStop();
                     msg.content = newText;
                     chat.messages = chat.messages.slice(0, msgIndex + 1);
+                    
+                    // Мгновенное отображение изменённого сообщения пользователя
+                    var area = document.getElementById('chatArea');
+                    var userRow = area.querySelector('.message-row.user[data-msg-index="' + msgIndex + '"]');
+                    if (userRow) {
+                        var newUserHtml = '<div class="message-row user" data-msg-index="' + msgIndex + '"><div><div class="message-content">' + escapeHtml(newText) + '</div></div></div>';
+                        userRow.outerHTML = newUserHtml;
+                    }
+                    
                     var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                     chat.messages.push(assistantMsg);
                     var newMsgIndex = chat.messages.length - 1;
                     var streamId = 'regen_user_stream_' + newMsgIndex;
                     activeStreamId = streamId;
-                    var userRow = document.querySelector('.message-row.user[data-msg-index="' + msgIndex + '"]');
-                    if (userRow) {
-                        var userHtml = buildMessageHtml(msgIndex, msg);
-                        userRow.outerHTML = userHtml;
-                    }
                     renderMessages();
 
                     var abortController = new AbortController();
@@ -1585,6 +1589,7 @@
                 })();
             });
         }
+
 
 
         function showRegeneratePopup(msgIndex, btnElement) {
