@@ -1048,20 +1048,17 @@
             var completion = lastAssistant.completion_tokens || 0;
             var cache = lastAssistant.cache_hit_tokens || 0;
             
-            var text = 'Prompt: ' + prompt.toLocaleString() + ' • Comp: ' + completion.toLocaleString() + ' • Cache: ' + cache.toLocaleString();
             var el = document.getElementById('usageDisplay');
             if (el) {
-                // Оставляем иконку, добавляем текст
                 var icon = el.querySelector('svg');
-                if (icon) {
-                    el.innerHTML = '';
-                    el.appendChild(icon);
-                    el.appendChild(document.createTextNode(' ' + text));
-                } else {
-                    el.innerHTML = text;
-                }
+                el.innerHTML = '';
+                if (icon) el.appendChild(icon);
+                el.appendChild(document.createTextNode(' USAGE'));
+                el.appendChild(document.createTextNode(' • Prompt: ' + prompt.toLocaleString() + ' • Comp: ' + completion.toLocaleString() + ' • Cache: ' + cache.toLocaleString()));
             }
         }
+
+
 
 
         function escapeHtml(text) {
