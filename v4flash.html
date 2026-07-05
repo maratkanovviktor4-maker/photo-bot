@@ -1424,6 +1424,11 @@
                     var newMsgIndex = chat.messages.length - 1;
                     var streamId = 'regen_user_stream_' + newMsgIndex;
                     activeStreamId = streamId;
+                    var userRow = document.querySelector('.message-row.user[data-msg-index="' + msgIndex + '"]');
+                    if (userRow) {
+                        var userHtml = buildMessageHtml(msgIndex, msg);
+                        userRow.outerHTML = userHtml;
+                    }
                     renderMessages();
 
                     var abortController = new AbortController();
