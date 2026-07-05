@@ -884,34 +884,53 @@
                 }
             } catch(e) { console.error(e); }
         }
+        var currentUsageModel = 'flash';
+        
         function showUsageModal() {
+            currentUsageModel = 'flash';
             document.getElementById('usageModal').classList.add('active');
             document.getElementById('usageModalBalance').textContent = 'Загрузка...';
             document.getElementById('usageModalMonthCost').textContent = '';
-            
+            loadUsageData('flash');
+        }
+        
+        function switchUsageTab(model) {
+            currentUsageModel = model;
+            document.querySelectorAll('.usage-tab-btn').forEach(function(btn) {
+                if (btn.dataset.model === model) {
+                    btn.style.background = 'rgba(0,203,245,0.2)';
+                    btn.style.color = '#00CBF5';
+                    btn.style.fontWeight = '600';
+                } else {
+                    btn.style.background = 'rgba(34,34,34,0.8)';
+                    btn.style.color = '#aaa';
+                    btn.style.fontWeight = '400';
+                }
+            });
+            document.getElementById('usageModalBalance').textContent = 'Загрузка...';
+            document.getElementById('usageModalMonthCost').textContent = '';
+            loadUsageData(model);
+        }
+        
+        function loadUsageData(model) {
             fetch(SERVER_URL + '/get_balance?user_id=' + currentUserId + '&session_token=' + sessionToken)
                 .then(function(resp) { return resp.json(); })
                 .then(function(data) {
-                    var flashBalance = data.flash || 0;
-                    var proBalance = data.pro || 0;
+                    var balance = data[model] || 0;
                     document.getElementById('usageModalBalance').textContent = 
-                        'Баланс: Flash ' + flashBalance.toFixed(1) + ' Stars | Pro ' + proBalance.toFixed(1) + ' Stars';
+                        'Баланс ' + model.toUpperCase() + ': ' + balance.toFixed(1) + ' Stars';
                 });
             
-            fetch(SERVER_URL + '/get_usage?user_id=' + currentUserId + '&session_token=' + sessionToken + '&days=30')
+            fetch(SERVER_URL + '/get_usage?user_id=' + currentUserId + '&session_token=' + sessionToken + '&days=30&model=' + model)
                 .then(function(resp) { return resp.json(); })
                 .then(function(data) {
                     var usageData = data.usage || [];
-                    
-                    // Считаем стоимость за месяц
                     var monthCost = 0;
                     for (var i = 0; i < usageData.length; i++) {
                         monthCost += usageData[i].cost || 0;
                     }
                     document.getElementById('usageModalMonthCost').textContent = 
-                        'Потрачено за месяц: ' + monthCost.toFixed(2) + ' Stars';
-                    
-                    // Рисуем график
+                        'Потрачено за месяц: ' + monthCost.toFixed(2) + ' Stars (' + model.toUpperCase() + ')';
                     drawUsageChart(usageData);
                 })
                 .catch(function(e) {
@@ -3810,6 +3829,11 @@
             <div class="modal-title" style="margin-bottom:16px;">Статистика использования</div>
             
             <div id="usageModalBalance" style="font-size:13px;color:#e0e0e0;font-family:Inter,sans-serif;margin-bottom:12px;text-align:center;"></div>
+            <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;">
+                <button class="usage-tab-btn active" data-model="flash" onclick="switchUsageTab('flash')" style="padding:6px 16px;border-radius:16px;font-size:12px;font-family:Inter,sans-serif;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(0,203,245,0.2);color:#00CBF5;font-weight:600;transition:0.2s;">Flash</button>
+                <button class="usage-tab-btn" data-model="pro" onclick="switchUsageTab('pro')" style="padding:6px 16px;border-radius:16px;font-size:12px;font-family:Inter,sans-serif;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(34,34,34,0.8);color:#aaa;transition:0.2s;">Pro</button>
+            </div>
+
             <div id="usageModalMonthCost" style="font-size:13px;color:#888;font-family:Inter,sans-serif;margin-bottom:16px;text-align:center;"></div>
             
             <div style="width:100%;height:300px;margin-bottom:16px;">
