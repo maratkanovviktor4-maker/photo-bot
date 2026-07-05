@@ -1044,7 +1044,7 @@
             
             if (!lastAssistant) return;
             
-            var prompt = lastAssistant.prompt_tokens || 0;
+            var prompt = (lastAssistant.prompt_tokens || 0) - (lastAssistant.cache_hit_tokens || 0);
             var completion = lastAssistant.completion_tokens || 0;
             var cache = lastAssistant.cache_hit_tokens || 0;
             
@@ -1054,7 +1054,7 @@
                 el.innerHTML = '';
                 if (icon) el.appendChild(icon);
                 el.appendChild(document.createTextNode(' USAGE'));
-                el.appendChild(document.createTextNode(' • Prompt: ' + prompt.toLocaleString() + ' • Comp: ' + completion.toLocaleString() + ' • Cache: ' + cache.toLocaleString()));
+                el.appendChild(document.createTextNode(' • Input: ' + prompt.toLocaleString() + ' • Output: ' + completion.toLocaleString() + ' • Cache hit: ' + cache.toLocaleString()));
             }
         }
 
