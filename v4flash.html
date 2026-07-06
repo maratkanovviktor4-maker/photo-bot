@@ -160,7 +160,6 @@
         body.light .attach-btn:hover { background: rgba(0,0,0,0.06); }
         .attach-btn:hover { color: #14E9FC; background: rgba(255,255,255,0.1); }
         .file-name-inline { font-size: 12px; color: #00CBF5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto; margin-right: 0; }
-        .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
         body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
         .thinking-dots::after { content: ''; animation: dots 1.5s infinite; }
         @keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
@@ -269,6 +268,38 @@
         #editCustomBtn:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
         body.light #editCustomBtn:hover { background: rgba(0,0,0,0.06); }
 
+        .topbar-control {
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+            height: 32px;
+            box-sizing: border-box;
+            
+            /* тёмная тема */
+            background: rgba(34,34,34,0.8);
+            color: #aaa;
+            border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+        body.light .topbar-control {
+            background: rgba(0,0,0,0.05);
+            color: #555;
+            border: 1px solid rgba(0,0,0,0.1);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .topbar-control:hover:not(.active) {
+            border-color: #00CBF5;
+            color: #e0e0e0;
+        }
+        body.light .topbar-control:hover:not(.active) {
+            color: #111;
+        }
 
         /* ===== BG PICKER ===== */
         .bg-preview-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 16px 0; }
@@ -328,11 +359,14 @@
         <div class="top-bar">
             <span id="balanceDisplay"></span>
             <span id="branchIndicatorTop"></span>
-            <select id="personalitySelect" onchange="changePersonality()" style="padding:8px 14px;border-radius:24px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:2px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;margin-right:4px;transition:all 0.2s ease;font-weight:500;backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(0,0,0,0.2);">
+            <select id="personalitySelect" class="topbar-control" onchange="changePersonality()">
+
                 <option value="default">🤖 Ассистент</option>
             </select>
-            <button onclick="showCustomPersonalityModal()" id="editCustomBtn" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;padding:6px 8px;border-radius:8px;font-family:Inter,sans-serif;transition:background 0.15s;line-height:1;" title="Редактировать кастомную"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-            <select id="highlightSelect" onchange="changeHighlight()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
+            <button onclick="showCustomPersonalityModal()" id="editCustomBtn" class="topbar-control" style="display:none;" title="Редактировать кастомную">
+
+            <select id="highlightSelect" class="topbar-control" onchange="changeHighlight()">
+
                 <option value="atom-one-dark">🌙 atom-one-dark</option>
                 <option value="atom-one-light">☀️ atom-one-light</option>
                 <option value="monokai">🌙 monokai</option>
@@ -397,20 +431,24 @@
                 <option value="xcode">☀️ xcode</option>
                 <option value="xt256">🌙 xt256</option>
             </select>
-            <button class="theme-btn" onclick="showBgModal()" title="Фон чата" style="margin-left:4px;">🎨</button>
-            <select id="soundSendSelect" onchange="saveSoundSettings()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
+            <button class="topbar-control" onclick="showBgModal()" title="Фон чата">🎨</button>
+
+            <select id="soundSendSelect" class="topbar-control" onchange="saveSoundSettings()">
+
                 <option value="">🔇 Отпр.</option>
                 <option value="ios_26">📱 ios_26</option>
                 <option value="slide_ios_17_26_iphone">📱 slide_ios</option>
                 <option value="telegram_notification">📱 Telegram</option>
             </select>
-            <select id="soundReplySelect" onchange="saveSoundSettings()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
+            <select id="soundReplySelect" class="topbar-control" onchange="saveSoundSettings()">
+
                 <option value="">🔇 Отв.</option>
                 <option value="ios_26">📱 ios_26</option>
                 <option value="slide_ios_17_26_iphone">📱 slide_ios</option>
                 <option value="telegram_notification">📱 Telegram</option>
             </select>
-            <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
+            <button class="topbar-control" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
+
 
         </div>
         <div class="chat-wrapper">
