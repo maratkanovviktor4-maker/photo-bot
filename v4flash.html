@@ -398,6 +398,18 @@
                 <option value="xt256">🌙 xt256</option>
             </select>
             <button class="theme-btn" onclick="showBgModal()" title="Фон чата" style="margin-left:4px;">🎨</button>
+            <select id="soundSendSelect" onchange="saveSoundSettings()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
+                <option value="">🔇 Отпр.</option>
+                <option value="ios_26">📱 ios_26</option>
+                <option value="slide_ios_17_26_iphone">📱 slide_ios</option>
+                <option value="telegram_notification">📱 Telegram</option>
+            </select>
+            <select id="soundReplySelect" onchange="saveSoundSettings()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
+                <option value="">🔇 Отв.</option>
+                <option value="ios_26">📱 ios_26</option>
+                <option value="slide_ios_17_26_iphone">📱 slide_ios</option>
+                <option value="telegram_notification">📱 Telegram</option>
+            </select>
             <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
 
         </div>
@@ -723,6 +735,10 @@
                 var btn = document.getElementById('reasonerToggle');
                 if (btn) btn.classList.add('active');
             }
+            var savedSoundSend = localStorage.getItem('photobot_sound_send');
+            if (savedSoundSend) document.getElementById('soundSendSelect').value = savedSoundSend;
+            var savedSoundReply = localStorage.getItem('photobot_sound_reply');
+            if (savedSoundReply) document.getElementById('soundReplySelect').value = savedSoundReply;
             var savedSidebar = localStorage.getItem('photobot_sidebar');
             if (savedSidebar === 'collapsed') {
                 var main = document.querySelector('.main');
@@ -2552,6 +2568,20 @@
         }
 
         var voiceInputActive = false;
+        function playSound(type) {
+            var selectId = type === 'send' ? 'soundSendSelect' : 'soundReplySelect';
+            var select = document.getElementById(selectId);
+            var soundName = select.value;
+            if (!soundName) return;
+            var audio = new Audio('sounds/' + soundName + '.mp3');
+            audio.volume = 0.5;
+            audio.play().catch(function(e) {});
+        }
+
+        function saveSoundSettings() {
+            localStorage.setItem('photobot_sound_send', document.getElementById('soundSendSelect').value);
+            localStorage.setItem('photobot_sound_reply', document.getElementById('soundReplySelect').value);
+        }
         var recognition = null;
 
 
@@ -2659,6 +2689,7 @@
             // Мгновенное отображение сообщения пользователя
             let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
             chat.messages.push({ role: 'user', content: displayText });
+            playSound('send');
             var area = document.getElementById('chatArea');
             var emptyState = area.querySelector('.empty-state');
             if (emptyState) emptyState.remove();
@@ -2861,6 +2892,7 @@
                 updateFileList();
                 renderMessages();
                 buildNavContainer();
+                playSound('reply');
             } catch (e) {
                 if (e.name === 'AbortError') {
                     assistantMsg.interrupted = true;
