@@ -1210,6 +1210,7 @@
             sendBtnStop();
             chat.messages = chat.messages.slice(0, msgIndex + 1);
             renderMessages();
+            playSound('send');
             var placeholderId = null;
             var isAssistantBranch = (msg.role === 'assistant');
             if (!isAssistantBranch) {
@@ -1374,7 +1375,6 @@
                     renderBranchesPanel();
                     hideLoading();
                     updateBalance();
-		    playSound('reply');
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
@@ -1448,6 +1448,7 @@
                         temp.innerHTML = '<div class="message-row user"><div><div class="message-content">' + escapeHtml(newText) + '</div></div></div>';
                         userRow.parentNode.replaceChild(temp.firstElementChild, userRow);
                     }
+                    playSound('send');
                     
                     var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                     chat.messages.push(assistantMsg);
@@ -1589,7 +1590,6 @@
                         renderChatList();
                         renderBranchesPanel();
                         updateBalance();
-			playSound('reply');
                         isSending = false;
                         activeStreamId = null;
                         sendBtnArrow();
