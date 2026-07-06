@@ -2651,8 +2651,7 @@
                 renderChatList();
             }
             const chat = chats.find(c => c.id === currentChatId);
-            if (!chat) return;
-            await updateBranchesFromServer();            
+            if (!chat) return;            
             // Мгновенное отображение сообщения пользователя
             let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
             chat.messages.push({ role: 'user', content: displayText });
@@ -2667,6 +2666,7 @@
             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             renderChatList();
             scrollToBottom();
+            await updateBranchesFromServer();
             
             // Сразу включаем спиннер и очищаем поле ввода
             isSending = true;
