@@ -7,7 +7,6 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" id="highlightTheme">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         .hljs { background: #1a1a2e; border-radius: 10px; padding: 14px; font-size: 14px; font-family: 'Courier New', monospace; }
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
@@ -396,11 +395,6 @@
                 <option value="xt256">🌙 xt256</option>
             </select>
             <button class="theme-btn" onclick="showBgModal()" title="Фон чата" style="margin-left:4px;">🎨</button>
-            <span id="usageDisplay" onclick="showUsageModal()" style="cursor:pointer;font-size:12px;color:#00CBF5;font-family:Inter,sans-serif;white-space:nowrap;margin-left:8px;display:inline-flex;align-items:center;gap:4px;">
-                <svg width="18" height="18" viewBox="0 0 100 100" style="vertical-align:middle;margin-right:4px;fill:#00CBF5;"><path d="M19,73.9c0,2.8,2.2,5,5,5h53c1.1,0,2-0.9,2-2v-2.1c0-1.1-0.9-2-2-2H26.9c-1,0-1.9-0.9-1.9-1.9V20.9c0-1.1-0.9-2-2-2H21c-1.1,0-2,0.9-2,2V73.9z"/><path d="M34.4,57.9c-0.8,0-1.5-0.3-2.1-0.9c-1.2-1.2-1.2-3.1,0-4.2l16-15.9c1.2-1.2,3.1-1.2,4.2,0l7.7,7.7l13.5-13.7c1.2-1.2,3.1-1.2,4.2,0c1.2,1.2,1.2,3.1,0,4.2L62.4,50.8c-0.6,0.6-1.3,0.9-2.1,0.9h0c-0.8,0-1.6-0.3-2.1-0.9l-7.8-7.7L36.6,57C36,57.6,35.2,57.9,34.4,57.9z"/></svg>
-                USAGE
-            </span>
-
             <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;">☀️</button>
 
         </div>
@@ -784,7 +778,6 @@
             } else {
                 loadChatsFromServer();
                 updateBalance();
-		updateUsage();
                 loadPersonalities();
                 loadChatBg();
             }
@@ -889,177 +882,6 @@
                 }
             } catch(e) { console.error(e); }
         }
-        var currentUsageModel = 'flash';
-        
-        function showUsageModal() {
-            currentUsageModel = 'flash';
-            document.getElementById('usageModal').classList.add('active');
-            document.getElementById('usageModalBalance').textContent = 'Загрузка...';
-            document.getElementById('usageModalMonthCost').textContent = '';
-            loadUsageData('flash');
-        }
-        
-        function switchUsageTab(model) {
-            currentUsageModel = model;
-            document.querySelectorAll('.usage-tab-btn').forEach(function(btn) {
-                if (btn.dataset.model === model) {
-                    btn.style.background = 'rgba(0,203,245,0.2)';
-                    btn.style.color = '#00CBF5';
-                    btn.style.fontWeight = '600';
-                } else {
-                    btn.style.background = 'rgba(34,34,34,0.8)';
-                    btn.style.color = '#aaa';
-                    btn.style.fontWeight = '400';
-                }
-            });
-            document.getElementById('usageModalBalance').textContent = 'Загрузка...';
-            document.getElementById('usageModalMonthCost').textContent = '';
-            loadUsageData(model);
-        }
-        
-        function loadUsageData(model) {
-            fetch(SERVER_URL + '/get_balance?user_id=' + currentUserId + '&session_token=' + sessionToken)
-                .then(function(resp) { return resp.json(); })
-                .then(function(data) {
-                    var balance = data[model] || 0;
-                    document.getElementById('usageModalBalance').textContent = 
-                        'Баланс ' + model.toUpperCase() + ': ' + balance.toFixed(1) + ' Stars';
-                });
-            
-            fetch(SERVER_URL + '/get_usage?user_id=' + currentUserId + '&session_token=' + sessionToken + '&days=30&model=' + model)
-                .then(function(resp) { return resp.json(); })
-                .then(function(data) {
-                    var usageData = data.usage || [];
-                    var monthCost = 0;
-                    for (var i = 0; i < usageData.length; i++) {
-                        monthCost += usageData[i].cost || 0;
-                    }
-                    document.getElementById('usageModalMonthCost').textContent = 
-                        'Потрачено за месяц: ' + monthCost.toFixed(2) + ' Stars (' + model.toUpperCase() + ')';
-                    drawUsageChart(usageData);
-                })
-                .catch(function(e) {
-                    document.getElementById('usageModalBalance').textContent = 'Ошибка загрузки';
-                });
-        }
-        
-        function closeUsageModal() {
-            document.getElementById('usageModal').classList.remove('active');
-        }
-        
-        function drawUsageChart(usageData) {
-            var canvas = document.getElementById('usageChart');
-            if (!canvas) return;
-            var ctx = canvas.getContext('2d');
-            
-            if (window._usageChartInstance) {
-                window._usageChartInstance.destroy();
-            }
-            
-            var labels = [];
-            var promptData = [];
-            var completionData = [];
-            var cacheData = [];
-            
-            for (var i = usageData.length - 1; i >= 0; i--) {
-                var d = usageData[i];
-                var parts = d.date.split('-');
-                labels.push(parts[2] + '.' + parts[1]);
-                promptData.push((d.prompt_tokens || 0) - (d.cache_hit_tokens || 0));
-                completionData.push(d.completion_tokens || 0);
-                cacheData.push(d.cache_hit_tokens || 0);
-            }
-            
-            window._usageChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Вход (prompt)',
-                            data: promptData,
-                            backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                            borderColor: 'rgb(255, 99, 132)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Выход (completion)',
-                            data: completionData,
-                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                            borderColor: 'rgb(54, 162, 235)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Кэш (cache)',
-                            data: cacheData,
-                            backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                            borderColor: 'rgb(75, 192, 192)',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            stacked: true,
-                            ticks: { color: '#aaa', font: { size: 10 } }
-                        },
-                        y: {
-                            stacked: true,
-                            beginAtZero: true,
-                            ticks: { color: '#aaa', font: { size: 10 } }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
-                                }
-                            }
-                        },
-                        legend: {
-                            labels: { color: '#e0e0e0', font: { size: 12 } }
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateUsage() {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat || chat.messages.length === 0) return;
-            
-            var lastAssistant = null;
-            for (var i = chat.messages.length - 1; i >= 0; i--) {
-                if (chat.messages[i].role === 'assistant' && chat.messages[i]._usage) {
-                    lastAssistant = chat.messages[i]._usage;
-                    break;
-                }
-            }
-            
-            if (!lastAssistant) return;
-            
-            var prompt = (lastAssistant.prompt_tokens || 0) - (lastAssistant.cache_hit_tokens || 0);
-            var completion = lastAssistant.completion_tokens || 0;
-            var cache = lastAssistant.cache_hit_tokens || 0;
-            
-            var el = document.getElementById('usageDisplay');
-            if (el) {
-                var icon = el.querySelector('svg');
-                el.innerHTML = '';
-                if (icon) el.appendChild(icon);
-                el.appendChild(document.createTextNode(' USAGE'));
-                el.appendChild(document.createTextNode(' • Input: ' + prompt.toLocaleString() + ' • Output: ' + completion.toLocaleString() + ' • Cache hit: ' + cache.toLocaleString()));
-            }
-        }
-
-
-
 
         function escapeHtml(text) {
             return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1533,7 +1355,6 @@
                     renderBranchesPanel();
                     hideLoading();
                     updateBalance();
-		    updateUsage();
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
@@ -1550,7 +1371,6 @@
                         renderChatList();
                         renderBranchesPanel();
                         updateBalance();
-			updateUsage();
                     } else {
                         let errorMessage = data.error || 'Не удалось создать ветку';
                         if (data.error_type === 'bad_request') {
@@ -1749,7 +1569,6 @@
                         renderChatList();
                         renderBranchesPanel();
                         updateBalance();
-			updateUsage();
                         isSending = false;
                         activeStreamId = null;
                         sendBtnArrow();
@@ -1967,7 +1786,6 @@
                 renderChatList();
                 renderBranchesPanel();
                 updateBalance();
-		updateUsage();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
@@ -2719,7 +2537,6 @@
                         renderChatList();
                         renderBranchesPanel();
                         updateBalance();
-			updateUsage();
                         isSending = false;
                         activeStreamId = null;
                         sendBtnArrow();
@@ -2862,7 +2679,7 @@
                 lastMsg.interrupted = false; lastMsg.finished = true;
             }
             
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _usage: null };
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
             chat.messages.push(assistantMsg);
             const msgIndex = chat.messages.length - 1;
             const streamId = 'stream_' + msgIndex;
@@ -2911,7 +2728,6 @@
                     chat.messages[msgIndex]._streaming = false;
                     renderMessages();
                     updateBalance();
-		    updateUsage();
                     isSending = false; sendBtnArrow(); activeStreamId = null;
                     return;
                 }
@@ -2966,7 +2782,6 @@
                 var sendBtnRef = document.getElementById('sendBtn');
                 sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
                 sendBtnRef.onclick = function() { stopTyping(); };
-                var usageData = null;
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
@@ -3002,8 +2817,6 @@
                             }
                             if (parsed.assistant_msg_id) {
                                 finalMeta = parsed;
-                            } else if (parsed.usage) {
-                                usageData = parsed.usage;
                             } else {
                                 if (parsed.reasoning) {
                                     assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
@@ -3028,9 +2841,6 @@
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
-                if (usageData) {
-                    assistantMsg._usage = usageData;
-                }
                 if (finalMeta) {
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
                     chat.messages[chat.messages.length - 2].msg_id = finalMeta.user_msg_id;
@@ -3041,8 +2851,6 @@
                 renderChatList();
                 updateBranchesFromServer();
                 updateBalance();
-		updateUsage();
-                updateUsage();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
@@ -3069,7 +2877,6 @@
                 }
             }
         }
-
 
 
         async function updateBranchesFromServer() {
@@ -3171,14 +2978,8 @@
             msg.content = '';
             msg._streaming = true;
             msg._fullBuffer = '';
-            msg._reasoningBuffer = '';
-            
-            var area = document.getElementById('chatArea');
-            var row = area.querySelector('.message-row[data-msg-index="' + index + '"]');
-            if (row) {
-                var html = buildMessageHtml(index, msg);
-                row.outerHTML = html;
-            }
+            msg._reasoningBuffer = '';  // очищаем буфер размышления
+            renderMessages();
             
             try {
                 var url = SERVER_URL + '/check_full_response?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + currentBranchId + '&session_token=' + sessionToken;
@@ -3190,19 +2991,17 @@
                 
                 if (data.ready) {
                     msg._reasoningBuffer = '';
-                    msg.msg_id = data.msg_id;
+                    msg.msg_id = data.msg_id;  // берём msg_id из ответа сервера
                     msg.content = data.content || '';
                     msg.reasoning = data.reasoning || '';
                     msg.finished = true;
                     msg._streaming = false;
                     msg.interrupted = false;
-                    var row2 = area.querySelector('.message-row[data-msg-index="' + index + '"]');
-                    if (row2) {
-                        row2.outerHTML = buildMessageHtml(index, msg);
-                    }
+                    renderMessages();
                     return;
                 }
                 
+                // Ответ ещё не готов — ждём 5 секунд
                 await new Promise(function(resolve) { setTimeout(resolve, 5000); });
                 
                 var resp2 = await fetch(url);
@@ -3210,37 +3009,28 @@
                 
                 if (data2.ready) {
                     msg._reasoningBuffer = '';
-                    msg.msg_id = data2.msg_id;
+                    msg.msg_id = data2.msg_id;  // берём msg_id из ответа сервера
                     msg.content = data2.content || '';
                     msg.reasoning = data2.reasoning || '';
                     msg.finished = true;
                     msg._streaming = false;
                     msg.interrupted = false;
-                    var row3 = area.querySelector('.message-row[data-msg-index="' + index + '"]');
-                    if (row3) {
-                        row3.outerHTML = buildMessageHtml(index, msg);
-                    }
+                    renderMessages();
                 } else {
+                    // Через 5 секунд всё ещё не готов
                     msg.content = 'Ответ ещё формируется. Пожалуйста, обновите страницу через некоторое время.';
                     msg.finished = true;
                     msg._streaming = false;
-                    var row4 = area.querySelector('.message-row[data-msg-index="' + index + '"]');
-                    if (row4) {
-                        row4.outerHTML = buildMessageHtml(index, msg);
-                    }
+                    renderMessages();
                 }
             } catch (e) {
                 console.error('continueMessage error:', e);
                 msg.content = 'Ошибка при проверке ответа. Попробуйте обновить страницу.';
                 msg.finished = true;
                 msg._streaming = false;
-                var row5 = area.querySelector('.message-row[data-msg-index="' + index + '"]');
-                if (row5) {
-                    row5.outerHTML = buildMessageHtml(index, msg);
-                }
+                renderMessages();
             }
         }
-
 
 
         function _setupSingleCodeBlock(block) {
@@ -3855,28 +3645,6 @@
             <div class="modal-actions" style="gap:12px;">
                 <button class="modal-btn-secondary" onclick="closeSelfPlayModal()" style="flex:1;padding:12px;">Отмена</button>
                 <button id="selfPlayConfirmBtn" class="modal-btn-primary" onclick="confirmSelfPlay()" style="flex:1;padding:12px;" disabled>Запустить</button>
-            </div>
-        </div>
-    </div>
-    <div id="usageModal" class="modal-overlay">
-        <div class="modal-box" style="max-width:700px;max-height:80vh;overflow-y:auto;">
-            <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;">📊</div>
-            <div class="modal-title" style="margin-bottom:16px;">Статистика использования</div>
-            
-            <div id="usageModalBalance" style="font-size:13px;color:#e0e0e0;font-family:Inter,sans-serif;margin-bottom:12px;text-align:center;"></div>
-            <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;">
-                <button class="usage-tab-btn active" data-model="flash" onclick="switchUsageTab('flash')" style="padding:6px 16px;border-radius:16px;font-size:12px;font-family:Inter,sans-serif;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(0,203,245,0.2);color:#00CBF5;font-weight:600;transition:0.2s;">Flash</button>
-                <button class="usage-tab-btn" data-model="pro" onclick="switchUsageTab('pro')" style="padding:6px 16px;border-radius:16px;font-size:12px;font-family:Inter,sans-serif;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(34,34,34,0.8);color:#aaa;transition:0.2s;">Pro</button>
-            </div>
-
-            <div id="usageModalMonthCost" style="font-size:13px;color:#888;font-family:Inter,sans-serif;margin-bottom:16px;text-align:center;"></div>
-            
-            <div style="width:100%;height:300px;margin-bottom:16px;">
-                <canvas id="usageChart"></canvas>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="modal-btn-secondary" onclick="closeUsageModal()" style="flex:1;padding:12px;">Закрыть</button>
             </div>
         </div>
     </div>
