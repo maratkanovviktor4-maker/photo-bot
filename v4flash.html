@@ -2879,10 +2879,13 @@
 
         async function sendMessage() {
             if (isSending) return;
+            isSending = true;
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
             const input = document.getElementById('userInput');
             const text = input.value.trim();
-            if (!text && !pendingFile) return;
-            if (!currentUserId) { showAlertModal('Ошибка', 'Авторизуйтесь на главной странице', '❌'); return; }
+            if (!text && !pendingFile) { isSending = false; sendBtn.disabled = false; return; }
+            if (!currentUserId) { showAlertModal('Ошибка', 'Авторизуйтесь на главной странице', '❌'); isSending = false; sendBtn.disabled = false; return; }
             if (!currentChatId) {
                 currentChatId = Date.now().toString();
                 var newChatObj = { id: currentChatId, title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: {}, lastMessageTime: Date.now() };
@@ -2890,9 +2893,8 @@
                 renderChatList();
             }
             const chat = chats.find(c => c.id === currentChatId);
-            if (!chat) return;
+            if (!chat) { isSending = false; sendBtn.disabled = false; return; }
             
-            // Мгновенное отображение сообщения пользователя
             let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
             chat.messages.push({ role: 'user', content: displayText });
             playSound('send');
@@ -2908,8 +2910,6 @@
             renderChatList();
             scrollToBottom();
             
-            // Сразу включаем спиннер и очищаем поле ввода
-            isSending = true;
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
             input.value = ''; input.style.height = 'auto'; input._init = false;
@@ -2924,7 +2924,6 @@
             const msgIndex = chat.messages.length - 1;
             const streamId = 'stream_' + msgIndex;
             activeStreamId = streamId;
-            // Показываем три точки для ассистента
             var assistantRow = document.createElement('div');
             assistantRow.className = 'message-row assistant';
             assistantRow.innerHTML = '<div><div class="message-content" id="stream-' + msgIndex + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
@@ -2958,7 +2957,7 @@
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex]._streaming = false;
                     renderMessages();
-                    isSending = false; sendBtnArrow(); activeStreamId = null;
+                    isSending = false; sendBtn.disabled = false; sendBtnArrow(); activeStreamId = null;
                     return;
                 }
                 if (resp.status === 402) {
@@ -2968,7 +2967,7 @@
                     chat.messages[msgIndex]._streaming = false;
                     renderMessages();
                     updateBalance();
-                    isSending = false; sendBtnArrow(); activeStreamId = null;
+                    isSending = false; sendBtn.disabled = false; sendBtnArrow(); activeStreamId = null;
                     return;
                 }
                 if (!resp.ok) {
@@ -2988,7 +2987,7 @@
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex]._streaming = false;
                     renderMessages();
-                    isSending = false; sendBtnArrow(); activeStreamId = null;
+                    isSending = false; sendBtn.disabled = false; sendBtnArrow(); activeStreamId = null;
                     return;
                 }
 
@@ -3010,7 +3009,7 @@
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex]._streaming = false;
                     renderMessages();
-                    isSending = false; sendBtnArrow(); activeStreamId = null;
+                    isSending = false; sendBtn.disabled = false; sendBtnArrow(); activeStreamId = null;
                     return;
                 }
 
@@ -3050,9 +3049,7 @@
                                 chat.messages[msgIndex].finished = true;
                                 chat.messages[msgIndex]._streaming = false;
                                 renderMessages();
-                                isSending = false;
-                                activeStreamId = null;
-                                sendBtnArrow();
+                                isSending = false; sendBtn.disabled = false; sendBtnArrow(); activeStreamId = null;
                                 return;
                             }
                             if (parsed.assistant_msg_id) {
@@ -3091,9 +3088,7 @@
                 renderChatList();
                 updateBranchesFromServer();
                 updateBalance();
-                isSending = false;
-                activeStreamId = null;
-                sendBtnArrow();
+                isSending = false; sendBtn.disabled = false; sendBtnArrow(); activeStreamId = null;
                 pendingFile = null;
                 updateFileList();
                 renderMessages();
@@ -3104,20 +3099,17 @@
                     assistantMsg.interrupted = true;
                     assistantMsg.finished = true;
                     assistantMsg._streaming = false;
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
+                    isSending = false; sendBtn.disabled = false; sendBtnArrow(); activeStreamId = null;
                 } else {
                     console.error('sendMessage error:', e);
                     assistantMsg.content = 'Ошибка соединения.';
                     assistantMsg.finished = true;
                     assistantMsg._streaming = false;
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
+                    isSending = false; sendBtn.disabled = false; sendBtnArrow(); activeStreamId = null;
                 }
             }
         }
+
 
 
         async function updateBranchesFromServer() {
