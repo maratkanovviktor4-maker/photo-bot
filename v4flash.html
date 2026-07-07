@@ -371,6 +371,22 @@
         #editMessageModal #editMessageConfirmBtn:hover {
             transform: translateY(-2px) !important;
         }
+        /* Кастомный тёмный фон в светлой теме */
+        body.light.custom-dark-bg .message-row.assistant .message-content {
+            color: #e0e0e0 !important;
+        }
+
+        body.light.custom-dark-bg #userInput {
+            color: #e0e0e0 !important;
+        }
+
+        body.light.custom-dark-bg #editMessageInput {
+            color: #e0e0e0 !important;
+        }
+
+        body.light.custom-dark-bg .message-row.user .message-content {
+            color: #111111 !important;
+        }
 
     </style>
 
@@ -646,23 +662,14 @@
                 if (s.includes('0b0f1e') || s.includes('0d0d2b') || s.includes('0a1f0e') || s.includes('0a1628') || s.includes('2b1b3d') || s.includes('0f2b1e') || s.includes('1f1a3e') || s.includes('2b1f0a') || s.includes('1a2b3e') || s.includes('0d0d1a') || s.includes('1a1a2e')) {
                     isDark = true;
                 }
-                var textColor = isDark ? '#e0e0e0' : '#111111';
-                document.querySelectorAll('.message-row.assistant .message-content').forEach(function(el) {
-                    el.style.color = textColor;
-                });
-                document.getElementById('userInput').style.color = textColor;
-                document.getElementById('editMessageInput').style.color = textColor;
-                document.querySelectorAll('.message-row.user .message-content').forEach(function(el) {
-                    el.style.color = '#111111';
-                });
+                if (isDark) {
+                    document.body.classList.add('custom-dark-bg');
+                } else {
+                    document.body.classList.remove('custom-dark-bg');
+                }
             } else {
-                document.querySelectorAll('.message-content').forEach(function(el) {
-                    el.style.color = '';
-                });
-                document.getElementById('userInput').style.color = '';
-                document.getElementById('editMessageInput').style.color = '';
+                document.body.classList.remove('custom-dark-bg');
             }
-
         }
 
 
