@@ -267,7 +267,6 @@
         #personalitySelect { border-radius: 24px !important; }
         #editCustomBtn:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
         body.light #editCustomBtn:hover { background: rgba(0,0,0,0.06); }
-	#fileNameInline { display: none; }
 
 
         /* ===== BG PICKER ===== */
@@ -2309,11 +2308,7 @@
 
         function updateFileList() {
             const inline = document.getElementById('fileNameInline');
-            if (!pendingFile) { 
-                if (inline) inline.innerHTML = ''; 
-                updateSendBtn(); 
-                return; 
-            }
+            if (!pendingFile) { if (inline) inline.innerHTML = ''; updateSendBtn(); return; }
             var ext = pendingFile.name.split('.').pop().toLowerCase();
             var mimeOk = pendingFile.mime && (pendingFile.mime.startsWith('image/') || pendingFile.mime.startsWith('text/') || pendingFile.mime === 'application/pdf' || pendingFile.mime.includes('zip') || pendingFile.mime.includes('word') || pendingFile.mime.includes('excel') || pendingFile.mime.includes('powerpoint'));
             var fileOk = supportedExtensions.indexOf(ext) !== -1 || mimeOk;
@@ -2333,13 +2328,9 @@
                 }
                 sizeInfo += ')';
             }
-            if (inline) {
-                inline.innerHTML = '<span style="color:' + color + '">' + icon + ' ' + escapeHtml(pendingFile.name) + sizeInfo + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
-                inline.style.display = 'inline';
-            }
+            if (inline) inline.innerHTML = '<span style="color:' + color + '">' + icon + ' ' + escapeHtml(pendingFile.name) + sizeInfo + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
             updateSendBtn();
         }
-
 
         async function handleFileSelect(e) {
             const file = e.target.files[0];
@@ -2430,15 +2421,7 @@
                 fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
             }
             btn.disabled = !((hasText || hasFile) && fileOk);
-            
-            // Скрываем fileNameInline если нет файла
-            var inline = document.getElementById('fileNameInline');
-            if (!hasFile && inline) {
-                inline.innerHTML = '';
-                inline.style.display = 'none';
-            }
         }
-
         input.addEventListener('input', updateSendBtn);
         updateSendBtn();
 
