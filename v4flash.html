@@ -2892,7 +2892,6 @@
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
             
-            // Мгновенное отображение сообщения пользователя
             let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
             chat.messages.push({ role: 'user', content: displayText });
             playSound('send');
@@ -2908,10 +2907,14 @@
             renderChatList();
             scrollToBottom();
             
-            // Сразу включаем спиннер и очищаем поле ввода
             isSending = true;
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
-            sendBtnStop();
+            
+            var sendBtnRef = document.getElementById('sendBtn');
+            sendBtnRef.disabled = true;
+            sendBtnRef.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(32,31,40,0.3);border-top-color:#201F28;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
+            sendBtnRef.onclick = null;
+            
             input.value = ''; input.style.height = 'auto'; input._init = false;
             
             var lastMsg = chat.messages[chat.messages.length - 1];
@@ -2924,7 +2927,7 @@
             const msgIndex = chat.messages.length - 1;
             const streamId = 'stream_' + msgIndex;
             activeStreamId = streamId;
-            // Показываем три точки для ассистента
+            
             var assistantRow = document.createElement('div');
             assistantRow.className = 'message-row assistant';
             assistantRow.innerHTML = '<div><div class="message-content" id="stream-' + msgIndex + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
@@ -2953,27 +2956,9 @@
                     signal: abortController.signal
                 });
 
-                if (resp.status === 403) {
-                    chat.messages[msgIndex].content = 'Сессия устарела. Авторизуйтесь заново.';
-                    chat.messages[msgIndex].finished = true;
-                    chat.messages[msgIndex]._streaming = false;
-                    renderMessages();
-                    isSending = false; sendBtnArrow(); activeStreamId = null;
-                    return;
-                }
-                if (resp.status === 402) {
-                    const errData = await resp.json();
-                    chat.messages[msgIndex].content = 'Недостаточно средств.';
-                    chat.messages[msgIndex].finished = true;
-                    chat.messages[msgIndex]._streaming = false;
-                    renderMessages();
-                    updateBalance();
-                    isSending = false; sendBtnArrow(); activeStreamId = null;
-                    return;
-                }
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
-                    let errorMessage = 'Ошибка сервера.';
+                    let errorMessage = errData.error || 'Ошибка сервера.';
                     if (errData.error_type === 'bad_request') {
                         errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
                     } else if (errData.error_type === 'rate_limited') {
@@ -2988,7 +2973,9 @@
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex]._streaming = false;
                     renderMessages();
-                    isSending = false; sendBtnArrow(); activeStreamId = null;
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
                     return;
                 }
 
@@ -3010,18 +2997,19 @@
                     chat.messages[msgIndex].finished = true;
                     chat.messages[msgIndex]._streaming = false;
                     renderMessages();
-                    isSending = false; sendBtnArrow(); activeStreamId = null;
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
                     return;
                 }
 
                 const reader = resp.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
+                let streamStarted = false;
                 let finalMeta = null;
                 assistantMsg._fullBuffer = '';
-                var sendBtnRef = document.getElementById('sendBtn');
-                sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
-                sendBtnRef.onclick = function() { stopTyping(); };
+                
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
@@ -3055,6 +3043,15 @@
                                 sendBtnArrow();
                                 return;
                             }
+                            
+                            // Первый контент — активируем кнопку с квадратом
+                            if ((parsed.content || parsed.reasoning) && !streamStarted) {
+                                streamStarted = true;
+                                sendBtnRef.disabled = false;
+                                sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
+                                sendBtnRef.onclick = function() { stopTyping(); };
+                            }
+                            
                             if (parsed.assistant_msg_id) {
                                 finalMeta = parsed;
                             } else {
@@ -3118,6 +3115,7 @@
                 }
             }
         }
+
 
 
         async function updateBranchesFromServer() {
