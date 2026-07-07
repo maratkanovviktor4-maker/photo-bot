@@ -3813,7 +3813,6 @@
         (function() {
             var modalClosePairs = [
                 ['copyHistoryModal', function() { document.getElementById('copyHistoryModal').style.display = 'none'; copyHistorySourceIndex = -1; }],
-                ['editMessageModal', closeEditMessageModal],
                 ['selfPlayModal', closeSelfPlayModal],
                 ['renameModal', closeRenameModal],
                 ['customPersonalityModal', closeCustomPersonalityModal]
@@ -3841,6 +3840,7 @@
                 closeEditMessageModal();
             }
         });
+        document.getElementById('editMessageModal').addEventListener('click', function(e) { if (e.target === this) closeEditMessageModal(); });
         document.getElementById('customPersonalityInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmCustomPersonality(); }
             if (e.key === 'Escape') { closeCustomPersonalityModal(); }
@@ -3882,7 +3882,7 @@
         });
 
         (function() {
-            var ids = ['modalOverlay', 'alertModalOverlay', 'renameModal', 'customPersonalityModal', 'copyHistoryModal', 'selfPlayModal'];
+            var ids = ['modalOverlay', 'alertModalOverlay', 'renameModal', 'customPersonalityModal', 'copyHistoryModal', 'editMessageModal', 'selfPlayModal'];
             for (var i = 0; i < ids.length; i++) {
                 var m = document.getElementById(ids[i]);
                 if (m) {
