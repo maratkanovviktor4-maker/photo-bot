@@ -661,15 +661,47 @@
                     const bg = BG_PRESETS[idx];
                     box.querySelectorAll('.bg-preview-item').forEach(p => p.classList.remove('active'));
                     this.classList.add('active');
+                    
                     saveChatBg(bg.css);
+                    
+                    // Применяем/убираем фон с модалки редактирования
                     var m = document.querySelector('#editMessageModal .modal-box > div');
-                    if (m) m.style.setProperty('background', bg.css || '', 'important');
+                    if (m) {
+                        if (bg.css) {
+                            m.style.setProperty('background', bg.css, 'important');
+                        } else {
+                            m.style.removeProperty('background');
+                        }
+                    }
+                    
+                    // Применяем/убираем фон с модалки выбора фона
+                    var bgModal = document.getElementById('bgModal');
+                    if (bgModal) {
+                        var bgBox = bgModal.querySelector('.modal-box');
+                        if (bgBox) {
+                            if (bg.css) {
+                                bgBox.style.setProperty('background', bg.css, 'important');
+                            } else {
+                                bgBox.style.removeProperty('background');
+                            }
+                        }
+                    }
                 });
             });
             overlay.addEventListener('click', function(e) {
                 if (e.target === this) this.remove();
             });
+            
+            // Применяем текущий фон к модалке выбора фона при открытии
+            var bgModal = document.getElementById('bgModal');
+            if (bgModal && currentBg) {
+                var bgBox = bgModal.querySelector('.modal-box');
+                if (bgBox) {
+                    bgBox.style.setProperty('background', currentBg, 'important');
+                }
+            }
         }
+
         // ===== END BG PICKER =====
 
 
