@@ -2908,8 +2908,6 @@
             scrollToBottom();
             
             isSending = true;
-	    pendingFile = null;
-	    updateFileList();
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             
             var sendBtnRef = document.getElementById('sendBtn');
@@ -2980,8 +2978,7 @@
                     sendBtnArrow();
                     return;
                 }
-                pendingFile = null;
-                updateFileList();
+
                 const contentType = resp.headers.get('content-type') || '';
                 if (!contentType.includes('text/event-stream')) {
                     const err = await resp.json().catch(() => ({}));
