@@ -482,10 +482,9 @@
         <div class="top-bar">
             <span id="balanceDisplay"></span>
             <span id="branchIndicatorTop"></span>
-            <div id="personalityDropdown" style="position:relative;display:inline-block;margin-right:4px;">
-                <button id="personalityTrigger" onclick="togglePersonalityDropdown()" style="padding:8px 14px;border-radius:24px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:2px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;transition:all 0.2s ease;font-weight:500;backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(0,0,0,0.2);white-space:nowrap;">🤖 Ассистент</button>
-                <div id="personalityDropdownList" style="display:none;position:absolute;top:100%;left:0;min-width:180px;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:4px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.4);margin-top:4px;"></div>
-            </div>
+            <select id="personalitySelect" onchange="changePersonality()" style="padding:8px 14px;border-radius:24px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:2px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;margin-right:4px;transition:all 0.2s ease;font-weight:500;backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(0,0,0,0.2);">
+                <option value="default">🤖 Ассистент</option>
+            </select>
             <button onclick="showCustomPersonalityModal()" id="editCustomBtn" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;padding:6px 8px;border-radius:8px;font-family:Inter,sans-serif;transition:background 0.15s;line-height:1;" title="Редактировать кастомную"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
 	    <span id="personalityPrompt" style="font-size:12px;color:#888;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:4px;"></span>
             <select id="highlightSelect" onchange="changeHighlight()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
@@ -792,16 +791,22 @@
                 if (resp.ok) {
                     var data = await resp.json();
                     personalities = data.personalities;
-                    var trigger = document.getElementById('personalityTrigger');
-                    if (trigger) {
-                        var name = personalities[currentPersonality] ? personalities[currentPersonality].name : 'Ассистент';
-                        var icon = personalities[currentPersonality] && personalities[currentPersonality].icon ? personalities[currentPersonality].icon : '🤖';
-                        if (currentPersonality === 'custom') {
-                            name = 'Кастомная...';
-                            icon = '🎭';
-                        }
-                        trigger.innerHTML = icon + ' ' + name;
+                    var select = document.getElementById('personalitySelect');
+                    select.innerHTML = '';
+                    var keys = Object.keys(personalities);
+                    for (var i = 0; i < keys.length; i++) {
+                        var key = keys[i];
+                        var opt = document.createElement('option');
+                        opt.value = key;
+                        opt.textContent = personalities[key].name;
+                        if (key === currentPersonality) opt.selected = true;
+                        select.appendChild(opt);
                     }
+                    var customOpt = document.createElement('option');
+                    customOpt.value = 'custom';
+                    customOpt.textContent = '\uD83C\uDFAD Кастомная...';
+                    if (currentPersonality === 'custom') customOpt.selected = true;
+                    select.appendChild(customOpt);
                     updatePersonalityPrompt(currentPersonality);
                     document.getElementById('editCustomBtn').style.display = currentPersonality === 'custom' ? 'inline-flex' : 'none';
                     if (currentPersonality === 'custom') {
@@ -823,60 +828,6 @@
                 promptEl.title = customPrompt || 'Своя роль';
                 return;
             }
-        function togglePersonalityDropdown() {
-            var list = document.getElementById('personalityDropdownList');
-            if (list.style.display === 'block') {
-                list.style.display = 'none';
-            } else {
-                var keys = Object.keys(personalities);
-                var html = '';
-                for (var i = 0; i < keys.length; i++) {
-                    var key = keys[i];
-                    var p = personalities[key];
-                    var isActive = key === currentPersonality;
-                    html += '<div onclick="selectPersonality(\'' + key + '\')" style="padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:Inter,sans-serif;color:' + (isActive ? '#00CBF5' : '#e0e0e0') + ';background:' + (isActive ? 'rgba(0,203,245,0.15)' : 'transparent') + ';transition:background 0.15s;" onmouseenter="this.style.background=\'rgba(0,203,245,0.1)\'" onmouseleave="this.style.background=\'' + (isActive ? 'rgba(0,203,245,0.15)' : 'transparent') + '\'">' + (p.icon || '🤖') + ' ' + p.name + '</div>';
-                }
-                html += '<div onclick="selectPersonality(\'custom\')" style="padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:Inter,sans-serif;color:' + (currentPersonality === 'custom' ? '#00CBF5' : '#e0e0e0') + ';background:' + (currentPersonality === 'custom' ? 'rgba(0,203,245,0.15)' : 'transparent') + ';transition:background 0.15s;" onmouseenter="this.style.background=\'rgba(0,203,245,0.1)\'" onmouseleave="this.style.background=\'' + (currentPersonality === 'custom' ? 'rgba(0,203,245,0.15)' : 'transparent') + '\'">🎭 Кастомная...</div>';
-                list.innerHTML = html;
-                list.style.display = 'block';
-                closeOtherDropdowns('personalityDropdownList');
-            }
-        }
-
-        function selectPersonality(key) {
-            document.getElementById('personalityDropdownList').style.display = 'none';
-            if (key === 'custom') {
-                showCustomPersonalityModal();
-                return;
-            }
-            currentPersonality = key;
-            localStorage.setItem('photobot_personality', key);
-            var names = personalities[key] ? personalities[key].name : key;
-            var icon = personalities[key] && personalities[key].icon ? personalities[key].icon : '🤖';
-            document.getElementById('personalityTrigger').innerHTML = icon + ' ' + names;
-            document.getElementById('editCustomBtn').style.display = 'none';
-            updatePersonalityPrompt(key);
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (chat) chat._personality = key;
-        }
-
-        function closeOtherDropdowns(excludeId) {
-            var dropdowns = ['personalityDropdownList'];
-            for (var i = 0; i < dropdowns.length; i++) {
-                if (dropdowns[i] !== excludeId) {
-                    var el = document.getElementById(dropdowns[i]);
-                    if (el) el.style.display = 'none';
-                }
-            }
-        }
-
-        document.addEventListener('click', function(e) {
-            var dd = document.getElementById('personalityDropdown');
-            if (dd && !dd.contains(e.target)) {
-                document.getElementById('personalityDropdownList').style.display = 'none';
-            }
-        });
-
             var p = personalities[key];
             if (p && p.prompt) {
                 promptEl.textContent = p.prompt;
