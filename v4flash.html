@@ -3907,7 +3907,8 @@
                 if (t === saved) opt.selected = true;
                 select.appendChild(opt);
             });
-            label.textContent = saved;
+            updateHighlightBtnIcon(saved);
+
 
             function buildDropdown() {
                 dropdown.innerHTML = '';
@@ -3934,7 +3935,8 @@
                     if (t === saved) item.style.background = 'rgba(0,203,245,0.15)';
                     item.addEventListener('mouseenter', function() { this.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; if (t === saved) this.style.background = 'rgba(0,203,245,0.2)'; });
                     item.addEventListener('mouseleave', function() { this.style.background = ''; if (t === saved) this.style.background = 'rgba(0,203,245,0.15)'; });
-                    item.addEventListener('click', function() { select.value = t; label.textContent = t; changeHighlight(); closeDropdown(); });
+                    item.addEventListener('click', function() { select.value = t; label.textContent = t; changeHighlight(); closeDropdown(); updateHighlightBtnIcon(t); });
+
                     dropdown.appendChild(item);
                 });
 
@@ -3953,7 +3955,8 @@
                     if (t === saved) item.style.background = 'rgba(0,203,245,0.15)';
                     item.addEventListener('mouseenter', function() { this.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; if (t === saved) this.style.background = 'rgba(0,203,245,0.2)'; });
                     item.addEventListener('mouseleave', function() { this.style.background = ''; if (t === saved) this.style.background = 'rgba(0,203,245,0.15)'; });
-                    item.addEventListener('click', function() { select.value = t; label.textContent = t; changeHighlight(); closeDropdown(); });
+                    item.addEventListener('click', function() { select.value = t; label.textContent = t; changeHighlight(); closeDropdown(); updateHighlightBtnIcon(t); });
+
                     dropdown.appendChild(item);
                 });
             }
@@ -4013,6 +4016,12 @@
             window.toggleHighlightDropdown = toggleHighlightDropdown;
             window.highlightDropdownClose = closeDropdown;
         }
+        function updateHighlightBtnIcon(themeName) {
+            const btn = document.getElementById('highlightDropdownBtn');
+            const isDark = HIGHLIGHT_THEMES_DARK.includes(themeName);
+            btn.innerHTML = (isDark ? ICON_MOON : ICON_SUN) + ' <span id="highlightCurrentLabel">' + themeName + '</span>';
+        }
+
 
         document.addEventListener('DOMContentLoaded', initHighlightDropdown);
         document.addEventListener('click', function(e) {
