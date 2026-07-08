@@ -257,7 +257,7 @@
         .regenerate-popup button { display: block; width: 100%; padding: 8px 12px; border: none; background: transparent; color: #e0e0e0; font-size: 12px; cursor: pointer; text-align: left; border-radius: 6px; font-family: 'Inter', sans-serif; }
         body.light .regenerate-popup button { color: #333; }
         .regenerate-popup button:hover { background: rgba(0,203,245,0.15); }
-
+        body.light #personalitySelect { background: rgba(255,255,255,0.9); color: #111; border: 2px solid rgba(0,0,0,0.1); box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
         body.light #personalitySelect:hover,
         body.light #highlightSelect:hover,
         body.light #soundSendSelect:hover,
@@ -275,12 +275,19 @@
 
 
         #personalitySelect:focus { border-color: #00CBF5; box-shadow: 0 0 0 3px rgba(0,203,245,0.15); }
+        #personalitySelect option,
+        #highlightSelect option,
+        #soundSendSelect option,
+        #soundReplySelect option { background: #1a1a2e; color: #e0e0e0; padding: 8px 12px; font-family: 'Inter', sans-serif; }
 
-
-
+        body.light #personalitySelect option,
+	body.light #highlightSelect option,
+	body.light #soundSendSelect option,
+	body.light #soundReplySelect option { background: #ffffff; color: #111; }
 
         #personalityPrompt { max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #personalityPrompt:hover { max-width: none; white-space: normal; overflow: visible; }
+        #personalitySelect { border-radius: 24px !important; }
         #editCustomBtn:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
         body.light #editCustomBtn:hover { background: rgba(0,0,0,0.06); }
 
@@ -299,7 +306,7 @@
         body.light .bg-preview-item:hover { border-color: rgba(0,0,0,0.2); }
         /* ===== END BG PICKER ===== */
         /* ===== УНИФИКАЦИЯ ВСЕХ СЕЛЕКТОРОВ TOP-BAR ===== */
-        
+        #personalitySelect,
         #highlightSelect,
         #soundSendSelect,
         #soundReplySelect {
@@ -318,7 +325,7 @@
         }
 
         /* Светлая тема */
-
+        body.light #personalitySelect,
         body.light #highlightSelect,
         body.light #soundSendSelect,
         body.light #soundReplySelect {
@@ -501,13 +508,9 @@
         <div class="top-bar">
             <span id="balanceDisplay"></span>
             <span id="branchIndicatorTop"></span>
-            <div id="personalityCustom" style="position:relative;display:inline-block;margin-right:4px;">
-                <select id="personalitySelect" onchange="changePersonality()" style="display:none;"></select>
-                <button class="theme-btn" onclick="togglePersonalityDropdown(event)" id="personalityDropdownBtn" title="Личность" style="display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;padding:8px 14px;border-radius:24px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:2px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;font-weight:500;backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(0,0,0,0.2);">
-                <span id="personalityCurrentLabel">Ассистент</span>
-                </button>
-                <div id="personalityDropdown" style="position:absolute;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:200px;max-height:320px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
-            </div>
+            <select id="personalitySelect" onchange="changePersonality()" style="padding:8px 14px;border-radius:24px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:2px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;margin-right:4px;transition:all 0.2s ease;font-weight:500;backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(0,0,0,0.2);">
+                <option value="default">🤖 Ассистент</option>
+            </select>
             <button onclick="showCustomPersonalityModal()" id="editCustomBtn" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;padding:6px 8px;border-radius:8px;font-family:Inter,sans-serif;transition:background 0.15s;line-height:1;" title="Редактировать кастомную"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
 	    <span id="personalityPrompt" style="font-size:12px;color:#888;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:4px;"></span>
             <div id="highlightCustom" style="position:relative;display:inline-block;">
@@ -517,6 +520,7 @@
                     <span id="highlightCurrentLabel">atom-one-dark</span>
                 </button>
                 <div id="highlightDropdown" style="position:absolute;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:220px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
+
             </div>
 
             <button class="theme-btn" onclick="showBgModal()" title="Фон чата" style="margin-left:4px;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z"/></svg></button>
@@ -601,147 +605,11 @@
         const ICON_ASSISTANT = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>';
         const ICON_CREATOR = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z"/></svg>';
         const ICON_INVESTOR = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>';
-        const ICON_SECURITY = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"/></svg>';
         const ICON_DOCTOR = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>';
         const ICON_LAWYER = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>';
         const ICON_MARKETER = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941"/></svg>';
         const ICON_PSYCHOLOGIST = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"/></svg>';
         const ICON_CUSTOM = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>';
-        const PERSONALITY_ICONS = {
-            default: ICON_ASSISTANT,
-            developer: ICON_DEVELOPER,
-            marketer: ICON_MARKETER,
-            creative: ICON_CREATOR,
-            lawyer: ICON_LAWYER,
-            doctor: ICON_DOCTOR,
-            teacher: ICON_TEACHER,
-            investor: ICON_INVESTOR,
-            scientist: ICON_SCIENTIST,
-            psychologist: ICON_PSYCHOLOGIST,
-            architect: ICON_ARCHITECT,
-            security: ICON_SECURITY,
-            judge: ICON_JUDGE,
-            custom: ICON_CUSTOM
-        };
-
-        // ===== CUSTOM PERSONALITY DROPDOWN =====
-        let personalityDropdownOpen = false;
-        let personalityCloseTimer = null;
-
-        function buildPersonalityDropdown() {
-            const select = document.getElementById('personalitySelect');
-            const dropdown = document.getElementById('personalityDropdown');
-            const isLight = document.body.classList.contains('light');
-            const bg = isLight ? '#ffffff' : '#1a1a2e';
-            const textColor = isLight ? '#333' : '#e0e0e0';
-            dropdown.style.background = bg;
-            dropdown.style.border = '1px solid ' + (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)');
-            dropdown.style.boxShadow = isLight ? '0 8px 24px rgba(0,0,0,0.15)' : '0 8px 24px rgba(0,0,0,0.4)';
-            dropdown.innerHTML = '';
-
-            // Get current value
-            const currentVal = select.value || 'default';
-
-            // Get options from native select
-            const options = Array.from(select.options);
-
-            options.forEach(function(opt) {
-                const key = opt.value;
-                const label = opt.textContent.replace(/^[^\s]+\s/, ''); // remove emoji if present
-                const icon = PERSONALITY_ICONS[key] || ICON_ASSISTANT;
-                const item = document.createElement('div');
-                item.innerHTML = icon + ' ' + label;
-                item.dataset.value = key;
-                item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + textColor + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;transition:background 0.1s;display:flex;align-items:center;gap:6px;';
-                if (key === currentVal) item.style.background = 'rgba(0,203,245,0.15)';
-                item.addEventListener('mouseenter', function() {
-                    this.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
-                    if (key === currentVal) this.style.background = 'rgba(0,203,245,0.2)';
-                });
-                item.addEventListener('mouseleave', function() {
-                    this.style.background = '';
-                    if (key === currentVal) this.style.background = 'rgba(0,203,245,0.15)';
-                });
-                item.addEventListener('click', function() {
-                    select.value = key;
-                    document.getElementById('personalityCurrentLabel').textContent = label;
-                    changePersonality();
-                    closePersonalityDropdown();
-                });
-                dropdown.appendChild(item);
-            });
-        }
-
-        function openPersonalityDropdown() {
-            if (personalityCloseTimer) { clearTimeout(personalityCloseTimer); personalityCloseTimer = null; }
-            const btn = document.getElementById('personalityDropdownBtn');
-            const dropdown = document.getElementById('personalityDropdown');
-            buildPersonalityDropdown();
-            const parentRect = document.getElementById('personalityCustom').getBoundingClientRect();
-            dropdown.style.display = 'block';
-            dropdown.style.left = '0px';
-            dropdown.style.top = (btn.offsetHeight + 4) + 'px';
-            requestAnimationFrame(function() {
-                dropdown.style.opacity = '1';
-                dropdown.style.transform = 'translateY(0)';
-            });
-            personalityDropdownOpen = true;
-        }
-
-        function closePersonalityDropdown() {
-            const dropdown = document.getElementById('personalityDropdown');
-            dropdown.style.opacity = '0';
-            dropdown.style.transform = 'translateY(-8px)';
-            setTimeout(function() { dropdown.style.display = 'none'; }, 200);
-            personalityDropdownOpen = false;
-        }
-
-        function togglePersonalityDropdown(e) {
-            e.stopPropagation();
-            if (personalityDropdownOpen) { closePersonalityDropdown(); return; }
-            openPersonalityDropdown();
-        }
-
-        function scheduleClosePersonality() {
-            const btn = document.getElementById('personalityDropdownBtn');
-            const dropdown = document.getElementById('personalityDropdown');
-            if (personalityCloseTimer) clearTimeout(personalityCloseTimer);
-            personalityCloseTimer = setTimeout(function() {
-                if (!dropdown.matches(':hover') && !btn.matches(':hover')) {
-                    closePersonalityDropdown();
-                }
-            }, 150);
-        }
-
-        function cancelClosePersonality() { if (personalityCloseTimer) { clearTimeout(personalityCloseTimer); personalityCloseTimer = null; } }
-
-        // Init personality dropdown events
-        document.addEventListener('DOMContentLoaded', function() {
-            const btn = document.getElementById('personalityDropdownBtn');
-            const dropdown = document.getElementById('personalityDropdown');
-            if (btn && dropdown) {
-                btn.addEventListener('mouseleave', scheduleClosePersonality);
-                dropdown.addEventListener('mouseleave', scheduleClosePersonality);
-                btn.addEventListener('mouseenter', cancelClosePersonality);
-                dropdown.addEventListener('mouseenter', cancelClosePersonality);
-            }
-            // Close on outside click
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('#personalityCustom')) {
-                    closePersonalityDropdown();
-                }
-            });
-            // Update label on load
-            const select = document.getElementById('personalitySelect');
-            if (select) {
-                const currentOpt = select.options[select.selectedIndex];
-                if (currentOpt) {
-                    document.getElementById('personalityCurrentLabel').textContent = currentOpt.textContent.replace(/^[^\s]+\s/, '');
-                }
-            }
-        });
-
-
 
         let currentPersonality = localStorage.getItem('photobot_personality') || 'default';
         let personalities = {};
@@ -913,7 +781,6 @@
                     personalities = data.personalities;
                     var select = document.getElementById('personalitySelect');
                     select.innerHTML = '';
-                    var currentVal = select.value || 'default';
                     var keys = Object.keys(personalities);
                     for (var i = 0; i < keys.length; i++) {
                         var key = keys[i];
@@ -923,13 +790,7 @@
                         if (key === currentPersonality) opt.selected = true;
                         select.appendChild(opt);
                     }
-                    // Update custom dropdown label
-                    var currentOpt = select.options[select.selectedIndex];
-                    if (currentOpt) {
-                        document.getElementById('personalityCurrentLabel').textContent = currentOpt.textContent.replace(/^[^\s]+\s/, '');
-                    }
                     var customOpt = document.createElement('option');
-
                     customOpt.value = 'custom';
                     customOpt.textContent = '\uD83C\uDFAD Кастомная...';
                     if (currentPersonality === 'custom') customOpt.selected = true;
@@ -975,14 +836,7 @@
             document.getElementById('customPersonalityModal').classList.remove('active');
             document.getElementById('personalitySelect').value = currentPersonality;
             document.getElementById('editCustomBtn').style.display = currentPersonality === 'custom' ? 'inline-flex' : 'none';
-            // Restore label
-            var select = document.getElementById('personalitySelect');
-            var currentOpt = select.options[select.selectedIndex];
-            if (currentOpt) {
-                document.getElementById('personalityCurrentLabel').textContent = currentOpt.textContent.replace(/^[^\s]+\s/, '');
-            }
         }
-
 
         function confirmCustomPersonality() {
             var newPrompt = document.getElementById('customPersonalityInput').value.trim();
@@ -991,11 +845,8 @@
                 updatePersonalityPrompt('custom');
                 document.getElementById('customPersonalityModal').classList.remove('active');
                 document.getElementById('editCustomBtn').style.display = 'inline-flex';
-                // Update custom dropdown label
-                document.getElementById('personalityCurrentLabel').textContent = 'Кастомная...';
             }
         }
-
         function changePersonality() {
             var val = document.getElementById('personalitySelect').value;
             if (val === 'custom') {
@@ -1007,18 +858,11 @@
             document.getElementById('personalitySelect').value = val;
             document.getElementById('editCustomBtn').style.display = val === 'custom' ? 'inline-flex' : 'none';
             updatePersonalityPrompt(val);
-            // Update custom dropdown label
-            var select = document.getElementById('personalitySelect');
-            var currentOpt = select.options[select.selectedIndex];
-            if (currentOpt) {
-                document.getElementById('personalityCurrentLabel').textContent = currentOpt.textContent.replace(/^[^\s]+\s/, '');
-            }
             var currentChat = chats.find(function(c) { return c.id === currentChatId; });
             if (currentChat) {
                 currentChat._personality = val;
             }
         }
-
 
         async function saveCustomPersonality() {
             var prompt = document.getElementById('customPersonalityInput') ? document.getElementById('customPersonalityInput').value.trim() : '';
@@ -1190,13 +1034,7 @@
                 localStorage.setItem('photobot_active_chat', currentChatId);
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (chat) {
-                    var select = document.getElementById('personalitySelect');
-                    var currentOpt = select.options[select.selectedIndex];
-                    if (currentOpt) {
-                        document.getElementById('personalityCurrentLabel').textContent = currentOpt.textContent.replace(/^[^\s]+\s/, '');
-                    }
                     currentBranchId = chat.activeBranch || 'main';
-
                 }
                 await loadChatMessages(currentChatId);
             }
