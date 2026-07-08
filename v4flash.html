@@ -4433,10 +4433,17 @@
 			const resp = await fetch(SERVER_URL + '/import_shared_chat?token=' + token + '&session_token=' + sessionToken);
 			if (resp.ok) {
 				const data = await resp.json();
-				await loadChatsFromServer();
+				// Создаем чат сразу из ответа
 				if (data.chat_id) {
-					openChat(data.chat_id);
+					var newChat = { id: data.chat_id, title: 'Импортированный чат', messages: [], activeBranch: data.active_branch || 'main', allBranches: {}, lastMessageTime: Date.now() };
+					chats.unshift(newChat);
+					currentChatId = data.chat_id;
+					currentBranchId = data.active_branch || 'main';
+					await loadChatMessages(currentChatId);
+					renderChatList();
 					showAlertModal('Чат импортирован', 'Общий чат успешно загружен.', '✅');
+					// Убираем token из URL без перезагрузки
+					history.replaceState({}, '', window.location.pathname);
 				}
 			} else {
 				showAlertModal('Ошибка', 'Не удалось загрузить общий чат. Возможно, ссылка устарела.', '❌');
@@ -4447,6 +4454,7 @@
 		}
 		hideLoading();
 	}
+
 
     </script>
     <div id="selfPlayModal" class="modal-overlay">
