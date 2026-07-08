@@ -4418,49 +4418,6 @@
                 window.highlightDropdownClose();
             }
         });
-	// Обработка shared chat при загрузке
-	(function() {
-		const params = new URLSearchParams(window.location.search);
-		const token = params.get('token');
-		if (token) {
-			importSharedChat(token);
-		}
-	})();
-	
-	async function importSharedChat(token) {
-		if (localStorage.getItem('imported_token') === token) return;
-		
-		showLoading();
-		try {
-			const resp = await fetch(SERVER_URL + '/import_shared_chat?token=' + token + '&session_token=' + sessionToken);
-			if (resp.ok) {
-				const data = await resp.json();
-				if (data.chat_id) {
-					localStorage.setItem('imported_token', token);
-					localStorage.setItem('photobot_active_chat', data.chat_id);
-					
-					await loadChatsFromServer();
-					
-					// Найти импортированный чат после загрузки
-					var importedChat = chats.find(function(c) { return c.id === data.chat_id; });
-					if (importedChat) {
-						currentChatId = importedChat.id;
-						currentBranchId = importedChat.activeBranch || 'main';
-						await loadChatMessages(currentChatId);
-						renderChatList();
-						showAlertModal('Чат импортирован', 'Общий чат успешно загружен.', '✅');
-					}
-					history.replaceState({}, '', window.location.pathname);
-				}
-			} else {
-				showAlertModal('Ошибка', 'Не удалось загрузить общий чат. Возможно, ссылка устарела.', '❌');
-			}
-		} catch(e) {
-			console.error('importSharedChat error:', e);
-			showAlertModal('Ошибка', 'Проверьте подключение к интернету.', '❌');
-		}
-		hideLoading();
-	}
 
     </script>
     <div id="selfPlayModal" class="modal-overlay">
