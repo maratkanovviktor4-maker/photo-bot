@@ -524,18 +524,28 @@
             </div>
 
             <button class="theme-btn" onclick="showBgModal()" title="Фон чата" style="margin-left:4px;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z"/></svg></button>
-            <select id="soundSendSelect" onchange="saveSoundSettings()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
-                <option value="">🔇 Отпр.</option>
-                <option value="ios_26">📱 ios_26</option>
-                <option value="slide_ios_17_26_iphone">📱 slide_ios</option>
-                <option value="telegram_notification">📱 Telegram</option>
-            </select>
-            <select id="soundReplySelect" onchange="saveSoundSettings()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
-                <option value="">🔇 Отв.</option>
-                <option value="ios_26">📱 ios_26</option>
-                <option value="slide_ios_17_26_iphone">📱 slide_ios</option>
-                <option value="telegram_notification">📱 Telegram</option>
-            </select>
+            <div id="soundSendCustom" style="position:relative;display:inline-block;">
+                <select id="soundSendSelect" onchange="saveSoundSettings()" style="display:none;">
+                    <option value="">🔇 Отпр.</option>
+                    <option value="ios_26">📱 ios_26</option>
+                    <option value="slide_ios_17_26_iphone">📱 slide_ios</option>
+                    <option value="telegram_notification">📱 Telegram</option>
+                </select>
+                <button class="theme-btn" onclick="window.toggle_soundSendBtn(event)" id="soundSendBtn" title="Звук отправки" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;">🔇 Отпр.</button>
+                <div id="soundSendDropdown" style="position:absolute;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:140px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
+            </div>
+
+            <div id="soundReplyCustom" style="position:relative;display:inline-block;">
+                <select id="soundReplySelect" onchange="saveSoundSettings()" style="display:none;">
+                    <option value="">🔇 Отв.</option>
+                    <option value="ios_26">📱 ios_26</option>
+                    <option value="slide_ios_17_26_iphone">📱 slide_ios</option>
+                    <option value="telegram_notification">📱 Telegram</option>
+                </select>
+                <button class="theme-btn" onclick="window.toggle_soundReplyBtn(event)" id="soundReplyBtn" title="Звук ответа" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;">🔇 Отв.</button>
+                <div id="soundReplyDropdown" style="position:absolute;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:140px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
+            </div>
+
             <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/></svg></button>
 
         </div>
@@ -4016,6 +4026,107 @@
             window.toggleHighlightDropdown = toggleHighlightDropdown;
             window.highlightDropdownClose = closeDropdown;
         }
+        // ===== CUSTOM SOUND DROPDOWN =====
+        const SOUND_OPTIONS = [
+            { value: '', label: '🔇 Отпр.' },
+            { value: 'ios_26', label: '📱 ios_26' },
+            { value: 'slide_ios_17_26_iphone', label: '📱 slide_ios' },
+            { value: 'telegram_notification', label: '📱 Telegram' }
+        ];
+
+        function initSoundDropdown(selectId, btnId, dropdownId, labelId) {
+            const select = document.getElementById(selectId);
+            const btn = document.getElementById(btnId);
+            const dropdown = document.getElementById(dropdownId);
+            let isOpen = false;
+            let closeTimer = null;
+
+            function buildDropdown() {
+                dropdown.innerHTML = '';
+                const isLight = document.body.classList.contains('light');
+                const bg = isLight ? '#ffffff' : '#1a1a2e';
+                const textColor = isLight ? '#333' : '#e0e0e0';
+                dropdown.style.background = bg;
+                dropdown.style.border = '1px solid ' + (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)');
+                dropdown.style.boxShadow = isLight ? '0 8px 24px rgba(0,0,0,0.15)' : '0 8px 24px rgba(0,0,0,0.4)';
+
+                SOUND_OPTIONS.forEach(opt => {
+                    const item = document.createElement('div');
+                    item.innerHTML = opt.label;
+                    item.dataset.value = opt.value;
+                    item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + textColor + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;transition:background 0.1s;';
+                    if (opt.value === select.value) item.style.background = 'rgba(0,203,245,0.15)';
+                    item.addEventListener('mouseenter', function() { this.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; if (opt.value === select.value) this.style.background = 'rgba(0,203,245,0.2)'; });
+                    item.addEventListener('mouseleave', function() { this.style.background = ''; if (opt.value === select.value) this.style.background = 'rgba(0,203,245,0.15)'; });
+                    item.addEventListener('click', function() {
+                        select.value = opt.value;
+                        btn.innerHTML = opt.label;
+                        saveSoundSettings();
+                        closeDropdown();
+                    });
+                    dropdown.appendChild(item);
+                });
+            }
+
+            function openDropdown() {
+                if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+                buildDropdown();
+                const parentRect = document.getElementById(btnId.replace('Btn', 'Custom')).getBoundingClientRect();
+                dropdown.style.display = 'block';
+                dropdown.style.left = '0px';
+                dropdown.style.top = (btn.offsetHeight + 4) + 'px';
+                requestAnimationFrame(function() {
+                    dropdown.style.opacity = '1';
+                    dropdown.style.transform = 'translateY(0)';
+                });
+                isOpen = true;
+            }
+
+            function closeDropdown() {
+                dropdown.style.opacity = '0';
+                dropdown.style.transform = 'translateY(-8px)';
+                setTimeout(function() { dropdown.style.display = 'none'; }, 200);
+                isOpen = false;
+            }
+
+            function toggle(e) {
+                e.stopPropagation();
+                if (isOpen) { closeDropdown(); return; }
+                openDropdown();
+            }
+
+            function scheduleClose() {
+                if (closeTimer) clearTimeout(closeTimer);
+                closeTimer = setTimeout(function() {
+                    if (!dropdown.matches(':hover') && !btn.matches(':hover')) {
+                        closeDropdown();
+                    }
+                }, 150);
+            }
+            function cancelClose() { if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; } }
+
+            btn.addEventListener('mouseleave', scheduleClose);
+            dropdown.addEventListener('mouseleave', scheduleClose);
+            btn.addEventListener('mouseenter', cancelClose);
+            dropdown.addEventListener('mouseenter', cancelClose);
+
+            window['toggle_' + btnId] = toggle;
+            window['close_' + dropdownId] = closeDropdown;
+
+            // Set initial label
+            const savedVal = select.value;
+            const found = SOUND_OPTIONS.find(o => o.value === savedVal);
+            if (found) btn.innerHTML = found.label;
+        }
+
+        document.addEventListener('click', function(e) {
+            ['soundSendDropdown', 'soundReplyDropdown'].forEach(function(id) {
+                if (window['close_' + id] && !e.target.closest('#soundSendCustom') && !e.target.closest('#soundReplyCustom')) {
+                    window['close_' + id]();
+                }
+            });
+        });
+
         function updateHighlightBtnIcon(themeName) {
             const btn = document.getElementById('highlightDropdownBtn');
             const isDark = HIGHLIGHT_THEMES_DARK.includes(themeName);
@@ -4023,7 +4134,12 @@
         }
 
 
-        document.addEventListener('DOMContentLoaded', initHighlightDropdown);
+        document.addEventListener('DOMContentLoaded', function() {
+            initHighlightDropdown();
+            initSoundDropdown('soundSendSelect', 'soundSendBtn', 'soundSendDropdown', 'soundSendLabel');
+            initSoundDropdown('soundReplySelect', 'soundReplyBtn', 'soundReplyDropdown', 'soundReplyLabel');
+        });
+
         document.addEventListener('click', function(e) {
             if (window.highlightDropdownClose && !e.target.closest('#highlightCustom')) {
                 window.highlightDropdownClose();
