@@ -593,6 +593,9 @@
     <script>
         var autoScroll = true;
         const SERVER_URL = CONFIG.SERVER_URL;
+        const ICON_MOON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+        const ICON_SUN = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+
         let currentPersonality = localStorage.getItem('photobot_personality') || 'default';
         let personalities = {};
         let chats = [];
@@ -3923,7 +3926,8 @@
 
                 HIGHLIGHT_THEMES_DARK.forEach(t => {
                     const item = document.createElement('div');
-                    item.textContent = t;
+                    item.innerHTML = ICON_MOON + ' ' + t;
+
                     item.dataset.value = t;
                     item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + textColor + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;transition:background 0.1s;';
                     if (t === saved) item.style.background = 'rgba(0,203,245,0.15)';
@@ -3941,7 +3945,8 @@
 
                 HIGHLIGHT_THEMES_LIGHT.forEach(t => {
                     const item = document.createElement('div');
-                    item.textContent = t;
+                    item.innerHTML = ICON_SUN + ' ' + t;
+
                     item.dataset.value = t;
                     item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + textColor + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;transition:background 0.1s;';
                     if (t === saved) item.style.background = 'rgba(0,203,245,0.15)';
