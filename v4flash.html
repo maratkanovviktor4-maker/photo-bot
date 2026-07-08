@@ -4055,7 +4055,9 @@
 
                 // Set initial button text
                 const initialOpt = SOUND_OPTIONS.find(function(o) { return o.value === saved; });
-                btn.innerHTML = (saved === '' ? ICON_MUTE : ICON_SOUND) + ' ' + (initialOpt ? initialOpt.label : 'Без звука');
+                const prefix = type === 'send' ? 'отправки' : 'ответа';
+                btn.innerHTML = (saved === '' ? ICON_MUTE : ICON_SOUND) + ' ' + (initialOpt ? initialOpt.label : 'Без звука') + ' ' + prefix;
+
 
                 function buildSoundDropdown() {
                     dropdown.innerHTML = '';
@@ -4085,10 +4087,12 @@
                         item.addEventListener('click', function() {
                             selectedSound = opt.value;
                             select.value = opt.value;
-                            btn.innerHTML = icon + ' ' + opt.label;
+                            const prefix = type === 'send' ? 'отправки' : 'ответа';
+                            btn.innerHTML = icon + ' ' + opt.label + ' ' + prefix;
                             saveSoundSettings();
                             closeSoundDropdown(type);
                         });
+
                         dropdown.appendChild(item);
                     });
                 }
