@@ -3607,10 +3607,13 @@
                 if (!firstChild) firstChild = target.querySelector('.message-content');
                 if (!firstChild) firstChild = target;
                 
-                var topOffset = 20; // небольшой отступ сверху
                 var rect = firstChild.getBoundingClientRect();
-                var scrollTo = rect.top + main.scrollTop - topOffset;
-                main.scrollTop = scrollTo;
+                var mainRect = main.getBoundingClientRect();
+                // Отступ от верха main до середины main
+                var offsetToCenter = (mainRect.height / 2);
+                // Прокручиваем так, чтобы верхняя граница firstChild оказалась посередине main
+                var scrollTo = rect.top + main.scrollTop - offsetToCenter;
+                main.scrollTop = Math.max(0, scrollTo);
                 main.style.scrollBehavior = 'smooth';
             }
             var strips = document.querySelectorAll('.nav-strip');
@@ -3618,6 +3621,7 @@
             var activeStrip = document.querySelector('.nav-strip[data-msg-index="' + index + '"]');
             if (activeStrip) activeStrip.classList.add('active');
         }
+
 
         function openHtmlPreview(code) {
             var panel = document.getElementById('previewPanel');
