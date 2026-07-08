@@ -3935,7 +3935,8 @@
                     if (t === saved) item.style.background = 'rgba(0,203,245,0.15)';
                     item.addEventListener('mouseenter', function() { this.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; if (t === saved) this.style.background = 'rgba(0,203,245,0.2)'; });
                     item.addEventListener('mouseleave', function() { this.style.background = ''; if (t === saved) this.style.background = 'rgba(0,203,245,0.15)'; });
-                    item.addEventListener('click', function() { select.value = t; label.textContent = t; changeHighlight(); closeDropdown(); updateHighlightBtnIcon(t); });
+                    item.addEventListener('click', function() { select.value = t; label.textContent = t; changeHighlight(); closeDropdown(); updateHighlightBtnIcon(t); highlightDropdownMarkSelected(t); });
+
 
                     dropdown.appendChild(item);
                 });
@@ -3955,7 +3956,8 @@
                     if (t === saved) item.style.background = 'rgba(0,203,245,0.15)';
                     item.addEventListener('mouseenter', function() { this.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; if (t === saved) this.style.background = 'rgba(0,203,245,0.2)'; });
                     item.addEventListener('mouseleave', function() { this.style.background = ''; if (t === saved) this.style.background = 'rgba(0,203,245,0.15)'; });
-                    item.addEventListener('click', function() { select.value = t; label.textContent = t; changeHighlight(); closeDropdown(); updateHighlightBtnIcon(t); });
+                    item.addEventListener('click', function() { select.value = t; label.textContent = t; changeHighlight(); closeDropdown(); updateHighlightBtnIcon(t); highlightDropdownMarkSelected(t); });
+
 
                     dropdown.appendChild(item);
                 });
@@ -4021,6 +4023,16 @@
             const isDark = HIGHLIGHT_THEMES_DARK.includes(themeName);
             btn.innerHTML = (isDark ? ICON_MOON : ICON_SUN) + ' <span id="highlightCurrentLabel">' + themeName + '</span>';
         }
+        function highlightDropdownMarkSelected(themeName) {
+            const items = document.querySelectorAll('#highlightDropdown > div');
+            items.forEach(el => {
+                el.style.background = '';
+                if (el.dataset.value === themeName) {
+                    el.style.background = 'rgba(0,203,245,0.15)';
+                }
+            });
+        }
+
 
 
         document.addEventListener('DOMContentLoaded', initHighlightDropdown);
