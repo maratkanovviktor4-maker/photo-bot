@@ -4428,7 +4428,6 @@
 	})();
 	
 	async function importSharedChat(token) {
-		// Если уже импортировали этот токен — не делаем ничего
 		if (localStorage.getItem('imported_token') === token) return;
 		
 		showLoading();
@@ -4440,13 +4439,17 @@
 					localStorage.setItem('imported_token', token);
 					localStorage.setItem('photobot_active_chat', data.chat_id);
 					
-					var newChat = { id: data.chat_id, title: 'Импортированный чат', messages: [], activeBranch: data.active_branch || 'main', allBranches: {}, lastMessageTime: Date.now() };
-					chats.unshift(newChat);
-					currentChatId = data.chat_id;
-					currentBranchId = data.active_branch || 'main';
-					await loadChatMessages(currentChatId);
-					renderChatList();
-					showAlertModal('Чат импортирован', 'Общий чат успешно загружен.', '✅');
+					await loadChatsFromServer();
+					
+					// Найти импортированный чат после загрузки
+					var importedChat = chats.find(function(c) { return c.id === data.chat_id; });
+					if (importedChat) {
+						currentChatId = importedChat.id;
+						currentBranchId = importedChat.activeBranch || 'main';
+						await loadChatMessages(currentChatId);
+						renderChatList();
+						showAlertModal('Чат импортирован', 'Общий чат успешно загружен.', '✅');
+					}
 					history.replaceState({}, '', window.location.pathname);
 				}
 			} else {
@@ -4458,10 +4461,6 @@
 		}
 		hideLoading();
 	}
-
-
-
-
 
     </script>
     <div id="selfPlayModal" class="modal-overlay">
