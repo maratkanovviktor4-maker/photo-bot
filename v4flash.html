@@ -3599,15 +3599,26 @@
         function scrollToMsg(index) {
             var main = document.querySelector('.main');
             if (!main) return;
-            main.style.scrollBehavior = 'auto';
             var target = main.querySelector('.message-row[data-msg-index="' + index + '"]');
-            if (target) target.scrollIntoView({ behavior: 'auto', block: 'start' });
-            main.style.scrollBehavior = 'smooth';
+            if (target) {
+                main.style.scrollBehavior = 'auto';
+                // Ищем первый дочерний элемент, который содержит видимый контент
+                var firstChild = target.querySelector('.message-content > :first-child');
+                if (!firstChild) firstChild = target.querySelector('.message-content');
+                if (!firstChild) firstChild = target;
+                
+                var topOffset = 20; // небольшой отступ сверху
+                var rect = firstChild.getBoundingClientRect();
+                var scrollTo = rect.top + main.scrollTop - topOffset;
+                main.scrollTop = scrollTo;
+                main.style.scrollBehavior = 'smooth';
+            }
             var strips = document.querySelectorAll('.nav-strip');
             for (var i = 0; i < strips.length; i++) { strips[i].classList.remove('active'); }
             var activeStrip = document.querySelector('.nav-strip[data-msg-index="' + index + '"]');
             if (activeStrip) activeStrip.classList.add('active');
         }
+
 
 
 
