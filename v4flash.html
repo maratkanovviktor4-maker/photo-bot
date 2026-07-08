@@ -786,6 +786,19 @@
                     select.appendChild(customOpt);
                     updatePersonalityPrompt(currentPersonality);
                     document.getElementById('editCustomBtn').style.display = currentPersonality === 'custom' ? 'inline-flex' : 'none';
+                    // Update custom dropdown button text
+                    const personalityBtn = document.getElementById('personalityBtn');
+                    if (personalityBtn) {
+                        const p = personalities[currentPersonality];
+                        if (currentPersonality === 'custom') {
+                            personalityBtn.textContent = '🎭 Кастомная';
+                        } else if (p) {
+                            personalityBtn.textContent = p.name;
+                        } else {
+                            personalityBtn.textContent = '🤖 Ассистент';
+                        }
+                    }
+
                     if (currentPersonality === 'custom') {
                         var customResp = await fetch(SERVER_URL + '/get_custom_personality?user_id=' + currentUserId + '&session_token=' + sessionToken);
                         if (customResp.ok) {
@@ -851,6 +864,17 @@
             if (currentChat) {
                 currentChat._personality = val;
             }
+            // Update custom dropdown button text
+            const personalityBtn = document.getElementById('personalityBtn');
+            if (personalityBtn) {
+                const p = personalities[val];
+                if (val === 'custom') {
+                    personalityBtn.textContent = '🎭 Кастомная';
+                } else if (p) {
+                    personalityBtn.textContent = p.name;
+                }
+            }
+
         }
 
         async function saveCustomPersonality() {
@@ -1110,7 +1134,17 @@
                 var select = document.getElementById('personalitySelect');
                 if (select) select.value = pers;
                 updatePersonalityPrompt(pers);
+                const personalityBtn = document.getElementById('personalityBtn');
+                if (personalityBtn) {
+                    const p = personalities[pers];
+                    if (pers === 'custom') {
+                        personalityBtn.textContent = '🎭 Кастомная';
+                    } else if (p) {
+                        personalityBtn.textContent = p.name;
+                    }
+                }
                 currentBranchId = chat.activeBranch || 'main';
+
             }
             loadChatMessages(currentChatId).then(function() {
                 _floatingHeaders = [];
