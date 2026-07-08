@@ -513,71 +513,15 @@
             </select>
             <button onclick="showCustomPersonalityModal()" id="editCustomBtn" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;padding:6px 8px;border-radius:8px;font-family:Inter,sans-serif;transition:background 0.15s;line-height:1;" title="Редактировать кастомную"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
 	    <span id="personalityPrompt" style="font-size:12px;color:#888;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:4px;"></span>
-            <select id="highlightSelect" onchange="changeHighlight()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
-                <option value="atom-one-dark">🌙 atom-one-dark</option>
-                <option value="atom-one-light">☀️ atom-one-light</option>
-                <option value="monokai">🌙 monokai</option>
-                <option value="monokai-sublime">🌙 monokai-sublime</option>
-                <option value="github">☀️ github</option>
-                <option value="github-dark">🌙 github-dark</option>
-                <option value="darcula">🌙 darcula</option>
-                <option value="stackoverflow-dark">🌙 stackoverflow-dark</option>
-                <option value="stackoverflow-light">☀️ stackoverflow-light</option>
-                <option value="tokyo-night-dark">🌙 tokyo-night-dark</option>
-                <option value="tokyo-night-light">☀️ tokyo-night-light</option>
-                <option value="vs">☀️ vs</option>
-                <option value="vs2015">🌙 vs2015</option>
-                <option value="night-owl">🌙 night-owl</option>
-                <option value="googlecode">☀️ googlecode</option>
-                <option value="a11y-dark">🌙 a11y-dark</option>
-                <option value="a11y-light">☀️ a11y-light</option>
-                <option value="agate">🌙 agate</option>
-                <option value="androidstudio">🌙 androidstudio</option>
-                <option value="arduino-light">☀️ arduino-light</option>
-                <option value="arta">🌙 arta</option>
-                <option value="codepen-embed">🌙 codepen-embed</option>
-                <option value="color-brewer">☀️ color-brewer</option>
-                <option value="dark">🌙 dark</option>
-                <option value="default">☀️ default</option>
-                <option value="devibeans">🌙 devibeans</option>
-                <option value="docco">☀️ docco</option>
-                <option value="far">🌙 far</option>
-                <option value="felipec">☀️ felipec</option>
-                <option value="foundation">☀️ foundation</option>
-                <option value="gml">🌙 gml</option>
-                <option value="gradient-dark">🌙 gradient-dark</option>
-                <option value="gradient-light">☀️ gradient-light</option>
-                <option value="grayscale">☀️ grayscale</option>
-                <option value="hybrid">🌙 hybrid</option>
-                <option value="idea">☀️ idea</option>
-                <option value="intellij-light">☀️ intellij-light</option>
-                <option value="ir-black">🌙 ir-black</option>
-                <option value="isbl-editor-dark">🌙 isbl-editor-dark</option>
-                <option value="isbl-editor-light">☀️ isbl-editor-light</option>
-                <option value="kimbie-dark">🌙 kimbie-dark</option>
-                <option value="kimbie-light">☀️ kimbie-light</option>
-                <option value="lightfair">☀️ lightfair</option>
-                <option value="lioshi">🌙 lioshi</option>
-                <option value="magula">☀️ magula</option>
-                <option value="nord">🌙 nord</option>
-                <option value="obsidian">🌙 obsidian</option>
-                <option value="ocean">🌙 ocean</option>
-                <option value="paraiso-dark">🌙 paraiso-dark</option>
-                <option value="paraiso-light">☀️ paraiso-light</option>
-                <option value="purebasic">☀️ purebasic</option>
-                <option value="qtcreator-dark">🌙 qtcreator-dark</option>
-                <option value="qtcreator-light">☀️ qtcreator-light</option>
-                <option value="rainbow">🌙 rainbow</option>
-                <option value="routeros">☀️ routeros</option>
-                <option value="school-book">☀️ school-book</option>
-                <option value="shades-of-purple">🌙 shades-of-purple</option>
-                <option value="srcery">🌙 srcery</option>
-                <option value="sunburst">🌙 sunburst</option>
-                <option value="tomorrow-night-blue">🌙 tomorrow-night-blue</option>
-                <option value="tomorrow-night-bright">🌙 tomorrow-night-bright</option>
-                <option value="xcode">☀️ xcode</option>
-                <option value="xt256">🌙 xt256</option>
-            </select>
+            <div id="highlightCustom" style="position:relative;display:inline-block;">
+                <select id="highlightSelect" onchange="changeHighlight()" style="display:none;"></select>
+                <button class="theme-btn" onclick="toggleHighlightDropdown(event)" id="highlightDropdownBtn" title="Тема подсветки" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <span id="highlightCurrentLabel">atom-one-dark</span>
+                </button>
+                <div id="highlightDropdown" style="position:fixed;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:180px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
+            </div>
+
             <button class="theme-btn" onclick="showBgModal()" title="Фон чата" style="margin-left:4px;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z"/></svg></button>
             <select id="soundSendSelect" onchange="saveSoundSettings()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
                 <option value="">🔇 Отпр.</option>
@@ -3919,6 +3863,157 @@
                 d.classList.remove('show');
             }
         });
+
+        // ===== CUSTOM HIGHLIGHT DROPDOWN =====
+        const HIGHLIGHT_THEMES_DARK = [
+            'atom-one-dark', 'monokai', 'monokai-sublime', 'github-dark', 'darcula',
+            'stackoverflow-dark', 'tokyo-night-dark', 'vs2015', 'night-owl',
+            'a11y-dark', 'agate', 'androidstudio', 'arta', 'codepen-embed',
+            'dark', 'devibeans', 'far', 'gml', 'gradient-dark', 'hybrid',
+            'ir-black', 'isbl-editor-dark', 'kimbie-dark', 'lioshi', 'nord',
+            'obsidian', 'ocean', 'paraiso-dark', 'qtcreator-dark', 'rainbow',
+            'shades-of-purple', 'srcery', 'sunburst', 'tomorrow-night-blue',
+            'tomorrow-night-bright', 'xt256'
+        ];
+        const HIGHLIGHT_THEMES_LIGHT = [
+            'atom-one-light', 'github', 'stackoverflow-light', 'tokyo-night-light',
+            'vs', 'googlecode', 'a11y-light', 'arduino-light', 'color-brewer',
+            'default', 'docco', 'felipec', 'foundation', 'gradient-light',
+            'grayscale', 'idea', 'intellij-light', 'isbl-editor-light',
+            'kimbie-light', 'lightfair', 'magula', 'paraiso-light', 'purebasic',
+            'qtcreator-light', 'routeros', 'school-book', 'xcode'
+        ];
+
+        function initHighlightDropdown() {
+            const select = document.getElementById('highlightSelect');
+            const btn = document.getElementById('highlightDropdownBtn');
+            const dropdown = document.getElementById('highlightDropdown');
+            const label = document.getElementById('highlightCurrentLabel');
+            const saved = localStorage.getItem('photobot_highlight_theme') || 'atom-one-dark';
+            let isOpen = false;
+            let closeTimer = null;
+
+            // Populate native select
+            select.innerHTML = '';
+            const allThemes = [...HIGHLIGHT_THEMES_DARK, ...HIGHLIGHT_THEMES_LIGHT];
+            allThemes.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t;
+                opt.textContent = t;
+                if (t === saved) opt.selected = true;
+                select.appendChild(opt);
+            });
+            label.textContent = saved;
+
+            function buildDropdown() {
+                dropdown.innerHTML = '';
+                const isLight = document.body.classList.contains('light');
+                const bg = isLight ? '#ffffff' : '#1a1a2e';
+                const textColor = isLight ? '#333' : '#e0e0e0';
+                const hoverBg = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
+                dropdown.style.background = bg;
+                dropdown.style.border = '1px solid ' + (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)');
+                dropdown.style.boxShadow = isLight ? '0 8px 24px rgba(0,0,0,0.15)' : '0 8px 24px rgba(0,0,0,0.4)';
+
+                // Dark group header
+                let darkHeader = document.createElement('div');
+                darkHeader.style.cssText = 'padding:6px 10px;font-size:11px;color:#888;font-family:Inter,sans-serif;font-weight:600;display:flex;align-items:center;gap:6px;user-select:none;';
+                darkHeader.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Тёмные';
+                dropdown.appendChild(darkHeader);
+
+                HIGHLIGHT_THEMES_DARK.forEach(t => {
+                    const item = document.createElement('div');
+                    item.textContent = t;
+                    item.dataset.value = t;
+                    item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + textColor + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;transition:background 0.1s;';
+                    if (t === saved) item.style.background = 'rgba(0,203,245,0.15)';
+                    item.addEventListener('mouseenter', function() { this.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; if (t === saved) this.style.background = 'rgba(0,203,245,0.2)'; });
+                    item.addEventListener('mouseleave', function() { this.style.background = ''; if (t === saved) this.style.background = 'rgba(0,203,245,0.15)'; });
+                    item.addEventListener('click', function() { select.value = t; label.textContent = t; changeHighlight(); closeDropdown(); });
+                    dropdown.appendChild(item);
+                });
+
+                // Light group header
+                let lightHeader = document.createElement('div');
+                lightHeader.style.cssText = 'padding:6px 10px;font-size:11px;color:#888;font-family:Inter,sans-serif;font-weight:600;display:flex;align-items:center;gap:6px;user-select:none;margin-top:4px;border-top:1px solid ' + (isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)') + ';padding-top:8px;';
+                lightHeader.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> Светлые';
+                dropdown.appendChild(lightHeader);
+
+                HIGHLIGHT_THEMES_LIGHT.forEach(t => {
+                    const item = document.createElement('div');
+                    item.textContent = t;
+                    item.dataset.value = t;
+                    item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + textColor + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;transition:background 0.1s;';
+                    if (t === saved) item.style.background = 'rgba(0,203,245,0.15)';
+                    item.addEventListener('mouseenter', function() { this.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; if (t === saved) this.style.background = 'rgba(0,203,245,0.2)'; });
+                    item.addEventListener('mouseleave', function() { this.style.background = ''; if (t === saved) this.style.background = 'rgba(0,203,245,0.15)'; });
+                    item.addEventListener('click', function() { select.value = t; label.textContent = t; changeHighlight(); closeDropdown(); });
+                    dropdown.appendChild(item);
+                });
+            }
+
+            function openDropdown() {
+                if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+                buildDropdown();
+                const rect = btn.getBoundingClientRect();
+                dropdown.style.display = 'block';
+                dropdown.style.left = rect.left + 'px';
+                dropdown.style.top = (rect.bottom + 4) + 'px';
+                requestAnimationFrame(function() {
+                    dropdown.style.opacity = '1';
+                    dropdown.style.transform = 'translateY(0)';
+                });
+                isOpen = true;
+            }
+
+            function closeDropdown() {
+                dropdown.style.opacity = '0';
+                dropdown.style.transform = 'translateY(-8px)';
+                setTimeout(function() { dropdown.style.display = 'none'; }, 200);
+                isOpen = false;
+            }
+
+            function toggleHighlightDropdown(e) {
+                e.stopPropagation();
+                if (isOpen) { closeDropdown(); return; }
+                openDropdown();
+            }
+
+            // Hover close logic
+            function scheduleClose() {
+                if (closeTimer) clearTimeout(closeTimer);
+                closeTimer = setTimeout(function() {
+                    if (!dropdown.matches(':hover') && !btn.matches(':hover')) {
+                        closeDropdown();
+                    }
+                }, 150);
+            }
+            function cancelClose() { if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; } }
+
+            btn.addEventListener('mouseleave', scheduleClose);
+            dropdown.addEventListener('mouseleave', scheduleClose);
+            btn.addEventListener('mouseenter', cancelClose);
+            dropdown.addEventListener('mouseenter', cancelClose);
+
+            // Rebuild on theme toggle
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    setTimeout(buildDropdown, 100);
+                });
+            }
+
+            window.toggleHighlightDropdown = toggleHighlightDropdown;
+            window.highlightDropdownClose = closeDropdown;
+        }
+
+        document.addEventListener('DOMContentLoaded', initHighlightDropdown);
+        document.addEventListener('click', function(e) {
+            if (window.highlightDropdownClose && !e.target.closest('#highlightCustom')) {
+                window.highlightDropdownClose();
+            }
+        });
+
     </script>
     <div id="selfPlayModal" class="modal-overlay">
         <div class="modal-box" style="max-width:600px;">
