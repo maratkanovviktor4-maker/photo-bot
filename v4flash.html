@@ -510,8 +510,7 @@
             <span id="branchIndicatorTop"></span>
             <div id="personalityCustom" style="position:relative;display:inline-block;">
                 <select id="personalitySelect" onchange="changePersonality()" style="display:none;"></select>
-                <span id="personalityBtnContent"></span>
-
+                <button class="theme-btn" onclick="togglePersonalityDropdown(event)" id="personalityBtn" title="Личность" style="display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;padding:8px 14px;border-radius:24px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:2px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;font-weight:500;backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(0,0,0,0.2);">🤖 Ассистент</button>
                 <div id="personalityDropdown" style="position:absolute;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:200px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
             </div>
             <button onclick="showCustomPersonalityModal()" id="editCustomBtn" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;padding:6px 8px;border-radius:8px;font-family:Inter,sans-serif;transition:background 0.15s;line-height:1;" title="Редактировать кастомную"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
@@ -600,6 +599,7 @@
         const ICON_SUN = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
         const ICON_MUTE = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z"/></svg>';
         const ICON_SOUND = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z"/></svg>';
+        const ICON_CUSTOM = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>';
         const ICON_BOT = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>';
         const ICON_CODE = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"/></svg>';
         const ICON_CHART = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941"/></svg>';
@@ -609,29 +609,26 @@
         const ICON_BOOK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5"/></svg>';
         const ICON_COIN = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>';
         const ICON_FLASK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>';
-        const ICON_BRAIN = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" /></svg>';
+        const ICON_BRAIN = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"/></svg>';
         const ICON_DIAGRAM = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 12a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm0 0c0 1.657 1.007 3 2.25 3S21 13.657 21 12a9 9 0 1 0-2.636 6.364M16.5 12V8.25"/></svg>';
         const ICON_SHIELD = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"/></svg>';
         const ICON_GAVEL = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z"/></svg>';
-        const ICON_CUSTOM = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>';
-        const PERSONALITY_ICON_MAP = {
-            'bot': ICON_BOT,
-            'code': ICON_CODE,
-            'chart': ICON_CHART,
-            'spark': ICON_SPARK,
-            'scale': ICON_SCALE,
-            'heart': ICON_HEART,
-            'book': ICON_BOOK,
-            'coin': ICON_COIN,
-            'flask': ICON_FLASK,
-            'brain': ICON_BRAIN,
-            'diagram': ICON_DIAGRAM,
-            'shield': ICON_SHIELD,
-            'gavel': ICON_GAVEL
+        const ICON_MAP = {
+            bot: ICON_BOT,
+            code: ICON_CODE,
+            chart: ICON_CHART,
+            spark: ICON_SPARK,
+            scale: ICON_SCALE,
+            heart: ICON_HEART,
+            book: ICON_BOOK,
+            coin: ICON_COIN,
+            flask: ICON_FLASK,
+            brain: ICON_BRAIN,
+            diagram: ICON_DIAGRAM,
+            shield: ICON_SHIELD,
+            gavel: ICON_GAVEL,
+            custom: ICON_CUSTOM
         };
-        function getPersonalityIcon(iconName) {
-            return PERSONALITY_ICON_MAP[iconName] || ICON_BOT;
-        }
 
         let currentPersonality = localStorage.getItem('photobot_personality') || 'default';
         let personalities = {};
@@ -824,9 +821,11 @@
                     if (personalityBtn) {
                         const p = personalities[currentPersonality];
                         if (currentPersonality === 'custom') {
-                            personalityBtn.textContent = '🎭 Кастомная';
+                            personalityBtn.innerHTML = ICON_MAP.custom + ' Кастомная';
+
                         } else if (p) {
-                            personalityBtn.textContent = p.name;
+                            personalityBtn.innerHTML = ICON_MAP[p.icon] + ' ' + p.name;
+
                         } else {
                             personalityBtn.textContent = '🤖 Ассистент';
                         }
@@ -902,9 +901,11 @@
             if (personalityBtn) {
                 const p = personalities[val];
                 if (val === 'custom') {
-                    personalityBtn.textContent = '🎭 Кастомная';
+                    personalityBtn.innerHTML = ICON_MAP.custom + ' Кастомная';
+
                 } else if (p) {
-                    personalityBtn.textContent = p.name;
+                    personalityBtn.innerHTML = ICON_MAP[p.icon] + ' ' + p.name;
+
                 }
             }
 
@@ -1171,9 +1172,11 @@
                 if (personalityBtn) {
                     const p = personalities[pers];
                     if (pers === 'custom') {
-                        personalityBtn.textContent = '🎭 Кастомная';
+                        personalityBtn.innerHTML = ICON_MAP.custom + ' Кастомная';
+
                     } else if (p) {
-                        personalityBtn.textContent = p.name;
+                        personalityBtn.innerHTML = ICON_MAP[p.icon] + ' ' + p.name;
+
                     }
                 }
                 currentBranchId = chat.activeBranch || 'main';
@@ -4247,7 +4250,8 @@
                 keys.forEach(function(key) {
                     const p = personalities[key];
                     const item = document.createElement('div');
-                    item.innerHTML = getPersonalityIcon(p.icon) + ' ' + p.name;
+                    const iconSvg = ICON_MAP[p.icon] || ICON_BOT;
+                    item.innerHTML = iconSvg + ' ' + p.name;
 
                     item.dataset.value = key;
                     item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + textColor + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;transition:background 0.1s;';
@@ -4263,7 +4267,8 @@
                     item.addEventListener('click', function() {
                         selectedPersonality = key;
                         select.value = key;
-                        btn.textContent = p.name;
+                        btn.innerHTML = iconSvg + ' ' + p.name;
+
                         changePersonality();
                         closePersonalityDropdown();
                     });
@@ -4272,7 +4277,7 @@
 
                 // Add custom option
                 const customItem = document.createElement('div');
-                customItem.innerHTML = ICON_CUSTOM + ' Кастомная...';
+                customItem.innerHTML = ICON_MAP.custom + ' Кастомная...';
 
                 customItem.dataset.value = 'custom';
                 customItem.style.cssText = 'padding:6px 10px;font-size:12px;color:' + textColor + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;transition:background 0.1s;border-top:1px solid ' + (isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)') + ';margin-top:4px;padding-top:10px;';
