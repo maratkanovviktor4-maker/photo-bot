@@ -97,8 +97,9 @@
         body.light .mode-btn { background: rgba(0,0,0,0.05); color: #555; }
         .mode-btn.active { background: linear-gradient(90deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; font-weight: 600; box-shadow: 0 0 16px rgba(0,203,245,0.7); }
         body.light .mode-btn.active { background: linear-gradient(90deg, #00CBF5, #14E9FC); border-color: transparent; color: #201F28; font-weight: 600; box-shadow: 0 0 16px rgba(0,203,245,0.7); }
-        .mode-btn:hover:not(.active) { border-color: #00CBF5; color: #e0e0e0; }
-        body.light .mode-btn:hover:not(.active) { color: #111; }
+        .mode-btn { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .mode-btn:hover:not(.active) { border-color: #00CBF5; color: #e0e0e0; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,203,245,0.15); }
+        body.light .mode-btn:hover:not(.active) { color: #111; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         #balanceDisplay { font-size: 12px; color: #00CBF5; font-family: 'Inter', sans-serif; white-space: nowrap; }
         #branchIndicatorTop { font-size: 12px; color: #00CBF5; font-family: 'Inter', sans-serif; display: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; margin-left: 4px; }
         .chat-wrapper { width: 100%; max-width: 775px; display: flex; flex-direction: column; margin: 0 auto; position: relative; flex: 1 0 auto; }
@@ -159,8 +160,10 @@
         body.light .attach-btn:hover { background: rgba(0,0,0,0.06); }
         .attach-btn:hover { color: #14E9FC; background: rgba(255,255,255,0.1); }
         .file-name-inline { font-size: 12px; color: #00CBF5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto; margin-right: 0; }
-        .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
+        .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .theme-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,203,245,0.15); border-color: #00CBF5; }
         body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
+        body.light .theme-btn:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #00CBF5; }
         .thinking-dots::after { content: ''; animation: dots 1.5s infinite; }
         @keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
         .thinking-dots { display: inline; }
@@ -264,7 +267,9 @@
         body.light #personalitySelect option { background: #ffffff; color: #111; }
         #personalityPrompt { max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #personalityPrompt:hover { max-width: none; white-space: normal; overflow: visible; }
-        #personalitySelect { border-radius: 24px !important; }
+        #personalitySelect { border-radius: 24px !important; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        #personalitySelect:hover { border-color: #00CBF5; box-shadow: 0 4px 12px rgba(0,203,245,0.15); }
+        body.light #personalitySelect:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         #editCustomBtn:hover { background: rgba(0,203,245,0.15); color: #00CBF5; }
         body.light #editCustomBtn:hover { background: rgba(0,0,0,0.06); }
 
@@ -487,7 +492,7 @@
             </select>
             <button onclick="showCustomPersonalityModal()" id="editCustomBtn" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;padding:6px 8px;border-radius:8px;font-family:Inter,sans-serif;transition:background 0.15s;line-height:1;" title="Редактировать кастомную"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
 	    <span id="personalityPrompt" style="font-size:12px;color:#888;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:4px;"></span>
-            <select id="highlightSelect" onchange="changeHighlight()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
+            <select id="highlightSelect" onchange="changeHighlight()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;transition:all 0.25s cubic-bezier(0.4,0,0.2,1);" onmouseover="this.style.borderColor='#00CBF5';this.style.boxShadow='0 4px 12px rgba(0,203,245,0.15)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)';this.style.boxShadow='none'">
                 <option value="atom-one-dark">🌙 atom-one-dark</option>
                 <option value="atom-one-light">☀️ atom-one-light</option>
                 <option value="monokai">🌙 monokai</option>
@@ -553,13 +558,13 @@
                 <option value="xt256">🌙 xt256</option>
             </select>
             <button class="theme-btn" onclick="showBgModal()" title="Фон чата" style="margin-left:4px;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z"/></svg></button>
-            <select id="soundSendSelect" onchange="saveSoundSettings()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
+            <select id="soundSendSelect" onchange="saveSoundSettings()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;transition:all 0.25s cubic-bezier(0.4,0,0.2,1);" onmouseover="this.style.borderColor='#00CBF5';this.style.boxShadow='0 4px 12px rgba(0,203,245,0.15)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)';this.style.boxShadow='none'">
                 <option value="">🔇 Отпр.</option>
                 <option value="ios_26">📱 ios_26</option>
                 <option value="slide_ios_17_26_iphone">📱 slide_ios</option>
                 <option value="telegram_notification">📱 Telegram</option>
             </select>
-            <select id="soundReplySelect" onchange="saveSoundSettings()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;">
+            <select id="soundReplySelect" onchange="saveSoundSettings()" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;transition:all 0.25s cubic-bezier(0.4,0,0.2,1);" onmouseover="this.style.borderColor='#00CBF5';this.style.boxShadow='0 4px 12px rgba(0,203,245,0.15)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)';this.style.boxShadow='none'">
                 <option value="">🔇 Отв.</option>
                 <option value="ios_26">📱 ios_26</option>
                 <option value="slide_ios_17_26_iphone">📱 slide_ios</option>
