@@ -4433,8 +4433,10 @@
 			const resp = await fetch(SERVER_URL + '/import_shared_chat?token=' + token + '&session_token=' + sessionToken);
 			if (resp.ok) {
 				const data = await resp.json();
-				// Создаем чат сразу из ответа
 				if (data.chat_id) {
+					// Сохраняем chat_id, чтобы чат не пропадал после F5
+					localStorage.setItem('photobot_active_chat', data.chat_id);
+					
 					var newChat = { id: data.chat_id, title: 'Импортированный чат', messages: [], activeBranch: data.active_branch || 'main', allBranches: {}, lastMessageTime: Date.now() };
 					chats.unshift(newChat);
 					currentChatId = data.chat_id;
@@ -4442,7 +4444,6 @@
 					await loadChatMessages(currentChatId);
 					renderChatList();
 					showAlertModal('Чат импортирован', 'Общий чат успешно загружен.', '✅');
-					// Убираем token из URL без перезагрузки
 					history.replaceState({}, '', window.location.pathname);
 				}
 			} else {
@@ -4454,6 +4455,7 @@
 		}
 		hideLoading();
 	}
+
 
 
     </script>
