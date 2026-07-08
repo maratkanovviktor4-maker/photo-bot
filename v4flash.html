@@ -508,9 +508,11 @@
         <div class="top-bar">
             <span id="balanceDisplay"></span>
             <span id="branchIndicatorTop"></span>
-            <select id="personalitySelect" onchange="changePersonality()" style="padding:8px 14px;border-radius:24px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:2px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;margin-right:4px;transition:all 0.2s ease;font-weight:500;backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(0,0,0,0.2);">
-                <option value="default">🤖 Ассистент</option>
-            </select>
+            <div id="personalityCustom" style="position:relative;display:inline-block;">
+                <select id="personalitySelect" onchange="changePersonality()" style="display:none;"></select>
+                <button class="theme-btn" onclick="togglePersonalityDropdown(event)" id="personalityBtn" title="Личность" style="display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;padding:8px 14px;border-radius:24px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#e0e0e0;border:2px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;font-weight:500;backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(0,0,0,0.2);">🤖 Ассистент</button>
+                <div id="personalityDropdown" style="position:absolute;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:200px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
+            </div>
             <button onclick="showCustomPersonalityModal()" id="editCustomBtn" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;padding:6px 8px;border-radius:8px;font-family:Inter,sans-serif;transition:background 0.15s;line-height:1;" title="Редактировать кастомную"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
 	    <span id="personalityPrompt" style="font-size:12px;color:#888;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:4px;"></span>
             <div id="highlightCustom" style="position:relative;display:inline-block;">
@@ -4155,6 +4157,126 @@
                 window['closeSoundDropdown_' + type] = closeSoundDropdown;
             });
         }
+        // ===== CUSTOM PERSONALITY DROPDOWN =====
+        function initPersonalityDropdown() {
+            const select = document.getElementById('personalitySelect');
+            const btn = document.getElementById('personalityBtn');
+            const dropdown = document.getElementById('personalityDropdown');
+            let isOpen = false;
+            let closeTimer = null;
+            let selectedPersonality = currentPersonality;
+
+            function buildPersonalityDropdown() {
+                dropdown.innerHTML = '';
+                const isLight = document.body.classList.contains('light');
+                const bg = isLight ? '#ffffff' : '#1a1a2e';
+                const textColor = isLight ? '#333' : '#e0e0e0';
+                dropdown.style.background = bg;
+                dropdown.style.border = '1px solid ' + (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)');
+                dropdown.style.boxShadow = isLight ? '0 8px 24px rgba(0,0,0,0.15)' : '0 8px 24px rgba(0,0,0,0.4)';
+
+                const keys = Object.keys(personalities);
+                keys.forEach(function(key) {
+                    const p = personalities[key];
+                    const item = document.createElement('div');
+                    item.textContent = p.name;
+                    item.dataset.value = key;
+                    item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + textColor + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;transition:background 0.1s;';
+                    if (key === selectedPersonality) item.style.background = 'rgba(0,203,245,0.15)';
+                    item.addEventListener('mouseenter', function() {
+                        this.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
+                        if (key === selectedPersonality) this.style.background = 'rgba(0,203,245,0.2)';
+                    });
+                    item.addEventListener('mouseleave', function() {
+                        this.style.background = '';
+                        if (key === selectedPersonality) this.style.background = 'rgba(0,203,245,0.15)';
+                    });
+                    item.addEventListener('click', function() {
+                        selectedPersonality = key;
+                        select.value = key;
+                        btn.textContent = p.name;
+                        changePersonality();
+                        closePersonalityDropdown();
+                    });
+                    dropdown.appendChild(item);
+                });
+
+                // Add custom option
+                const customItem = document.createElement('div');
+                customItem.textContent = '🎭 Кастомная...';
+                customItem.dataset.value = 'custom';
+                customItem.style.cssText = 'padding:6px 10px;font-size:12px;color:' + textColor + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;transition:background 0.1s;border-top:1px solid ' + (isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)') + ';margin-top:4px;padding-top:10px;';
+                if ('custom' === selectedPersonality) customItem.style.background = 'rgba(0,203,245,0.15)';
+                customItem.addEventListener('mouseenter', function() {
+                    this.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
+                    if ('custom' === selectedPersonality) this.style.background = 'rgba(0,203,245,0.2)';
+                });
+                customItem.addEventListener('mouseleave', function() {
+                    this.style.background = '';
+                    if ('custom' === selectedPersonality) this.style.background = 'rgba(0,203,245,0.15)';
+                });
+                customItem.addEventListener('click', function() {
+                    closePersonalityDropdown();
+                    showCustomPersonalityModal();
+                });
+                dropdown.appendChild(customItem);
+            }
+
+            function openPersonalityDropdown() {
+                if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+                buildPersonalityDropdown();
+                const parentRect = document.getElementById('personalityCustom').getBoundingClientRect();
+                dropdown.style.display = 'block';
+                dropdown.style.left = '0px';
+                dropdown.style.top = (btn.offsetHeight + 4) + 'px';
+                requestAnimationFrame(function() {
+                    dropdown.style.opacity = '1';
+                    dropdown.style.transform = 'translateY(0)';
+                });
+                isOpen = true;
+            }
+
+            function closePersonalityDropdown() {
+                dropdown.style.opacity = '0';
+                dropdown.style.transform = 'translateY(-8px)';
+                setTimeout(function() { dropdown.style.display = 'none'; }, 200);
+                isOpen = false;
+            }
+
+            function togglePersonalityDropdown(e) {
+                e.stopPropagation();
+                if (isOpen) { closePersonalityDropdown(); return; }
+                openPersonalityDropdown();
+            }
+
+            function scheduleClose() {
+                if (closeTimer) clearTimeout(closeTimer);
+                closeTimer = setTimeout(function() {
+                    if (!dropdown.matches(':hover') && !btn.matches(':hover')) {
+                        closePersonalityDropdown();
+                    }
+                }, 150);
+            }
+            function cancelClose() { if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; } }
+
+            btn.addEventListener('mouseleave', scheduleClose);
+            dropdown.addEventListener('mouseleave', scheduleClose);
+            btn.addEventListener('mouseenter', cancelClose);
+            dropdown.addEventListener('mouseenter', cancelClose);
+
+            window.togglePersonalityDropdown = togglePersonalityDropdown;
+            window.closePersonalityDropdown = closePersonalityDropdown;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initPersonalityDropdown();
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#personalityCustom')) {
+                    if (window.closePersonalityDropdown) window.closePersonalityDropdown();
+                }
+            });
+        });
+
 
         // Global toggle function (called from HTML onclick)
         function toggleSoundDropdown(e, type) {
