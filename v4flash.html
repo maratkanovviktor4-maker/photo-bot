@@ -4418,6 +4418,35 @@
                 window.highlightDropdownClose();
             }
         });
+	// Обработка shared chat при загрузке
+	(function() {
+		const params = new URLSearchParams(window.location.search);
+		const token = params.get('token');
+		if (token) {
+			importSharedChat(token);
+		}
+	})();
+	
+	async function importSharedChat(token) {
+		showLoading();
+		try {
+			const resp = await fetch(SERVER_URL + '/import_shared_chat?token=' + token + '&session_token=' + sessionToken);
+			if (resp.ok) {
+				const data = await resp.json();
+				await loadChatsFromServer();
+				if (data.chat_id) {
+					openChat(data.chat_id);
+					showAlertModal('Чат импортирован', 'Общий чат успешно загружен.', '✅');
+				}
+			} else {
+				showAlertModal('Ошибка', 'Не удалось загрузить общий чат. Возможно, ссылка устарела.', '❌');
+			}
+		} catch(e) {
+			console.error('importSharedChat error:', e);
+			showAlertModal('Ошибка', 'Проверьте подключение к интернету.', '❌');
+		}
+		hideLoading();
+	}
 
     </script>
     <div id="selfPlayModal" class="modal-overlay">
