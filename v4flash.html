@@ -1055,10 +1055,17 @@
             }, { passive: true });
         })();
         async function importSharedChat(token) {
+            console.log('importSharedChat called, token:', token);
             try {
-                var resp = await fetch(SERVER_URL + '/import_shared_chat?token=' + token + '&session_token=' + sessionToken);
+                const url = SERVER_URL + '/import_shared_chat?token=' + token + '&session_token=' + sessionToken;
+                console.log('Fetching:', url);
+                const resp = await fetch(url);
+                console.log('Response status:', resp.status);
+                const text = await resp.text();
+                console.log('Response body:', text.substring(0, 200));
                 if (resp.ok) {
-                    var data = await resp.json();
+                    const data = JSON.parse(text);
+                    console.log('Parsed data:', data);
                     await loadChatsFromServer();
                     currentChatId = data.chat_id;
                     currentBranchId = data.active_branch || 'main';
@@ -1069,14 +1076,14 @@
                     renderBranchesPanel();
                     window.history.replaceState({}, document.title, window.location.pathname);
                 } else {
-                    var err = await resp.json();
-                    showAlertModal('Ошибка импорта', err.error || 'Не удалось импортировать чат.', '❌');
+                    showAlertModal('Ошибка импорта', text.substring(0, 200), '❌');
                 }
             } catch(e) {
                 console.error('importSharedChat error:', e);
-                showAlertModal('Ошибка', 'Не удалось загрузить поделённый чат.', '❌');
+                showAlertModal('Ошибка', e.message, '❌');
             }
         }
+
 
         const savedAuth = localStorage.getItem('photobot_auth');
         if (savedAuth) {
