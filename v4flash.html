@@ -779,13 +779,19 @@
                 <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z"/></svg></div>
                 <div class="modal-title" style="margin-bottom:12px;">Фон чата</div>
                 <div class="bg-preview-grid">
-                    ${BG_PRESETS.map((bg, i) => `
-                        <div class="bg-preview-item ${bg.css === currentBg ? 'active' : ''}"
-                             data-index="${i}"
-                             style="background:${bg.css || '#1a1a2e'}; ${bg.css ? '' : 'border:2px dashed rgba(255,255,255,0.2);'}"
-                             title="${bg.name}">
-                        </div>
-                    `).join('')}
+                    ${BG_PRESETS.map((bg, i) => {
+                        var s = bg.css.toLowerCase();
+                        var isDark = s.includes('0b0f1e') || s.includes('0d0d2b') || s.includes('0a1f0e') || s.includes('0a1628') || s.includes('2b1b3d') || s.includes('0f2b1e') || s.includes('1f1a3e') || s.includes('2b1f0a') || s.includes('1a2b3e') || s.includes('0d0d1a') || s.includes('1a1a2e');
+                        var iconHtml = isDark ? ICON_MOON : ICON_SUN;
+                        return `
+                            <div class="bg-preview-item ${bg.css === currentBg ? 'active' : ''}"
+                                 data-index="${i}"
+                                 style="background:${bg.css || '#1a1a2e'}; ${bg.css ? '' : 'border:2px dashed rgba(255,255,255,0.2);'} display:flex;align-items:center;justify-content:center;"
+                                 title="${bg.name}">
+                                ${bg.css ? iconHtml : ''}
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
                 <div class="modal-actions" style="gap:12px;">
                     <button class="modal-btn-secondary" onclick="document.getElementById('bgModal').remove()" style="flex:1;padding:12px;">Закрыть</button>
