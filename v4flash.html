@@ -1054,6 +1054,29 @@
                 }
             }, { passive: true });
         })();
+        async function importSharedChat(token) {
+            try {
+                var resp = await fetch(SERVER_URL + '/import_shared_chat?token=' + token + '&session_token=' + sessionToken);
+                if (resp.ok) {
+                    var data = await resp.json();
+                    await loadChatsFromServer();
+                    currentChatId = data.chat_id;
+                    currentBranchId = data.active_branch || 'main';
+                    localStorage.setItem('photobot_active_chat', currentChatId);
+                    await loadChatMessages(currentChatId);
+                    renderChatList();
+                    fullRender();
+                    renderBranchesPanel();
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } else {
+                    var err = await resp.json();
+                    showAlertModal('Ошибка импорта', err.error || 'Не удалось импортировать чат.', '❌');
+                }
+            } catch(e) {
+                console.error('importSharedChat error:', e);
+                showAlertModal('Ошибка', 'Не удалось загрузить поделённый чат.', '❌');
+            }
+        }
 
         const savedAuth = localStorage.getItem('photobot_auth');
         if (savedAuth) {
@@ -1064,11 +1087,19 @@
                 showAlertModal('Сессия истекла', 'Сессия устарела. Авторизуйтесь заново на главной странице.', '❌');
                 window.location.href = 'index.html';
             } else {
-                loadChatsFromServer();
+                loadChatsFromServer().then(function() {
+                    // Проверяем token из share-ссылки
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const shareToken = urlParams.get('token');
+                    if (shareToken) {
+                        importSharedChat(shareToken);
+                    }
+                });
                 updateBalance();
                 loadPersonalities();
                 loadChatBg();
             }
+
         } else {
             showAlertModal('Требуется авторизация', 'Авторизуйтесь на главной странице', '❌');
             window.location.href = 'index.html';
