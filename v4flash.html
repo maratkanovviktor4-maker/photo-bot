@@ -1064,53 +1064,15 @@
                 showAlertModal('Сессия истекла', 'Сессия устарела. Авторизуйтесь заново на главной странице.', '❌');
                 window.location.href = 'index.html';
             } else {
-                // Проверяем token в URL (импорт поделённого чата)
-                const urlParams = new URLSearchParams(window.location.search);
-                const shareToken = urlParams.get('token');
-                if (shareToken) {
-                    importSharedChat(shareToken);
-                } else {
-                    loadChatsFromServer();
-                    updateBalance();
-                    loadPersonalities();
-                    loadChatBg();
-                }
-            }
-
-        } else {
-            showAlertModal('Требуется авторизация', 'Авторизуйтесь на главной странице', '❌');
-            window.location.href = 'index.html';
-        }
-        async function importSharedChat(token) {
-            showLoading();
-            try {
-                var resp = await fetch(SERVER_URL + '/import_shared_chat?token=' + token + '&session_token=' + sessionToken);
-                if (resp.ok) {
-                    // Просто перезагружаем страницу — чат уже сохранён на сервере
-                    window.location.href = window.location.pathname;
-                } else {
-                    var err = await resp.json().catch(() => ({}));
-                    showAlertModal('Ошибка', err.error || 'Не удалось загрузить поделённый чат. Ссылка могла устареть.', '❌');
-                    hideLoading();
-                    loadChatsFromServer();
-                    updateBalance();
-                    loadPersonalities();
-                    loadChatBg();
-                }
-            } catch(e) {
-                console.error('importSharedChat error:', e);
-                showAlertModal('Ошибка', 'Не удалось загрузить поделённый чат.', '❌');
-                hideLoading();
                 loadChatsFromServer();
                 updateBalance();
                 loadPersonalities();
                 loadChatBg();
             }
+        } else {
+            showAlertModal('Требуется авторизация', 'Авторизуйтесь на главной странице', '❌');
+            window.location.href = 'index.html';
         }
-
-
-
-
 
         async function loadChatsFromServer() {
             showLoading();
