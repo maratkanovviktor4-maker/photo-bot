@@ -209,7 +209,7 @@
             position: sticky; 
             bottom: 0; 
             z-index: 10000; 
-            background: inherit; /* наследует от body */
+            background: inherit; /* наследует фон от родителя (main) */
             padding-bottom: 8px; 
             border-radius: 16px 16px 0 0; 
         }
@@ -218,9 +218,6 @@
             padding-bottom: 8px; 
             border-radius: 16px 16px 0 0; 
         }
-
-
-
         body.light .bottom-container { background: #ffffff; padding-bottom: 8px; }
         .message-content ol, .message-content ul { padding-left: 24px; margin: 6px 0; }
         .message-content li { margin: 2px 0; }
@@ -721,7 +718,7 @@
         function saveChatBg(css) {
             localStorage.setItem('photobot_chat_bg', css);
             const main = document.querySelector('.main');
-            const bottom = document.querySelector('.bottom-container');
+            // bottom-container не трогаем — он наследует фон от main через CSS
             const inputWrapper = document.querySelector('.input-row-wrapper');
             const inputArea = document.querySelector('.input-area');
             const sidebar = document.querySelector('.sidebar');
@@ -729,9 +726,6 @@
             const editModal = document.querySelector('#editMessageModal .modal-box > div');
             const val = css || '';
             if (main) main.style.background = val;
-            // bottom-container получает фон body, а не main
-            // Это чтобы скрывать чат под полем ввода, но не показывать кастомный фон в щели
-            if (bottom) bottom.style.background = ''; // Сбрасываем — будет фон body
             if (inputWrapper) inputWrapper.style.background = val;
             if (inputArea) inputArea.style.background = val;
             if (sidebar) sidebar.style.background = val;
@@ -762,6 +756,7 @@
                 document.body.classList.remove('custom-dark-bg');
             }
         }
+
 
 
 
