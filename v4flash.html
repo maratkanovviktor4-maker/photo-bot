@@ -1086,26 +1086,12 @@
             try {
                 var resp = await fetch(SERVER_URL + '/import_shared_chat?token=' + token + '&session_token=' + sessionToken);
                 if (resp.ok) {
-                    var data = await resp.json();
-                    // Создаём новый чат локально
-                    var newChat = {
-                        id: data.chat_id,
-                        title: 'Поделённый чат',
-                        messages: [],
-                        activeBranch: data.active_branch || 'main',
-                        allBranches: {},
-                        lastMessageTime: Date.now(),
-                        _personality: 'default'
-                    };
-                    chats.unshift(newChat);
-                    // Открываем его
-                    await openChat(data.chat_id);
-                    // Очищаем URL только после успеха
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    showAlertModal('Чат импортирован', 'Поделённый чат успешно загружен.', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>');
+                    // Просто перезагружаем страницу — чат уже сохранён на сервере
+                    window.location.href = window.location.pathname;
                 } else {
                     var err = await resp.json().catch(() => ({}));
                     showAlertModal('Ошибка', err.error || 'Не удалось загрузить поделённый чат. Ссылка могла устареть.', '❌');
+                    hideLoading();
                     loadChatsFromServer();
                     updateBalance();
                     loadPersonalities();
@@ -1114,13 +1100,14 @@
             } catch(e) {
                 console.error('importSharedChat error:', e);
                 showAlertModal('Ошибка', 'Не удалось загрузить поделённый чат.', '❌');
+                hideLoading();
                 loadChatsFromServer();
                 updateBalance();
                 loadPersonalities();
                 loadChatBg();
             }
-            hideLoading();
         }
+
 
 
 
