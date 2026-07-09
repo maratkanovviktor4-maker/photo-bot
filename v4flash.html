@@ -205,8 +205,20 @@
         .main.preview-open { padding-right: var(--preview-width, 50%); }
         .main.preview-open .chat-wrapper { max-width: 100%; }
         .main.preview-open .input-row-wrapper { width: 100%; max-width: 100%; }
-        .bottom-container { position: sticky; bottom: 0; z-index: 10000; background: #201F28; padding-bottom: 8px; border-radius: 16px 16px 0 0; }
-        body.light .bottom-container { background: #ffffff; padding-bottom: 8px; border-radius: 16px 16px 0 0; }
+        .bottom-container { 
+            position: sticky; 
+            bottom: 0; 
+            z-index: 10000; 
+            background: transparent !important;  /* меняем на прозрачный */
+            padding-bottom: 8px; 
+            border-radius: 16px 16px 0 0; 
+        }
+        body.light .bottom-container { 
+            background: transparent !important;  /* и для светлой темы */
+            padding-bottom: 8px; 
+            border-radius: 16px 16px 0 0; 
+        }
+
         body.light .bottom-container { background: #ffffff; padding-bottom: 8px; }
         .message-content ol, .message-content ul { padding-left: 24px; margin: 6px 0; }
         .message-content li { margin: 2px 0; }
@@ -715,14 +727,13 @@
             const editModal = document.querySelector('#editMessageModal .modal-box > div');
             const val = css || '';
             if (main) main.style.background = val;
-            if (bottom) bottom.style.background = val;
+            // Убираем отдельный фон для bottom-container — он наследует от main
             if (inputWrapper) inputWrapper.style.background = val;
             if (inputArea) inputArea.style.background = val;
             if (sidebar) sidebar.style.background = val;
             if (topBar) topBar.style.background = val;
             if (editModal) editModal.style.background = val;
             document.querySelectorAll('.modal-box').forEach(function(el) { el.style.background = val || ''; });
-
 
             if (inputWrapper) {
                 if (css) {
@@ -731,7 +742,7 @@
                     inputWrapper.style.boxShadow = '';
                 }
             }
-            // Авто-контраст текста при кастомном фоне
+            // Авто-контраст
             if (val) {
                 var isDark = false;
                 var s = val.toLowerCase();
@@ -747,6 +758,7 @@
                 document.body.classList.remove('custom-dark-bg');
             }
         }
+
 
 
 
