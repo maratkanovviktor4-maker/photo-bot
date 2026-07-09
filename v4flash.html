@@ -209,15 +209,16 @@
             position: sticky; 
             bottom: 0; 
             z-index: 10000; 
-            background: #201F28; 
+            background: inherit; /* наследует от body */
             padding-bottom: 8px; 
             border-radius: 16px 16px 0 0; 
         }
         body.light .bottom-container { 
-            background: #ffffff; 
+            background: inherit; 
             padding-bottom: 8px; 
             border-radius: 16px 16px 0 0; 
         }
+
 
 
         body.light .bottom-container { background: #ffffff; padding-bottom: 8px; }
@@ -728,7 +729,9 @@
             const editModal = document.querySelector('#editMessageModal .modal-box > div');
             const val = css || '';
             if (main) main.style.background = val;
-            if (bottom) bottom.style.background = val;  // Возвращаем фон для bottom-container
+            // bottom-container получает фон body, а не main
+            // Это чтобы скрывать чат под полем ввода, но не показывать кастомный фон в щели
+            if (bottom) bottom.style.background = ''; // Сбрасываем — будет фон body
             if (inputWrapper) inputWrapper.style.background = val;
             if (inputArea) inputArea.style.background = val;
             if (sidebar) sidebar.style.background = val;
@@ -759,6 +762,7 @@
                 document.body.classList.remove('custom-dark-bg');
             }
         }
+
 
 
 
