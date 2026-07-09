@@ -462,24 +462,6 @@
         body.light.custom-dark-bg .logo-text {
             color: #00CBF5 !important;
         }
-        .bottom-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--custom-bg, transparent);
-            opacity: 0.4;
-            pointer-events: none;
-            z-index: -1;
-            border-radius: inherit;
-        }
-        .bottom-container {
-            position: relative;
-            z-index: 1;
-        }
-
 
 
     </style>
@@ -725,43 +707,31 @@
         function saveChatBg(css) {
             localStorage.setItem('photobot_chat_bg', css);
             const main = document.querySelector('.main');
+            const bottom = document.querySelector('.bottom-container');
+            const inputWrapper = document.querySelector('.input-row-wrapper');
+            const inputArea = document.querySelector('.input-area');
             const sidebar = document.querySelector('.sidebar');
             const topBar = document.querySelector('.top-bar');
             const editModal = document.querySelector('#editMessageModal .modal-box > div');
             const val = css || '';
-
             if (main) main.style.background = val;
+            if (bottom) bottom.style.background = val;
+            if (inputWrapper) inputWrapper.style.background = val;
+            if (inputArea) inputArea.style.background = val;
             if (sidebar) sidebar.style.background = val;
             if (topBar) topBar.style.background = val;
             if (editModal) editModal.style.background = val;
+            document.querySelectorAll('.modal-box').forEach(function(el) { el.style.background = val || ''; });
 
-            // bottom-container — полупрозрачный поверх кастомного фона
-            const bottom = document.querySelector('.bottom-container');
-            if (bottom) {
-                if (val) {
-                    bottom.style.setProperty('--custom-bg', val);
-                    bottom.style.background = 'rgba(0,0,0,0.3)';
-                    bottom.style.backdropFilter = 'blur(12px)';
-                    bottom.style.webkitBackdropFilter = 'blur(12px)';
-                } else {
-                    bottom.style.background = '';
-                    bottom.style.backdropFilter = '';
-                    bottom.style.webkitBackdropFilter = '';
-                    bottom.style.removeProperty('--custom-bg');
-                }
-            }
 
-            // input-row-wrapper — без изменений
-            const inputWrapper = document.querySelector('.input-row-wrapper');
             if (inputWrapper) {
-                if (val) {
+                if (css) {
                     inputWrapper.style.boxShadow = 'none';
                 } else {
                     inputWrapper.style.boxShadow = '';
                 }
             }
-
-            // Авто-контраст
+            // Авто-контраст текста при кастомном фоне
             if (val) {
                 var isDark = false;
                 var s = val.toLowerCase();
@@ -777,7 +747,6 @@
                 document.body.classList.remove('custom-dark-bg');
             }
         }
-
 
 
 
