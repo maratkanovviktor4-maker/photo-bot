@@ -1272,45 +1272,6 @@
                 }
             });
         }
-        async function importSharedChat(token) {
-            showLoading();
-            try {
-                const resp = await fetch(`${SERVER_URL}/import_shared_chat?token=${token}&session_token=${sessionToken}`);
-                if (resp.ok) {
-                    const data = await resp.json();
-                    if (data.success) {
-                        showAlertModal('Чат импортирован', 'Чат успешно импортирован в вашу историю.', '✅');
-                        await loadChatsFromServer();
-                        if (data.chat_id) {
-                            openChat(data.chat_id);
-                        }
-                    } else {
-                        showAlertModal('Ошибка импорта', data.error || 'Не удалось импортировать чат.', '❌');
-                    }
-                } else {
-                    const errData = await resp.json().catch(() => ({}));
-                    showAlertModal('Ошибка импорта', errData.error || 'Чат не найден или ссылка недействительна.', '❌');
-                }
-            } catch (e) {
-                console.error('importSharedChat error:', e);
-                showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
-            }
-            hideLoading();
-        }
-
-        (function checkImportOnLoad() {
-            const params = new URLSearchParams(window.location.search);
-            const importToken = params.get('import');
-            if (importToken) {
-                const checkSession = setInterval(() => {
-                    if (sessionToken && currentUserId) {
-                        clearInterval(checkSession);
-                        importSharedChat(importToken);
-                    }
-                }, 100);
-                setTimeout(() => clearInterval(checkSession), 10000);
-            }
-        })();
 
         async function shareChat(id) {
             var chat = chats.find(function(c) { return c.id === id; });
@@ -1323,16 +1284,6 @@
                 });
                 if (resp.ok) {
                     var data = await resp.json();
-                    var token = data.token || data.share_url.split('import=')[1] || '';
-
-                    // Если сервер вернул ссылку без параметра import, добавляем его
-                    let shareUrl = data.share_url;
-                    if (shareUrl && !shareUrl.includes('import=')) {
-                        const baseUrl = shareUrl.split('?')[0];
-                        shareUrl = baseUrl + '?import=' + token;
-                        data.share_url = shareUrl;
-                    }
-
                     await navigator.clipboard.writeText(data.share_url);
                     showAlertModal('Ссылка создана', 'Ссылка скопирована в буфер обмена:\n' + data.share_url, '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg>');
 
@@ -1712,7 +1663,6 @@
                     sendBtnArrow();
                 } else {
                     var data = await resp.json();
-
                     if (data.success) {
                         currentBranchId = data.branch_id;
                         chat.activeBranch = data.branch_id;
