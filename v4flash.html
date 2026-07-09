@@ -4480,16 +4480,26 @@
                 const resp = await fetch(`${SERVER_URL}/import_shared_chat?token=${encodeURIComponent(token)}&session_token=${sessionToken}`);
                 if (resp.ok) {
                     const data = await resp.json();
+                    console.log('Import response:', data);
                     if (data.success) {
-                        showAlertModal(
-                            'Чат импортирован',
-                            'Чат успешно добавлен в вашу историю.',
-                            '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>'
-                        );
+                        // Показываем модалку
+                        closeAlertModal();
+                        document.getElementById('alertModalOverlay').classList.add('active');
+                        document.getElementById('alertModalIcon').innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>';
+                        document.getElementById('alertModalIcon').className = 'modal-icon success';
+                        document.getElementById('alertModalTitle').textContent = 'Чат импортирован';
+                        document.getElementById('alertModalMessage').textContent = 'Чат успешно добавлен в вашу историю.';
+                        // Добавляем кнопку "Открыть"
+                        var actions = document.querySelector('#alertModalOverlay .modal-actions');
+                        actions.innerHTML = '<button class="modal-btn-primary" onclick="closeAlertModal(); openImportedChat(\'' + data.chat_id + '\', \'' + (data.active_branch || 'main') + '\')">Открыть чат</button>';
+
+                        // Сохраняем id для открытия
+                        window._importedChatId = data.chat_id;
+                        window._importedBranchId = data.active_branch || 'main';
+
+                        // Перезагружаем список чатов
                         await loadChatsFromServer();
-                        if (data.chat_id) {
-                            openChat(data.chat_id);
-                        }
+
                         // Убираем параметр из URL
                         const newUrl = window.location.pathname + window.location.hash;
                         window.history.replaceState({}, '', newUrl);
@@ -4505,8 +4515,7 @@
                         'Ошибка импорта',
                         'Не удалось загрузить чат по ссылке. Проверьте соединение.',
                         '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>'
-                        );
-                    }
+                    );
                 }
             } catch(e) {
                 console.error('Import shared chat error:', e);
@@ -4517,6 +4526,29 @@
                 );
             }
         }
+
+        // Функция для открытия импортированного чата после нажатия кнопки
+        function openImportedChat(chatId, branchId) {
+            var chat = chats.find(function(c) { return c.id === chatId; });
+            if (chat) {
+                currentBranchId = branchId || chat.activeBranch || 'main';
+                openChat(chatId);
+                setTimeout(scrollToBottom, 200);
+            } else {
+                // Если чата ещё нет в списке, ждём и пробуем снова
+                var waitForChat = setInterval(function() {
+                    var found = chats.find(function(c) { return c.id === chatId; });
+                    if (found) {
+                        clearInterval(waitForChat);
+                        currentBranchId = branchId || found.activeBranch || 'main';
+                        openChat(chatId);
+                        setTimeout(scrollToBottom, 200);
+                    }
+                }, 500);
+                setTimeout(function() { clearInterval(waitForChat); }, 10000);
+            }
+        }
+
 
 
     </script>
