@@ -1064,68 +1064,15 @@
                 showAlertModal('Сессия истекла', 'Сессия устарела. Авторизуйтесь заново на главной странице.', '❌');
                 window.location.href = 'index.html';
             } else {
-                // Проверяем token в URL (импорт поделённого чата)
-                const urlParams = new URLSearchParams(window.location.search);
-                const shareToken = urlParams.get('token');
-                if (shareToken) {
-                    importSharedChat(shareToken);
-                } else {
-                    loadChatsFromServer();
-                    updateBalance();
-                    loadPersonalities();
-                    loadChatBg();
-                }
-            }
-        } else {
-            showAlertModal('Требуется авторизация', 'Авторизуйтесь на главной странице', '❌');
-            window.location.href = 'index.html';
-        }
-        async function importSharedChat(token) {
-            showLoading();
-            try {
-                var resp = await fetch(SERVER_URL + '/import_shared_chat?token=' + token + '&session_token=' + sessionToken);
-                if (resp.ok) {
-                    var data = await resp.json();
-                    // Создаём новый чат локально и сразу добавляем в список
-                    var newChat = {
-                        id: data.chat_id,
-                        title: 'Поделённый чат',
-                        messages: [],
-                        activeBranch: data.active_branch || 'main',
-                        allBranches: {},
-                        lastMessageTime: Date.now(),
-                        _personality: 'default'
-                    };
-                    chats.unshift(newChat);
-                    // Загружаем сообщения этого чата
-                    await loadChatMessages(data.chat_id);
-                    // Открываем чат
-                    openChat(data.chat_id);
-                    // Очищаем URL от token
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    // Загружаем остальное
-                    updateBalance();
-                    loadPersonalities();
-                    loadChatBg();
-                } else {
-                    var err = await resp.json().catch(() => ({}));
-                    showAlertModal('Ошибка', err.error || 'Не удалось загрузить поделённый чат.', '❌');
-                    loadChatsFromServer();
-                    updateBalance();
-                    loadPersonalities();
-                    loadChatBg();
-                }
-            } catch(e) {
-                console.error('importSharedChat error:', e);
-                showAlertModal('Ошибка', 'Не удалось загрузить поделённый чат.', '❌');
                 loadChatsFromServer();
                 updateBalance();
                 loadPersonalities();
                 loadChatBg();
             }
-            hideLoading();
+        } else {
+            showAlertModal('Требуется авторизация', 'Авторизуйтесь на главной странице', '❌');
+            window.location.href = 'index.html';
         }
-
 
         async function loadChatsFromServer() {
             showLoading();
