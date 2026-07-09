@@ -1064,10 +1064,17 @@
                 showAlertModal('Сессия истекла', 'Сессия устарела. Авторизуйтесь заново на главной странице.', '❌');
                 window.location.href = 'index.html';
             } else {
-                loadChatsFromServer();
-                updateBalance();
-                loadPersonalities();
-                loadChatBg();
+                // Проверяем token в URL (импорт поделённого чата)
+                const urlParams = new URLSearchParams(window.location.search);
+                const shareToken = urlParams.get('token');
+                if (shareToken) {
+                    importSharedChat(shareToken);
+                } else {
+                    loadChatsFromServer();
+                    updateBalance();
+                    loadPersonalities();
+                    loadChatBg();
+                }
             }
         } else {
             showAlertModal('Требуется авторизация', 'Авторизуйтесь на главной странице', '❌');
