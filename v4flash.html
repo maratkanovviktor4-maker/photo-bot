@@ -1064,11 +1064,19 @@
                 showAlertModal('Сессия истекла', 'Сессия устарела. Авторизуйтесь заново на главной странице.', '❌');
                 window.location.href = 'index.html';
             } else {
-                loadChatsFromServer();
-                updateBalance();
-                loadPersonalities();
-                loadChatBg();
+                // Проверяем параметр token из URL
+                var urlParams = new URLSearchParams(window.location.search);
+                var importToken = urlParams.get('token');
+                if (importToken) {
+                    importSharedChat(importToken);
+                } else {
+                    loadChatsFromServer();
+                    updateBalance();
+                    loadPersonalities();
+                    loadChatBg();
+                }
             }
+
         } else {
             showAlertModal('Требуется авторизация', 'Авторизуйтесь на главной странице', '❌');
             window.location.href = 'index.html';
@@ -3822,6 +3830,46 @@
 
         function showLoading() { document.getElementById('loadingSpinner').style.display = 'flex'; }
         function hideLoading() { document.getElementById('loadingSpinner').style.display = 'none'; }
+        async function importSharedChat(token) {
+            showLoading();
+            try {
+                var resp = await fetch(SERVER_URL + '/import_shared_chat?token=' + token + '&session_token=' + sessionToken);
+                if (resp.ok) {
+                    var data = await resp.json();
+                    if (data.success) {
+                        currentChatId = data.chat_id;
+                        currentBranchId = data.active_branch || 'main';
+                        localStorage.setItem('photobot_active_chat', data.chat_id);
+                        await loadChatsFromServer();
+                        var chat = chats.find(function(c) { return c.id === data.chat_id; });
+                        if (chat) {
+                            currentBranchId = chat.activeBranch || data.active_branch || 'main';
+                            await loadChatMessages(data.chat_id);
+                        }
+                        renderChatList();
+                        renderBranchesPanel();
+                        fullRender();
+                        scrollToBottom();
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    } else {
+                        showAlertModal('Ошибка импорта', data.error || 'Не удалось импортировать чат', '❌');
+                        loadChatsFromServer();
+                    }
+                } else {
+                    showAlertModal('Ошибка импорта', 'Чат не найден или ссылка устарела', '❌');
+                    loadChatsFromServer();
+                }
+            } catch(e) {
+                console.error('importSharedChat error:', e);
+                showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету', '❌');
+                loadChatsFromServer();
+            }
+            updateBalance();
+            loadPersonalities();
+            loadChatBg();
+            hideLoading();
+        }
+
 
 
     </script>
