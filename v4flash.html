@@ -2255,205 +2255,25 @@
 
 
         function retryMessage(userIndex) {
-            if (isSending) return;
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             
-            var msg = chat.messages[userIndex];
-            if (!msg || msg.role !== 'user') return;
-            
+            // Удаляем только сообщение ассистента с ошибкой (следующее после user)
             if (userIndex < chat.messages.length - 1) {
                 chat.messages.splice(userIndex + 1, 1);
             }
             
             renderMessages();
             
-            isSending = true;
-            if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
-            sendBtnStop();
-            playSound('send');
-            
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
-            chat.messages.push(assistantMsg);
-            var newMsgIndex = chat.messages.length - 1;
-            activeStreamId = 'retry_stream_' + newMsgIndex;
-            renderMessages();
-            
-            var abortController = new AbortController();
-            assistantMsg._abortController = abortController;
-            
-            fetch(SERVER_URL + '/regenerate_user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                body: JSON.stringify({
-                    user_id: currentUserId,
-                    model: 'flash',
-                    mode: currentMode,
-                    chat_id: currentChatId,
-                    branch_id: currentBranchId,
-                    edit_msg_id: msg.msg_id,
-                    new_prompt: msg.content
-                }),
-                signal: abortController.signal
-            }).then(function(resp) {
-                if (!resp.ok) {
-                    var errData = resp.json().catch(function() { return {}; });
-                    return errData.then(function(errData) {
-                        var errorMessage = errData.error || 'Ошибка сервера.';
-                        if (errData.error_type === 'bad_request') {
-                            errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
-                        } else if (errData.error_type === 'rate_limited') {
-                            errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
-                        } else if (errData.error_type === 'deepseek_error') {
-                            errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
-                        } else if (errData.error_type === 'deepseek_overloaded') {
-                            errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                        }
-                        assistantMsg._error_type = errData.error_type || null;
-                        assistantMsg.content = errorMessage;
-                        assistantMsg.finished = true;
-                        assistantMsg._streaming = false;
-                        renderMessages();
-                        isSending = false;
-                        activeStreamId = null;
-                        sendBtnArrow();
-                        throw new Error(errorMessage);
-                    });
-                }
-                return resp;
-            }).then(function(resp) {
-                var contentType = resp.headers.get('content-type') || '';
-                if (!contentType.includes('text/event-stream')) {
-                    return resp.json().then(function(errJson) {
-                        var errorMessage = errJson.error || 'Ошибка сервера.';
-                        if (errJson.error_type === 'bad_request') {
-                            errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
-                        } else if (errJson.error_type === 'rate_limited') {
-                            errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
-                        } else if (errJson.error_type === 'deepseek_error') {
-                            errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
-                        } else if (errJson.error_type === 'deepseek_overloaded') {
-                            errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                        }
-                        assistantMsg._error_type = errJson.error_type || null;
-                        assistantMsg.content = errorMessage;
-                        assistantMsg.finished = true;
-                        renderMessages();
-                        isSending = false;
-                        activeStreamId = null;
-                        sendBtnArrow();
-                        throw new Error(errorMessage);
-                    });
-                }
-                return resp;
-            }).then(function(resp) {
-                return processRegenerateStream(resp, assistantMsg, newMsgIndex, chat);
-            }).catch(function(e) {
-                if (e.name === 'AbortError') {
-                    assistantMsg.interrupted = true;
-                    assistantMsg.finished = true;
-                    assistantMsg._streaming = false;
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
-                } else {
-                    console.error('retryMessage error:', e);
-                    isSending = false;
-                    sendBtnArrow();
-                }
-            });
-        }
-        function processRegenerateStream(resp, assistantMsg, newMsgIndex, chat) {
-            var reader = resp.body.getReader();
-            var decoder = new TextDecoder();
-            var buffer = '';
-            var sendBtnRef = document.getElementById('sendBtn');
-            sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
-            sendBtnRef.onclick = function() { stopTyping(); };
-            
-            function readChunk() {
-                return reader.read().then(function(readResult) {
-                    if (readResult.done) {
-                        assistantMsg.finished = true;
-                        assistantMsg._streaming = false;
-                        assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
-                        return updateBranchesFromServer().then(function() {
-                            if (chat.allBranches && chat.allBranches[currentBranchId]) {
-                                chat.messages = chat.allBranches[currentBranchId].messages || [];
-                            }
-                            chat.lastMessageTime = Date.now();
-                            chats.sort(function(a, b) { return (b.lastMessageTime || 0) - (a.lastMessageTime || 0); });
-                            autoNameChat(chat);
-                            renderMessages();
-                            renderChatList();
-                            renderBranchesPanel();
-                            updateBalance();
-                            playSound('reply');
-                            isSending = false;
-                            activeStreamId = null;
-                            sendBtnArrow();
-                        });
-                    }
-                    buffer += decoder.decode(readResult.value, { stream: true });
-                    var lines = buffer.split('\n');
-                    buffer = lines.pop() || '';
-                    return processLines(lines, assistantMsg, newMsgIndex).then(readChunk);
-                });
+            // Берем текст из сообщения пользователя и отправляем заново
+            var userMsg = chat.messages[userIndex];
+            if (userMsg && userMsg.role === 'user' && userMsg.content) {
+                var input = document.getElementById('userInput');
+                input.value = userMsg.content;
+                input.dispatchEvent(new Event('input'));
+                sendMessage();
             }
-            
-            function processLines(lines, assistantMsg, newMsgIndex) {
-                for (var i = 0; i < lines.length; i++) {
-                    var line = lines[i];
-                    if (!line.startsWith('data: ')) continue;
-                    var dataStr = line.slice(6).trim();
-                    if (dataStr === '[DONE]') continue;
-                    try {
-                        var parsed = JSON.parse(dataStr);
-                        if (parsed.error_type) {
-                            var errorMessage = 'Ошибка сервера.';
-                            if (parsed.error_type === 'bad_request') {
-                                errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
-                            } else if (parsed.error_type === 'rate_limited') {
-                                errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
-                            } else if (parsed.error_type === 'deepseek_error') {
-                                errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
-                            } else if (parsed.error_type === 'deepseek_overloaded') {
-                                errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                            }
-                            assistantMsg._error_type = parsed.error_type;
-                            assistantMsg.content = errorMessage;
-                            assistantMsg.finished = true;
-                            assistantMsg._streaming = false;
-                            renderMessages();
-                            isSending = false;
-                            activeStreamId = null;
-                            sendBtnArrow();
-                            return;
-                        }
-                        if (parsed.assistant_msg_id) {
-                            assistantMsg.msg_id = parsed.assistant_msg_id;
-                        } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
-                            if (parsed.reasoning) {
-                                assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
-                            }
-                            if (parsed.content) {
-                                assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
-                            }
-                            assistantMsg.content = assistantMsg._fullBuffer || '';
-                            var msgEl = document.getElementById('stream-' + newMsgIndex);
-                            if (msgEl) {
-                                requestAnimationFrame(function() {
-                                    streamUpdateDOM(msgEl, assistantMsg);
-                                });
-                            }
-                        }
-                    } catch (e) {}
-                }
-            }
-            
-            return readChunk();
         }
-
 
         function copyMessage(index) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
