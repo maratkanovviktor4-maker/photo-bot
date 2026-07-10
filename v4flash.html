@@ -2105,11 +2105,17 @@
                     sendBtnArrow();
                 } else {
                     console.error('regenerateAssistantMessage error:', e);
-                    showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
+                    var errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                    assistantMsg.content = errorMessage;
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
+                    renderMessages();
                     isSending = false;
+                    activeStreamId = null;
                     sendBtnArrow();
                 }
             }
+
         }
         function buildMessageHtml(index, msg) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
