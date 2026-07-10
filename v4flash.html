@@ -2258,22 +2258,29 @@
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             
-            // Удаляем только сообщение ассистента с ошибкой (следующее после user)
-            if (userIndex < chat.messages.length - 1) {
-                chat.messages.splice(userIndex + 1, 1);
+            // Сохраняем текст сообщения пользователя
+            var userMsg = chat.messages[userIndex];
+            var userText = userMsg ? userMsg.content : '';
+            
+            // Удаляем сообщение пользователя
+            chat.messages.splice(userIndex, 1);
+            
+            // Удаляем сообщение ассистента с ошибкой (следующее после user)
+            if (userIndex < chat.messages.length) {
+                chat.messages.splice(userIndex, 1);
             }
             
             renderMessages();
             
-            // Берем текст из сообщения пользователя и отправляем заново
-            var userMsg = chat.messages[userIndex];
-            if (userMsg && userMsg.role === 'user' && userMsg.content) {
+            // Отправляем сохраненный текст
+            if (userText) {
                 var input = document.getElementById('userInput');
-                input.value = userMsg.content;
+                input.value = userText;
                 input.dispatchEvent(new Event('input'));
                 sendMessage();
             }
         }
+
 
         function copyMessage(index) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
