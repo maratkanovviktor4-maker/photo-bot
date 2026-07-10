@@ -2077,6 +2077,12 @@
                         } catch (e) {}
                     }
                 }
+                if (assistantMsg._error_type) {
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                    return;
+                }
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
@@ -2091,7 +2097,7 @@
                 renderChatList();
                 renderBranchesPanel();
                 updateBalance();
-		playSound('reply');
+                playSound('reply');
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
@@ -2115,8 +2121,8 @@
                     sendBtnArrow();
                 }
             }
-
         }
+
         function buildMessageHtml(index, msg) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!msg) return '';
