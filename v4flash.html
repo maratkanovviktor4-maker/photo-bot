@@ -2266,9 +2266,12 @@
                 chat.messages.splice(userIndex + 1, 1);
             }
             
+            // Удаляем само сообщение user из массива
+            chat.messages.splice(userIndex, 1);
+            
             renderMessages();
             
-            // Удаляем сообщение user из Redis, если есть msg_id
+            // Удаляем сообщение user из Redis
             if (userMsg.msg_id) {
                 fetch(SERVER_URL + '/delete_message?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&msg_id=' + userMsg.msg_id + '&session_token=' + sessionToken, {
                     method: 'DELETE'
@@ -2281,6 +2284,7 @@
             input.dispatchEvent(new Event('input'));
             sendMessage();
         }
+
 
 
 
