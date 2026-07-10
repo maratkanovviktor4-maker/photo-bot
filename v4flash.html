@@ -2018,7 +2018,6 @@
                 var sendBtnRef = document.getElementById('sendBtn');
                 sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
                 sendBtnRef.onclick = function() { stopTyping(); };
-                // Флаг, что стрим явно завершён (не по ошибке)
                 var streamDone = false;
                 while (true) {
                     var readResult = await reader.read();
@@ -2036,7 +2035,6 @@
                         }
                         try {
                             var parsed = JSON.parse(dataStr);
-                            // ★ ОБРАБОТКА ОШИБКИ ИЗ SSE ★
                             if (parsed.error_type) {
                                 let errorMessage = 'Ошибка сервера.';
                                 if (parsed.error_type === 'bad_request') {
@@ -2056,8 +2054,8 @@
                                 isSending = false;
                                 activeStreamId = null;
                                 sendBtnArrow();
-                                streamDone = true; // прерываем внешний while (выйти из for)
-                                break; // выходим из for
+                                streamDone = true;
+                                break;
                             }
                             if (parsed.assistant_msg_id) {
                                 assistantMsg.msg_id = parsed.assistant_msg_id;
@@ -2082,9 +2080,8 @@
                             }
                         } catch (e) {}
                     }
-                    if (streamDone) break; // выход из while при ошибке или [DONE]
+                    if (streamDone) break;
                 }
-                // Если стрим завершился с ошибкой — не продолжаем
                 if (streamDone && assistantMsg.finished) return;
 
                 assistantMsg.finished = true;
@@ -2115,12 +2112,18 @@
                     sendBtnArrow();
                 } else {
                     console.error('regenerateAssistantMessage error:', e);
-                    showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
+                    assistantMsg._error_type = 'deepseek_overloaded';
+                    assistantMsg.content = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
+                    renderMessages();
                     isSending = false;
+                    activeStreamId = null;
                     sendBtnArrow();
                 }
             }
         }
+
 
         function buildMessageHtml(index, msg) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
