@@ -2257,17 +2257,14 @@
         function retryMessage(userIndex) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
-
-            var userRow = document.querySelector('.message-row.user[data-msg-index="' + userIndex + '"]');
-            if (userRow) userRow.remove();
-
+            
             // Удаляем только сообщение ассистента с ошибкой (следующее после user)
             if (userIndex < chat.messages.length - 1) {
                 chat.messages.splice(userIndex + 1, 1);
             }
-
+            
             renderMessages();
-
+            
             // Берем текст из сообщения пользователя и отправляем заново
             var userMsg = chat.messages[userIndex];
             if (userMsg && userMsg.role === 'user' && userMsg.content) {
@@ -2277,7 +2274,6 @@
                 sendMessage();
             }
         }
-
 
         function copyMessage(index) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
