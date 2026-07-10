@@ -2018,7 +2018,6 @@
                 var sendBtnRef = document.getElementById('sendBtn');
                 sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
                 sendBtnRef.onclick = function() { stopTyping(); };
-                var streamDone = false;
                 while (true) {
                     var readResult = await reader.read();
                     if (readResult.done) break;
@@ -2029,10 +2028,7 @@
                         var line = lines[i];
                         if (!line.startsWith('data: ')) continue;
                         var dataStr = line.slice(6).trim();
-                        if (dataStr === '[DONE]') {
-                            streamDone = true;
-                            continue;
-                        }
+                        if (dataStr === '[DONE]') continue;
                         try {
                             var parsed = JSON.parse(dataStr);
                             if (parsed.error_type) {
@@ -2054,8 +2050,7 @@
                                 isSending = false;
                                 activeStreamId = null;
                                 sendBtnArrow();
-                                streamDone = true;
-                                break;
+                                return;
                             }
                             if (parsed.assistant_msg_id) {
                                 assistantMsg.msg_id = parsed.assistant_msg_id;
@@ -2080,10 +2075,7 @@
                             }
                         } catch (e) {}
                     }
-                    if (streamDone) break;
                 }
-                if (streamDone && assistantMsg.finished) return;
-
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
@@ -2098,7 +2090,7 @@
                 renderChatList();
                 renderBranchesPanel();
                 updateBalance();
-                playSound('reply');
+		playSound('reply');
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
@@ -2112,19 +2104,12 @@
                     sendBtnArrow();
                 } else {
                     console.error('regenerateAssistantMessage error:', e);
-                    assistantMsg._error_type = 'deepseek_overloaded';
-                    assistantMsg.content = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                    assistantMsg.finished = true;
-                    assistantMsg._streaming = false;
-                    renderMessages();
+                    showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
                     isSending = false;
-                    activeStreamId = null;
                     sendBtnArrow();
                 }
             }
         }
-
-
         function buildMessageHtml(index, msg) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!msg) return '';
