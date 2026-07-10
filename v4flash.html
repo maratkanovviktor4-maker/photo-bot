@@ -2018,6 +2018,7 @@
                 var sendBtnRef = document.getElementById('sendBtn');
                 sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
                 sendBtnRef.onclick = function() { stopTyping(); };
+                var streamError = false;
                 while (true) {
                     var readResult = await reader.read();
                     if (readResult.done) break;
@@ -2032,6 +2033,7 @@
                         try {
                             var parsed = JSON.parse(dataStr);
                             if (parsed.error_type) {
+                                streamError = true;
                                 let errorMessage = 'Ошибка сервера.';
                                 if (parsed.error_type === 'bad_request') {
                                     errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
@@ -2050,7 +2052,7 @@
                                 isSending = false;
                                 activeStreamId = null;
                                 sendBtnArrow();
-                                return;
+                                break;
                             }
                             if (parsed.assistant_msg_id) {
                                 assistantMsg.msg_id = parsed.assistant_msg_id;
@@ -2075,7 +2077,9 @@
                             }
                         } catch (e) {}
                     }
+                    if (streamError) break;
                 }
+
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
