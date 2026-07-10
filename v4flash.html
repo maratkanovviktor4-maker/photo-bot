@@ -2255,38 +2255,30 @@
 
 
         function retryMessage(userIndex) {
+            if (isSending) return;
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             
             var userMsg = chat.messages[userIndex];
             if (!userMsg || userMsg.role !== 'user') return;
+            var text = userMsg.content;
+            if (!text) return;
             
             // Удаляем ошибочный ответ ассистента
             if (userIndex < chat.messages.length - 1) {
                 chat.messages.splice(userIndex + 1, 1);
             }
-            
             // Удаляем само сообщение user из массива
             chat.messages.splice(userIndex, 1);
             
             renderMessages();
             
-            // Удаляем сообщение user из Redis
-            fetch(SERVER_URL + '/delete_message?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&msg_id=' + userMsg.msg_id + '&session_token=' + sessionToken, {
-                method: 'DELETE'
-            }).catch(function(e) { console.error('delete user msg error:', e); });
-            
-            // Отправляем заново
+            // Вставляем текст в input и вызываем sendMessage
             var input = document.getElementById('userInput');
-            input.value = userMsg.content;
+            input.value = text;
             input.dispatchEvent(new Event('input'));
             sendMessage();
         }
-
-
-
-
-
 
         function copyMessage(index) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
