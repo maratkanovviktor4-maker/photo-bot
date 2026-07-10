@@ -2272,11 +2272,9 @@
             renderMessages();
             
             // Удаляем сообщение user из Redis
-            if (userMsg.msg_id) {
-                fetch(SERVER_URL + '/delete_message?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&msg_id=' + userMsg.msg_id + '&session_token=' + sessionToken, {
-                    method: 'DELETE'
-                }).catch(function(e) { console.error('delete user msg error:', e); });
-            }
+            fetch(SERVER_URL + '/delete_message?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&msg_id=' + userMsg.msg_id + '&session_token=' + sessionToken, {
+                method: 'DELETE'
+            }).catch(function(e) { console.error('delete user msg error:', e); });
             
             // Отправляем заново
             var input = document.getElementById('userInput');
@@ -2284,6 +2282,7 @@
             input.dispatchEvent(new Event('input'));
             sendMessage();
         }
+
 
 
 
