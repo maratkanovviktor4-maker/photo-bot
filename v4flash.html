@@ -2258,22 +2258,29 @@
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             
-            // Удаляем только сообщение ассистента с ошибкой (следующее после user)
+            var userMsg = chat.messages[userIndex];
+            if (!userMsg || userMsg.role !== 'user' || !userMsg.msg_id) return;
+            
+            // Удаляем ошибочный ответ ассистента
             if (userIndex < chat.messages.length - 1) {
                 chat.messages.splice(userIndex + 1, 1);
             }
             
             renderMessages();
             
-            // Берем текст из сообщения пользователя и отправляем заново
-            var userMsg = chat.messages[userIndex];
-            if (userMsg && userMsg.role === 'user' && userMsg.content) {
-                var input = document.getElementById('userInput');
-                input.value = userMsg.content;
-                input.dispatchEvent(new Event('input'));
-                sendMessage();
-            }
+            // Удаляем сообщение user из Redis
+            fetch(SERVER_URL + '/delete_message?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&msg_id=' + userMsg.msg_id + '&session_token=' + sessionToken, {
+                method: 'DELETE'
+            }).catch(function(e) { console.error('delete user msg error:', e); });
+            
+            // Отправляем заново
+            var input = document.getElementById('userInput');
+            input.value = userMsg.content;
+            input.dispatchEvent(new Event('input'));
+            sendMessage();
         }
+
+
 
         function copyMessage(index) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
