@@ -2257,25 +2257,22 @@
         function retryMessage(userIndex) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
-            
-            // Сохраняем текст сообщения пользователя
-            var userMsg = chat.messages[userIndex];
-            var userText = userMsg ? userMsg.content : '';
-            
-            // Удаляем сообщение пользователя
-            chat.messages.splice(userIndex, 1);
-            
-            // Удаляем сообщение ассистента с ошибкой (следующее после user)
-            if (userIndex < chat.messages.length) {
-                chat.messages.splice(userIndex, 1);
+
+            var userRow = document.querySelector('.message-row.user[data-msg-index="' + userIndex + '"]');
+            if (userRow) userRow.remove();
+
+            // Удаляем только сообщение ассистента с ошибкой (следующее после user)
+            if (userIndex < chat.messages.length - 1) {
+                chat.messages.splice(userIndex + 1, 1);
             }
-            
+
             renderMessages();
-            
-            // Отправляем сохраненный текст
-            if (userText) {
+
+            // Берем текст из сообщения пользователя и отправляем заново
+            var userMsg = chat.messages[userIndex];
+            if (userMsg && userMsg.role === 'user' && userMsg.content) {
                 var input = document.getElementById('userInput');
-                input.value = userText;
+                input.value = userMsg.content;
                 input.dispatchEvent(new Event('input'));
                 sendMessage();
             }
