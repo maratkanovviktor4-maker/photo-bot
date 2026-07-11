@@ -153,7 +153,7 @@
         body.light .input-area textarea { background: transparent; border: none; color: #111; }
         body.light .input-area textarea:focus { outline: none; border: none; box-shadow: none; }
         #sendBtn { width: 36px; height: 36px; padding: 0; background: linear-gradient(90deg, #F59E0B, #FBBF24); color: #201F28; border: 2px solid transparent; border-radius: 50%; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 16px; transition: 0.3s ease; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,203,245,0.3); display: inline-flex; align-items: center; justify-content: center; }
-        #sendBtn:disabled { background: rgba(0,203,245,0.3); color: rgba(32,31,40,0.4); cursor: not-allowed; box-shadow: none; transform: none; }
+        #sendBtn:disabled { background: rgba(245,158,11,0.15); color: rgba(32,31,40,0.3); cursor: not-allowed; box-shadow: none; transform: none; }
         #sendBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,203,245,0.4); }
         .attach-btn { padding: 8px; background: transparent; border: none; border-radius: 10px; color: #F59E0B; cursor: pointer; font-family: 'Inter', sans-serif; transition: 0.3s ease; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
         body.light .attach-btn { background: transparent; border: none; }
@@ -2104,6 +2104,9 @@
                     sendBtnArrow();
                 } else {
                     console.error('regenerateAssistantMessage error:', e);
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
+                    renderMessages();
                     showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
                     isSending = false;
                     sendBtnArrow();
@@ -2993,7 +2996,7 @@
             
             var sendBtnRef = document.getElementById('sendBtn');
             sendBtnRef.disabled = true;
-            sendBtnRef.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(32,31,40,0.3);border-top-color:#201F28;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
+            sendBtnRef.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(245,158,11,0.4);border-top-color:#F59E0B;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
             sendBtnRef.onclick = null;
             
             input.value = ''; input.style.height = 'auto'; input._init = false;
