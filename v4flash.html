@@ -1115,7 +1115,9 @@
                     currentBranchId = chat.activeBranch || 'main';
                 }
                 await loadChatMessages(currentChatId);
+                fullRender();
             }
+
             if (chats.length === 0 || !currentChatId) {
                 currentChatId = null;
                 currentBranchId = 'main';
@@ -3079,14 +3081,15 @@
                     sendBtnArrow();
                 } else {
                     console.error('sendMessage error:', e);
-                    assistantMsg.content = 'Ошибка соединения.';
-                    assistantMsg.finished = true;
-                    assistantMsg._streaming = false;
+                    chat.messages.pop(); // удаляем ассистента
+                    chat.messages.pop(); // удаляем пользователя
+                    renderMessages();
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
-                    showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
+                    showAlertModal('Ошибка соединения', 'Пук', '❌');
                 }
+
             }
         }
 
