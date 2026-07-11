@@ -1572,16 +1572,7 @@
                                     } else if (parsed.error_type === 'deepseek_overloaded') {
                                         errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                                     }
-                                    if (assistantMsg) {
-                                        assistantMsg.content = errorMessage;
-                                        assistantMsg.finished = true;
-                                        assistantMsg._streaming = false;
-                                        assistantMsg._error_type = parsed.error_type;
-                                    }
-                                    renderMessages();
-                                    isSending = false;
-                                    activeStreamId = null;
-                                    sendBtnArrow();
+                                    showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                     return;
                                 }
                                 if (!branchMetaReceived) {
@@ -1822,14 +1813,7 @@
                                         } else if (parsed.error_type === 'deepseek_overloaded') {
                                             errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                                         }
-                                        assistantMsg._error_type = parsed.error_type;
-                                        assistantMsg.content = errorMessage;
-                                        assistantMsg.finished = true;
-                                        assistantMsg._streaming = false;
-                                        renderMessages();
-                                        isSending = false;
-                                        activeStreamId = null;
-                                        sendBtnArrow();
+                                        showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                         return;
                                     }
                                     if (parsed.assistant_msg_id) {
@@ -2042,14 +2026,7 @@
                                 } else if (parsed.error_type === 'deepseek_overloaded') {
                                     errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                                 }
-                                assistantMsg._error_type = parsed.error_type;
-                                assistantMsg.content = errorMessage;
-                                assistantMsg.finished = true;
-                                assistantMsg._streaming = false;
-                                renderMessages();
-                                isSending = false;
-                                activeStreamId = null;
-                                sendBtnArrow();
+                                showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
                             }
                             if (parsed.assistant_msg_id) {
@@ -2770,16 +2747,9 @@
                                                             } else if (parsed.error_type === 'deepseek_overloaded') {
                                                                 errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                                                             }
-                                                            assistantMsg._error_type = parsed.error_type;
-                                                            assistantMsg.content = errorMessage;
-                                                            assistantMsg.finished = true;
-                                                            assistantMsg._streaming = false;
-                                                            renderMessages();
-                                                            isSending = false;
-                                                            activeStreamId = null;
-                                                            sendBtnArrow();
-                                                            return;
-                                                        }
+                                                    	    showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
+                                                    	    return;
+                                             	   	}
                                                         if (parsed.branch_id) {
                                                                 currentBranchId = parsed.branch_id;
                                                                 chat.activeBranch = parsed.branch_id;
@@ -3114,14 +3084,7 @@
                                 } else if (parsed.error_type === 'deepseek_overloaded') {
                                     errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                                 }
-                                chat.messages[msgIndex]._error_type = parsed.error_type;
-                                chat.messages[msgIndex].content = errorMessage;
-                                chat.messages[msgIndex].finished = true;
-                                chat.messages[msgIndex]._streaming = false;
-                                renderMessages();
-                                isSending = false;
-                                activeStreamId = null;
-                                sendBtnArrow();
+                                showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
                             }
                             
