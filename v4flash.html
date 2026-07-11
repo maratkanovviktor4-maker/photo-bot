@@ -1519,24 +1519,10 @@
                 if (!resp.ok) {
                     var errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
-                    if (errData.error_type === 'bad_request') {
-                        errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
-                    } else if (errData.error_type === 'rate_limited') {
-                        errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
-                    } else if (errData.error_type === 'deepseek_error') {
-                        errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
-                    } else if (errData.error_type === 'deepseek_overloaded') {
-                        errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                    }
-                    var errAssistantMsg = { role: 'assistant', content: errorMessage, finished: true, _streaming: false };
-                    errAssistantMsg._error_type = errData.error_type || null;
-                    chat.messages.push(errAssistantMsg);
-                    fullRender();
-                    isSending = false;
-                    sendBtnArrow();
-                    hideLoading();
+                    showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
+
                 var contentType = resp.headers.get('content-type') || '';
                 if (contentType.includes('text/event-stream')) {
                     var reader = resp.body.getReader();
@@ -1744,24 +1730,10 @@
                         if (!resp.ok) {
                             var errData = await resp.json().catch(() => ({}));
                             let errorMessage = errData.error || 'Ошибка сервера.';
-                            if (errData.error_type === 'bad_request') {
-                                errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
-                            } else if (errData.error_type === 'rate_limited') {
-                                errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
-                            } else if (errData.error_type === 'deepseek_error') {
-                                errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
-                            } else if (errData.error_type === 'deepseek_overloaded') {
-                                errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                            }
-                            assistantMsg._error_type = errData.error_type || null;
-                            assistantMsg.content = errorMessage;
-                            assistantMsg.finished = true;
-                            assistantMsg._streaming = false;
-                            renderMessages();
-                            isSending = false;
-                            sendBtnArrow();
+                            showAlertModal('Ошибка', errorMessage, '❌');
                             return;
                         }
+
                         var contentType = resp.headers.get('content-type') || '';
                         if (!contentType.includes('text/event-stream')) {
                             var errJson = await resp.json().catch(() => ({}));
@@ -1957,24 +1929,10 @@
                 if (!resp.ok) {
                     var errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
-                    if (errData.error_type === 'bad_request') {
-                        errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
-                    } else if (errData.error_type === 'rate_limited') {
-                        errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
-                    } else if (errData.error_type === 'deepseek_error') {
-                        errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
-                    } else if (errData.error_type === 'deepseek_overloaded') {
-                        errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                    }
-                    assistantMsg._error_type = errData.error_type || null;
-                    assistantMsg.content = errorMessage;
-                    assistantMsg.finished = true;
-                    assistantMsg._streaming = false;
-                    renderMessages();
-                    isSending = false;
-                    sendBtnArrow();
+                    showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
+
                 var contentType = resp.headers.get('content-type') || '';
                 if (!contentType.includes('text/event-stream')) {
                     var errJson = await resp.json().catch(() => ({}));
@@ -2692,24 +2650,10 @@
                         if (!resp.ok) {
                             var errData = await resp.json().catch(() => ({}));
                             let errorMessage = errData.error || 'Ошибка сервера.';
-                            if (errData.error_type === 'bad_request') {
-                                errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
-                            } else if (errData.error_type === 'rate_limited') {
-                                errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
-                            } else if (errData.error_type === 'deepseek_error') {
-                                errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
-                            } else if (errData.error_type === 'deepseek_overloaded') {
-                                errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                            }
-                            assistantMsg._error_type = errData.error_type || null;
-                            assistantMsg.content = errorMessage;
-                            assistantMsg.finished = true;
-                            assistantMsg._streaming = false;
-                            renderMessages();
-                            isSending = false;
-                            sendBtnArrow();
+                            showAlertModal('Ошибка', errorMessage, '❌');
                             return;
                         }
+
                         var newBranchId = resp.headers.get('X-Branch-Id');
                         if (newBranchId) {
                                 currentBranchId = newBranchId;
@@ -3008,27 +2952,12 @@
                 });
 
                 if (!resp.ok) {
-                    const errData = await resp.json().catch(() => ({}));
+                    var errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
-                    if (errData.error_type === 'bad_request') {
-                        errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
-                    } else if (errData.error_type === 'rate_limited') {
-                        errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
-                    } else if (errData.error_type === 'deepseek_error') {
-                        errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
-                    } else if (errData.error_type === 'deepseek_overloaded') {
-                        errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                    }
-                    chat.messages[msgIndex]._error_type = errData.error_type || null;
-                    chat.messages[msgIndex].content = errorMessage;
-                    chat.messages[msgIndex].finished = true;
-                    chat.messages[msgIndex]._streaming = false;
-                    renderMessages();
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
+                    showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
+
 
                 const contentType = resp.headers.get('content-type') || '';
                 if (!contentType.includes('text/event-stream')) {
