@@ -2059,7 +2059,7 @@
                 actionsHtml += '<button onclick="shareChat(\'' + (currentChatId || '') + '\')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg></button>';
                 if (msg.interrupted) actionsHtml += '<button onclick="continueMessage(' + index + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                 actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + index + ')" title="Self-Play диалог" style="color:#F59E0B;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
-		actionsHtml += '<button class="debate-btn" onclick="startDebate(' + index + ')" title="Дебаты Pro vs Flash" style="color:#F59E0B;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Дебаты</button>';
+		actionsHtml += '<button class="review-btn" onclick="showReviewModal(' + index + ')" title="Ревью Pro + Flash" style="color:#F59E0B;">📋 Ревью</button>';
             }
             var reasoningHtml = '';
             var contentToShow = msg.content || '';
@@ -2603,7 +2603,32 @@
                 });
             }
         })();
-        async function startDebate(msgIndex) {
+        var reviewMsgIndex = -1;
+
+        function showReviewModal(index) {
+            reviewMsgIndex = index;
+            document.getElementById('reviewPrompt').value = '';
+            document.getElementById('reviewRounds').value = 3;
+            document.getElementById('reviewRoundsValue').textContent = '3';
+            document.getElementById('reviewModal').classList.add('active');
+            setTimeout(function() { document.getElementById('reviewPrompt').focus(); }, 100);
+        }
+
+        function closeReviewModal() {
+            document.getElementById('reviewModal').classList.remove('active');
+            reviewMsgIndex = -1;
+        }
+
+        function confirmReview() {
+            var prompt = document.getElementById('reviewPrompt').value.trim();
+            if (!prompt) return;
+            var rounds = parseInt(document.getElementById('reviewRounds').value);
+            var idx = reviewMsgIndex;
+            closeReviewModal();
+            startReview(idx, prompt, rounds);
+        }
+
+        async function startReview(msgIndex, prompt, rounds) {
             if (isSending) return;
             if (!currentChatId) {
                 currentChatId = Date.now().toString();
@@ -2621,11 +2646,11 @@
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '', msg_id: null, _abortController: null };
             chat.messages.push(assistantMsg);
             var streamMsgIndex = chat.messages.length - 1;
-            activeStreamId = 'debate_' + streamMsgIndex;
+            activeStreamId = 'review_' + streamMsgIndex;
             renderMessages();
             
             try {
-                const resp = await fetch(SERVER_URL + '/debate', {
+                const resp = await fetch(SERVER_URL + '/review', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
                     body: JSON.stringify({
@@ -2634,7 +2659,8 @@
                         chat_id: currentChatId,
                         branch_id: currentBranchId,
                         source_msg_id: msg.msg_id || '',
-                        prompt: msg.content || '',
+                        prompt: prompt,
+                        rounds: rounds,
                         mode: currentMode
                     })
                 });
@@ -2647,8 +2673,6 @@
                 
                 var contentType = resp.headers.get('content-type') || '';
                 if (!contentType.includes('text/event-stream')) {
-                    var errJson = await resp.json().catch(() => ({}));
-                    showAlertModal('Ошибка', errJson.error || 'Ошибка сервера.', '❌');
                     return;
                 }
                 
@@ -2674,19 +2698,33 @@
                         try {
                             var parsed = JSON.parse(dataStr);
                             if (parsed.error_type) {
-                                showAlertModal('Ошибка DeepSeek', 'Ошибка DeepSeek. Попробуйте позже.', '❌');
+                                var errorMessage = 'Ошибка сервера.';
+                                if (parsed.error_type === 'bad_request') {
+                                    errorMessage = 'Неверный формат запроса.';
+                                } else if (parsed.error_type === 'rate_limited') {
+                                    errorMessage = 'Слишком много запросов.';
+                                } else if (parsed.error_type === 'deepseek_error') {
+                                    errorMessage = 'Ошибка DeepSeek. Попробуйте позже.';
+                                } else if (parsed.error_type === 'deepseek_overloaded') {
+                                    errorMessage = 'DeepSeek перегружен. Попробуйте позже.';
+                                } else if (parsed.error_type === 'server_timeout') {
+                                    errorMessage = 'Сервер не дождался ответа. Попробуйте позже.';
+                                } else if (parsed.error_type === 'insufficient_funds') {
+                                    errorMessage = 'Недостаточно средств.';
+                                }
+                                showAlertModal('Ошибка', errorMessage, '❌');
                                 return;
                             }
                             if (!branchMetaReceived && parsed.branch_id) {
                                 currentBranchId = parsed.branch_id;
                                 chat.activeBranch = parsed.branch_id;
                                 if (!chat.allBranches) chat.allBranches = {};
-                                chat.allBranches[parsed.branch_id] = { name: '⚔️ Дебаты Pro vs Flash', messages: [], msg_ids: [], source_role: 'assistant' };
+                                chat.allBranches[parsed.branch_id] = { name: '📋 Ревью Pro + Flash', messages: [], msg_ids: [], source_role: 'assistant' };
                                 renderBranchesPanel();
                                 branchMetaReceived = true;
                             }
                             if (parsed.role && parsed.content) {
-                                var prefix = parsed.role === 'pro' ? '🔵 DeepSeek Pro:\n' : '🟡 DeepSeek Flash:\n';
+                                var prefix = parsed.role === 'pro' ? '🔵 Pro:\n' : '🟡 Flash:\n';
                                 assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + prefix + parsed.content + '\n\n';
                                 assistantMsg.content = assistantMsg._fullBuffer;
                                 var msgEl = document.getElementById('stream-' + streamMsgIndex);
@@ -2726,16 +2764,17 @@
                     activeStreamId = null;
                     sendBtnArrow();
                 } else {
-                    console.error('debate error:', e);
+                    console.error('review error:', e);
                     chat.messages.pop();
                     renderMessages();
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
-                    showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
+                    showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
                 }
             }
         }
+
 
         async function selfPlay(msgIndex, promptText, selectedRoles, consensusRole, temperature) {
                 if (isSending) return;
@@ -4023,6 +4062,7 @@
                 }
             }
         })();
+	document.getElementById('reviewModal').addEventListener('click', function(e) { if (e.target === this) closeReviewModal(); });
 
         document.addEventListener('click', function(e) {
             var d = document.querySelector('.chat-menu-dropdown.show');
@@ -4493,6 +4533,25 @@
         });
 
     </script>
+    <div id="reviewModal" class="modal-overlay">
+        <div class="modal-box" style="max-width:500px;">
+            <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#F59E0B;">📋</div>
+            <div class="modal-title" style="margin-bottom:12px;">Ревью Pro + Flash</div>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">ЗАДАЧА</label>
+                <textarea id="reviewPrompt" style="width:100%;padding:12px 14px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:14px;font-family:Inter,sans-serif;outline:none;resize:none;min-height:80px;transition:all 0.2s ease;" placeholder="Что нужно проанализировать?"></textarea>
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">КОЛИЧЕСТВО РАУНДОВ: <span id="reviewRoundsValue">3</span></label>
+                <input type="range" id="reviewRounds" min="1" max="20" value="3" step="1" style="width:100%;height:8px;border-radius:4px;background:linear-gradient(to right, #F59E0B, #FF4500);-webkit-appearance:none;appearance:none;outline:none;cursor:pointer;" oninput="document.getElementById('reviewRoundsValue').textContent=this.value">
+            </div>
+            <div class="modal-actions" style="gap:12px;">
+                <button class="modal-btn-secondary" onclick="closeReviewModal()" style="flex:1;padding:12px;">Отмена</button>
+                <button id="reviewConfirmBtn" class="modal-btn-primary" onclick="confirmReview()" style="flex:1;padding:12px;">Запустить</button>
+            </div>
+        </div>
+    </div>
+    
     <div id="selfPlayModal" class="modal-overlay">
         <div class="modal-box" style="max-width:600px;">
             <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#F59E0B;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"/></svg></div>
