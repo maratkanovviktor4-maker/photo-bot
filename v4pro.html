@@ -2059,7 +2059,6 @@
                 actionsHtml += '<button onclick="shareChat(\'' + (currentChatId || '') + '\')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg></button>';
                 if (msg.interrupted) actionsHtml += '<button onclick="continueMessage(' + index + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                 actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + index + ')" title="Self-Play диалог" style="color:#F59E0B;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
-		actionsHtml += '<button class="review-btn" onclick="showReviewModal(' + index + ')" title="Ревью Pro + Flash" style="color:#F59E0B;">📋 Ревью</button>';
             }
             var reasoningHtml = '';
             var contentToShow = msg.content || '';
@@ -2603,178 +2602,6 @@
                 });
             }
         })();
-        var reviewMsgIndex = -1;
-
-        function showReviewModal(index) {
-            reviewMsgIndex = index;
-            document.getElementById('reviewPrompt').value = '';
-            document.getElementById('reviewRounds').value = 3;
-            document.getElementById('reviewRoundsValue').textContent = '3';
-            document.getElementById('reviewModal').classList.add('active');
-            setTimeout(function() { document.getElementById('reviewPrompt').focus(); }, 100);
-        }
-
-        function closeReviewModal() {
-            document.getElementById('reviewModal').classList.remove('active');
-            reviewMsgIndex = -1;
-        }
-
-        function confirmReview() {
-            var prompt = document.getElementById('reviewPrompt').value.trim();
-            if (!prompt) return;
-            var rounds = parseInt(document.getElementById('reviewRounds').value);
-            var idx = reviewMsgIndex;
-            closeReviewModal();
-            startReview(idx, prompt, rounds);
-        }
-
-        async function startReview(msgIndex, prompt, rounds) {
-            if (isSending) return;
-            if (!currentChatId) {
-                currentChatId = Date.now().toString();
-                var newChatObj = { id: currentChatId, title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: {}, lastMessageTime: Date.now() };
-                chats.push(newChatObj);
-            }
-            const chat = chats.find(c => c.id === currentChatId);
-            if (!chat) return;
-            const msg = chat.messages[msgIndex];
-            if (!msg || msg.role !== 'assistant') return;
-            
-            isSending = true;
-            sendBtnStop();
-            
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '', msg_id: null, _abortController: null };
-            chat.messages.push(assistantMsg);
-            var streamMsgIndex = chat.messages.length - 1;
-            activeStreamId = 'review_' + streamMsgIndex;
-            renderMessages();
-            
-            try {
-                const resp = await fetch(SERVER_URL + '/review', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({
-                        user_id: currentUserId,
-                        model: 'pro',
-                        chat_id: currentChatId,
-                        branch_id: currentBranchId,
-                        source_msg_id: msg.msg_id || '',
-                        prompt: prompt,
-                        rounds: rounds,
-                        mode: currentMode
-                    })
-                });
-                
-                if (!resp.ok) {
-                    var errData = await resp.json().catch(() => ({}));
-                    showAlertModal('Ошибка', errData.error || 'Ошибка сервера.', '❌');
-                    return;
-                }
-                
-                var contentType = resp.headers.get('content-type') || '';
-                if (!contentType.includes('text/event-stream')) {
-                    return;
-                }
-                
-                var reader = resp.body.getReader();
-                var decoder = new TextDecoder();
-                var buffer = '';
-                var sendBtnRef = document.getElementById('sendBtn');
-                sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
-                sendBtnRef.onclick = function() { stopTyping(); };
-                var branchMetaReceived = false;
-                
-                while (true) {
-                    var readResult = await reader.read();
-                    if (readResult.done) break;
-                    buffer += decoder.decode(readResult.value, { stream: true });
-                    var lines = buffer.split('\n');
-                    buffer = lines.pop() || '';
-                    for (var i = 0; i < lines.length; i++) {
-                        var line = lines[i];
-                        if (!line.startsWith('data: ')) continue;
-                        var dataStr = line.slice(6).trim();
-                        if (dataStr === '[DONE]') continue;
-                        try {
-                            var parsed = JSON.parse(dataStr);
-                            if (parsed.error_type) {
-                                var errorMessage = 'Ошибка сервера.';
-                                if (parsed.error_type === 'bad_request') {
-                                    errorMessage = 'Неверный формат запроса.';
-                                } else if (parsed.error_type === 'rate_limited') {
-                                    errorMessage = 'Слишком много запросов.';
-                                } else if (parsed.error_type === 'deepseek_error') {
-                                    errorMessage = 'Ошибка DeepSeek. Попробуйте позже.';
-                                } else if (parsed.error_type === 'deepseek_overloaded') {
-                                    errorMessage = 'DeepSeek перегружен. Попробуйте позже.';
-                                } else if (parsed.error_type === 'server_timeout') {
-                                    errorMessage = 'Сервер не дождался ответа. Попробуйте позже.';
-                                } else if (parsed.error_type === 'insufficient_funds') {
-                                    errorMessage = 'Недостаточно средств.';
-                                }
-                                showAlertModal('Ошибка', errorMessage, '❌');
-                                return;
-                            }
-                            if (!branchMetaReceived && parsed.branch_id) {
-                                currentBranchId = parsed.branch_id;
-                                chat.activeBranch = parsed.branch_id;
-                                if (!chat.allBranches) chat.allBranches = {};
-                                chat.allBranches[parsed.branch_id] = { name: '📋 Ревью Pro + Flash', messages: [], msg_ids: [], source_role: 'assistant' };
-                                renderBranchesPanel();
-                                branchMetaReceived = true;
-                            }
-                            if (parsed.role && parsed.content) {
-                                var prefix = parsed.role === 'pro' ? '🔵 Pro:\n' : '🟡 Flash:\n';
-                                assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + prefix + parsed.content + '\n\n';
-                                assistantMsg.content = assistantMsg._fullBuffer;
-                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
-                                if (msgEl) {
-                                    requestAnimationFrame(function() {
-                                        streamUpdateDOM(msgEl, assistantMsg);
-                                    });
-                                }
-                            }
-                            if (parsed.consensus_reached !== undefined) {
-                                assistantMsg.finished = true;
-                                assistantMsg._streaming = false;
-                            }
-                        } catch (e) {}
-                    }
-                }
-                
-                await updateBranchesFromServer();
-                if (chat.allBranches && chat.allBranches[currentBranchId]) {
-                    chat.messages = chat.allBranches[currentBranchId].messages || [];
-                }
-                chat.lastMessageTime = Date.now();
-                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                renderMessages();
-                renderChatList();
-                renderBranchesPanel();
-                updateBalance();
-                isSending = false;
-                activeStreamId = null;
-                sendBtnArrow();
-            } catch (e) {
-                if (e.name === 'AbortError') {
-                    assistantMsg.interrupted = true;
-                    assistantMsg.finished = true;
-                    assistantMsg._streaming = false;
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
-                } else {
-                    console.error('review error:', e);
-                    chat.messages.pop();
-                    renderMessages();
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
-                    showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету.', '❌');
-                }
-            }
-        }
-
 
         async function selfPlay(msgIndex, promptText, selectedRoles, consensusRole, temperature) {
                 if (isSending) return;
@@ -4062,7 +3889,6 @@
                 }
             }
         })();
-	document.getElementById('reviewModal').addEventListener('click', function(e) { if (e.target === this) closeReviewModal(); });
 
         document.addEventListener('click', function(e) {
             var d = document.querySelector('.chat-menu-dropdown.show');
@@ -4533,25 +4359,6 @@
         });
 
     </script>
-    <div id="reviewModal" class="modal-overlay">
-        <div class="modal-box" style="max-width:500px;">
-            <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#F59E0B;">📋</div>
-            <div class="modal-title" style="margin-bottom:12px;">Ревью Pro + Flash</div>
-            <div style="margin-bottom:12px;">
-                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">ЗАДАЧА</label>
-                <textarea id="reviewPrompt" style="width:100%;padding:12px 14px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:14px;font-family:Inter,sans-serif;outline:none;resize:none;min-height:80px;transition:all 0.2s ease;" placeholder="Что нужно проанализировать?"></textarea>
-            </div>
-            <div style="margin-bottom:16px;">
-                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">КОЛИЧЕСТВО РАУНДОВ: <span id="reviewRoundsValue">3</span></label>
-                <input type="range" id="reviewRounds" min="1" max="20" value="3" step="1" style="width:100%;height:8px;border-radius:4px;background:linear-gradient(to right, #F59E0B, #FF4500);-webkit-appearance:none;appearance:none;outline:none;cursor:pointer;" oninput="document.getElementById('reviewRoundsValue').textContent=this.value">
-            </div>
-            <div class="modal-actions" style="gap:12px;">
-                <button class="modal-btn-secondary" onclick="closeReviewModal()" style="flex:1;padding:12px;">Отмена</button>
-                <button id="reviewConfirmBtn" class="modal-btn-primary" onclick="confirmReview()" style="flex:1;padding:12px;">Запустить</button>
-            </div>
-        </div>
-    </div>
-    
     <div id="selfPlayModal" class="modal-overlay">
         <div class="modal-box" style="max-width:600px;">
             <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#F59E0B;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"/></svg></div>
