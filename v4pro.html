@@ -2059,6 +2059,7 @@
                 actionsHtml += '<button onclick="shareChat(\'' + (currentChatId || '') + '\')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg></button>';
                 if (msg.interrupted) actionsHtml += '<button onclick="continueMessage(' + index + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                 actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + index + ')" title="Self-Play диалог" style="color:#F59E0B;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
+		actionsHtml += '<button class="debate-btn" onclick="startDebate(' + index + ')" title="Дебаты Pro vs Flash" style="color:#F59E0B;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Дебаты</button>';
             }
             var reasoningHtml = '';
             var contentToShow = msg.content || '';
@@ -2602,6 +2603,139 @@
                 });
             }
         })();
+        async function startDebate(msgIndex) {
+            if (isSending) return;
+            if (!currentChatId) {
+                currentChatId = Date.now().toString();
+                var newChatObj = { id: currentChatId, title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: {}, lastMessageTime: Date.now() };
+                chats.push(newChatObj);
+            }
+            const chat = chats.find(c => c.id === currentChatId);
+            if (!chat) return;
+            const msg = chat.messages[msgIndex];
+            if (!msg || msg.role !== 'assistant') return;
+            
+            isSending = true;
+            sendBtnStop();
+            
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '', msg_id: null, _abortController: null };
+            chat.messages.push(assistantMsg);
+            var streamMsgIndex = chat.messages.length - 1;
+            activeStreamId = 'debate_' + streamMsgIndex;
+            renderMessages();
+            
+            try {
+                const resp = await fetch(SERVER_URL + '/debate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        model: 'pro',
+                        chat_id: currentChatId,
+                        branch_id: currentBranchId,
+                        source_msg_id: msg.msg_id || '',
+                        prompt: msg.content || '',
+                        mode: currentMode
+                    })
+                });
+                
+                if (!resp.ok) {
+                    var errData = await resp.json().catch(() => ({}));
+                    showAlertModal('Ошибка', errData.error || 'Ошибка сервера.', '❌');
+                    return;
+                }
+                
+                var contentType = resp.headers.get('content-type') || '';
+                if (!contentType.includes('text/event-stream')) {
+                    var errJson = await resp.json().catch(() => ({}));
+                    showAlertModal('Ошибка', errJson.error || 'Ошибка сервера.', '❌');
+                    return;
+                }
+                
+                var reader = resp.body.getReader();
+                var decoder = new TextDecoder();
+                var buffer = '';
+                var sendBtnRef = document.getElementById('sendBtn');
+                sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
+                sendBtnRef.onclick = function() { stopTyping(); };
+                var branchMetaReceived = false;
+                
+                while (true) {
+                    var readResult = await reader.read();
+                    if (readResult.done) break;
+                    buffer += decoder.decode(readResult.value, { stream: true });
+                    var lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i];
+                        if (!line.startsWith('data: ')) continue;
+                        var dataStr = line.slice(6).trim();
+                        if (dataStr === '[DONE]') continue;
+                        try {
+                            var parsed = JSON.parse(dataStr);
+                            if (parsed.error_type) {
+                                showAlertModal('Ошибка DeepSeek', 'Ошибка DeepSeek. Попробуйте позже.', '❌');
+                                return;
+                            }
+                            if (!branchMetaReceived && parsed.branch_id) {
+                                currentBranchId = parsed.branch_id;
+                                chat.activeBranch = parsed.branch_id;
+                                if (!chat.allBranches) chat.allBranches = {};
+                                chat.allBranches[parsed.branch_id] = { name: '⚔️ Дебаты Pro vs Flash', messages: [], msg_ids: [], source_role: 'assistant' };
+                                renderBranchesPanel();
+                                branchMetaReceived = true;
+                            }
+                            if (parsed.role && parsed.content) {
+                                var prefix = parsed.role === 'pro' ? '🔵 DeepSeek Pro:\n' : '🟡 DeepSeek Flash:\n';
+                                assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + prefix + parsed.content + '\n\n';
+                                assistantMsg.content = assistantMsg._fullBuffer;
+                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
+                                if (msgEl) {
+                                    requestAnimationFrame(function() {
+                                        streamUpdateDOM(msgEl, assistantMsg);
+                                    });
+                                }
+                            }
+                            if (parsed.consensus_reached !== undefined) {
+                                assistantMsg.finished = true;
+                                assistantMsg._streaming = false;
+                            }
+                        } catch (e) {}
+                    }
+                }
+                
+                await updateBranchesFromServer();
+                if (chat.allBranches && chat.allBranches[currentBranchId]) {
+                    chat.messages = chat.allBranches[currentBranchId].messages || [];
+                }
+                chat.lastMessageTime = Date.now();
+                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                renderMessages();
+                renderChatList();
+                renderBranchesPanel();
+                updateBalance();
+                isSending = false;
+                activeStreamId = null;
+                sendBtnArrow();
+            } catch (e) {
+                if (e.name === 'AbortError') {
+                    assistantMsg.interrupted = true;
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                } else {
+                    console.error('debate error:', e);
+                    chat.messages.pop();
+                    renderMessages();
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                    showAlertModal('Ошибка соединения', 'Проверьте подключение к интернету и попробуйте снова.', '❌');
+                }
+            }
+        }
 
         async function selfPlay(msgIndex, promptText, selectedRoles, consensusRole, temperature) {
                 if (isSending) return;
