@@ -1558,6 +1558,8 @@
                                         errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
                                     } else if (parsed.error_type === 'deepseek_overloaded') {
                                         errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                                    } else if (parsed.error_type === 'server_timeout') {
+                                        errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
                                     }
                                     showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                     return;
@@ -1665,7 +1667,7 @@
             } catch (e) {
                 if (placeholderId) { var el2 = document.getElementById(placeholderId); if (el2) el2.remove(); }
                 console.error('createBranchFromMessage error:', e);
-                showAlertModal('Ошибка соединения', 'Пук ветка юзер.', '❌');
+                showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
                 isSending = false;
                 sendBtnArrow();
                 hideLoading();
@@ -1772,7 +1774,9 @@
                                             errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
                                         } else if (parsed.error_type === 'deepseek_overloaded') {
                                             errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                                        }
+                                	} else if (parsed.error_type === 'server_timeout') {
+                                    	    errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
+                                	}
                                         showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                         return;
                                     }
@@ -1831,7 +1835,7 @@
                             sendBtnArrow();
                         } else {
                             console.error('regenerateUserMessage error:', e);
-                            showAlertModal('Ошибка соединения', 'Пук юзер', '❌');
+                            showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
                             isSending = false;
                             sendBtnArrow();
                         }
@@ -1971,6 +1975,8 @@
                                     errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
                                 } else if (parsed.error_type === 'deepseek_overloaded') {
                                     errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                                } else if (parsed.error_type === 'server_timeout') {
+                                    errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
                                 }
                                 showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
@@ -2028,7 +2034,7 @@
                     sendBtnArrow();
                 } else {
                     console.error('regenerateAssistantMessage error:', e);
-                    showAlertModal('Ошибка соединения', 'Пук ассистент.', '❌');
+                    showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
                     isSending = false;
                     sendBtnArrow();
                 }
@@ -2500,7 +2506,7 @@
                 }
             } catch (e) {
                 console.error('copyHistory error:', e);
-                showAlertModal('Ошибка соединения', 'Пук слияние ветки', '\u274C');
+                showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '\u274C');
             }
             btn.disabled = false;
             btn.textContent = 'Перенести';
@@ -2678,7 +2684,9 @@
                                                                 errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
                                                             } else if (parsed.error_type === 'deepseek_overloaded') {
                                                                 errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                                                            }
+                                			    } else if (parsed.error_type === 'server_timeout') {
+                                    				errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
+                                			    }
                                                     	    showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                                     	    return;
                                                 	}
@@ -2750,7 +2758,7 @@
                         sendBtnArrow();
                 } catch(e) {
                         console.error('selfPlay error:', e);
-                        showAlertModal('Ошибка соединения', 'пук селфплей', '❌');
+                        showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
                         isSending = false;
                         sendBtnArrow();
                 }
@@ -3000,7 +3008,7 @@
                                 } else if (parsed.error_type === 'deepseek_overloaded') {
                                     errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                                 } else if (parsed.error_type === 'server_timeout') {
-                                    errorMessage = 'Сервер не дождался ответа от DeepSeek. Попробуйте позже.'
+                                    errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.'
                                 }
                                 showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
@@ -3074,7 +3082,7 @@
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
-                    showAlertModal('Ошибка соединения', 'Пук сендмесседж', '❌');
+                    showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
                 }
 
 
