@@ -555,6 +555,16 @@
                 <div class="input-area" id="inputArea">
                     <div id="dropZone" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none;align-items:center;justify-content:center;background:rgba(0,203,245,0.1);border:2px dashed #00CBF5;border-radius:16px;font-size:14px;color:#00CBF5;">Отпустите файл для загрузки</div>
                     <div class="file-list" id="fileList"></div>
+                    <div class="quick-replies-container" id="quickRepliesContainer">
+                        <div class="quick-replies-row" id="quickRepliesRow">
+                            <span class="quick-reply-chip" data-text="Да, далее">Да, далее</span>
+                            <span class="quick-reply-chip" data-text="Нет, не понял поясни">Нет, не понял поясни</span>
+                            <span class="quick-reply-chip" data-text="В чем суть?">В чем суть?</span>
+                            <span class="quick-reply-chip" data-text="Это всё?">Это всё?</span>
+                            <span class="quick-reply-chip" data-text="Какие минусы?">Какие минусы?</span>
+                        </div>
+                    </div>
+
                     <div class="input-row-wrapper">
                         <div class="input-row">
                             <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
@@ -817,6 +827,16 @@
             });
         }
         // ===== END BG PICKER =====
+        /* ===== QUICK REPLIES ===== */
+        .quick-replies-container { overflow: hidden; max-height: 0; transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease; opacity: 0; margin: 0; }
+        .quick-replies-container.show { max-height: 60px; opacity: 1; margin: 0 0 8px 0; }
+        .quick-replies-row { display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; padding: 4px 0; justify-content: flex-start; }
+        .quick-reply-chip { flex-shrink: 0; padding: 6px 16px; font-size: 13px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.12); background: rgba(34,34,34,0.8); color: #c0c0c0; cursor: pointer; font-family: 'Inter', sans-serif; transition: background 0.2s, color 0.2s, border-color 0.2s; white-space: nowrap; user-select: none; }
+        body.light .quick-reply-chip { background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); color: #555; }
+        .quick-reply-chip:hover { background: rgba(0,203,245,0.15); color: #00CBF5; border-color: #00CBF5; }
+        body.light .quick-reply-chip:hover { background: rgba(0,203,245,0.1); color: #005f7a; border-color: #005f7a; }
+        /* ===== END QUICK REPLIES ===== */
+
 
 
         window.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
@@ -2072,6 +2092,8 @@
                 actionsHtml += '<button onclick="shareChat(\'' + (currentChatId || '') + '\')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg></button>';
                 if (msg.interrupted) actionsHtml += '<button onclick="continueMessage(' + index + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                 actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + index + ')" title="Self-Play диалог" style="color:#00CBF5;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
+		actionsHtml += '<button class="quick-reply-btn" onclick="toggleQuickReplies()" title="Быстрые реплики" style="color:#888;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></svg></button>';
+
             }
             var reasoningHtml = '';
             var contentToShow = msg.content || '';
@@ -2448,6 +2470,33 @@
         }
         input.addEventListener('input', updateSendBtn);
         updateSendBtn();
+        function toggleQuickReplies() {
+            var container = document.getElementById('quickRepliesContainer');
+            if (!container) return;
+            var isShow = container.classList.contains('show');
+            if (isShow) {
+                container.classList.remove('show');
+            } else {
+                container.classList.add('show');
+            }
+        }
+        document.addEventListener('click', function(e) {
+            var chip = e.target.closest('.quick-reply-chip');
+            if (chip) {
+                var text = chip.getAttribute('data-text');
+                if (text) {
+                    var input = document.getElementById('userInput');
+                    input.value = text;
+                    var container = document.getElementById('quickRepliesContainer');
+                    if (container) container.classList.remove('show');
+                    var btn = document.getElementById('sendBtn');
+                    if (btn && !btn.disabled) {
+                        sendMessage();
+                    }
+                }
+            }
+        });
+
 
         var copyHistorySourceIndex = -1;
 
