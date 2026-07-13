@@ -2329,10 +2329,13 @@
         async function runReview(msgIndex) {
             console.log('runReview started', msgIndex);
             var chat = chats.find(c => c.id === currentChatId);
+            console.log('chat found:', !!chat);
             if (!chat) return;
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true };
             chat.messages.push(assistantMsg);
+            console.log('msg pushed, messages count:', chat.messages.length);
             renderMessages();
+            console.log('rendered, fetching...');
             try {
                 var resp = await fetch(SERVER_URL + '/sandbox_review', {
                     method: 'POST',
