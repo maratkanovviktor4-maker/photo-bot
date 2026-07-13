@@ -2329,36 +2329,46 @@
         async function runReview(msgIndex) {
             var chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
-            
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true };
             chat.messages.push(assistantMsg);
-            var newMsgIndex = chat.messages.length - 1;
             renderMessages();
-            
             try {
                 var resp = await fetch(SERVER_URL + '/sandbox_review', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({
-                        user_id: currentUserId,
-                        model: 'flash',
-                        chat_id: currentChatId,
-                        branch_id: currentBranchId
-                    })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId })
                 });
-                
                 var data = await resp.json();
-                assistantMsg.content = data.success ? '✅ Проект работает' : '❌ Ошибка:\n' + data.output;
+                if (data.error_type) {
+                    var errorMessage = 'Ошибка сервера.';
+                    if (data.error_type === 'bad_request') {
+                        errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
+                    } else if (data.error_type === 'deepseek_overloaded') {
+                        errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                    } else if (data.error_type === 'server_timeout') {
+                        errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
+                    } else if (data.error_type === 'sandbox_error') {
+                        errorMessage = 'Ошибка при запуске проекта:\n' + (data.error || '');
+                    }
+                    showAlertModal('Ошибка', errorMessage, '\u274C');
+                    assistantMsg.content = errorMessage;
+                    assistantMsg._error_type = data.error_type || null;
+                } else {
+                    assistantMsg.content = (data.success ? '\u2705 Проект работает\n' : '\u274C Ошибка\n') + (data.output || '');
+                }
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 renderMessages();
             } catch(e) {
-                assistantMsg.content = 'Ошибка соединения';
+                console.error('runReview error:', e);
+                showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '\u274C');
+                assistantMsg.content = 'Отсутствует подключение к интернету 000100.';
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 renderMessages();
             }
         }
+
         
 
 
