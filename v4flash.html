@@ -1951,27 +1951,14 @@
             btnElement.addEventListener('mouseenter', cancelClose);
             popup.addEventListener('mouseenter', cancelClose);
         }
-        function doPrompt(text) {
-            var popup = document.querySelector('.prompt-popup');
-            if (popup) popup.remove();
-            if (!currentChatId) {
-                currentChatId = Date.now().toString();
-                var newChatObj = { id: currentChatId, title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: {}, lastMessageTime: Date.now(), _personality: currentPersonality };
-                chats.push(newChatObj);
-                renderChatList();
-            }
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var msg = chat.messages[promptMsgIndex];
-            if (!msg) return;
-            var removeFrom = promptMsgIndex + 1;
-            while (chat.messages.length > removeFrom) { chat.messages.pop(); }
-            chat.messages.push({ role: 'user', content: text });
-            playSound('send');
-            renderMessages();
-            var sendBtn = document.getElementById('sendBtn');
-            if (!sendBtn.disabled) sendMessage();
-        }
+	function doPrompt(text) {
+    	    var popup = document.querySelector('.prompt-popup');
+    	    if (popup) popup.remove();
+    	    var input = document.getElementById('userInput');
+    	    input.value = text;
+    	    input.dispatchEvent(new Event('input'));
+    	    sendMessage();
+	}
 
         function doRegenerate(style) {
             var popup = document.querySelector('.regenerate-popup');
