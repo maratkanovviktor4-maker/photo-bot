@@ -2336,7 +2336,11 @@
             if (!chat) { isSending = false; sendBtnArrow(); return; }
             
             activeStreamId = 'review_stream';
-
+            
+            var tempAssistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '' };
+            chat.messages.push(tempAssistantMsg);
+            var streamMsgIndex = chat.messages.length - 1;
+            renderMessages();
             
             try {
                 var resp = await fetch(SERVER_URL + '/sandbox_review', {
@@ -2352,9 +2356,9 @@
                         errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
                     }
                     showAlertModal('Ошибка', errorMessage, '\u274C');
-                    assistantMsg.content = errorMessage;
-                    assistantMsg.finished = true;
-                    assistantMsg._streaming = false;
+                    tempAssistantMsg.content = errorMessage;
+                    tempAssistantMsg.finished = true;
+                    tempAssistantMsg._streaming = false;
                     renderMessages();
                     isSending = false;
                     activeStreamId = null;
@@ -2391,21 +2395,25 @@
                                 return;
                             }
                             if (parsed.content) {
-                                assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
-                                assistantMsg.content = assistantMsg._fullBuffer;
-                                var msgEl = document.getElementById('stream-' + newMsgIndex);
+                                tempAssistantMsg._fullBuffer = (tempAssistantMsg._fullBuffer || '') + parsed.content;
+                                tempAssistantMsg.content = tempAssistantMsg._fullBuffer;
+                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                 if (msgEl) {
                                     requestAnimationFrame(function() {
-                                        streamUpdateDOM(msgEl, assistantMsg);
+                                        streamUpdateDOM(msgEl, tempAssistantMsg);
                                     });
                                 }
                             }
                         } catch(e) {}
                     }
                 }
+                
+                tempAssistantMsg.finished = true;
+                tempAssistantMsg._streaming = false;
+                tempAssistantMsg.content = tempAssistantMsg._fullBuffer || tempAssistantMsg.content;
                 updateBalance();
                 updateBranchesFromServer();
-                renderMessages();
+                fullRender();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
@@ -2413,15 +2421,16 @@
             } catch(e) {
                 console.error('runReview error:', e);
                 showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '\u274C');
-                assistantMsg.content = 'Отсутствует подключение к интернету 000100.';
-                assistantMsg.finished = true;
-                assistantMsg._streaming = false;
+                tempAssistantMsg.content = 'Отсутствует подключение к интернету 000100.';
+                tempAssistantMsg.finished = true;
+                tempAssistantMsg._streaming = false;
                 renderMessages();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
             }
         }
+
 
 
         
