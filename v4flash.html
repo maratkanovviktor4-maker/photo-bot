@@ -2335,11 +2335,8 @@
             var chat = chats.find(c => c.id === currentChatId);
             if (!chat) { isSending = false; sendBtnArrow(); return; }
             
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
-            chat.messages.push(assistantMsg);
-            var newMsgIndex = chat.messages.length - 1;
-            activeStreamId = 'review_' + newMsgIndex;
-            renderMessages();
+            activeStreamId = 'review_stream';
+
             
             try {
                 var resp = await fetch(SERVER_URL + '/sandbox_review', {
