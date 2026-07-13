@@ -1914,7 +1914,13 @@
             popup.style.transform = 'translateY(-8px)';
             popup.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
             var rect = btnElement.getBoundingClientRect();
-            popup.style.top = (rect.bottom + 4) + 'px';
+            var popupHeight = 5 * 36 + 8;
+            var spaceBelow = window.innerHeight - rect.bottom - 8;
+            if (spaceBelow < popupHeight) {
+                popup.style.top = (rect.top - popupHeight) + 'px';
+            } else {
+                popup.style.top = (rect.bottom + 4) + 'px';
+            }
             popup.style.left = rect.left + 'px';
             var prompts = [
                 'Да, далее',
