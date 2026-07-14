@@ -2247,10 +2247,16 @@
         function buildMessageHtml(index, msg) {
             if (!msg) return '';
             if (msg._review_container && msg.role === 'user') {
+                var chat = chats.find(c => c.id === currentChatId);
                 var assistantContent = '';
-                var msgIndex = index + 1;
-                if (msgIndex < chat.messages.length && chat.messages[msgIndex]._review_container && chat.messages[msgIndex].role === 'assistant') {
-                    assistantContent = chat.messages[msgIndex].content || '';
+                if (chat) {
+                    var msgIndex = chat.messages.indexOf(msg);
+                    if (msgIndex !== -1 && msgIndex + 1 < chat.messages.length) {
+                        var nextMsg = chat.messages[msgIndex + 1];
+                        if (nextMsg._review_container && nextMsg.role === 'assistant') {
+                            assistantContent = nextMsg.content || '';
+                        }
+                    }
                 }
                 return '<div class="review-container">' +
                     '<div class="review-header" onclick="toggleReviewContainer(this.parentNode)">' +
@@ -2261,6 +2267,7 @@
                         (assistantContent ? '<div class="message-row assistant"><div><div class="message-content">' + formatMessage(assistantContent) + '</div></div></div>' : '') +
                     '</div></div>';
             }
+
 
             if (msg._review_container && msg.role === 'assistant') {
                 return '';
