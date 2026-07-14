@@ -2246,28 +2246,17 @@
         }
         function buildMessageHtml(index, msg) {
             if (!msg) return '';
-            if (msg.role === 'review_container') {
-                var statusText = { 'launch': 'запуск...', 'sandbox': 'отправка в песочницу...', 'analyzing': 'анализ модели...', 'done': 'готово', 'error': 'ошибка' };
-                var statusColor = msg.status === 'done' ? '#4caf50' : msg.status === 'error' ? '#e74c3c' : '#888';
-                var isDone = msg.status === 'done' || msg.status === 'error';
-                var bodyDisplay = isDone ? 'none' : 'none';
-                var containerHtml = 
-                    '<div class="review-container" id="' + msg.containerId + '">' +
-                        '<div class="review-header" onclick="toggleReviewContainer(\'' + msg.containerId + '\')">' +
-                            '<span class="review-arrow">▶</span> 🔍 Код-ревью <span class="review-status" style="color:' + statusColor + '">' + (statusText[msg.status] || msg.status) + '</span>' +
-                        '</div>' +
-                        '<div class="review-body" style="display:none;">';
-                if (msg.userContent) {
-                    containerHtml += '<div class="message-row user"><div><div class="message-content">' + escapeHtml(msg.userContent) + '</div></div></div>';
-                }
-                if (msg.assistantContent) {
-                    containerHtml += '<div class="message-row assistant"><div><div class="message-content">' + formatMessage(msg.assistantContent) + '</div></div></div>';
-                }
-                if (!isDone) {
-                    containerHtml += '<div class="message-row assistant"><div><div class="message-content"><div class="typing-dots"><span></span><span></span><span></span></div></div></div></div>';
-                }
-                containerHtml += '</div></div>';
-                return containerHtml;
+            if (msg._review_container && msg.role === 'user') {
+                return '<div class="review-container">' +
+                    '<div class="review-header" onclick="toggleReviewContainer(this.parentNode)">' +
+                        '<span class="review-arrow">▶</span> 🔍 Код-ревью <span class="review-status" style="color:#4caf50">готово</span>' +
+                    '</div>' +
+                    '<div class="review-body" style="display:none;">' +
+                        '<div class="message-row user"><div><div class="message-content">' + escapeHtml(msg.content) + '</div></div></div>' +
+                    '</div></div>';
+            }
+            if (msg._review_container && msg.role === 'assistant') {
+                return '';
             }
 
             if (msg.role === 'system') {
@@ -2371,16 +2360,30 @@
             var chat = chats.find(c => c.id === currentChatId);
             if (!chat) { isSending = false; sendBtnArrow(); return; }
             
-            var containerId = 'review_' + Date.now();
-            var containerMsg = { role: 'review_container', containerId: containerId, status: 'launch', userContent: '', assistantContent: '', finished: false };
-            chat.messages.push(containerMsg);
             activeStreamId = 'review_stream';
-            renderMessages();
+            
+            var area = document.getElementById('chatArea');
+            var emptyState = area.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+            
+            var containerId = 'review_' + Date.now();
+            var container = document.createElement('div');
+            container.id = containerId;
+            container.className = 'review-container';
+            container.innerHTML = 
+                '<div class="review-header" onclick="toggleReviewContainer(this.parentNode)">' +
+                    '<span class="review-arrow">▼</span> 🔍 Код-ревью <span class="review-status">запуск...</span>' +
+                '</div>' +
+                '<div class="review-body" style="display:block;">' +
+                    '<div class="message-row user"><div><div class="message-content">Запуск код-ревью</div></div></div>' +
+                    '<div class="message-row assistant"><div><div class="message-content" id="review_stream_content"><div class="typing-dots"><span></span><span></span><span></span></div></div></div></div>' +
+                '</div>';
+            area.appendChild(container);
+            var statusEl = container.querySelector('.review-status');
             scrollToBottom();
             
             try {
-                containerMsg.status = 'sandbox';
-                renderMessages();
+                statusEl.textContent = 'отправка в песочницу...';
                 
                 var resp = await fetch(SERVER_URL + '/sandbox_review', {
                     method: 'POST',
@@ -2391,23 +2394,30 @@
                 if (!resp.ok) {
                     var errData = await resp.json().catch(() => ({}));
                     var errorMessage = errData.error || 'Ошибка сервера.';
-                    showAlertModal('Ошибка', errorMessage, '\u274C');
-                    containerMsg.status = 'error';
-                    containerMsg.userContent = errorMessage;
-                    containerMsg.finished = true;
-                    renderMessages();
+                    var errorMessages = {
+                        'bad_request': 'Неверный формат запроса, попробуйте другой файл.',
+                        'rate_limited': 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.',
+                        'deepseek_error': 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.',
+                        'deepseek_overloaded': 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.',
+                        'server_timeout': 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.',
+                        'sandbox_error': 'Ошибка при запуске проекта.'
+                    };
+                    var msg = errorMessages[errData.error_type] || errorMessage;
+                    showAlertModal('Ошибка', msg, '\u274C');
+                    statusEl.textContent = 'ошибка';
+                    statusEl.style.color = '#e74c3c';
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
                     return;
                 }
                 
-                containerMsg.status = 'analyzing';
-                renderMessages();
+                statusEl.textContent = 'анализ модели...';
                 
                 var reader = resp.body.getReader();
                 var decoder = new TextDecoder();
                 var buffer = '';
+                var fullContent = '';
                 
                 while (true) {
                     var readResult = await reader.read();
@@ -2423,23 +2433,35 @@
                         try {
                             var parsed = JSON.parse(dataStr);
                             if (parsed.error_type) {
-                                showAlertModal('Ошибка', 'Ошибка при проверке проекта.', '\u274C');
-                                containerMsg.status = 'error';
-                                containerMsg.finished = true;
-                                renderMessages();
+                                var errorMessages = {
+                                    'bad_request': 'Неверный формат запроса, попробуйте другой файл.',
+                                    'rate_limited': 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.',
+                                    'deepseek_error': 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.',
+                                    'deepseek_overloaded': 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.',
+                                    'server_timeout': 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.'
+                                };
+                                showAlertModal('Ошибка DeepSeek', errorMessages[parsed.error_type] || 'Ошибка сервера.', '\u274C');
                                 return;
                             }
                             if (parsed.content) {
-                                containerMsg.assistantContent = (containerMsg.assistantContent || '') + parsed.content;
+                                fullContent += parsed.content;
+                                var msgEl = document.getElementById('review_stream_content');
+                                if (msgEl) {
+                                    msgEl.innerHTML = formatMessage(fullContent);
+                                    var codeBlocks = msgEl.querySelectorAll('pre code');
+                                    for (var j = 0; j < codeBlocks.length; j++) {
+                                        if (typeof hljs !== 'undefined') hljs.highlightElement(codeBlocks[j]);
+                                    }
+                                }
                             }
                         } catch(e) {}
                     }
                 }
                 
-                containerMsg.status = 'done';
-                containerMsg.finished = true;
+                statusEl.textContent = 'готово';
+                statusEl.style.color = '#4caf50';
                 updateBalance();
-                renderMessages();
+                updateBranchesFromServer();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
@@ -2447,18 +2469,18 @@
             } catch(e) {
                 console.error('runReview error:', e);
                 showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '\u274C');
-                containerMsg.status = 'error';
-                containerMsg.finished = true;
-                renderMessages();
+                statusEl.textContent = 'ошибка';
+                statusEl.style.color = '#e74c3c';
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
             }
         }
 
+
+
         
-        function toggleReviewContainer(containerId) {
-            var container = document.getElementById(containerId);
+        function toggleReviewContainer(container) {
             if (!container) return;
             var body = container.querySelector('.review-body');
             var arrow = container.querySelector('.review-arrow');
@@ -2469,7 +2491,8 @@
                 body.style.display = 'none';
                 arrow.textContent = '▶';
             }
-        }        
+        }
+       
 
 
         function renderMessages() {
