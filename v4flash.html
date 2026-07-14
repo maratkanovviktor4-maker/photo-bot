@@ -2246,6 +2246,30 @@
         }
         function buildMessageHtml(index, msg) {
             if (!msg) return '';
+            if (msg.role === 'review_container') {
+                var statusText = { 'launch': 'запуск...', 'sandbox': 'отправка в песочницу...', 'analyzing': 'анализ модели...', 'done': 'готово', 'error': 'ошибка' };
+                var statusColor = msg.status === 'done' ? '#4caf50' : msg.status === 'error' ? '#e74c3c' : '#888';
+                var isDone = msg.status === 'done' || msg.status === 'error';
+                var bodyDisplay = isDone ? 'none' : 'none';
+                var containerHtml = 
+                    '<div class="review-container" id="' + msg.containerId + '">' +
+                        '<div class="review-header" onclick="toggleReviewContainer(\'' + msg.containerId + '\')">' +
+                            '<span class="review-arrow">▶</span> 🔍 Код-ревью <span class="review-status" style="color:' + statusColor + '">' + (statusText[msg.status] || msg.status) + '</span>' +
+                        '</div>' +
+                        '<div class="review-body" style="display:none;">';
+                if (msg.userContent) {
+                    containerHtml += '<div class="message-row user"><div><div class="message-content">' + escapeHtml(msg.userContent) + '</div></div></div>';
+                }
+                if (msg.assistantContent) {
+                    containerHtml += '<div class="message-row assistant"><div><div class="message-content">' + formatMessage(msg.assistantContent) + '</div></div></div>';
+                }
+                if (!isDone) {
+                    containerHtml += '<div class="message-row assistant"><div><div class="message-content"><div class="typing-dots"><span></span><span></span><span></span></div></div></div></div>';
+                }
+                containerHtml += '</div></div>';
+                return containerHtml;
+            }
+
             if (msg.role === 'system') {
                 return '<div class="message-row system" data-msg-index="' + index + '"><div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">' + escapeHtml(msg.content) + '</div></div></div>';
             }
@@ -2347,29 +2371,16 @@
             var chat = chats.find(c => c.id === currentChatId);
             if (!chat) { isSending = false; sendBtnArrow(); return; }
             
-            var area = document.getElementById('chatArea');
-            var emptyState = area.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
-            
             var containerId = 'review_' + Date.now();
-            var container = document.createElement('div');
-            container.id = containerId;
-            container.className = 'review-container';
-            container.innerHTML = 
-                '<div class="review-header" onclick="toggleReviewContainer(\'' + containerId + '\')">' +
-                    '<span class="review-arrow">▶</span> 🔍 Код-ревью <span class="review-status">запуск...</span>' +
-                '</div>' +
-                '<div class="review-body" style="display:none;"></div>';
-            area.appendChild(container);
-            var body = container.querySelector('.review-body');
-            var statusEl = container.querySelector('.review-status');
-            var arrowEl = container.querySelector('.review-arrow');
+            var containerMsg = { role: 'review_container', containerId: containerId, status: 'launch', userContent: '', assistantContent: '', finished: false };
+            chat.messages.push(containerMsg);
+            activeStreamId = 'review_stream';
+            renderMessages();
             scrollToBottom();
             
-            activeStreamId = 'review_stream';
-            
             try {
-                statusEl.textContent = 'отправка в песочницу...';
+                containerMsg.status = 'sandbox';
+                renderMessages();
                 
                 var resp = await fetch(SERVER_URL + '/sandbox_review', {
                     method: 'POST',
@@ -2381,36 +2392,22 @@
                     var errData = await resp.json().catch(() => ({}));
                     var errorMessage = errData.error || 'Ошибка сервера.';
                     showAlertModal('Ошибка', errorMessage, '\u274C');
-                    statusEl.textContent = 'ошибка';
-                    statusEl.style.color = '#e74c3c';
+                    containerMsg.status = 'error';
+                    containerMsg.userContent = errorMessage;
+                    containerMsg.finished = true;
+                    renderMessages();
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
                     return;
                 }
                 
-                statusEl.textContent = 'анализ модели...';
+                containerMsg.status = 'analyzing';
+                renderMessages();
                 
                 var reader = resp.body.getReader();
                 var decoder = new TextDecoder();
                 var buffer = '';
-                
-                // Добавляем user внутрь контейнера
-                var userDiv = document.createElement('div');
-                userDiv.className = 'message-row user';
-                userDiv.innerHTML = '<div><div class="message-content">Запуск код-ревью (вывод песочницы передан модели)</div></div>';
-                body.appendChild(userDiv);
-                
-                // Добавляем ассистента
-                var streamId = 'stream_' + containerId;
-                var assistantDiv = document.createElement('div');
-                assistantDiv.className = 'message-row assistant';
-                assistantDiv.innerHTML = '<div><div class="message-content" id="' + streamId + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
-                body.appendChild(assistantDiv);
-                
-                // Разворачиваем контейнер при начале стрима
-                body.style.display = 'block';
-                arrowEl.textContent = '▼';
                 
                 while (true) {
                     var readResult = await reader.read();
@@ -2427,33 +2424,22 @@
                             var parsed = JSON.parse(dataStr);
                             if (parsed.error_type) {
                                 showAlertModal('Ошибка', 'Ошибка при проверке проекта.', '\u274C');
+                                containerMsg.status = 'error';
+                                containerMsg.finished = true;
+                                renderMessages();
                                 return;
                             }
                             if (parsed.content) {
-                                var msgEl = document.getElementById(streamId);
-                                if (msgEl && msgEl._fullBuffer === undefined) {
-                                    msgEl._fullBuffer = '';
-                                }
-                                if (msgEl) {
-                                    msgEl._fullBuffer = (msgEl._fullBuffer || '') + parsed.content;
-                                    msgEl.innerHTML = formatMessage(msgEl._fullBuffer);
-                                    var codeBlocks = msgEl.querySelectorAll('pre code');
-                                    for (var j = 0; j < codeBlocks.length; j++) {
-                                        if (typeof hljs !== 'undefined') hljs.highlightElement(codeBlocks[j]);
-                                    }
-                                }
-                            }
-                            if (parsed.assistant_msg_id) {
-                                chat.messages.push({ role: 'assistant', content: document.getElementById(streamId)._fullBuffer || '', msg_id: parsed.assistant_msg_id, finished: true });
+                                containerMsg.assistantContent = (containerMsg.assistantContent || '') + parsed.content;
                             }
                         } catch(e) {}
                     }
                 }
                 
-                statusEl.textContent = 'готово';
-                statusEl.style.color = '#4caf50';
+                containerMsg.status = 'done';
+                containerMsg.finished = true;
                 updateBalance();
-                updateBranchesFromServer();
+                renderMessages();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
@@ -2461,27 +2447,14 @@
             } catch(e) {
                 console.error('runReview error:', e);
                 showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '\u274C');
-                statusEl.textContent = 'ошибка';
-                statusEl.style.color = '#e74c3c';
+                containerMsg.status = 'error';
+                containerMsg.finished = true;
+                renderMessages();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
             }
         }
-        
-        function toggleReviewContainer(containerId) {
-            var container = document.getElementById(containerId);
-            if (!container) return;
-            var body = container.querySelector('.review-body');
-            var arrow = container.querySelector('.review-arrow');
-            if (body.style.display === 'none') {
-                body.style.display = 'block';
-                arrow.textContent = '▼';
-            } else {
-                body.style.display = 'none';
-                arrow.textContent = '▶';
-            }
-        }
 
         
         function toggleReviewContainer(containerId) {
@@ -2496,13 +2469,7 @@
                 body.style.display = 'none';
                 arrow.textContent = '▶';
             }
-        }
-
-
-
-
-
-        
+        }        
 
 
         function renderMessages() {
