@@ -274,6 +274,14 @@
         body.light .review-header:hover { background: rgba(0,0,0,0.03); }
         .review-body .message-row.user .message-content { max-width: 100%; }
         .review-body .message-row.assistant .message-content { max-width: 100%; }
+        .review-container { border: 1px solid rgba(0,203,245,0.3); border-radius: 12px; margin: 8px 0; overflow: hidden; background: rgba(0,203,245,0.03); }
+        body.light .review-container { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.15); }
+        .review-header { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: Inter, sans-serif; font-size: 13px; color: #00CBF5; user-select: none; }
+        .review-header:hover { background: rgba(0,203,245,0.06); }
+        body.light .review-header:hover { background: rgba(0,0,0,0.03); }
+        .review-status { margin-left: auto; color: #888; font-size: 12px; }
+        .review-body { padding: 0; }
+        .review-body .message-row { max-width: 100%; }
 
         #personalitySelect:hover,
         #highlightSelect:hover,
@@ -2343,43 +2351,25 @@
             var emptyState = area.querySelector('.empty-state');
             if (emptyState) emptyState.remove();
             
-            // Создаём блок-контейнер
-            var containerId = 'review_container_' + Date.now();
+            var containerId = 'review_' + Date.now();
             var container = document.createElement('div');
             container.id = containerId;
-            container.style.cssText = 'border:1px solid rgba(0,203,245,0.3);border-radius:12px;margin:8px 0;overflow:hidden;background:rgba(0,203,245,0.03);';
+            container.className = 'review-container';
             container.innerHTML = 
-                '<div class="review-header" onclick="toggleReviewContainer(\'' + containerId + '\')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:Inter,sans-serif;font-size:13px;color:#00CBF5;">' +
-                    '<span class="review-arrow">▼</span> 🔍 Ревью проекта <span class="review-status" style="margin-left:auto;color:#888;font-size:12px;">запуск...</span>' +
+                '<div class="review-header" onclick="toggleReviewContainer(\'' + containerId + '\')">' +
+                    '<span class="review-arrow">▶</span> 🔍 Код-ревью <span class="review-status">запуск...</span>' +
                 '</div>' +
-                '<div class="review-body" style="display:block;padding:0;"></div>';
+                '<div class="review-body" style="display:none;"></div>';
             area.appendChild(container);
             var body = container.querySelector('.review-body');
             var statusEl = container.querySelector('.review-status');
             var arrowEl = container.querySelector('.review-arrow');
             scrollToBottom();
             
-            // User-сообщение внутри контейнера
-            var userDiv = document.createElement('div');
-            userDiv.className = 'message-row user';
-            userDiv.innerHTML = '<div><div class="message-content">Запуск ревью проекта</div></div>';
-            body.appendChild(userDiv);
-            
-            // Ассистент внутри контейнера
-            var assistantDiv = document.createElement('div');
-            assistantDiv.className = 'message-row assistant';
-            var streamId = 'review_stream_' + Date.now();
-            assistantDiv.innerHTML = '<div><div class="message-content" id="' + streamId + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
-            body.appendChild(assistantDiv);
-            
-            // Сохраняем в массив для истории
-            chat.messages.push({ role: 'user', content: 'Запуск ревью проекта' });
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '' };
-            chat.messages.push(assistantMsg);
             activeStreamId = 'review_stream';
             
             try {
-                statusEl.textContent = 'запуск песочницы...';
+                statusEl.textContent = 'отправка в песочницу...';
                 
                 var resp = await fetch(SERVER_URL + '/sandbox_review', {
                     method: 'POST',
@@ -2391,11 +2381,6 @@
                     var errData = await resp.json().catch(() => ({}));
                     var errorMessage = errData.error || 'Ошибка сервера.';
                     showAlertModal('Ошибка', errorMessage, '\u274C');
-                    assistantMsg.content = errorMessage;
-                    assistantMsg.finished = true;
-                    assistantMsg._streaming = false;
-                    var streamEl = document.getElementById(streamId);
-                    if (streamEl) streamEl.innerHTML = errorMessage;
                     statusEl.textContent = 'ошибка';
                     statusEl.style.color = '#e74c3c';
                     isSending = false;
@@ -2404,11 +2389,28 @@
                     return;
                 }
                 
-                statusEl.textContent = 'анализ...';
+                statusEl.textContent = 'анализ модели...';
                 
                 var reader = resp.body.getReader();
                 var decoder = new TextDecoder();
                 var buffer = '';
+                
+                // Добавляем user внутрь контейнера
+                var userDiv = document.createElement('div');
+                userDiv.className = 'message-row user';
+                userDiv.innerHTML = '<div><div class="message-content">Запуск код-ревью (вывод песочницы передан модели)</div></div>';
+                body.appendChild(userDiv);
+                
+                // Добавляем ассистента
+                var streamId = 'stream_' + containerId;
+                var assistantDiv = document.createElement('div');
+                assistantDiv.className = 'message-row assistant';
+                assistantDiv.innerHTML = '<div><div class="message-content" id="' + streamId + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
+                body.appendChild(assistantDiv);
+                
+                // Разворачиваем контейнер при начале стрима
+                body.style.display = 'block';
+                arrowEl.textContent = '▼';
                 
                 while (true) {
                     var readResult = await reader.read();
@@ -2428,22 +2430,26 @@
                                 return;
                             }
                             if (parsed.content) {
-                                assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
-                                assistantMsg.content = assistantMsg._fullBuffer;
                                 var msgEl = document.getElementById(streamId);
-                                if (msgEl) {
-                                    requestAnimationFrame(function() {
-                                        streamUpdateDOM(msgEl, assistantMsg);
-                                    });
+                                if (msgEl && msgEl._fullBuffer === undefined) {
+                                    msgEl._fullBuffer = '';
                                 }
+                                if (msgEl) {
+                                    msgEl._fullBuffer = (msgEl._fullBuffer || '') + parsed.content;
+                                    msgEl.innerHTML = formatMessage(msgEl._fullBuffer);
+                                    var codeBlocks = msgEl.querySelectorAll('pre code');
+                                    for (var j = 0; j < codeBlocks.length; j++) {
+                                        if (typeof hljs !== 'undefined') hljs.highlightElement(codeBlocks[j]);
+                                    }
+                                }
+                            }
+                            if (parsed.assistant_msg_id) {
+                                chat.messages.push({ role: 'assistant', content: document.getElementById(streamId)._fullBuffer || '', msg_id: parsed.assistant_msg_id, finished: true });
                             }
                         } catch(e) {}
                     }
                 }
                 
-                assistantMsg.finished = true;
-                assistantMsg._streaming = false;
-                assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
                 statusEl.textContent = 'готово';
                 statusEl.style.color = '#4caf50';
                 updateBalance();
@@ -2455,8 +2461,6 @@
             } catch(e) {
                 console.error('runReview error:', e);
                 showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '\u274C');
-                var streamEl = document.getElementById(streamId);
-                if (streamEl) streamEl.innerHTML = 'Отсутствует подключение к интернету 000100.';
                 statusEl.textContent = 'ошибка';
                 statusEl.style.color = '#e74c3c';
                 isSending = false;
@@ -2464,6 +2468,21 @@
                 sendBtnArrow();
             }
         }
+        
+        function toggleReviewContainer(containerId) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+            var body = container.querySelector('.review-body');
+            var arrow = container.querySelector('.review-arrow');
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                arrow.textContent = '▼';
+            } else {
+                body.style.display = 'none';
+                arrow.textContent = '▶';
+            }
+        }
+
         
         function toggleReviewContainer(containerId) {
             var container = document.getElementById(containerId);
