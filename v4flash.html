@@ -2246,29 +2246,45 @@
         }
         function buildMessageHtml(index, msg) {
             if (!msg) return '';
-            if (msg.role === 'review_container') {
-                var statusText = { 'launch': 'запуск...', 'sandbox': 'отправка в песочницу...', 'analyzing': 'анализ модели...', 'done': 'готово', 'error': 'ошибка' };
-                var statusColor = msg.status === 'done' ? '#4caf50' : msg.status === 'error' ? '#e74c3c' : '#888';
-                var isDone = msg.status === 'done' || msg.status === 'error';
-                var bodyDisplay = isDone ? 'none' : 'none';
-                var containerHtml = 
-                    '<div class="review-container" id="' + msg.containerId + '">' +
-                        '<div class="review-header" onclick="toggleReviewContainer(\'' + msg.containerId + '\')">' +
-                            '<span class="review-arrow">▶</span> 🔍 Код-ревью <span class="review-status" style="color:' + statusColor + '">' + (statusText[msg.status] || msg.status) + '</span>' +
-                        '</div>' +
-                        '<div class="review-body" style="display:none;">';
-                if (msg.userContent) {
-                    containerHtml += '<div class="message-row user"><div><div class="message-content">' + escapeHtml(msg.userContent) + '</div></div></div>';
+            if (msg._review_container && msg.role === 'user') {
+                var chat = chats.find(c => c.id === currentChatId);
+                var status = msg._review_status || 'done';
+                var statusTexts = { 'launch': 'запуск...', 'sandbox': 'отправка в песочницу...', 'analyzing': 'анализ модели...', 'done': 'готово', 'error': 'ошибка' };
+                var statusColors = { 'done': '#4caf50', 'error': '#e74c3c' };
+                var isStreaming = status !== 'done' && status !== 'error';
+                var userContent = msg.content || '';
+                var bodyContent = '';
+                if (userContent) {
+                    bodyContent += '<div class="message-row user"><div><div class="message-content">' + escapeHtml(userContent) + '</div></div></div>';
                 }
-                if (msg.assistantContent) {
-                    containerHtml += '<div class="message-row assistant"><div><div class="message-content">' + formatMessage(msg.assistantContent) + '</div></div></div>';
+                if (isStreaming) {
+                    bodyContent += '<div class="message-row assistant"><div><div class="message-content" id="stream-' + index + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div></div>';
+                } else if (chat) {
+                    var msgIndex = chat.messages.indexOf(msg);
+                    if (msgIndex !== -1 && msgIndex + 1 < chat.messages.length) {
+                        var nextMsg = chat.messages[msgIndex + 1];
+                        if (nextMsg._review_container && nextMsg.role === 'assistant' && nextMsg.content) {
+                            bodyContent += '<div class="message-row assistant"><div><div class="message-content">' + formatMessage(nextMsg.content) + '</div></div></div>';
+                        }
+                    }
                 }
-                if (!isDone) {
-                    containerHtml += '<div class="message-row assistant"><div><div class="message-content"><div class="typing-dots"><span></span><span></span><span></span></div></div></div></div>';
-                }
-                containerHtml += '</div></div>';
-                return containerHtml;
+                return '<div class="review-container">' +
+                    '<div class="review-header" onclick="toggleReviewContainer(this.parentNode)">' +
+                        '<span class="review-arrow">' + (isStreaming ? '▼' : '▶') + '</span> 🔍 Код-ревью <span class="review-status" style="color:' + (statusColors[status] || '#888') + '">' + (statusTexts[status] || status) + '</span>' +
+                    '</div>' +
+                    '<div class="review-body" style="display:' + (isStreaming ? 'block' : 'none') + ';">' +
+                        bodyContent +
+                    '</div></div>';
             }
+
+
+
+
+            if (msg._review_container && msg.role === 'assistant') {
+                return '';
+            }
+
+
 
             if (msg.role === 'system') {
                 return '<div class="message-row system" data-msg-index="' + index + '"><div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">' + escapeHtml(msg.content) + '</div></div></div>';
@@ -2323,15 +2339,21 @@
             }
         }
         function patchMessageDom(area, index, html) {
+            if (!html) return;
             var existingRow = area.children[index];
             if (!existingRow) {
                 var temp = document.createElement('div');
                 temp.innerHTML = html;
-                area.appendChild(temp.firstElementChild);
+                var el = temp.firstElementChild;
+                if (el) {
+                    area.appendChild(el);
+                }
             } else {
                 existingRow.outerHTML = html;
             }
         }
+
+
         function fullRender() {
             _floatingHeaders = [];
             const chat = chats.find(c => c.id === currentChatId);
@@ -2371,94 +2393,158 @@
             var chat = chats.find(c => c.id === currentChatId);
             if (!chat) { isSending = false; sendBtnArrow(); return; }
             
-            var containerId = 'review_' + Date.now();
-            var containerMsg = { role: 'review_container', containerId: containerId, status: 'launch', userContent: '', assistantContent: '', finished: false };
-            chat.messages.push(containerMsg);
             activeStreamId = 'review_stream';
+            
+            var userMsg = { role: 'user', content: '', _review_container: true, _review_status: 'launch' };
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '', _review_container: true, msg_id: null, _abortController: null };
+            chat.messages.push(userMsg);
+            chat.messages.push(assistantMsg);
+            var streamMsgIndex = chat.messages.length - 1;
             renderMessages();
             scrollToBottom();
             
+            var statusEl = document.querySelector('#chatArea .review-container:last-child .review-status');
+            if (!statusEl) { statusEl = document.querySelector('#chatArea .review-status'); }
+
+            const abortController = new AbortController();
+            assistantMsg._abortController = abortController;
+            
             try {
-                containerMsg.status = 'sandbox';
-                renderMessages();
+                if (statusEl) { statusEl.textContent = 'отправка в песочницу...'; statusEl.style.color = '#888'; }
+                userMsg._review_status = 'sandbox';
                 
-                var resp = await fetch(SERVER_URL + '/sandbox_review', {
+                const resp = await fetch(SERVER_URL + '/sandbox_review', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId }),
+                    signal: abortController.signal
                 });
-                
+
                 if (!resp.ok) {
                     var errData = await resp.json().catch(() => ({}));
-                    var errorMessage = errData.error || 'Ошибка сервера.';
-                    showAlertModal('Ошибка', errorMessage, '\u274C');
-                    containerMsg.status = 'error';
-                    containerMsg.userContent = errorMessage;
-                    containerMsg.finished = true;
-                    renderMessages();
+                    userMsg._review_status = 'error';
+                    assistantMsg.content = errData.error || 'Ошибка сервера.';
+                    assistantMsg._error_type = errData.error_type || null;
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
+                    if (statusEl) { statusEl.textContent = 'ошибка'; statusEl.style.color = '#e74c3c'; }
+                    showAlertModal('Ошибка', assistantMsg.content, '❌');
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
                     return;
                 }
-                
-                containerMsg.status = 'analyzing';
-                renderMessages();
-                
-                var reader = resp.body.getReader();
-                var decoder = new TextDecoder();
-                var buffer = '';
-                
+
+                const contentType = resp.headers.get('content-type') || '';
+                if (!contentType.includes('text/event-stream')) {
+                    userMsg._review_status = 'error';
+                    const err = await resp.json().catch(() => ({}));
+                    assistantMsg.content = err.error || 'Неизвестная ошибка сервера.';
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
+                    if (statusEl) { statusEl.textContent = 'ошибка'; statusEl.style.color = '#e74c3c'; }
+                    showAlertModal('Ошибка', assistantMsg.content, '❌');
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                    return;
+                }
+
+                if (statusEl) { statusEl.textContent = 'анализ модели...'; statusEl.style.color = '#888'; }
+                userMsg._review_status = 'analyzing';
+
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
                 while (true) {
-                    var readResult = await reader.read();
-                    if (readResult.done) break;
-                    buffer += decoder.decode(readResult.value, { stream: true });
-                    var lines = buffer.split('\n');
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
                     buffer = lines.pop() || '';
-                    for (var i = 0; i < lines.length; i++) {
-                        var line = lines[i];
+                    for (const line of lines) {
                         if (!line.startsWith('data: ')) continue;
-                        var dataStr = line.slice(6).trim();
+                        const dataStr = line.slice(6).trim();
                         if (dataStr === '[DONE]') continue;
                         try {
-                            var parsed = JSON.parse(dataStr);
+                            const parsed = JSON.parse(dataStr);
                             if (parsed.error_type) {
-                                showAlertModal('Ошибка', 'Ошибка при проверке проекта.', '\u274C');
-                                containerMsg.status = 'error';
-                                containerMsg.finished = true;
-                                renderMessages();
+                                var errorMessages = {
+                                    'bad_request': 'Неверный формат запроса.',
+                                    'rate_limited': 'Слишком много запросов.',
+                                    'deepseek_error': 'Ошибка DeepSeek.',
+                                    'deepseek_overloaded': 'DeepSeek перегружен.',
+                                    'server_timeout': 'Сервер не дождался ответа 000503.'
+                                };
+                                showAlertModal('Ошибка DeepSeek', errorMessages[parsed.error_type] || 'Ошибка сервера.', '❌');
                                 return;
                             }
                             if (parsed.content) {
-                                containerMsg.assistantContent = (containerMsg.assistantContent || '') + parsed.content;
+                                assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
+                                assistantMsg.content = assistantMsg._fullBuffer;
+                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
+                                if (msgEl) {
+                                    requestAnimationFrame(function() {
+                                        streamUpdateDOM(msgEl, assistantMsg);
+                                    });
+                                }
                             }
-                        } catch(e) {}
+                            if (parsed.assistant_msg_id) {
+                                assistantMsg.msg_id = parsed.assistant_msg_id;
+                            }
+                        } catch (e) {}
                     }
                 }
-                
-                containerMsg.status = 'done';
-                containerMsg.finished = true;
+
+                userMsg._review_status = 'done';
+                assistantMsg.finished = true;
+                assistantMsg._streaming = false;
+                assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
+                if (statusEl) { statusEl.textContent = 'готово'; statusEl.style.color = '#4caf50'; }
+                // Сворачиваем контейнер
+                var container = document.querySelector('#chatArea .review-container:last-child');
+                if (container) {
+                    var body = container.querySelector('.review-body');
+                    var arrow = container.querySelector('.review-arrow');
+                    if (body) body.style.display = 'none';
+                    if (arrow) arrow.textContent = '▶';
+                }
                 updateBalance();
-                renderMessages();
+                updateBranchesFromServer();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
                 playSound('reply');
-            } catch(e) {
-                console.error('runReview error:', e);
-                showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '\u274C');
-                containerMsg.status = 'error';
-                containerMsg.finished = true;
-                renderMessages();
-                isSending = false;
-                activeStreamId = null;
-                sendBtnArrow();
+            } catch (e) {
+                if (e.name === 'AbortError') {
+                    assistantMsg.interrupted = true;
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                } else {
+                    console.error('runReview error:', e);
+                    userMsg._review_status = 'error';
+                    if (statusEl) { statusEl.textContent = 'ошибка'; statusEl.style.color = '#e74c3c'; }
+                    chat.messages.pop();
+                    chat.messages.pop();
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                    showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
+                }
             }
         }
 
+
+
+
+
+
         
-        function toggleReviewContainer(containerId) {
-            var container = document.getElementById(containerId);
+        function toggleReviewContainer(container) {
             if (!container) return;
             var body = container.querySelector('.review-body');
             var arrow = container.querySelector('.review-arrow');
@@ -2469,7 +2555,8 @@
                 body.style.display = 'none';
                 arrow.textContent = '▶';
             }
-        }        
+        }
+       
 
 
         function renderMessages() {
