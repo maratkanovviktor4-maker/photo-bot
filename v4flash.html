@@ -1857,7 +1857,6 @@
                             showAlertModal('Ошибка', errorMessage, '❌');
                             return;
                         }
-
                         var contentType = resp.headers.get('content-type') || '';
                         if (!contentType.includes('text/event-stream')) {
                             var errJson = await resp.json().catch(() => ({}));
@@ -2377,9 +2376,9 @@
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
-                const contentType = resp.headers.get('content-type') || '';
+                var contentType = resp.headers.get('content-type') || '';
                 if (!contentType.includes('text/event-stream')) {
-                    const err = await resp.json().catch(() => ({}));
+                    var err = await resp.json().catch(() => ({}));
                     let errorMessage = err.error || 'Неизвестная ошибка сервера.';
                     if (err.error_type === 'bad_request') {
                         errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
@@ -3305,9 +3304,9 @@
                 }
 
 
-                const contentType = resp.headers.get('content-type') || '';
+                var contentType = resp.headers.get('content-type') || '';
                 if (!contentType.includes('text/event-stream')) {
-                    const err = await resp.json().catch(() => ({}));
+                    var err = await resp.json().catch(() => ({}));
                     let errorMessage = err.error || 'Неизвестная ошибка сервера.';
                     if (err.error_type === 'bad_request') {
                         errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
