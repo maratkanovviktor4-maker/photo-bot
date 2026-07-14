@@ -2326,15 +2326,21 @@
             }
         }
         function patchMessageDom(area, index, html) {
+            if (!html) return;
             var existingRow = area.children[index];
             if (!existingRow) {
                 var temp = document.createElement('div');
                 temp.innerHTML = html;
-                area.appendChild(temp.firstElementChild);
+                var el = temp.firstElementChild;
+                if (el) {
+                    area.appendChild(el);
+                }
             } else {
                 existingRow.outerHTML = html;
             }
         }
+
+
         function fullRender() {
             _floatingHeaders = [];
             const chat = chats.find(c => c.id === currentChatId);
