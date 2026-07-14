@@ -274,14 +274,6 @@
         body.light .review-header:hover { background: rgba(0,0,0,0.03); }
         .review-body .message-row.user .message-content { max-width: 100%; }
         .review-body .message-row.assistant .message-content { max-width: 100%; }
-        .review-container { border: 1px solid rgba(0,203,245,0.3); border-radius: 12px; margin: 8px 0; overflow: hidden; background: rgba(0,203,245,0.03); }
-        body.light .review-container { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.15); }
-        .review-header { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: Inter, sans-serif; font-size: 13px; color: #00CBF5; user-select: none; }
-        .review-header:hover { background: rgba(0,203,245,0.06); }
-        body.light .review-header:hover { background: rgba(0,0,0,0.03); }
-        .review-status { margin-left: auto; color: #888; font-size: 12px; }
-        .review-body { padding: 0; }
-        .review-body .message-row { max-width: 100%; }
 
         #personalitySelect:hover,
         #highlightSelect:hover,
@@ -2357,13 +2349,6 @@
             const emptyState = area.querySelector('.empty-state');
             if (emptyState) emptyState.remove();
             
-            chat.messages.push({ role: 'user', content: 'Запуск код-ревью' });
-            const userRow = document.createElement('div');
-            userRow.className = 'message-row user';
-            userRow.innerHTML = '<div><div class="message-content">Запуск код-ревью</div></div>';
-            area.appendChild(userRow);
-            scrollToBottom();
-            
             const assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
             chat.messages.push(assistantMsg);
             const streamIdx = chat.messages.length - 1;
@@ -2389,7 +2374,23 @@
                 if (!resp.ok) {
                     var errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
+                    if (errData.error_type === 'bad_request') {
+                        errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
+                    } else if (errData.error_type === 'rate_limited') {
+                        errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
+                    } else if (errData.error_type === 'deepseek_error') {
+                        errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
+                    } else if (errData.error_type === 'deepseek_overloaded') {
+                        errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                    }
+                    assistantMsg.content = errorMessage;
+                    assistantMsg._error_type = errData.error_type || null;
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
                     showAlertModal('Ошибка', errorMessage, '❌');
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
                     return;
                 }
 
@@ -2471,6 +2472,7 @@
                 }
             }
         }
+
 
         function renderMessages() {
             const chat = chats.find(c => c.id === currentChatId);
