@@ -2367,10 +2367,11 @@
                     } else if (err.error_type === 'server_timeout') {
                         errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
                     }
-                    assistantMsg.content = errorMessage;
-                    assistantMsg._error_type = err.error_type || null;
-                    assistantMsg.finished = true;
-                    assistantMsg._streaming = false;
+                    chat.messages[streamIdx]._error_type = err.error_type || null;
+                    chat.messages[streamIdx].content = errorMessage;
+                    chat.messages[streamIdx].finished = true;
+                    chat.messages[streamIdx]._streaming = false;
+                    renderMessages();
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
