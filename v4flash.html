@@ -2249,6 +2249,10 @@
             if (msg._review_container && msg.role === 'user') {
                 var chat = chats.find(c => c.id === currentChatId);
                 var assistantContent = '';
+                var status = msg._review_status || 'done';
+                var statusTexts = { 'launch': 'запуск...', 'sandbox': 'отправка в песочницу...', 'analyzing': 'анализ модели...', 'done': 'готово', 'error': 'ошибка' };
+                var statusColors = { 'done': '#4caf50', 'error': '#e74c3c' };
+                var isExpanded = status !== 'done' && status !== 'error';
                 if (chat) {
                     var msgIndex = chat.messages.indexOf(msg);
                     if (msgIndex !== -1 && msgIndex + 1 < chat.messages.length) {
@@ -2260,13 +2264,14 @@
                 }
                 return '<div class="review-container">' +
                     '<div class="review-header" onclick="toggleReviewContainer(this.parentNode)">' +
-                        '<span class="review-arrow">▶</span> 🔍 Код-ревью <span class="review-status" style="color:#4caf50">готово</span>' +
+                        '<span class="review-arrow">' + (isExpanded ? '▼' : '▶') + '</span> 🔍 Код-ревью <span class="review-status" style="color:' + (statusColors[status] || '#888') + '">' + (statusTexts[status] || status) + '</span>' +
                     '</div>' +
-                    '<div class="review-body" style="display:none;">' +
+                    '<div class="review-body" style="display:' + (isExpanded ? 'block' : 'none') + ';">' +
                         '<div class="message-row user"><div><div class="message-content">' + escapeHtml(msg.content) + '</div></div></div>' +
                         (assistantContent ? '<div class="message-row assistant"><div><div class="message-content">' + formatMessage(assistantContent) + '</div></div></div>' : '') +
                     '</div></div>';
             }
+
 
 
             if (msg._review_container && msg.role === 'assistant') {
@@ -2382,7 +2387,7 @@
             
             activeStreamId = 'review_stream';
             
-            var userMsg = { role: 'user', content: 'Запуск код-ревью', _review_container: true };
+            var userMsg = { role: 'user', content: 'Запуск код-ревью', _review_container: true, _review_status: 'launch' };
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '', _review_container: true, msg_id: null, _abortController: null };
             chat.messages.push(userMsg);
             chat.messages.push(assistantMsg);
@@ -2394,6 +2399,9 @@
             assistantMsg._abortController = abortController;
             
             try {
+                userMsg._review_status = 'sandbox';
+                renderMessages();
+                
                 const resp = await fetch(SERVER_URL + '/sandbox_review', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
@@ -2403,6 +2411,7 @@
 
                 if (!resp.ok) {
                     var errData = await resp.json().catch(() => ({}));
+                    userMsg._review_status = 'error';
                     let errorMessage = errData.error || 'Ошибка сервера.';
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
@@ -2410,6 +2419,7 @@
 
                 const contentType = resp.headers.get('content-type') || '';
                 if (!contentType.includes('text/event-stream')) {
+                    userMsg._review_status = 'error';
                     const err = await resp.json().catch(() => ({}));
                     let errorMessage = err.error || 'Неизвестная ошибка сервера.';
                     if (err.error_type === 'bad_request') {
@@ -2421,16 +2431,19 @@
                     } else if (err.error_type === 'deepseek_overloaded') {
                         errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                     }
-                    chat.messages[streamMsgIndex]._error_type = err.error_type || null;
-                    chat.messages[streamMsgIndex].content = errorMessage;
-                    chat.messages[streamMsgIndex].finished = true;
-                    chat.messages[streamMsgIndex]._streaming = false;
+                    assistantMsg.content = errorMessage;
+                    assistantMsg._error_type = err.error_type || null;
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
                     renderMessages();
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
                     return;
                 }
+
+                userMsg._review_status = 'analyzing';
+                renderMessages();
 
                 const reader = resp.body.getReader();
                 const decoder = new TextDecoder();
@@ -2483,6 +2496,7 @@
                     }
                 }
 
+                userMsg._review_status = 'done';
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
@@ -2502,6 +2516,7 @@
                     sendBtnArrow();
                 } else {
                     console.error('runReview error:', e);
+                    userMsg._review_status = 'error';
                     chat.messages.pop();
                     chat.messages.pop();
                     renderMessages();
@@ -2512,6 +2527,7 @@
                 }
             }
         }
+
 
 
 
