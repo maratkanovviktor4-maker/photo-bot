@@ -2275,8 +2275,12 @@
 
 
             if (msg._review_container && msg.role === 'assistant') {
+                if (msg._streaming) {
+                    return '<div style="display:none;" id="stream-' + index + '"></div>';
+                }
                 return '';
             }
+
 
             if (msg.role === 'system') {
                 return '<div class="message-row system" data-msg-index="' + index + '"><div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">' + escapeHtml(msg.content) + '</div></div></div>';
@@ -2387,7 +2391,8 @@
             
             activeStreamId = 'review_stream';
             
-            var userMsg = { role: 'user', content: 'Запуск код-ревью', _review_container: true, _review_status: 'launch' };
+            var userMsg = { role: 'user', content: '', _review_container: true, _review_status: 'launch' };
+
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '', _review_container: true, msg_id: null, _abortController: null };
             chat.messages.push(userMsg);
             chat.messages.push(assistantMsg);
