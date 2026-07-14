@@ -2345,21 +2345,30 @@
                     body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: currentMode, chat_id: currentChatId, branch_id: currentBranchId }),
                     signal: abortController.signal
                 });
-
                 if (!resp.ok) {
                     var errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
-                    if (errData.error_type === 'bad_request') {
+                    showAlertModal('Ошибка', errorMessage, '❌');
+                    return;
+                }
+
+                const contentType = resp.headers.get('content-type') || '';
+                if (!contentType.includes('text/event-stream')) {
+                    const err = await resp.json().catch(() => ({}));
+                    let errorMessage = err.error || 'Неизвестная ошибка сервера.';
+                    if (err.error_type === 'bad_request') {
                         errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
-                    } else if (errData.error_type === 'rate_limited') {
+                    } else if (err.error_type === 'rate_limited') {
                         errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
-                    } else if (errData.error_type === 'deepseek_error') {
+                    } else if (err.error_type === 'deepseek_error') {
                         errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
-                    } else if (errData.error_type === 'deepseek_overloaded') {
+                    } else if (err.error_type === 'deepseek_overloaded') {
                         errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                    } else if (err.error_type === 'server_timeout') {
+                        errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
                     }
                     assistantMsg.content = errorMessage;
-                    assistantMsg._error_type = errData.error_type || null;
+                    assistantMsg._error_type = err.error_type || null;
                     assistantMsg.finished = true;
                     assistantMsg._streaming = false;
                     showAlertModal('Ошибка', errorMessage, '❌');
