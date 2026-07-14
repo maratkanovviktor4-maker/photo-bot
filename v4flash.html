@@ -2367,7 +2367,7 @@
                 const resp = await fetch(SERVER_URL + '/sandbox_review', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId }),
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: currentMode, chat_id: currentChatId, branch_id: currentBranchId }),
                     signal: abortController.signal
                 });
 
@@ -2426,6 +2426,10 @@
                                 showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
                             }
+                            if (parsed.reasoning) {
+                                assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                            }
+
                             if (parsed.content) {
                                 assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                 assistantMsg.content = assistantMsg._fullBuffer;
