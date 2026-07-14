@@ -270,18 +270,6 @@
         .prompt-popup button { display: block; width: 100%; padding: 8px 12px; border: none; background: transparent; color: #e0e0e0; font-size: 12px; cursor: pointer; text-align: left; border-radius: 6px; font-family: 'Inter', sans-serif; white-space: normal; word-break: break-word; line-height: 1.3; }
         body.light .prompt-popup button { color: #333; }
         .prompt-popup button:hover { background: rgba(0,203,245,0.15); }
-        .review-header:hover { background: rgba(0,203,245,0.06); }
-        body.light .review-header:hover { background: rgba(0,0,0,0.03); }
-        .review-body .message-row.user .message-content { max-width: 100%; }
-        .review-body .message-row.assistant .message-content { max-width: 100%; }
-        .review-container { border: 1px solid rgba(0,203,245,0.3); border-radius: 12px; margin: 8px 0; overflow: hidden; background: rgba(0,203,245,0.03); }
-        body.light .review-container { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.15); }
-        .review-header { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: Inter, sans-serif; font-size: 13px; color: #00CBF5; user-select: none; }
-        .review-header:hover { background: rgba(0,203,245,0.06); }
-        body.light .review-header:hover { background: rgba(0,0,0,0.03); }
-        .review-status { margin-left: auto; color: #888; font-size: 12px; }
-        .review-body { padding: 0; }
-        .review-body .message-row { max-width: 100%; }
 
         #personalitySelect:hover,
         #highlightSelect:hover,
@@ -2246,46 +2234,6 @@
         }
         function buildMessageHtml(index, msg) {
             if (!msg) return '';
-            if (msg._review_container && msg.role === 'user') {
-                var chat = chats.find(c => c.id === currentChatId);
-                var status = msg._review_status || 'done';
-                var statusTexts = { 'launch': 'запуск...', 'sandbox': 'отправка в песочницу...', 'analyzing': 'анализ модели...', 'done': 'готово', 'error': 'ошибка' };
-                var statusColors = { 'done': '#4caf50', 'error': '#e74c3c' };
-                var isStreaming = status !== 'done' && status !== 'error';
-                var userContent = msg.content || '';
-                var bodyContent = '';
-                if (userContent) {
-                    bodyContent += '<div class="message-row user"><div><div class="message-content">' + escapeHtml(userContent) + '</div></div></div>';
-                }
-                if (isStreaming) {
-                    bodyContent += '<div class="message-row assistant"><div><div class="message-content" id="stream-' + index + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div></div>';
-                } else if (chat) {
-                    var msgIndex = chat.messages.indexOf(msg);
-                    if (msgIndex !== -1 && msgIndex + 1 < chat.messages.length) {
-                        var nextMsg = chat.messages[msgIndex + 1];
-                        if (nextMsg._review_container && nextMsg.role === 'assistant' && nextMsg.content) {
-                            bodyContent += '<div class="message-row assistant"><div><div class="message-content">' + formatMessage(nextMsg.content) + '</div></div></div>';
-                        }
-                    }
-                }
-                return '<div class="review-container">' +
-                    '<div class="review-header" onclick="toggleReviewContainer(this.parentNode)">' +
-                        '<span class="review-arrow">' + (isStreaming ? '▼' : '▶') + '</span> 🔍 Код-ревью <span class="review-status" style="color:' + (statusColors[status] || '#888') + '">' + (statusTexts[status] || status) + '</span>' +
-                    '</div>' +
-                    '<div class="review-body" style="display:' + (isStreaming ? 'block' : 'none') + ';">' +
-                        bodyContent +
-                    '</div></div>';
-            }
-
-
-
-
-            if (msg._review_container && msg.role === 'assistant') {
-                return '';
-            }
-
-
-
             if (msg.role === 'system') {
                 return '<div class="message-row system" data-msg-index="' + index + '"><div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">' + escapeHtml(msg.content) + '</div></div></div>';
             }
@@ -2304,7 +2252,6 @@
                 if (msg.interrupted) actionsHtml += '<button onclick="continueMessage(' + index + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                 actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + index + ')" title="Self-Play диалог" style="color:#00CBF5;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
                 actionsHtml += '<button class="prompt-btn" onclick="showPromptPopup(' + index + ', this)" title="Реплика"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg></button>';
-                actionsHtml += '<button class="review-btn" onclick="runReview(' + index + ')" title="Запустить ревью">🔍 Ревью</button>';
             }
             var reasoningHtml = '';
             var contentToShow = msg.content || '';
@@ -2339,21 +2286,15 @@
             }
         }
         function patchMessageDom(area, index, html) {
-            if (!html) return;
             var existingRow = area.children[index];
             if (!existingRow) {
                 var temp = document.createElement('div');
                 temp.innerHTML = html;
-                var el = temp.firstElementChild;
-                if (el) {
-                    area.appendChild(el);
-                }
+                area.appendChild(temp.firstElementChild);
             } else {
                 existingRow.outerHTML = html;
             }
         }
-
-
         function fullRender() {
             _floatingHeaders = [];
             const chat = chats.find(c => c.id === currentChatId);
@@ -2384,179 +2325,7 @@
             }
         }
 
-        async function runReview(msgIndex) {
-            if (isSending) return;
-            isSending = true;
-            if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
-            sendBtnStop();
-            
-            var chat = chats.find(c => c.id === currentChatId);
-            if (!chat) { isSending = false; sendBtnArrow(); return; }
-            
-            activeStreamId = 'review_stream';
-            
-            var userMsg = { role: 'user', content: '', _review_container: true, _review_status: 'launch' };
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '', _review_container: true, msg_id: null, _abortController: null };
-            chat.messages.push(userMsg);
-            chat.messages.push(assistantMsg);
-            var streamMsgIndex = chat.messages.length - 1;
-            renderMessages();
-            scrollToBottom();
-            
-            var statusEl = document.querySelector('#chatArea .review-container:last-child .review-status');
-            if (!statusEl) { statusEl = document.querySelector('#chatArea .review-status'); }
 
-            const abortController = new AbortController();
-            assistantMsg._abortController = abortController;
-            
-            try {
-                if (statusEl) { statusEl.textContent = 'отправка в песочницу...'; statusEl.style.color = '#888'; }
-                userMsg._review_status = 'sandbox';
-                
-                const resp = await fetch(SERVER_URL + '/sandbox_review', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId }),
-                    signal: abortController.signal
-                });
-
-                if (!resp.ok) {
-                    var errData = await resp.json().catch(() => ({}));
-                    userMsg._review_status = 'error';
-                    assistantMsg.content = errData.error || 'Ошибка сервера.';
-                    assistantMsg._error_type = errData.error_type || null;
-                    assistantMsg.finished = true;
-                    assistantMsg._streaming = false;
-                    if (statusEl) { statusEl.textContent = 'ошибка'; statusEl.style.color = '#e74c3c'; }
-                    showAlertModal('Ошибка', assistantMsg.content, '❌');
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
-                    return;
-                }
-
-                const contentType = resp.headers.get('content-type') || '';
-                if (!contentType.includes('text/event-stream')) {
-                    userMsg._review_status = 'error';
-                    const err = await resp.json().catch(() => ({}));
-                    assistantMsg.content = err.error || 'Неизвестная ошибка сервера.';
-                    assistantMsg.finished = true;
-                    assistantMsg._streaming = false;
-                    if (statusEl) { statusEl.textContent = 'ошибка'; statusEl.style.color = '#e74c3c'; }
-                    showAlertModal('Ошибка', assistantMsg.content, '❌');
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
-                    return;
-                }
-
-                if (statusEl) { statusEl.textContent = 'анализ модели...'; statusEl.style.color = '#888'; }
-                userMsg._review_status = 'analyzing';
-
-                const reader = resp.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop() || '';
-                    for (const line of lines) {
-                        if (!line.startsWith('data: ')) continue;
-                        const dataStr = line.slice(6).trim();
-                        if (dataStr === '[DONE]') continue;
-                        try {
-                            const parsed = JSON.parse(dataStr);
-                            if (parsed.error_type) {
-                                var errorMessages = {
-                                    'bad_request': 'Неверный формат запроса.',
-                                    'rate_limited': 'Слишком много запросов.',
-                                    'deepseek_error': 'Ошибка DeepSeek.',
-                                    'deepseek_overloaded': 'DeepSeek перегружен.',
-                                    'server_timeout': 'Сервер не дождался ответа 000503.'
-                                };
-                                showAlertModal('Ошибка DeepSeek', errorMessages[parsed.error_type] || 'Ошибка сервера.', '❌');
-                                return;
-                            }
-                            if (parsed.content) {
-                                assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
-                                assistantMsg.content = assistantMsg._fullBuffer;
-                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
-                                if (msgEl) {
-                                    requestAnimationFrame(function() {
-                                        streamUpdateDOM(msgEl, assistantMsg);
-                                    });
-                                }
-                            }
-                            if (parsed.assistant_msg_id) {
-                                assistantMsg.msg_id = parsed.assistant_msg_id;
-                            }
-                        } catch (e) {}
-                    }
-                }
-
-                userMsg._review_status = 'done';
-                assistantMsg.finished = true;
-                assistantMsg._streaming = false;
-                assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
-                if (statusEl) { statusEl.textContent = 'готово'; statusEl.style.color = '#4caf50'; }
-                // Сворачиваем контейнер
-                var container = document.querySelector('#chatArea .review-container:last-child');
-                if (container) {
-                    var body = container.querySelector('.review-body');
-                    var arrow = container.querySelector('.review-arrow');
-                    if (body) body.style.display = 'none';
-                    if (arrow) arrow.textContent = '▶';
-                }
-                updateBalance();
-                updateBranchesFromServer();
-                isSending = false;
-                activeStreamId = null;
-                sendBtnArrow();
-                playSound('reply');
-            } catch (e) {
-                if (e.name === 'AbortError') {
-                    assistantMsg.interrupted = true;
-                    assistantMsg.finished = true;
-                    assistantMsg._streaming = false;
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
-                } else {
-                    console.error('runReview error:', e);
-                    userMsg._review_status = 'error';
-                    if (statusEl) { statusEl.textContent = 'ошибка'; statusEl.style.color = '#e74c3c'; }
-                    chat.messages.pop();
-                    chat.messages.pop();
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
-                    showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
-                }
-            }
-        }
-
-
-
-
-
-
-        
-        function toggleReviewContainer(container) {
-            if (!container) return;
-            var body = container.querySelector('.review-body');
-            var arrow = container.querySelector('.review-arrow');
-            if (body.style.display === 'none') {
-                body.style.display = 'block';
-                arrow.textContent = '▼';
-            } else {
-                body.style.display = 'none';
-                arrow.textContent = '▶';
-            }
-        }
-       
 
 
         function renderMessages() {
