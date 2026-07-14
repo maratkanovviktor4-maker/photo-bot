@@ -2247,14 +2247,21 @@
         function buildMessageHtml(index, msg) {
             if (!msg) return '';
             if (msg._review_container && msg.role === 'user') {
+                var assistantContent = '';
+                var msgIndex = index + 1;
+                if (msgIndex < chat.messages.length && chat.messages[msgIndex]._review_container && chat.messages[msgIndex].role === 'assistant') {
+                    assistantContent = chat.messages[msgIndex].content || '';
+                }
                 return '<div class="review-container">' +
                     '<div class="review-header" onclick="toggleReviewContainer(this.parentNode)">' +
                         '<span class="review-arrow">▶</span> 🔍 Код-ревью <span class="review-status" style="color:#4caf50">готово</span>' +
                     '</div>' +
                     '<div class="review-body" style="display:none;">' +
                         '<div class="message-row user"><div><div class="message-content">' + escapeHtml(msg.content) + '</div></div></div>' +
+                        (assistantContent ? '<div class="message-row assistant"><div><div class="message-content">' + formatMessage(assistantContent) + '</div></div></div>' : '') +
                     '</div></div>';
             }
+
             if (msg._review_container && msg.role === 'assistant') {
                 return '';
             }
@@ -2362,120 +2369,137 @@
             
             activeStreamId = 'review_stream';
             
-            var area = document.getElementById('chatArea');
-            var emptyState = area.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
-            
-            var containerId = 'review_' + Date.now();
-            var container = document.createElement('div');
-            container.id = containerId;
-            container.className = 'review-container';
-            container.innerHTML = 
-                '<div class="review-header" onclick="toggleReviewContainer(this.parentNode)">' +
-                    '<span class="review-arrow">▼</span> 🔍 Код-ревью <span class="review-status">запуск...</span>' +
-                '</div>' +
-                '<div class="review-body" style="display:block;">' +
-                    '<div class="message-row user"><div><div class="message-content">Запуск код-ревью</div></div></div>' +
-                    '<div class="message-row assistant"><div><div class="message-content" id="review_stream_content"><div class="typing-dots"><span></span><span></span><span></span></div></div></div></div>' +
-                '</div>';
-            area.appendChild(container);
-            var statusEl = container.querySelector('.review-status');
+            var userMsg = { role: 'user', content: 'Запуск код-ревью', _review_container: true };
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '', _review_container: true, msg_id: null, _abortController: null };
+            chat.messages.push(userMsg);
+            chat.messages.push(assistantMsg);
+            var streamMsgIndex = chat.messages.length - 1;
+            renderMessages();
             scrollToBottom();
+
+            const abortController = new AbortController();
+            assistantMsg._abortController = abortController;
             
             try {
-                statusEl.textContent = 'отправка в песочницу...';
-                
-                var resp = await fetch(SERVER_URL + '/sandbox_review', {
+                const resp = await fetch(SERVER_URL + '/sandbox_review', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId }),
+                    signal: abortController.signal
                 });
-                
+
                 if (!resp.ok) {
                     var errData = await resp.json().catch(() => ({}));
-                    var errorMessage = errData.error || 'Ошибка сервера.';
-                    var errorMessages = {
-                        'bad_request': 'Неверный формат запроса, попробуйте другой файл.',
-                        'rate_limited': 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.',
-                        'deepseek_error': 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.',
-                        'deepseek_overloaded': 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.',
-                        'server_timeout': 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.',
-                        'sandbox_error': 'Ошибка при запуске проекта.'
-                    };
-                    var msg = errorMessages[errData.error_type] || errorMessage;
-                    showAlertModal('Ошибка', msg, '\u274C');
-                    statusEl.textContent = 'ошибка';
-                    statusEl.style.color = '#e74c3c';
+                    let errorMessage = errData.error || 'Ошибка сервера.';
+                    showAlertModal('Ошибка', errorMessage, '❌');
+                    return;
+                }
+
+                const contentType = resp.headers.get('content-type') || '';
+                if (!contentType.includes('text/event-stream')) {
+                    const err = await resp.json().catch(() => ({}));
+                    let errorMessage = err.error || 'Неизвестная ошибка сервера.';
+                    if (err.error_type === 'bad_request') {
+                        errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
+                    } else if (err.error_type === 'rate_limited') {
+                        errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
+                    } else if (err.error_type === 'deepseek_error') {
+                        errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
+                    } else if (err.error_type === 'deepseek_overloaded') {
+                        errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                    }
+                    chat.messages[streamMsgIndex]._error_type = err.error_type || null;
+                    chat.messages[streamMsgIndex].content = errorMessage;
+                    chat.messages[streamMsgIndex].finished = true;
+                    chat.messages[streamMsgIndex]._streaming = false;
+                    renderMessages();
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
                     return;
                 }
-                
-                statusEl.textContent = 'анализ модели...';
-                
-                var reader = resp.body.getReader();
-                var decoder = new TextDecoder();
-                var buffer = '';
-                var fullContent = '';
-                
+
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
                 while (true) {
-                    var readResult = await reader.read();
-                    if (readResult.done) break;
-                    buffer += decoder.decode(readResult.value, { stream: true });
-                    var lines = buffer.split('\n');
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
                     buffer = lines.pop() || '';
-                    for (var i = 0; i < lines.length; i++) {
-                        var line = lines[i];
+                    for (const line of lines) {
                         if (!line.startsWith('data: ')) continue;
-                        var dataStr = line.slice(6).trim();
+                        const dataStr = line.slice(6).trim();
                         if (dataStr === '[DONE]') continue;
                         try {
-                            var parsed = JSON.parse(dataStr);
+                            const parsed = JSON.parse(dataStr);
                             if (parsed.error_type) {
-                                var errorMessages = {
-                                    'bad_request': 'Неверный формат запроса, попробуйте другой файл.',
-                                    'rate_limited': 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.',
-                                    'deepseek_error': 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.',
-                                    'deepseek_overloaded': 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.',
-                                    'server_timeout': 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.'
-                                };
-                                showAlertModal('Ошибка DeepSeek', errorMessages[parsed.error_type] || 'Ошибка сервера.', '\u274C');
+                                let errorMessage = 'Ошибка сервера.';
+                                if (parsed.error_type === 'bad_request') {
+                                    errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
+                                } else if (parsed.error_type === 'rate_limited') {
+                                    errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
+                                } else if (parsed.error_type === 'deepseek_error') {
+                                    errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
+                                } else if (parsed.error_type === 'deepseek_overloaded') {
+                                    errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                                } else if (parsed.error_type === 'server_timeout') {
+                                    errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
+                                }
+                                showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
                             }
                             if (parsed.content) {
-                                fullContent += parsed.content;
-                                var msgEl = document.getElementById('review_stream_content');
+                                assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
+                                assistantMsg.content = assistantMsg._fullBuffer;
+                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
                                 if (msgEl) {
-                                    msgEl.innerHTML = formatMessage(fullContent);
-                                    var codeBlocks = msgEl.querySelectorAll('pre code');
-                                    for (var j = 0; j < codeBlocks.length; j++) {
-                                        if (typeof hljs !== 'undefined') hljs.highlightElement(codeBlocks[j]);
-                                    }
+                                    requestAnimationFrame(function() {
+                                        streamUpdateDOM(msgEl, assistantMsg);
+                                    });
                                 }
                             }
-                        } catch(e) {}
+                            if (parsed.assistant_msg_id) {
+                                assistantMsg.msg_id = parsed.assistant_msg_id;
+                            }
+                        } catch (e) {
+                            console.warn('SSE parse error:', e, dataStr);
+                        }
                     }
                 }
-                
-                statusEl.textContent = 'готово';
-                statusEl.style.color = '#4caf50';
+
+                assistantMsg.finished = true;
+                assistantMsg._streaming = false;
+                assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
                 updateBalance();
                 updateBranchesFromServer();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
                 playSound('reply');
-            } catch(e) {
-                console.error('runReview error:', e);
-                showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '\u274C');
-                statusEl.textContent = 'ошибка';
-                statusEl.style.color = '#e74c3c';
-                isSending = false;
-                activeStreamId = null;
-                sendBtnArrow();
+            } catch (e) {
+                if (e.name === 'AbortError') {
+                    assistantMsg.interrupted = true;
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                } else {
+                    console.error('runReview error:', e);
+                    chat.messages.pop();
+                    chat.messages.pop();
+                    renderMessages();
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                    showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
+                }
             }
         }
+
 
 
 
