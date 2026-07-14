@@ -2248,38 +2248,42 @@
             if (!msg) return '';
             if (msg._review_container && msg.role === 'user') {
                 var chat = chats.find(c => c.id === currentChatId);
-                var assistantContent = '';
                 var status = msg._review_status || 'done';
                 var statusTexts = { 'launch': 'запуск...', 'sandbox': 'отправка в песочницу...', 'analyzing': 'анализ модели...', 'done': 'готово', 'error': 'ошибка' };
                 var statusColors = { 'done': '#4caf50', 'error': '#e74c3c' };
-                var isExpanded = false;
-                if (chat) {
+                var isStreaming = status !== 'done' && status !== 'error';
+                var userContent = msg.content || '';
+                var bodyContent = '';
+                if (userContent) {
+                    bodyContent += '<div class="message-row user"><div><div class="message-content">' + escapeHtml(userContent) + '</div></div></div>';
+                }
+                if (isStreaming) {
+                    bodyContent += '<div class="message-row assistant"><div><div class="message-content" id="stream-' + index + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div></div>';
+                } else if (chat) {
                     var msgIndex = chat.messages.indexOf(msg);
                     if (msgIndex !== -1 && msgIndex + 1 < chat.messages.length) {
                         var nextMsg = chat.messages[msgIndex + 1];
-                        if (nextMsg._review_container && nextMsg.role === 'assistant') {
-                            assistantContent = nextMsg.content || '';
+                        if (nextMsg._review_container && nextMsg.role === 'assistant' && nextMsg.content) {
+                            bodyContent += '<div class="message-row assistant"><div><div class="message-content">' + formatMessage(nextMsg.content) + '</div></div></div>';
                         }
                     }
                 }
                 return '<div class="review-container">' +
                     '<div class="review-header" onclick="toggleReviewContainer(this.parentNode)">' +
-                        '<span class="review-arrow">' + (isExpanded ? '▼' : '▶') + '</span> 🔍 Код-ревью <span class="review-status" style="color:' + (statusColors[status] || '#888') + '">' + (statusTexts[status] || status) + '</span>' +
+                        '<span class="review-arrow">' + (isStreaming ? '▼' : '▶') + '</span> 🔍 Код-ревью <span class="review-status" style="color:' + (statusColors[status] || '#888') + '">' + (statusTexts[status] || status) + '</span>' +
                     '</div>' +
-                    '<div class="review-body" style="display:' + (isExpanded ? 'block' : 'none') + ';">' +
-                        '<div class="message-row user"><div><div class="message-content">' + escapeHtml(msg.content) + '</div></div></div>' +
-                        (assistantContent ? '<div class="message-row assistant"><div><div class="message-content">' + formatMessage(assistantContent) + '</div></div></div>' : '') +
+                    '<div class="review-body" style="display:' + (isStreaming ? 'block' : 'none') + ';">' +
+                        bodyContent +
                     '</div></div>';
             }
 
 
 
+
             if (msg._review_container && msg.role === 'assistant') {
-                if (msg._streaming) {
-                    return '<div style="display:none;" id="stream-' + index + '"></div>';
-                }
                 return '';
             }
+
 
 
             if (msg.role === 'system') {
