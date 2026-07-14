@@ -270,6 +270,10 @@
         .prompt-popup button { display: block; width: 100%; padding: 8px 12px; border: none; background: transparent; color: #e0e0e0; font-size: 12px; cursor: pointer; text-align: left; border-radius: 6px; font-family: 'Inter', sans-serif; white-space: normal; word-break: break-word; line-height: 1.3; }
         body.light .prompt-popup button { color: #333; }
         .prompt-popup button:hover { background: rgba(0,203,245,0.15); }
+        .review-header:hover { background: rgba(0,203,245,0.06); }
+        body.light .review-header:hover { background: rgba(0,0,0,0.03); }
+        .review-body .message-row.user .message-content { max-width: 100%; }
+        .review-body .message-row.assistant .message-content { max-width: 100%; }
 
         #personalitySelect:hover,
         #highlightSelect:hover,
@@ -2335,28 +2339,48 @@
             var chat = chats.find(c => c.id === currentChatId);
             if (!chat) { isSending = false; sendBtnArrow(); return; }
             
-            chat.messages.push({ role: 'user', content: 'Запуск ревью проекта' });
             var area = document.getElementById('chatArea');
             var emptyState = area.querySelector('.empty-state');
             if (emptyState) emptyState.remove();
-            var userRow = document.createElement('div');
-            userRow.className = 'message-row user';
-            userRow.innerHTML = '<div><div class="message-content">Запуск ревью проекта</div></div>';
-            area.appendChild(userRow);
+            
+            // Создаём блок-контейнер
+            var containerId = 'review_container_' + Date.now();
+            var container = document.createElement('div');
+            container.id = containerId;
+            container.style.cssText = 'border:1px solid rgba(0,203,245,0.3);border-radius:12px;margin:8px 0;overflow:hidden;background:rgba(0,203,245,0.03);';
+            container.innerHTML = 
+                '<div class="review-header" onclick="toggleReviewContainer(\'' + containerId + '\')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:Inter,sans-serif;font-size:13px;color:#00CBF5;">' +
+                    '<span class="review-arrow">▼</span> 🔍 Ревью проекта <span class="review-status" style="margin-left:auto;color:#888;font-size:12px;">запуск...</span>' +
+                '</div>' +
+                '<div class="review-body" style="display:block;padding:0;"></div>';
+            area.appendChild(container);
+            var body = container.querySelector('.review-body');
+            var statusEl = container.querySelector('.review-status');
+            var arrowEl = container.querySelector('.review-arrow');
             scrollToBottom();
             
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
+            // User-сообщение внутри контейнера
+            var userDiv = document.createElement('div');
+            userDiv.className = 'message-row user';
+            userDiv.innerHTML = '<div><div class="message-content">Запуск ревью проекта</div></div>';
+            body.appendChild(userDiv);
+            
+            // Ассистент внутри контейнера
+            var assistantDiv = document.createElement('div');
+            assistantDiv.className = 'message-row assistant';
+            var streamId = 'review_stream_' + Date.now();
+            assistantDiv.innerHTML = '<div><div class="message-content" id="' + streamId + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
+            body.appendChild(assistantDiv);
+            
+            // Сохраняем в массив для истории
+            chat.messages.push({ role: 'user', content: 'Запуск ревью проекта' });
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _fullBuffer: '' };
             chat.messages.push(assistantMsg);
-            var streamMsgIndex = chat.messages.length - 1;
             activeStreamId = 'review_stream';
             
-            var assistantRow = document.createElement('div');
-            assistantRow.className = 'message-row assistant';
-            assistantRow.innerHTML = '<div><div class="message-content" id="stream-' + streamMsgIndex + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
-            area.appendChild(assistantRow);
-            scrollToBottom();
-            
             try {
+                statusEl.textContent = 'запуск песочницы...';
+                
                 var resp = await fetch(SERVER_URL + '/sandbox_review', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
@@ -2370,13 +2394,17 @@
                     assistantMsg.content = errorMessage;
                     assistantMsg.finished = true;
                     assistantMsg._streaming = false;
-                    var streamEl = document.getElementById('stream-' + streamMsgIndex);
+                    var streamEl = document.getElementById(streamId);
                     if (streamEl) streamEl.innerHTML = errorMessage;
+                    statusEl.textContent = 'ошибка';
+                    statusEl.style.color = '#e74c3c';
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
                     return;
                 }
+                
+                statusEl.textContent = 'анализ...';
                 
                 var reader = resp.body.getReader();
                 var decoder = new TextDecoder();
@@ -2396,26 +2424,18 @@
                         try {
                             var parsed = JSON.parse(dataStr);
                             if (parsed.error_type) {
-                                var errorMessages = {
-                                    'bad_request': 'Неверный формат запроса.',
-                                    'deepseek_overloaded': 'DeepSeek перегружен. Попробуйте позже.',
-                                    'server_timeout': 'Сервер не дождался ответа 000503.'
-                                };
-                                showAlertModal('Ошибка', errorMessages[parsed.error_type] || 'Ошибка сервера.', '\u274C');
+                                showAlertModal('Ошибка', 'Ошибка при проверке проекта.', '\u274C');
                                 return;
                             }
                             if (parsed.content) {
                                 assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                 assistantMsg.content = assistantMsg._fullBuffer;
-                                var msgEl = document.getElementById('stream-' + streamMsgIndex);
+                                var msgEl = document.getElementById(streamId);
                                 if (msgEl) {
                                     requestAnimationFrame(function() {
                                         streamUpdateDOM(msgEl, assistantMsg);
                                     });
                                 }
-                            }
-                            if (parsed.assistant_msg_id) {
-                                assistantMsg.msg_id = parsed.assistant_msg_id;
                             }
                         } catch(e) {}
                     }
@@ -2424,10 +2444,10 @@
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
+                statusEl.textContent = 'готово';
+                statusEl.style.color = '#4caf50';
                 updateBalance();
-                updateBranchesFromServer().then(function() {
-                    fullRender();
-                });
+                updateBranchesFromServer();
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
@@ -2435,13 +2455,30 @@
             } catch(e) {
                 console.error('runReview error:', e);
                 showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '\u274C');
-                var streamEl = document.getElementById('stream-' + streamMsgIndex);
+                var streamEl = document.getElementById(streamId);
                 if (streamEl) streamEl.innerHTML = 'Отсутствует подключение к интернету 000100.';
+                statusEl.textContent = 'ошибка';
+                statusEl.style.color = '#e74c3c';
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
             }
         }
+        
+        function toggleReviewContainer(containerId) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+            var body = container.querySelector('.review-body');
+            var arrow = container.querySelector('.review-arrow');
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                arrow.textContent = '▼';
+            } else {
+                body.style.display = 'none';
+                arrow.textContent = '▶';
+            }
+        }
+
 
 
 
