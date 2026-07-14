@@ -2366,12 +2366,12 @@
             
             const assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
             chat.messages.push(assistantMsg);
-            const msgIndex = chat.messages.length - 1;
+            const streamIdx = chat.messages.length - 1;
             activeStreamId = 'review_stream';
             
             const assistantRow = document.createElement('div');
             assistantRow.className = 'message-row assistant';
-            assistantRow.innerHTML = '<div><div class="message-content" id="stream-' + msgIndex + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
+            assistantRow.innerHTML = '<div><div class="message-content" id="stream-' + streamIdx + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
             area.appendChild(assistantRow);
             scrollToBottom();
 
@@ -2428,7 +2428,7 @@
                             if (parsed.content) {
                                 assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
                                 assistantMsg.content = assistantMsg._fullBuffer;
-                                var msgEl = document.getElementById('stream-' + msgIndex);
+                                var msgEl = document.getElementById('stream-' + streamIdx);
                                 if (msgEl) {
                                     requestAnimationFrame(function() {
                                         streamUpdateDOM(msgEl, assistantMsg);
