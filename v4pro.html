@@ -2238,6 +2238,7 @@
                 if (msg.interrupted) actionsHtml += '<button onclick="continueMessage(' + index + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                 actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + index + ')" title="Self-Play диалог" style="color:#F59E0B;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
                 actionsHtml += '<button class="prompt-btn" onclick="showPromptPopup(' + index + ', this)" title="Реплика"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg></button>';
+		actionsHtml += '<button class="review-btn" onclick="runReview(' + index + ')" title="Запустить ревью проекта">' + '\uD83D\uDD0D' + ' Ревью</button>';
             }
             var reasoningHtml = '';
             var contentToShow = msg.content || '';
@@ -2310,6 +2311,153 @@
                 }
             }
         }
+        async function runReview(msgIndex) {
+            if (isSending) return;
+            isSending = true;
+            if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
+            sendBtnStop();
+            
+            const chat = chats.find(c => c.id === currentChatId);
+            if (!chat) { isSending = false; sendBtnArrow(); return; }
+            
+            const area = document.getElementById('chatArea');
+            const emptyState = area.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+            
+            const assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
+            chat.messages.push(assistantMsg);
+            const streamIdx = chat.messages.length - 1;
+            activeStreamId = 'review_stream';
+            
+            const assistantRow = document.createElement('div');
+            assistantRow.className = 'message-row assistant';
+            assistantRow.innerHTML = '<div><div class="message-content" id="stream-' + streamIdx + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
+            area.appendChild(assistantRow);
+            scrollToBottom();
+
+            const abortController = new AbortController();
+            assistantMsg._abortController = abortController;
+            
+            try {
+                const resp = await fetch(SERVER_URL + '/sandbox_review', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: currentMode, chat_id: currentChatId, branch_id: currentBranchId }),
+                    signal: abortController.signal
+                });
+                if (!resp.ok) {
+                    var errData = await resp.json().catch(() => ({}));
+                    let errorMessage = errData.error || 'Ошибка сервера.';
+                    showAlertModal('Ошибка', errorMessage, '❌');
+                    return;
+                }
+
+                var contentType = resp.headers.get('content-type') || '';
+                if (!contentType.includes('text/event-stream')) {
+                    var err = await resp.json().catch(() => ({}));
+                    let errorMessage = err.error || 'Неизвестная ошибка сервера.';
+                    if (err.error_type === 'bad_request') {
+                        errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
+                    } else if (err.error_type === 'rate_limited') {
+                        errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
+                    } else if (err.error_type === 'deepseek_error') {
+                        errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
+                    } else if (err.error_type === 'deepseek_overloaded') {
+                        errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                    } else if (err.error_type === 'server_timeout') {
+                        errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
+                    }
+                    chat.messages[streamIdx]._error_type = err.error_type || null;
+                    chat.messages[streamIdx].content = errorMessage;
+                    chat.messages[streamIdx].finished = true;
+                    chat.messages[streamIdx]._streaming = false;
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                    return;
+                }
+
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+                        const dataStr = line.slice(6).trim();
+                        if (dataStr === '[DONE]') continue;
+                        try {
+                            const parsed = JSON.parse(dataStr);
+                            if (parsed.error_type) {
+                                let errorMessage = 'Ошибка сервера.';
+                                if (parsed.error_type === 'bad_request') {
+                                    errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
+                                } else if (parsed.error_type === 'rate_limited') {
+                                    errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
+                                } else if (parsed.error_type === 'deepseek_error') {
+                                    errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
+                                } else if (parsed.error_type === 'deepseek_overloaded') {
+                                    errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                                } else if (parsed.error_type === 'server_timeout') {
+                                    errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
+                                }
+                                showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
+                                return;
+                            }
+                            if (parsed.reasoning) {
+                                assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                            }
+
+                            if (parsed.content) {
+                                assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
+                                assistantMsg.content = assistantMsg._fullBuffer;
+                                var msgEl = document.getElementById('stream-' + streamIdx);
+                                if (msgEl) {
+                                    streamUpdateDOM(msgEl, assistantMsg);
+                                }
+                            }
+                            if (parsed.assistant_msg_id) {
+                                assistantMsg.msg_id = parsed.assistant_msg_id;
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                assistantMsg.finished = true;
+                assistantMsg._streaming = false;
+                assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
+                chat.lastMessageTime = Date.now();
+                chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                renderChatList();
+                updateBalance();
+                updateBranchesFromServer();
+                isSending = false;
+                activeStreamId = null;
+                sendBtnArrow();
+                playSound('reply');
+            } catch (e) {
+                if (e.name === 'AbortError') {
+                    assistantMsg.interrupted = true;
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                } else {
+                    console.error('runReview error:', e);
+                    showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                }
+            }
+        }
+
 
 
 
@@ -3134,10 +3282,9 @@
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
-
-                const contentType = resp.headers.get('content-type') || '';
+                var contentType = resp.headers.get('content-type') || '';
                 if (!contentType.includes('text/event-stream')) {
-                    const err = await resp.json().catch(() => ({}));
+                    var err = await resp.json().catch(() => ({}));
                     let errorMessage = err.error || 'Неизвестная ошибка сервера.';
                     if (err.error_type === 'bad_request') {
                         errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
