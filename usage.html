@@ -10,169 +10,233 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: #201F28; color: #e0e0e0; min-height: 100vh; padding: 30px; }
         body.light { background: #ffffff; color: #111; }
-        h1 { color: #00CBF5; margin-bottom: 20px; font-size: 22px; }
-        h2 { color: #00CBF5; margin: 30px 0 15px; font-size: 17px; }
-        .top-cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 30px; }
-        .card { background: #1a1a2e; border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 180px; }
+        h1 { color: #00CBF5; margin-bottom: 10px; font-size: 22px; }
+        h2 { color: #00CBF5; margin: 25px 0 10px; font-size: 17px; }
+        .bot-link { display: inline-flex; align-items: center; gap: 6px; color: #00CBF5; text-decoration: none; font-size: 13px; margin-bottom: 20px; }
+        .bot-link:hover { text-decoration: underline; }
+        .top-cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 25px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 170px; }
         body.light .card { background: #f5f5f5; }
-        .card-label { font-size: 12px; color: #888; margin-bottom: 4px; }
-        .card-value { font-size: 22px; font-weight: 700; color: #00CBF5; }
-        .card-sub { font-size: 13px; color: #a0a0b0; margin-top: 4px; }
-        .chart-container { background: #1a1a2e; border-radius: 12px; padding: 20px; margin: 20px 0; }
+        .card-label { font-size: 12px; color: #888; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+        .card-value { font-size: 22px; font-weight: 700; color: #00CBF5; display: flex; align-items: center; gap: 4px; }
+        .card-sub { font-size: 13px; color: #a0a0b0; margin-top: 2px; }
+        .section { margin-bottom: 30px; }
+        .chart-container { background: #1a1a2e; border-radius: 12px; padding: 20px; margin: 10px 0; }
         body.light .chart-container { background: #f5f5f5; }
-        .chart-bars { display: flex; align-items: flex-end; gap: 4px; height: 200px; padding: 10px 0; }
-        .bar-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 30px; }
-        .bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; position: relative; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+        .chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 180px; padding: 10px 0; min-height: 180px; }
+        .bar-wrapper { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; position: relative; width: 40px; flex-shrink: 0; }
+        .bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
         .bar-cache { background: #4caf50; width: 100%; }
         .bar-prompt { background: #2196F3; width: 100%; }
         .bar-completion { background: #FF9800; width: 100%; }
         .bar-label { font-size: 9px; color: #888; text-align: center; }
-        .bar-value { font-size: 8px; color: #aaa; text-align: center; }
-        .month-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
-        .month-nav button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: #e0e0e0; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; }
-        body.light .month-nav button { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: #111; }
-        .month-nav button:hover { background: rgba(0,203,245,0.15); }
-        .month-nav .month-label { font-size: 15px; font-weight: 600; min-width: 120px; text-align: center; }
+        .bar-wrapper.selected .bar { opacity: 0.6; }
+        .bar-wrapper.selected .bar-label { color: #00CBF5; font-weight: 600; }
         .legend { display: flex; gap: 16px; margin-bottom: 10px; font-size: 11px; color: #888; }
         .legend span { display: flex; align-items: center; gap: 4px; }
         .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
         .no-data { text-align: center; color: #555; padding: 40px; font-size: 14px; }
         .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; position: fixed; top: 20px; right: 20px; }
         body.light .theme-btn { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: #555; }
+        .tooltip { position: fixed; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 12px; font-size: 11px; pointer-events: none; z-index: 9999; display: none; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+        body.light .tooltip { background: #ffffff; border-color: rgba(0,0,0,0.15); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        .tt-row { display: flex; justify-content: space-between; gap: 12px; padding: 1px 0; }
+        .tt-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+        .calendar-container { background: #1a1a2e; border-radius: 12px; padding: 15px; margin-top: 10px; display: inline-block; }
+        body.light .calendar-container { background: #f5f5f5; }
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
+        .cal-header button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: #e0e0e0; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+        body.light .cal-header button { background: rgba(0,0,0,0.05); color: #111; border-color: rgba(0,0,0,0.1); }
+        .cal-header .cal-month { font-size: 14px; font-weight: 600; color: #00CBF5; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 32px); gap: 4px; }
+        .cal-day-name { font-size: 10px; color: #666; text-align: center; padding: 2px; }
+        .cal-day { width: 32px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; border-radius: 6px; cursor: pointer; color: #aaa; }
+        .cal-day:hover { background: rgba(0,203,245,0.15); color: #e0e0e0; }
+        .cal-day.has-data { color: #e0e0e0; font-weight: 500; }
+        .cal-day.range-start, .cal-day.range-end { background: #00CBF5; color: #201F28; font-weight: 700; }
+        .cal-day.in-range { background: rgba(0,203,245,0.2); color: #00CBF5; }
+        .cal-day.other-month { color: #444; cursor: default; }
+        .range-summary { margin-top: 10px; padding: 10px 14px; background: rgba(0,203,245,0.1); border-radius: 8px; font-size: 13px; color: #00CBF5; display: none; }
+        select.model-select { background: #1a1a2e; color: #e0e0e0; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 10px; font-family: 'Inter', sans-serif; font-size: 13px; margin-bottom: 10px; }
+        body.light select.model-select { background: #f5f5f5; color: #111; border-color: rgba(0,0,0,0.1); }
     </style>
     <script src="config.js"></script>
 </head>
 <body>
     <button class="theme-btn" onclick="toggleTheme()">🌓 Тема</button>
     <h1>📊 Статистика использования</h1>
+    <a class="bot-link" href="https://t.me/PhotoDocumentsBot_bot" target="_blank">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>
+        @PhotoDocumentsBot_bot
+    </a>
     
     <div class="top-cards">
-        <div class="card">
-            <div class="card-label">Баланс Pro</div>
-            <div class="card-value" id="balancePro">—</div>
-            <div class="card-sub">⭐ Stars</div>
-        </div>
-        <div class="card">
-            <div class="card-label">Баланс Flash</div>
-            <div class="card-value" id="balanceFlash">—</div>
-            <div class="card-sub">⭐ Stars</div>
-        </div>
-        <div class="card">
-            <div class="card-label">Потрачено сегодня Pro</div>
-            <div class="card-value" id="todayPro">—</div>
-            <div class="card-sub">⭐ Stars</div>
-        </div>
-        <div class="card">
-            <div class="card-label">Потрачено сегодня Flash</div>
-            <div class="card-value" id="todayFlash">—</div>
-            <div class="card-sub">⭐ Stars</div>
-        </div>
+        <div class="card"><div class="card-label" id="starIcon1"></div><div class="card-value" id="balancePro">—</div><div class="card-sub">Stars</div></div>
+        <div class="card"><div class="card-label" id="starIcon2"></div><div class="card-value" id="balanceFlash">—</div><div class="card-sub">Stars</div></div>
+        <div class="card"><div class="card-label">Потрачено сегодня Pro</div><div class="card-value" id="todayPro">—</div><div class="card-sub">Stars</div></div>
+        <div class="card"><div class="card-label">Потрачено сегодня Flash</div><div class="card-value" id="todayFlash">—</div><div class="card-sub">Stars</div></div>
     </div>
 
-    <h2>🧠 DeepSeek V4 Pro</h2>
-    <div class="month-nav">
-        <button onclick="prevMonth('pro')">←</button>
-        <span class="month-label" id="proMonthLabel">—</span>
-        <button onclick="nextMonth('pro')">→</button>
-    </div>
-    <div class="chart-container">
-        <div class="legend">
-            <span><div class="legend-dot" style="background:#4caf50;"></div> Кэш</span>
-            <span><div class="legend-dot" style="background:#2196F3;"></div> Входные</span>
-            <span><div class="legend-dot" style="background:#FF9800;"></div> Выходные</span>
+    <div class="section">
+        <h2>📊 График и календарь</h2>
+        <select class="model-select" id="modelSelect" onchange="switchModel()">
+            <option value="pro">Pro</option>
+            <option value="flash" selected>Flash</option>
+        </select>
+        <div class="chart-container">
+            <div class="legend">
+                <span><div class="legend-dot" style="background:#4caf50;"></div>Кэш</span>
+                <span><div class="legend-dot" style="background:#2196F3;"></div>Вход</span>
+                <span><div class="legend-dot" style="background:#FF9800;"></div>Выход</span>
+            </div>
+            <div class="chart-bars" id="chart"></div>
         </div>
-        <div class="chart-bars" id="proChart"></div>
+        <div class="calendar-container" id="calendar"></div>
+        <div class="range-summary" id="rangeSummary"></div>
     </div>
 
-    <h2>⚡ DeepSeek V4 Flash</h2>
-    <div class="month-nav">
-        <button onclick="prevMonth('flash')">←</button>
-        <span class="month-label" id="flashMonthLabel">—</span>
-        <button onclick="nextMonth('flash')">→</button>
-    </div>
-    <div class="chart-container">
-        <div class="legend">
-            <span><div class="legend-dot" style="background:#4caf50;"></div> Кэш</span>
-            <span><div class="legend-dot" style="background:#2196F3;"></div> Входные</span>
-            <span><div class="legend-dot" style="background:#FF9800;"></div> Выходные</span>
-        </div>
-        <div class="chart-bars" id="flashChart"></div>
-    </div>
+    <div class="tooltip" id="tooltip"></div>
 
     <script>
         const SERVER_URL = CONFIG.SERVER_URL;
+        const STAR = '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>';
         const savedAuth = localStorage.getItem('photobot_auth');
         if (!savedAuth) { window.location.href = 'index.html'; }
         const auth = JSON.parse(savedAuth);
         const userId = auth.user_id;
         const sessionToken = auth.session_token || '';
 
-        let proMonth = new Date().toISOString().substring(0, 7);
-        let flashMonth = new Date().toISOString().substring(0, 7);
+        let currentModel = 'flash';
+        let calYear, calMonth, rangeStart, rangeEnd, chartData = {};
 
-        async function loadStats() {
-            try {
-                const resp = await fetch(`${SERVER_URL}/get_usage_stats?user_id=${userId}&session_token=${sessionToken}&month=${proMonth}`);
-                const data = await resp.json();
-                
-                document.getElementById('balancePro').textContent = data.balance_pro.toFixed(1);
-                document.getElementById('balanceFlash').textContent = data.balance_flash.toFixed(1);
-                document.getElementById('todayPro').textContent = data.today_pro_cost.toFixed(2);
-                document.getElementById('todayFlash').textContent = data.today_flash_cost.toFixed(2);
-                
-                document.getElementById('proMonthLabel').textContent = proMonth;
-                document.getElementById('flashMonthLabel').textContent = flashMonth;
-                
-                renderChart('proChart', data.pro_monthly);
-                renderChart('flashChart', data.flash_monthly);
-            } catch(e) { console.error(e); }
+        document.getElementById('starIcon1').innerHTML = 'Баланс Pro ' + STAR;
+        document.getElementById('starIcon2').innerHTML = 'Баланс Flash ' + STAR;
+
+        async function loadBalance() {
+            const resp = await fetch(`${SERVER_URL}/get_balance?user_id=${userId}&session_token=${sessionToken}`);
+            const d = await resp.json();
+            document.getElementById('balancePro').innerHTML = STAR + ' ' + d.pro.toFixed(1);
+            document.getElementById('balanceFlash').innerHTML = STAR + ' ' + d.flash.toFixed(1);
         }
 
-        function renderChart(chartId, data) {
-            const chart = document.getElementById(chartId);
-            if (!Object.keys(data).length) {
-                chart.innerHTML = '<div class="no-data">Нет данных за этот месяц</div>';
-                return;
-            }
-            
-            const maxTokens = Math.max(...Object.values(data).map(d => d.prompt_tokens + d.completion_tokens), 1);
-            const daysInMonth = new Date(parseInt(proMonth.split('-')[0]), parseInt(proMonth.split('-')[1]), 0).getDate();
-            
+        async function loadToday() {
+            const today = new Date().toISOString().substring(0, 10);
+            const respP = await fetch(`${SERVER_URL}/get_usage_range?user_id=${userId}&model=pro&start_date=${today}&end_date=${today}&session_token=${sessionToken}`);
+            const dP = await respP.json();
+            const costP = dP.data && dP.data[today] ? dP.data[today].cost : 0;
+            document.getElementById('todayPro').innerHTML = STAR + ' ' + costP.toFixed(2);
+
+            const respF = await fetch(`${SERVER_URL}/get_usage_range?user_id=${userId}&model=flash&start_date=${today}&end_date=${today}&session_token=${sessionToken}`);
+            const dF = await respF.json();
+            const costF = dF.data && dF.data[today] ? dF.data[today].cost : 0;
+            document.getElementById('todayFlash').innerHTML = STAR + ' ' + costF.toFixed(2);
+        }
+
+        async function loadChartRange(start, end) {
+            const resp = await fetch(`${SERVER_URL}/get_usage_range?user_id=${userId}&model=${currentModel}&start_date=${start}&end_date=${end}&session_token=${sessionToken}`);
+            const d = await resp.json();
+            chartData = d.data || {};
+            renderChart();
+            renderCalendar();
+            updateRangeSummary();
+        }
+
+        function renderChart() {
+            const chart = document.getElementById('chart');
+            const days = Object.keys(chartData).sort();
+            if (!days.length) { chart.innerHTML = '<div class="no-data">Нет данных</div>'; return; }
+            const maxT = Math.max(...days.map(d => (chartData[d].prompt_tokens + chartData[d].completion_tokens)), 1);
+            const barWidth = Math.max(40, Math.min(60, Math.floor(800 / days.length)));
             let html = '';
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayStr = `${proMonth}-${String(day).padStart(2, '0')}`;
-                const d = data[dayStr] || { prompt_tokens: 0, completion_tokens: 0, cache_hit_tokens: 0, cost: 0 };
-                const cacheH = d.cache_hit_tokens / maxTokens * 180;
-                const promptH = (d.prompt_tokens - d.cache_hit_tokens) / maxTokens * 180;
-                const completionH = d.completion_tokens / maxTokens * 180;
-                
-                html += `<div class="bar-wrapper">
-                    <div class="bar-value">${d.cost > 0 ? d.cost.toFixed(2) + '⭐' : ''}</div>
-                    <div class="bar" style="height:${Math.max(cacheH + promptH + completionH, 1)}px;">
-                        <div class="bar-cache" style="height:${cacheH}px;"></div>
-                        <div class="bar-prompt" style="height:${promptH}px;"></div>
-                        <div class="bar-completion" style="height:${completionH}px;"></div>
-                    </div>
-                    <div class="bar-label">${day}</div>
-                </div>`;
-            }
+            days.forEach(day => {
+                const d = chartData[day];
+                const cH = d.cache_hit_tokens / maxT * 160;
+                const pH = (d.prompt_tokens - d.cache_hit_tokens) / maxT * 160;
+                const cmH = d.completion_tokens / maxT * 160;
+                html += `<div class="bar-wrapper" style="width:${barWidth}px;" data-day="${day}"
+                    onmouseenter="showTooltip(event, this)" onmouseleave="hideTooltip()">
+                    <div class="bar" style="height:${Math.max(cH+pH+cmH,1)}px;"><div class="bar-cache" style="height:${cH}px;"></div><div class="bar-prompt" style="height:${pH}px;"></div><div class="bar-completion" style="height:${cmH}px;"></div></div>
+                    <div class="bar-label">${day.substring(8)}</div></div>`;
+            });
             chart.innerHTML = html;
         }
 
-        function prevMonth(model) {
-            const d = new Date((model === 'pro' ? proMonth : flashMonth) + '-01');
-            d.setMonth(d.getMonth() - 1);
-            if (model === 'pro') proMonth = d.toISOString().substring(0, 7);
-            else flashMonth = d.toISOString().substring(0, 7);
-            loadStats();
+        function showTooltip(e, el) {
+            const day = el.dataset.day;
+            const d = chartData[day];
+            if (!d) return;
+            const t = document.getElementById('tooltip');
+            t.innerHTML = `<div class="tt-row"><span><span class="tt-dot" style="background:#4caf50;"></span>Кэш</span><span>${d.cache_hit_tokens.toLocaleString()}</span></div>
+                <div class="tt-row"><span><span class="tt-dot" style="background:#2196F3;"></span>Вход</span><span>${(d.prompt_tokens - d.cache_hit_tokens).toLocaleString()}</span></div>
+                <div class="tt-row"><span><span class="tt-dot" style="background:#FF9800;"></span>Выход</span><span>${d.completion_tokens.toLocaleString()}</span></div>`;
+            t.style.display = 'block';
+            t.style.left = (e.clientX + 12) + 'px';
+            t.style.top = (e.clientY - 10) + 'px';
         }
 
-        function nextMonth(model) {
-            const d = new Date((model === 'pro' ? proMonth : flashMonth) + '-01');
-            d.setMonth(d.getMonth() + 1);
-            if (model === 'pro') proMonth = d.toISOString().substring(0, 7);
-            else flashMonth = d.toISOString().substring(0, 7);
-            loadStats();
+        function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
+
+        function renderCalendar() {
+            const cal = document.getElementById('calendar');
+            if (!calYear) { const now = new Date(); calYear = now.getFullYear(); calMonth = now.getMonth(); }
+            const firstDay = new Date(calYear, calMonth, 1);
+            const lastDay = new Date(calYear, calMonth + 1, 0);
+            const startOffset = (firstDay.getDay() + 6) % 7;
+            const daysInMonth = lastDay.getDate();
+            const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+            let html = `<div class="cal-header">
+                <button onclick="calYear--;renderCalendar()">«</button>
+                <button onclick="if(calMonth===0){calMonth=11;calYear--;}else{calMonth--;}renderCalendar()">‹</button>
+                <span class="cal-month">${['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'][calMonth]} ${calYear}</span>
+                <button onclick="if(calMonth===11){calMonth=0;calYear++;}else{calMonth++;}renderCalendar()">›</button>
+                <button onclick="calYear++;renderCalendar()">»</button></div>
+                <div class="cal-grid">`;
+            dayNames.forEach(n => html += `<div class="cal-day-name">${n}</div>`);
+            for (let i = 0; i < startOffset; i++) html += '<div class="cal-day other-month"></div>';
+            for (let d = 1; d <= daysInMonth; d++) {
+                const ds = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const hasData = !!chartData[ds];
+                let cls = 'cal-day';
+                if (hasData) cls += ' has-data';
+                if (rangeStart === ds) cls += ' range-start';
+                if (rangeEnd === ds) cls += ' range-end';
+                if (rangeStart && rangeEnd && ds > rangeStart && ds < rangeEnd) cls += ' in-range';
+                html += `<div class="${cls}" data-day="${ds}" onclick="calendarClick('${ds}')">${d}</div>`;
+            }
+            html += '</div>';
+            cal.innerHTML = html;
+        }
+
+        function calendarClick(day) {
+            if (!rangeStart || (rangeStart && rangeEnd)) { rangeStart = day; rangeEnd = null; }
+            else { rangeEnd = day; if (rangeEnd < rangeStart) { const t = rangeStart; rangeStart = rangeEnd; rangeEnd = t; } }
+            renderCalendar();
+            updateRangeSummary();
+            if (rangeStart && rangeEnd) loadChartRange(rangeStart, rangeEnd);
+        }
+
+        function updateRangeSummary() {
+            const el = document.getElementById('rangeSummary');
+            if (!rangeStart || !rangeEnd) { el.style.display = 'none'; return; }
+            let pt = 0, ct = 0, ch = 0, cost = 0;
+            Object.keys(chartData).forEach(day => {
+                if (day >= rangeStart && day <= rangeEnd) {
+                    pt += chartData[day].prompt_tokens;
+                    ct += chartData[day].completion_tokens;
+                    ch += chartData[day].cache_hit_tokens;
+                    cost += chartData[day].cost;
+                }
+            });
+            el.style.display = 'block';
+            el.innerHTML = `${rangeStart} – ${rangeEnd}: ${(pt+ct).toLocaleString()} токенов (вход: ${(pt-ch).toLocaleString()}, кэш: ${ch.toLocaleString()}, выход: ${ct.toLocaleString()}) | ${cost.toFixed(2)} ${STAR} Stars`;
+        }
+
+        function switchModel() {
+            currentModel = document.getElementById('modelSelect').value;
+            rangeStart = null; rangeEnd = null;
+            const now = new Date(); calYear = now.getFullYear(); calMonth = now.getMonth();
+            const today = now.toISOString().substring(0, 10);
+            loadChartRange(today, today);
         }
 
         function toggleTheme() {
@@ -181,7 +245,12 @@
         }
 
         if (localStorage.getItem('usage_theme') === 'light') document.body.classList.add('light');
-        loadStats();
+        
+        const now = new Date(); calYear = now.getFullYear(); calMonth = now.getMonth();
+        const today = now.toISOString().substring(0, 10);
+        loadBalance();
+        loadToday();
+        loadChartRange(today, today);
     </script>
 </body>
 </html>
