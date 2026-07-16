@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhotoBot — Статистика</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #201F28; color: #e0e0e0; min-height: 100vh; padding: 30px; }
+        body.light { background: #ffffff; color: #111; }
+        h1 { color: #00CBF5; margin-bottom: 20px; font-size: 22px; }
+        h2 { color: #00CBF5; margin: 30px 0 15px; font-size: 17px; }
+        .top-cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 30px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 180px; }
+        body.light .card { background: #f5f5f5; }
+        .card-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .card-value { font-size: 22px; font-weight: 700; color: #00CBF5; }
+        .card-sub { font-size: 13px; color: #a0a0b0; margin-top: 4px; }
+        .chart-container { background: #1a1a2e; border-radius: 12px; padding: 20px; margin: 20px 0; }
+        body.light .chart-container { background: #f5f5f5; }
+        .chart-bars { display: flex; align-items: flex-end; gap: 4px; height: 200px; padding: 10px 0; }
+        .bar-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 30px; }
+        .bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; position: relative; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+        .bar-cache { background: #4caf50; width: 100%; }
+        .bar-prompt { background: #2196F3; width: 100%; }
+        .bar-completion { background: #FF9800; width: 100%; }
+        .bar-label { font-size: 9px; color: #888; text-align: center; }
+        .bar-value { font-size: 8px; color: #aaa; text-align: center; }
+        .month-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
+        .month-nav button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: #e0e0e0; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; }
+        body.light .month-nav button { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: #111; }
+        .month-nav button:hover { background: rgba(0,203,245,0.15); }
+        .month-nav .month-label { font-size: 15px; font-weight: 600; min-width: 120px; text-align: center; }
+        .legend { display: flex; gap: 16px; margin-bottom: 10px; font-size: 11px; color: #888; }
+        .legend span { display: flex; align-items: center; gap: 4px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+        .no-data { text-align: center; color: #555; padding: 40px; font-size: 14px; }
+        .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; position: fixed; top: 20px; right: 20px; }
+        body.light .theme-btn { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: #555; }
+    </style>
+    <script src="config.js"></script>
+</head>
+<body>
+    <button class="theme-btn" onclick="toggleTheme()">🌓 Тема</button>
+    <h1>📊 Статистика использования</h1>
+    
+    <div class="top-cards">
+        <div class="card">
+            <div class="card-label">Баланс Pro</div>
+            <div class="card-value" id="balancePro">—</div>
+            <div class="card-sub">⭐ Stars</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Баланс Flash</div>
+            <div class="card-value" id="balanceFlash">—</div>
+            <div class="card-sub">⭐ Stars</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Потрачено сегодня Pro</div>
+            <div class="card-value" id="todayPro">—</div>
+            <div class="card-sub">⭐ Stars</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Потрачено сегодня Flash</div>
+            <div class="card-value" id="todayFlash">—</div>
+            <div class="card-sub">⭐ Stars</div>
+        </div>
+    </div>
+
+    <h2>🧠 DeepSeek V4 Pro</h2>
+    <div class="month-nav">
+        <button onclick="prevMonth('pro')">←</button>
+        <span class="month-label" id="proMonthLabel">—</span>
+        <button onclick="nextMonth('pro')">→</button>
+    </div>
+    <div class="chart-container">
+        <div class="legend">
+            <span><div class="legend-dot" style="background:#4caf50;"></div> Кэш</span>
+            <span><div class="legend-dot" style="background:#2196F3;"></div> Входные</span>
+            <span><div class="legend-dot" style="background:#FF9800;"></div> Выходные</span>
+        </div>
+        <div class="chart-bars" id="proChart"></div>
+    </div>
+
+    <h2>⚡ DeepSeek V4 Flash</h2>
+    <div class="month-nav">
+        <button onclick="prevMonth('flash')">←</button>
+        <span class="month-label" id="flashMonthLabel">—</span>
+        <button onclick="nextMonth('flash')">→</button>
+    </div>
+    <div class="chart-container">
+        <div class="legend">
+            <span><div class="legend-dot" style="background:#4caf50;"></div> Кэш</span>
+            <span><div class="legend-dot" style="background:#2196F3;"></div> Входные</span>
+            <span><div class="legend-dot" style="background:#FF9800;"></div> Выходные</span>
+        </div>
+        <div class="chart-bars" id="flashChart"></div>
+    </div>
+
+    <script>
+        const SERVER_URL = CONFIG.SERVER_URL;
+        const savedAuth = localStorage.getItem('photobot_auth');
+        if (!savedAuth) { window.location.href = 'index.html'; }
+        const auth = JSON.parse(savedAuth);
+        const userId = auth.user_id;
+        const sessionToken = auth.session_token || '';
+
+        let proMonth = new Date().toISOString().substring(0, 7);
+        let flashMonth = new Date().toISOString().substring(0, 7);
+
+        async function loadStats() {
+            try {
+                const resp = await fetch(`${SERVER_URL}/get_usage_stats?user_id=${userId}&session_token=${sessionToken}&month=${proMonth}`);
+                const data = await resp.json();
+                
+                document.getElementById('balancePro').textContent = data.balance_pro.toFixed(1);
+                document.getElementById('balanceFlash').textContent = data.balance_flash.toFixed(1);
+                document.getElementById('todayPro').textContent = data.today_pro_cost.toFixed(2);
+                document.getElementById('todayFlash').textContent = data.today_flash_cost.toFixed(2);
+                
+                document.getElementById('proMonthLabel').textContent = proMonth;
+                document.getElementById('flashMonthLabel').textContent = flashMonth;
+                
+                renderChart('proChart', data.pro_monthly);
+                renderChart('flashChart', data.flash_monthly);
+            } catch(e) { console.error(e); }
+        }
+
+        function renderChart(chartId, data) {
+            const chart = document.getElementById(chartId);
+            if (!Object.keys(data).length) {
+                chart.innerHTML = '<div class="no-data">Нет данных за этот месяц</div>';
+                return;
+            }
+            
+            const maxTokens = Math.max(...Object.values(data).map(d => d.prompt_tokens + d.completion_tokens), 1);
+            const daysInMonth = new Date(parseInt(proMonth.split('-')[0]), parseInt(proMonth.split('-')[1]), 0).getDate();
+            
+            let html = '';
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayStr = `${proMonth}-${String(day).padStart(2, '0')}`;
+                const d = data[dayStr] || { prompt_tokens: 0, completion_tokens: 0, cache_hit_tokens: 0, cost: 0 };
+                const cacheH = d.cache_hit_tokens / maxTokens * 180;
+                const promptH = (d.prompt_tokens - d.cache_hit_tokens) / maxTokens * 180;
+                const completionH = d.completion_tokens / maxTokens * 180;
+                
+                html += `<div class="bar-wrapper">
+                    <div class="bar-value">${d.cost > 0 ? d.cost.toFixed(2) + '⭐' : ''}</div>
+                    <div class="bar" style="height:${Math.max(cacheH + promptH + completionH, 1)}px;">
+                        <div class="bar-cache" style="height:${cacheH}px;"></div>
+                        <div class="bar-prompt" style="height:${promptH}px;"></div>
+                        <div class="bar-completion" style="height:${completionH}px;"></div>
+                    </div>
+                    <div class="bar-label">${day}</div>
+                </div>`;
+            }
+            chart.innerHTML = html;
+        }
+
+        function prevMonth(model) {
+            const d = new Date((model === 'pro' ? proMonth : flashMonth) + '-01');
+            d.setMonth(d.getMonth() - 1);
+            if (model === 'pro') proMonth = d.toISOString().substring(0, 7);
+            else flashMonth = d.toISOString().substring(0, 7);
+            loadStats();
+        }
+
+        function nextMonth(model) {
+            const d = new Date((model === 'pro' ? proMonth : flashMonth) + '-01');
+            d.setMonth(d.getMonth() + 1);
+            if (model === 'pro') proMonth = d.toISOString().substring(0, 7);
+            else flashMonth = d.toISOString().substring(0, 7);
+            loadStats();
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light');
+            localStorage.setItem('usage_theme', document.body.classList.contains('light') ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('usage_theme') === 'light') document.body.classList.add('light');
+        loadStats();
+    </script>
+</body>
+</html>
