@@ -75,6 +75,8 @@
         <div class="card"><div class="card-label" id="starIcon2"></div><div class="card-value" id="balanceFlash">—</div><div class="card-sub">Stars</div></div>
         <div class="card"><div class="card-label">Потрачено сегодня Pro</div><div class="card-value" id="todayPro">—</div><div class="card-sub">Stars</div></div>
         <div class="card"><div class="card-label">Потрачено сегодня Flash</div><div class="card-value" id="todayFlash">—</div><div class="card-sub">Stars</div></div>
+	<div class="card"><div class="card-label">Потрачено за месяц Pro</div><div class="card-value" id="monthPro">—</div><div class="card-sub">Stars</div></div>
+	<div class="card"><div class="card-label">Потрачено за месяц Flash</div><div class="card-value" id="monthFlash">—</div><div class="card-sub">Stars</div></div>
     </div>
 
     <div class="section">
@@ -230,6 +232,25 @@
             el.style.display = 'block';
             el.innerHTML = `${rangeStart} – ${rangeEnd}: ${(pt+ct).toLocaleString()} токенов (вход: ${(pt-ch).toLocaleString()}, кэш: ${ch.toLocaleString()}, выход: ${ct.toLocaleString()}) | ${cost.toFixed(2)} ${STAR} Stars`;
         }
+        async function loadMonthCost() {
+            const now = new Date();
+            const start = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+            const end = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(new Date(now.getFullYear(), now.getMonth()+1, 0).getDate()).padStart(2,'0')}`;
+            
+            const respP = await fetch(`${SERVER_URL}/get_usage_range?user_id=${userId}&model=pro&start_date=${start}&end_date=${end}&session_token=${sessionToken}`);
+            const dP = await respP.json();
+            let costP = 0;
+            Object.values(dP.data || {}).forEach(d => costP += d.cost);
+            
+            const respF = await fetch(`${SERVER_URL}/get_usage_range?user_id=${userId}&model=flash&start_date=${start}&end_date=${end}&session_token=${sessionToken}`);
+            const dF = await respF.json();
+            let costF = 0;
+            Object.values(dF.data || {}).forEach(d => costF += d.cost);
+
+            document.getElementById('monthPro').innerHTML = STAR + ' ' + costP.toFixed(2);
+            document.getElementById('monthFlash').innerHTML = STAR + ' ' + costF.toFixed(2);
+        }
+
 
         function switchModel() {
             currentModel = document.getElementById('modelSelect').value;
@@ -250,6 +271,7 @@
         const today = now.toISOString().substring(0, 10);
         loadBalance();
         loadToday();
+        loadMonthCost();
         loadChartRange(today, today);
     </script>
 </body>
