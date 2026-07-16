@@ -43,8 +43,16 @@
         body.light h2 { border-bottom-color: rgba(0,0,0,0.08); }
         h3 { margin: 20px 0 10px; font-size: 15px; color: #ccc; }
         body.light h3 { color: #444; }
+        h4 { margin: 15px 0 8px; font-size: 13px; color: #888; }
         p { margin: 8px 0; line-height: 1.6; font-size: 14px; }
         a { color: #00CBF5; }
+
+        .group-label {
+            padding: 6px 10px; font-size: 11px; color: #888; font-family: 'Inter', sans-serif;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+            border-top: 1px solid rgba(255,255,255,0.06); margin-top: 4px; padding-top: 8px;
+        }
+        body.light .group-label { border-top-color: rgba(0,0,0,0.06); }
 
         code { background: #1a1a2e; padding: 2px 6px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 13px; }
         body.light code { background: #f0f0f0; }
@@ -68,14 +76,13 @@
             font-weight: 600; margin-bottom: 12px;
         }
         body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
-
         .placeholder { padding: 30px; text-align: center; color: #555; font-size: 14px; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 </head>
 <body>
     <div class="sidebar">
-        <button class="theme-btn" onclick="toggleTheme()">🌓 Тема</button>
+        <button class="theme-btn" onclick="toggleTheme()">🌓</button>
         <button class="rubric-btn active" onclick="showRubric('deepseek')">🧠 DeepSeek V4</button>
         <button class="rubric-btn" onclick="showRubric('flux')">📸 Генерация FLUX</button>
         <button class="rubric-btn" onclick="showRubric('audio')">🎵 Stable Audio 3</button>
@@ -100,8 +107,9 @@
 
             <h2>Примеры использования</h2>
 
-            <h3>1. Отправка сообщения — <code>POST /chat</code></h3>
-            <p>Основной эндпоинт для общения с DeepSeek. Поддерживает streaming (SSE).</p>
+            <!-- Пример 1: SSE Streaming -->
+            <h3>1. SSE Streaming — <code>POST /chat</code></h3>
+            <p>Основной эндпоинт для общения с DeepSeek. Ответ приходит через Server-Sent Events (SSE). Аналогично работают <code>/create_branch</code>, <code>/regenerate_assistant</code>, <code>/regenerate_user</code>, <code>/selfplay</code>.</p>
             <p><strong>Параметры:</strong> <code>user_id</code>, <code>message</code>, <code>model</code> (flash/pro), <code>chat_id</code>, <code>branch_id</code>, <code>personality</code>, <code>mode</code> (chat/reasoner)</p>
 
             <h4>cURL</h4>
@@ -116,7 +124,6 @@
 headers = {"Authorization": "Bearer sk-xxx"}
 data = {"user_id": "123", "message": "Привет", "model": "flash", "chat_id": "default"}
 
-# Streaming (SSE)
 resp = requests.post("https://фото-бот.рф/chat", headers=headers, json=data, stream=True)
 for line in resp.iter_lines():
     if line and line.startswith(b"data: "):
@@ -125,15 +132,9 @@ for line in resp.iter_lines():
             <h4>JavaScript</h4>
             <pre><code class="language-javascript">const resp = await fetch("https://фото-бот.рф/chat", {
   method: "POST",
-  headers: {
-    "Authorization": "Bearer sk-xxx",
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    user_id: "123", message: "Привет", model: "flash", chat_id: "default"
-  })
+  headers: { "Authorization": "Bearer sk-xxx", "Content-Type": "application/json" },
+  body: JSON.stringify({ user_id: "123", message: "Привет", model: "flash", chat_id: "default" })
 });
-
 const reader = resp.body.getReader();
 const decoder = new TextDecoder();
 while (true) {
@@ -150,28 +151,26 @@ var request = URLRequest(url: url)
 request.httpMethod = "POST"
 request.setValue("Bearer sk-xxx", forHTTPHeaderField: "Authorization")
 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-let body: [String: Any] = [
-    "user_id": "123", "message": "Привет",
-    "model": "flash", "chat_id": "default"
-]
-request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+request.httpBody = try? JSONSerialization.data(withJSONObject: [
+    "user_id": "123", "message": "Привет", "model": "flash", "chat_id": "default"
+])
 
 let (data, _) = try await URLSession.shared.data(for: request)
-if let json = try? JSONSerialization.jsonObject(with: data) {
-    print(json)
+if let text = String(data: data, encoding: .utf8) {
+    print(text)
 }</code></pre>
 
-            <h3>2. Получение истории — <code>GET /get_chat_history</code></h3>
-            <p>Возвращает все чаты пользователя с сообщениями и ветками.</p>
-            <p><strong>Параметры:</strong> <code>user_id</code>, <code>model</code>, <code>meta_only</code> (опционально)</p>
+            <!-- Пример 2: JSON ответы -->
+            <h3>2. Получение данных — <code>GET /get_chat_history</code></h3>
+            <p>Возвращает все чаты пользователя в формате JSON. Аналогично работают <code>/get_chat_tree</code>, <code>/get_full_response</code>, <code>/get_balance</code>.</p>
+            <p><strong>Параметры:</strong> <code>user_id</code>, <code>model</code>, <code>meta_only</code> (опционально, только заголовки чатов)</p>
 
             <h4>Python</h4>
             <pre><code class="language-python">import requests
 
 headers = {"Authorization": "Bearer sk-xxx"}
-params = {"user_id": "123", "model": "flash"}
-resp = requests.get("https://фото-бот.рф/get_chat_history", headers=headers, params=params)
+resp = requests.get("https://фото-бот.рф/get_chat_history",
+    headers=headers, params={"user_id": "123", "model": "flash"})
 data = resp.json()
 # data = {"history": {...}, "titles": {...}, "active_branches": {...}}</code></pre>
 
@@ -183,59 +182,50 @@ data = resp.json()
 const data = await resp.json();
 console.log(data.history);</code></pre>
 
-            <h3>3. Создание ветки — <code>POST /create_branch</code></h3>
-            <p>Ответвляет диалог от указанного сообщения и получает ответ ассистента.</p>
-            <p><strong>Параметры:</strong> <code>user_id</code>, <code>model</code>, <code>chat_id</code>, <code>source_msg_id</code>, <code>prompt</code></p>
+            <!-- Пример 3: Управление -->
+            <h3>3. Управление чатами — <code>POST /rename_chat</code></h3>
+            <p>Переименовывает чат. Аналогично работают <code>/delete_chat</code>, <code>/share_chat</code>, <code>/rename_branch</code>, <code>/delete_branch</code>, <code>/switch_branch</code>, <code>/copy_history</code>.</p>
+            <p><strong>Параметры:</strong> <code>user_id</code>, <code>model</code>, <code>chat_id</code>, <code>title</code></p>
 
             <h4>Python</h4>
             <pre><code class="language-python">import requests
 
 headers = {"Authorization": "Bearer sk-xxx"}
-data = {
-    "user_id": "123", "model": "flash", "chat_id": "abc",
-    "source_msg_id": "msg_xxx", "prompt": "Расскажи подробнее"
-}
-resp = requests.post("https://фото-бот.рф/create_branch", headers=headers, json=data, stream=True)
-for line in resp.iter_lines():
-    if line and line.startswith(b"data: "):
-        print(line.decode())</code></pre>
+resp = requests.post("https://фото-бот.рф/rename_chat",
+    headers=headers,
+    json={"user_id": "123", "model": "flash", "chat_id": "abc", "title": "Новый чат"})
+print(resp.json())  # {"success": true}</code></pre>
 
             <h4>JavaScript</h4>
-            <pre><code class="language-javascript">const resp = await fetch("https://фото-бот.рф/create_branch", {
+            <pre><code class="language-javascript">const resp = await fetch("https://фото-бот.рф/rename_chat", {
   method: "POST",
   headers: { "Authorization": "Bearer sk-xxx", "Content-Type": "application/json" },
-  body: JSON.stringify({
-    user_id: "123", model: "flash", chat_id: "abc",
-    source_msg_id: "msg_xxx", prompt: "Расскажи подробнее"
-  })
+  body: JSON.stringify({ user_id: "123", model: "flash", chat_id: "abc", title: "Новый чат" })
 });
-const reader = resp.body.getReader();
-const decoder = new TextDecoder();
-while (true) {
-  const { done, value } = await reader.read();
-  if (done) break;
-  console.log(decoder.decode(value));
-}</code></pre>
+console.log(await resp.json());  // {success: true}</code></pre>
 
             <h2>Список эндпоинтов</h2>
             <table>
                 <tr><th>Метод</th><th>Путь</th><th>Описание</th></tr>
-                <tr><td class="method post">POST</td><td><code>/chat</code></td><td>Отправка сообщения (SSE-поток)</td></tr>
-                <tr><td class="method">GET</td><td><code>/get_chat_history</code></td><td>Список чатов с историей</td></tr>
-                <tr><td class="method">GET</td><td><code>/get_chat_tree</code></td><td>Древовидная структура чата</td></tr>
-                <tr><td class="method post">POST</td><td><code>/create_branch</code></td><td>Создание ветки от сообщения</td></tr>
+                <tr><td colspan="3" class="group-label">SSE Streaming (ответ через Server-Sent Events)</td></tr>
+                <tr><td class="method post">POST</td><td><code>/chat</code></td><td>Отправка сообщения в чат</td></tr>
+                <tr><td class="method post">POST</td><td><code>/create_branch</code></td><td>Создание новой ветки от сообщения</td></tr>
+                <tr><td class="method post">POST</td><td><code>/regenerate_assistant</code></td><td>Регенерация ответа ассистента («коротко» / «развёрнуто»)</td></tr>
+                <tr><td class="method post">POST</td><td><code>/regenerate_user</code></td><td>Редактирование сообщения пользователя с регенерацией ответа</td></tr>
+                <tr><td class="method post">POST</td><td><code>/selfplay</code></td><td>Диалог между несколькими личностями</td></tr>
+                <tr><td colspan="3" class="group-label">JSON ответы (обычные HTTP-запросы)</td></tr>
+                <tr><td class="method">GET</td><td><code>/get_chat_history</code></td><td>Список всех чатов с историей и ветками</td></tr>
+                <tr><td class="method">GET</td><td><code>/get_chat_tree</code></td><td>Древовидная структура одного чата</td></tr>
+                <tr><td class="method">GET</td><td><code>/get_full_response</code></td><td>Полный ответ прерванного сообщения</td></tr>
+                <tr><td class="method">GET</td><td><code>/get_balance</code></td><td>Баланс Stars (pro + flash)</td></tr>
+                <tr><td colspan="3" class="group-label">Управление чатами и ветками (POST / DELETE)</td></tr>
                 <tr><td class="method post">POST</td><td><code>/switch_branch</code></td><td>Переключение активной ветки</td></tr>
-                <tr><td class="method post">POST</td><td><code>/regenerate_assistant</code></td><td>Регенерация ответа ассистента</td></tr>
-                <tr><td class="method post">POST</td><td><code>/regenerate_user</code></td><td>Редактирование сообщения пользователя</td></tr>
-                <tr><td class="method post">POST</td><td><code>/copy_history</code></td><td>Перенос истории между ветками</td></tr>
-                <tr><td class="method post">POST</td><td><code>/selfplay</code></td><td>Запуск диалога нескольких личностей</td></tr>
+                <tr><td class="method post">POST</td><td><code>/copy_history</code></td><td>Перенос истории в другую ветку</td></tr>
                 <tr><td class="method post">POST</td><td><code>/share_chat</code></td><td>Создание публичной ссылки на чат</td></tr>
                 <tr><td class="method post">POST</td><td><code>/rename_chat</code></td><td>Переименование чата</td></tr>
                 <tr><td class="method post">POST</td><td><code>/rename_branch</code></td><td>Переименование ветки</td></tr>
                 <tr><td class="method delete">DELETE</td><td><code>/delete_chat</code></td><td>Удаление чата</td></tr>
                 <tr><td class="method delete">DELETE</td><td><code>/delete_branch</code></td><td>Удаление ветки</td></tr>
-                <tr><td class="method">GET</td><td><code>/get_balance</code></td><td>Баланс Stars (pro + flash)</td></tr>
-                <tr><td class="method">GET</td><td><code>/get_full_response</code></td><td>Полный ответ прерванного сообщения</td></tr>
             </table>
 
             <h2>Ошибки</h2>
