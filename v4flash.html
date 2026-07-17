@@ -1515,7 +1515,7 @@
                     '<svg class="branch-icon" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="' + iconColor + '"/></svg>' +
                     '<span class="branch-name">' + escapeHtml(b.name || bid) + '</span>' +
                     '<span style="font-size:10px;color:#666;">' + ((b.msg_ids && b.msg_ids.length) || 0) + '</span>' +
-                    (bid !== 'main' ? '<button class="branch-delete-btn" onclick="event.stopPropagation();deleteBranch(\'' + bid + '\')" title="Удалить ветку" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:12px;padding:0 4px;">✕</button>' : '') +
+                    (bid !== 'main' ? '<button class="branch-delete-btn" onclick="event.stopPropagation();deleteBranch(\'' + bid + '\')" title="Удалить ветку" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0 4px;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="11" height="11"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>' : '') +
                     '<button class="branch-rename-btn" onclick="event.stopPropagation();renameBranch(\'' + bid + '\')" title="Переименовать" style="background:transparent;border:none;color:#888;cursor:pointer;font-size:12px;padding:0 4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
                     '</div>';
             }
@@ -2532,7 +2532,7 @@
                 }
                 sizeInfo += ')';
             }
-            if (inline) inline.innerHTML = '<span style="color:' + color + '">' + icon + ' ' + escapeHtml(pendingFile.name) + sizeInfo + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:' + color + ';">' + icon + ' ' + escapeHtml(pendingFile.name) + sizeInfo + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
             updateSendBtn();
         }
 
@@ -2569,13 +2569,13 @@
                         } else {
                             errorText = 'Ошибка проверки файла';
                         }
-                        if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + errorText + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+                        if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ ' + errorText + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                         pendingFile = null;
                     } else {
                         updateFileList();
                     }
                 } catch (e) {
-                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+                    if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                     pendingFile = null;
                 }
             };
@@ -2644,13 +2644,13 @@
                                     errorText = 'Ошибка проверки файла';
                                 }
 
-                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + errorText + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+                                if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ ' + errorText + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                                 pendingFile = null;
                             } else {
                                 updateFileList();
                             }
                         } catch (e) {
-                            if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+                            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                             pendingFile = null;
                         }
                     };
