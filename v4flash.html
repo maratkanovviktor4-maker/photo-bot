@@ -3317,25 +3317,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         block.style.maxHeight = '60px';
                         block.style.overflow = 'hidden';
                         block.style.position = 'relative';
-                        
-                        // Кнопка развернуть
-                        var toggleBtn = document.createElement('button');
-                        toggleBtn.textContent = '▶ Развернуть (' + code.textContent.length + ' символов)';
-                        toggleBtn.style.cssText = 'position:absolute;bottom:4px;right:4px;background:rgba(0,203,245,0.9);color:#201F28;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;z-index:5;font-weight:600;';
-                        toggleBtn.onclick = function(e) {
-                            e.stopPropagation();
-                            var parent = this.parentElement;
-                            if (parent.dataset.collapsed === 'true') {
-                                parent.dataset.collapsed = 'false';
-                                parent.style.maxHeight = 'none';
-                                this.textContent = '▼ Свернуть';
-                            } else {
-                                parent.dataset.collapsed = 'true';
-                                parent.style.maxHeight = '60px';
-                                this.textContent = '▶ Развернуть (' + code.textContent.length + ' символов)';
-                            }
-                        };
-                        block.appendChild(toggleBtn);
                     }
                 }
                 
@@ -3828,6 +3809,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
 
 
+
         function _setupSingleCodeBlock(block) {
             if (block.querySelector('.floating-code-header')) return;
             var pre = block.tagName === 'PRE' ? block : block.querySelector('pre');
@@ -3884,29 +3866,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 toggleCodeEditor(pre);
             });
             actions.insertBefore(editBtn, actions.firstChild);
-            // Collapse toggle button
-            var codeText = pre.querySelector('code') ? pre.querySelector('code').textContent : '';
-            if (codeText.length > 1000) {
-                var collapseBtn = _makeActionBtn('', '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>', function() {
-                    toggleCodeCollapse(block, collapseBtn, pre, header);
-                });
-                collapseBtn.className = 'collapse-toggle-btn';
-                actions.insertBefore(collapseBtn, actions.firstChild);
-                
-                // Add preview line
-                var previewLine = document.createElement('div');
-                previewLine.className = 'code-preview-line';
-                var lines = codeText.split('\n');
-                var lastLine = lines[lines.length - 1] || lines[lines.length - 2] || '';
-                previewLine.textContent = lastLine;
-                block.appendChild(previewLine);
-                
-                if (codeText.length > 1000) {
-                    block.classList.add('collapsed');
-                    collapseBtn.innerHTML = '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" /></svg>';
-                }
-            }
-
         }
 
         function _makeActionBtn(title, innerHTML, clickHandler) {
