@@ -2553,12 +2553,16 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 
                 // Отправляем на валидацию
                 try {
+                    _abortController = new AbortController();
                     var resp = await fetch(SERVER_URL + '/validate_file', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                        body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type })
+                        body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type }),
+                        signal: _abortController.signal
                     });
+                    _abortController = null;
                     var result = await resp.json();
+
                     
                     if (!result.valid) {
                         var errorText = '';
@@ -2577,10 +2581,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         updateFileList();
                     }
                 } catch (e) {
+                    if (e.name === 'AbortError') {
+                        _abortController = null;
+                        return;
+                    }
                     if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-
                     pendingFile = null;
                 }
+
             };
             reader.readAsDataURL(file);
             document.getElementById('fileInput').value = '';
@@ -2630,12 +2638,16 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         
                         // Отправляем на валидацию
                         try {
+                            _abortController = new AbortController();
                             var resp = await fetch(SERVER_URL + '/validate_file', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type })
+                                body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type }),
+                                signal: _abortController.signal
                             });
+                            _abortController = null;
                             var result = await resp.json();
+
                             
                             if (!result.valid) {
                                 var errorText = '';
@@ -2658,10 +2670,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                                 updateFileList();
                             }
                         } catch (e) {
+                            if (e.name === 'AbortError') {
+                                _abortController = null;
+                                return;
+                            }
                             if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-
                             pendingFile = null;
                         }
+
                     };
                     reader.readAsDataURL(file);
                 }
@@ -2692,12 +2708,16 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
                             
                             try {
+                                _abortController = new AbortController();
                                 var resp = await fetch(SERVER_URL + '/validate_file', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                    body: JSON.stringify({ file_data: base64, file_name: 'screenshot.png', file_mime: blob.type })
+                                    body: JSON.stringify({ file_data: base64, file_name: 'screenshot.png', file_mime: blob.type }),
+                                    signal: _abortController.signal
                                 });
+                                _abortController = null;
                                 var result = await resp.json();
+
                                 
                                 if (!result.valid) {
                                     var errorText = '';
@@ -2717,7 +2737,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                                     updateFileList();
                                 }
                             } catch (e) {
-                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+                                if (e.name === 'AbortError') {
+                                    _abortController = null;
+                                    return;
+                                }
+                                if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                                 pendingFile = null;
                             }
                         };
@@ -3130,16 +3154,23 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         }
         var _fileReader = null;
         var _abortCheck = false;
+        var _abortController = null;
+
 
 
         function cancelFileCheck() {
             _abortCheck = true;
+            if (_abortController) {
+                _abortController.abort();
+                _abortController = null;
+            }
             _fileReader = null;
             pendingFile = null;
             updateFileList();
             var inline = document.getElementById('fileNameInline');
             if (inline) inline.innerHTML = '';
         }
+
 
 
 
