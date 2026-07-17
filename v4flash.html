@@ -552,7 +552,6 @@
 </button>
 
             <button class="theme-btn" onclick="toggleTheme()" id="themeToggle" style="margin-left: auto;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/></svg></button>
-
         </div>
         <div class="chat-wrapper">
             <div class="chat-area" id="chatArea">
@@ -835,6 +834,12 @@
             }
         }
 
+
+
+
+
+
+
         function saveChatBg(css) {
             localStorage.setItem('photobot_chat_bg', css);
             const main = document.querySelector('.main');
@@ -878,6 +883,11 @@
                 document.body.classList.remove('custom-dark-bg');
             }
         }
+
+
+
+
+
 
         function showBgModal() {
             const currentBg = localStorage.getItem('photobot_chat_bg') || '';
@@ -1630,12 +1640,11 @@
                 });
                 if (placeholderId) { var el = document.getElementById(placeholderId); if (el) el.remove(); }
                 if (!resp.ok) {
-                    var errData = await resp.json().catch(() => ({}));
+                    const errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
-
                 var contentType = resp.headers.get('content-type') || '';
                 if (contentType.includes('text/event-stream')) {
                     var reader = resp.body.getReader();
@@ -1676,6 +1685,7 @@
                                     showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                     return;
                                 }
+
                                 if (!branchMetaReceived) {
                                     var newBranchId = parsed.branch_id;
                                     var branchMessages = parsed.messages || [];
@@ -1768,19 +1778,6 @@
                         updateBalance();
                     } else {
                         let errorMessage = data.error || 'Не удалось создать ветку';
-                        if (data.error_type === 'bad_request') {
-                            errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
-                        } else if (data.error_type === 'rate_limited') {
-                            errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
-                        } else if (data.error_type === 'deepseek_error') {
-                            errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
-                        } else if (data.error_type === 'deepseek_overloaded') {
-                            errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                        }
-                        var errAssistantMsg = { role: 'assistant', content: errorMessage, finished: true, _streaming: false };
-                        errAssistantMsg._error_type = data.error_type || null;
-                        chat.messages.push(errAssistantMsg);
-                        renderMessages();
                         showAlertModal('Ошибка', errorMessage, '❌');
                     }
                     isSending = false;
@@ -1848,7 +1845,6 @@
                             showAlertModal('Ошибка', errorMessage, '❌');
                             return;
                         }
-
                         var contentType = resp.headers.get('content-type') || '';
                         if (!contentType.includes('text/event-stream')) {
                             var errJson = await resp.json().catch(() => ({}));
@@ -1905,6 +1901,7 @@
                                         showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                         return;
                                     }
+
                                     if (parsed.assistant_msg_id) {
                                         assistantMsg.msg_id = parsed.assistant_msg_id;
                                     } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
@@ -2028,6 +2025,7 @@
                 popup.style.top = (rect.bottom + 4) + 'px';
             }
             popup.style.left = rect.left + 'px';
+
             var prompts = [
                 'Да, далее',
                 'Не понял, поясни кратко простыми словами',
@@ -2117,7 +2115,6 @@
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
-
                 var contentType = resp.headers.get('content-type') || '';
                 if (!contentType.includes('text/event-stream')) {
                     var errJson = await resp.json().catch(() => ({}));
@@ -2174,6 +2171,7 @@
                                 showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
                             }
+
                             if (parsed.assistant_msg_id) {
                                 assistantMsg.msg_id = parsed.assistant_msg_id;
                             } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
@@ -2251,7 +2249,7 @@
                 actionsHtml += '<button onclick="shareChat(\'' + (currentChatId || '') + '\')" title="Поделиться чатом"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg></button>';
                 if (msg.interrupted) actionsHtml += '<button onclick="continueMessage(' + index + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                 actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + index + ')" title="Self-Play диалог" style="color:#00CBF5;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
-                actionsHtml += '<button class="prompt-btn" onclick="showPromptPopup(' + index + ', this)" title="Реплика"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg></button>';
+                actionsHtml += '<button class="prompt-btn" onclick="showPromptPopup(' + index + ', this)" title="Реплика"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg></button>';
             }
             var reasoningHtml = '';
             var contentToShow = msg.content || '';
@@ -2542,23 +2540,29 @@
             
             // Показываем спиннер
             var inline = document.getElementById('fileNameInline');
-            document.getElementById('sendBtn').disabled = true;
-            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#F59E0B;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(245,158,11,0.3);border-top-color:#F59E0B;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
             
             const reader = new FileReader();
             _fileReader = reader;
+
             reader.onload = async function(ev) {
+                if (_abortCheck) { _abortCheck = false; return; }
                 const base64 = ev.target.result.split(',')[1];
+
                 pendingFile = { name: file.name, mime: file.type, data: base64 };
                 
                 // Отправляем на валидацию
                 try {
+                    _abortController = new AbortController();
                     var resp = await fetch(SERVER_URL + '/validate_file', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                        body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type })
+                        body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type }),
+                        signal: _abortController.signal
                     });
+                    _abortController = null;
                     var result = await resp.json();
+
                     
                     if (!result.valid) {
                         var errorText = '';
@@ -2577,9 +2581,14 @@
                         updateFileList();
                     }
                 } catch (e) {
+                    if (e.name === 'AbortError') {
+                        _abortController = null;
+                        return;
+                    }
                     if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                     pendingFile = null;
                 }
+
             };
             reader.readAsDataURL(file);
             document.getElementById('fileInput').value = '';
@@ -2616,23 +2625,29 @@
                     var file = files[0];
                     // Показываем спиннер
                     var inline = document.getElementById('fileNameInline');
-                    document.getElementById('sendBtn').disabled = true;
-                    if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#F59E0B;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(245,158,11,0.3);border-top-color:#F59E0B;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                     
                     var reader = new FileReader();
                     _fileReader = reader;
+
                     reader.onload = async function(ev) {
+                        if (_abortCheck) { _abortCheck = false; return; }
                         var base64 = ev.target.result.split(',')[1];
+
                         pendingFile = { name: file.name, mime: file.type, data: base64 };
                         
                         // Отправляем на валидацию
                         try {
+                            _abortController = new AbortController();
                             var resp = await fetch(SERVER_URL + '/validate_file', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type })
+                                body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type }),
+                                signal: _abortController.signal
                             });
+                            _abortController = null;
                             var result = await resp.json();
+
                             
                             if (!result.valid) {
                                 var errorText = '';
@@ -2649,14 +2664,20 @@
                                 }
 
                                 if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ ' + errorText + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+
                                 pendingFile = null;
                             } else {
                                 updateFileList();
                             }
                         } catch (e) {
+                            if (e.name === 'AbortError') {
+                                _abortController = null;
+                                return;
+                            }
                             if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                             pendingFile = null;
                         }
+
                     };
                     reader.readAsDataURL(file);
                 }
@@ -2675,22 +2696,28 @@
                         var blob = items[i].getAsFile();
                         var reader = new FileReader();
                         _fileReader = reader;
+
                         reader.onload = async function(ev) {
+                            if (_abortCheck) { _abortCheck = false; return; }
                             var base64 = ev.target.result.split(',')[1];
+
                             pendingFile = { name: 'screenshot.png', mime: blob.type, data: base64 };
                             
                             var inline = document.getElementById('fileNameInline');
-                            document.getElementById('sendBtn').disabled = true;
-                            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#F59E0B;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(245,158,11,0.3);border-top-color:#F59E0B;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+                            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
 
                             
                             try {
+                                _abortController = new AbortController();
                                 var resp = await fetch(SERVER_URL + '/validate_file', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                    body: JSON.stringify({ file_data: base64, file_name: 'screenshot.png', file_mime: blob.type })
+                                    body: JSON.stringify({ file_data: base64, file_name: 'screenshot.png', file_mime: blob.type }),
+                                    signal: _abortController.signal
                                 });
+                                _abortController = null;
                                 var result = await resp.json();
+
                                 
                                 if (!result.valid) {
                                     var errorText = '';
@@ -2710,7 +2737,11 @@
                                     updateFileList();
                                 }
                             } catch (e) {
-                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+                                if (e.name === 'AbortError') {
+                                    _abortController = null;
+                                    return;
+                                }
+                                if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                                 pendingFile = null;
                             }
                         };
@@ -2955,7 +2986,6 @@
                             showAlertModal('Ошибка', errorMessage, '❌');
                             return;
                         }
-
                         var newBranchId = resp.headers.get('X-Branch-Id');
                         if (newBranchId) {
                                 currentBranchId = newBranchId;
@@ -2997,7 +3027,7 @@
                                 			    }
                                                     	    showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                                     	    return;
-                                             	   	}
+                                                	}
                                                         if (parsed.branch_id) {
                                                                 currentBranchId = parsed.branch_id;
                                                                 chat.activeBranch = parsed.branch_id;
@@ -3123,18 +3153,24 @@
             document.getElementById('micBtn').style.color = '#e74c3c';
         }
         var _fileReader = null;
+        var _abortCheck = false;
+        var _abortController = null;
+
+
 
         function cancelFileCheck() {
-            if (_fileReader && _fileReader.readyState === FileReader.LOADING) {
-                _fileReader.abort();
+            _abortCheck = true;
+            if (_abortController) {
+                _abortController.abort();
+                _abortController = null;
             }
             _fileReader = null;
             pendingFile = null;
             updateFileList();
             var inline = document.getElementById('fileNameInline');
             if (inline) inline.innerHTML = '';
-            updateSendBtn();
         }
+
 
 
 
@@ -3193,6 +3229,8 @@
 
         async function sendMessage() {
             if (isSending) return;
+            // Прерываем проверку файла, если она идёт
+            cancelFileCheck();
             const input = document.getElementById('userInput');
             const text = input.value.trim();
             if (!text && !pendingFile) return;
@@ -3226,7 +3264,7 @@
             
             var sendBtnRef = document.getElementById('sendBtn');
             sendBtnRef.disabled = true;
-            sendBtnRef.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(32,31,40,0.3);border-top-color:#201F28;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
+            sendBtnRef.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(245,158,11,0.4);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
             sendBtnRef.onclick = null;
             
             input.value = ''; input.style.height = 'auto'; input._init = false;
@@ -3271,12 +3309,11 @@
                 });
 
                 if (!resp.ok) {
-                    var errData = await resp.json().catch(() => ({}));
+                    const errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
-
 
                 const contentType = resp.headers.get('content-type') || '';
                 if (!contentType.includes('text/event-stream')) {
@@ -3332,7 +3369,7 @@
                                 } else if (parsed.error_type === 'deepseek_overloaded') {
                                     errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                                 } else if (parsed.error_type === 'server_timeout') {
-                                    errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
+                                    errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.'
                                 }
                                 showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
@@ -3409,7 +3446,9 @@
                     showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
                 }
 
+
             }
+
         }
 
 
@@ -3991,13 +4030,16 @@
             document.getElementById('alertModalOverlay').classList.add('active');
         }
 
-        function closeAlertModal() {
+	function closeAlertModal() {
    	    document.getElementById('alertModalOverlay').classList.remove('active');
-   	    isSending = false;
-   	    activeStreamId = null;
-   	    sendBtnArrow();
-   	    loadChatsFromServer();
+    	    isSending = false;
+    	    activeStreamId = null;
+    	    sendBtnArrow();
+    	    loadChatsFromServer();
 	}
+
+
+
         // Rename modal
         var renameCallback = null;
 
