@@ -2546,7 +2546,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             _fileReader = reader;
 
             reader.onload = async function(ev) {
+                if (_abortCheck) { _abortCheck = false; return; }
                 const base64 = ev.target.result.split(',')[1];
+
                 pendingFile = { name: file.name, mime: file.type, data: base64 };
                 
                 // Отправляем на валидацию
@@ -2621,7 +2623,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     _fileReader = reader;
 
                     reader.onload = async function(ev) {
+                        if (_abortCheck) { _abortCheck = false; return; }
                         var base64 = ev.target.result.split(',')[1];
+
                         pendingFile = { name: file.name, mime: file.type, data: base64 };
                         
                         // Отправляем на валидацию
@@ -2678,7 +2682,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         _fileReader = reader;
 
                         reader.onload = async function(ev) {
+                            if (_abortCheck) { _abortCheck = false; return; }
                             var base64 = ev.target.result.split(',')[1];
+
                             pendingFile = { name: 'screenshot.png', mime: blob.type, data: base64 };
                             
                             var inline = document.getElementById('fileNameInline');
@@ -3123,17 +3129,18 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             document.getElementById('micBtn').style.color = '#e74c3c';
         }
         var _fileReader = null;
+        var _abortCheck = false;
+
 
         function cancelFileCheck() {
-            if (_fileReader && _fileReader.readyState === FileReader.LOADING) {
-                _fileReader.abort();
-            }
+            _abortCheck = true;
             _fileReader = null;
             pendingFile = null;
             updateFileList();
             var inline = document.getElementById('fileNameInline');
             if (inline) inline.innerHTML = '';
         }
+
 
 
         function stopVoiceInput() {
