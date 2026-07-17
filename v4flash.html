@@ -468,6 +468,60 @@
         body.light.custom-dark-bg .logo-text {
             color: #00CBF5 !important;
         }
+        .msg-code-block[data-collapsed="true"] {
+            transition: max-height 0.3s ease;
+            cursor: pointer;
+        }
+
+        .msg-code-block[data-collapsed="true"]:hover {
+            opacity: 0.9;
+        }
+        /* Collapse code block */
+        .msg-code-block .code-preview-line {
+            display: none;
+            padding: 6px 14px 10px 14px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-top: none;
+            background: rgba(255,255,255,0.02);
+        }
+        body.light .msg-code-block .code-preview-line {
+            background: rgba(0,0,0,0.02);
+            color: #999;
+        }
+        .msg-code-block.collapsed .code-preview-line {
+            display: block;
+        }
+        .msg-code-block.collapsed pre {
+            display: none;
+        }
+        .collapse-toggle-btn {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            font-family: Inter, sans-serif;
+            font-size: 11px;
+            transition: background 0.15s, color 0.15s;
+            line-height: 1;
+        }
+        .collapse-toggle-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #e0e0e0;
+        }
+        body.light .collapse-toggle-btn:hover {
+            background: rgba(0,0,0,0.06);
+            color: #333;
+        }
 
 
     </style>
@@ -3252,15 +3306,49 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     : '';
                 var contentHtml = formatMessage(msg.content || '');
                 el.innerHTML = reasoningHtml + contentHtml;
-                var codeBlocks = el.querySelectorAll('pre code');
+                
+                // Сворачивание блоков кода > 1000 символов
+                var codeBlocks = el.querySelectorAll('.msg-code-block');
                 for (var i = 0; i < codeBlocks.length; i++) {
                     var block = codeBlocks[i];
+                    var code = block.querySelector('code');
+                    if (code && code.textContent.length > 1000 && !block.dataset.collapsed) {
+                        block.dataset.collapsed = 'true';
+                        block.style.maxHeight = '60px';
+                        block.style.overflow = 'hidden';
+                        block.style.position = 'relative';
+                        
+                        // Кнопка развернуть
+                        var toggleBtn = document.createElement('button');
+                        toggleBtn.textContent = '▶ Развернуть (' + code.textContent.length + ' символов)';
+                        toggleBtn.style.cssText = 'position:absolute;bottom:4px;right:4px;background:rgba(0,203,245,0.9);color:#201F28;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;z-index:5;font-weight:600;';
+                        toggleBtn.onclick = function(e) {
+                            e.stopPropagation();
+                            var parent = this.parentElement;
+                            if (parent.dataset.collapsed === 'true') {
+                                parent.dataset.collapsed = 'false';
+                                parent.style.maxHeight = 'none';
+                                this.textContent = '▼ Свернуть';
+                            } else {
+                                parent.dataset.collapsed = 'true';
+                                parent.style.maxHeight = '60px';
+                                this.textContent = '▶ Развернуть (' + code.textContent.length + ' символов)';
+                            }
+                        };
+                        block.appendChild(toggleBtn);
+                    }
+                }
+                
+                var codeBlocks2 = el.querySelectorAll('pre code');
+                for (var i = 0; i < codeBlocks2.length; i++) {
+                    var block = codeBlocks2[i];
                     if (!block._highlighted && typeof hljs !== 'undefined') {
                         hljs.highlightElement(block);
                         block._highlighted = true;
                     }
                 }
                 setupFloatingCopyButtonsForMsg(el);
+                setupCollapseForNewBlocks(el);
                 updateFloatingButtons();
                 if (autoScroll) {
                     var main = document.querySelector('.main');
@@ -3272,6 +3360,36 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
             }, 16);
         }
+        function setupCollapseForNewBlocks(el) {
+            var blocks = el.querySelectorAll('.msg-code-block');
+            for (var i = 0; i < blocks.length; i++) {
+                var block = blocks[i];
+                if (block.querySelector('.collapse-toggle-btn')) continue;
+                var pre = block.querySelector('pre');
+                var header = block.querySelector('.floating-code-header');
+                if (!pre || !header) continue;
+                var codeText = pre.querySelector('code') ? pre.querySelector('code').textContent : '';
+                if (codeText.length > 1000) {
+                    var actions = header.querySelector('span:last-child');
+                    var collapseBtn = _makeActionBtn('', '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>', function() {
+                        toggleCodeCollapse(block, collapseBtn, pre, header);
+                    });
+                    collapseBtn.className = 'collapse-toggle-btn';
+                    actions.insertBefore(collapseBtn, actions.firstChild);
+                    
+                    var previewLine = document.createElement('div');
+                    previewLine.className = 'code-preview-line';
+                    var lines = codeText.split('\n');
+                    var lastLine = lines[lines.length - 1] || lines[lines.length - 2] || '';
+                    previewLine.textContent = lastLine;
+                    block.appendChild(previewLine);
+                    
+                    block.classList.add('collapsed');
+                    collapseBtn.innerHTML = '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" /></svg>';
+                }
+            }
+        }
+
 
         async function sendMessage() {
             if (isSending) return;
@@ -3690,6 +3808,23 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }, 0);
             }
         }
+        function toggleCodeCollapse(block, btn, pre, header) {
+            if (block.classList.contains('collapsed')) {
+                block.classList.remove('collapsed');
+                btn.innerHTML = '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>';
+            } else {
+                block.classList.add('collapsed');
+                btn.innerHTML = '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" /></svg>';
+            }
+            // Update preview line
+            var previewLine = block.querySelector('.code-preview-line');
+            if (previewLine && block.classList.contains('collapsed')) {
+                var codeText = pre.querySelector('code') ? pre.querySelector('code').textContent : '';
+                var lines = codeText.split('\n');
+                var lastLine = lines[lines.length - 1] || lines[lines.length - 2] || '';
+                previewLine.textContent = lastLine;
+            }
+        }
 
 
 
@@ -3749,6 +3884,29 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 toggleCodeEditor(pre);
             });
             actions.insertBefore(editBtn, actions.firstChild);
+            // Collapse toggle button
+            var codeText = pre.querySelector('code') ? pre.querySelector('code').textContent : '';
+            if (codeText.length > 1000) {
+                var collapseBtn = _makeActionBtn('', '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>', function() {
+                    toggleCodeCollapse(block, collapseBtn, pre, header);
+                });
+                collapseBtn.className = 'collapse-toggle-btn';
+                actions.insertBefore(collapseBtn, actions.firstChild);
+                
+                // Add preview line
+                var previewLine = document.createElement('div');
+                previewLine.className = 'code-preview-line';
+                var lines = codeText.split('\n');
+                var lastLine = lines[lines.length - 1] || lines[lines.length - 2] || '';
+                previewLine.textContent = lastLine;
+                block.appendChild(previewLine);
+                
+                if (codeText.length > 1000) {
+                    block.classList.add('collapsed');
+                    collapseBtn.innerHTML = '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" /></svg>';
+                }
+            }
+
         }
 
         function _makeActionBtn(title, innerHTML, clickHandler) {
