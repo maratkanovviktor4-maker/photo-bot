@@ -2537,15 +2537,50 @@
         async function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
+            
+            // Показываем спиннер
+            var inline = document.getElementById('fileNameInline');
+            if (inline) inline.innerHTML = '<span style="color:#F59E0B;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(245,158,11,0.3);border-top-color:#F59E0B;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span>';
+            
             const reader = new FileReader();
-            reader.onload = function(ev) {
+            reader.onload = async function(ev) {
                 const base64 = ev.target.result.split(',')[1];
                 pendingFile = { name: file.name, mime: file.type, data: base64 };
-                updateFileList();
+                
+                // Отправляем на валидацию
+                try {
+                    var resp = await fetch(SERVER_URL + '/validate_file', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type })
+                    });
+                    var result = await resp.json();
+                    
+                    if (!result.valid) {
+                        var errorText = '';
+                        if (result.error === 'max_weight') {
+                            errorText = 'Превышен максимальный вес (' + (result.size_mb || '?') + ' МБ)';
+                        } else if (result.error === 'max_text') {
+                            errorText = 'Превышена максимальная длина текста (' + (result.length || '?') + ' символов)';
+                        } else if (result.error === 'max_text_zip') {
+                            errorText = 'Превышена максимальная длина текста в архиве (' + (result.length || '?') + ' символов)';
+                        } else {
+                            errorText = 'Ошибка проверки файла';
+                        }
+                        if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + errorText + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+                        pendingFile = null;
+                    } else {
+                        updateFileList();
+                    }
+                } catch (e) {
+                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+                    pendingFile = null;
+                }
             };
             reader.readAsDataURL(file);
             document.getElementById('fileInput').value = '';
         }
+
 
         function setupDragDrop() {
             var inputArea = document.getElementById('inputArea');
@@ -2571,19 +2606,53 @@
                 inputArea.addEventListener(hideEvents[k], hideDrop);
             }
 
-            inputArea.addEventListener('drop', function(e) {
+            inputArea.addEventListener('drop', function(e) {            inputArea.addEventListener('drop', async function(e) {
                 var files = e.dataTransfer.files;
                 if (files.length > 0) {
                     var file = files[0];
+                    // Показываем спиннер
+                    var inline = document.getElementById('fileNameInline');
+                    if (inline) inline.innerHTML = '<span style="color:#F59E0B;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(245,158,11,0.3);border-top-color:#F59E0B;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span>';
+                    
                     var reader = new FileReader();
-                    reader.onload = function(ev) {
+                    reader.onload = async function(ev) {
                         var base64 = ev.target.result.split(',')[1];
                         pendingFile = { name: file.name, mime: file.type, data: base64 };
-                        updateFileList();
+                        
+                        // Отправляем на валидацию
+                        try {
+                            var resp = await fetch(SERVER_URL + '/validate_file', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type })
+                            });
+                            var result = await resp.json();
+                            
+                            if (!result.valid) {
+                                var errorText = '';
+                                if (result.error === 'max_weight') {
+                                    errorText = 'Превышен максимальный вес (' + (result.size_mb || '?') + ' МБ)';
+                                } else if (result.error === 'max_text') {
+                                    errorText = 'Превышена максимальная длина текста (' + (result.length || '?') + ' символов)';
+                                } else if (result.error === 'max_text_zip') {
+                                    errorText = 'Превышена максимальная длина текста в архиве (' + (result.length || '?') + ' символов)';
+                                } else {
+                                    errorText = 'Ошибка проверки файла';
+                                }
+                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + errorText + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+                                pendingFile = null;
+                            } else {
+                                updateFileList();
+                            }
+                        } catch (e) {
+                            if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+                            pendingFile = null;
+                        }
                     };
                     reader.readAsDataURL(file);
                 }
             });
+
         }
 
         function setupPaste() {
@@ -2596,11 +2665,41 @@
                         e.preventDefault();
                         var blob = items[i].getAsFile();
                         var reader = new FileReader();
-                        reader.onload = function(ev) {
+                        reader.onload = async function(ev) {
                             var base64 = ev.target.result.split(',')[1];
                             pendingFile = { name: 'screenshot.png', mime: blob.type, data: base64 };
-                            updateFileList();
+                            
+                            var inline = document.getElementById('fileNameInline');
+                            if (inline) inline.innerHTML = '<span style="color:#F59E0B;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(245,158,11,0.3);border-top-color:#F59E0B;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span>';
+                            
+                            try {
+                                var resp = await fetch(SERVER_URL + '/validate_file', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                    body: JSON.stringify({ file_data: base64, file_name: 'screenshot.png', file_mime: blob.type })
+                                });
+                                var result = await resp.json();
+                                
+                                if (!result.valid) {
+                                    var errorText = '';
+                                    if (result.error === 'max_weight') {
+                                        errorText = 'Превышен максимальный вес (' + (result.size_mb || '?') + ' МБ)';
+                                    } else if (result.error === 'max_text') {
+                                        errorText = 'Превышена максимальная длина текста (' + (result.length || '?') + ' символов)';
+                                    } else {
+                                        errorText = 'Ошибка проверки файла';
+                                    }
+                                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + errorText + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+                                    pendingFile = null;
+                                } else {
+                                    updateFileList();
+                                }
+                            } catch (e) {
+                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
+                                pendingFile = null;
+                            }
                         };
+
                         reader.readAsDataURL(blob);
                         break;
                     }
