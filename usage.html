@@ -114,6 +114,16 @@
         document.getElementById('starIcon1').innerHTML = 'Баланс Pro ' + STAR;
         document.getElementById('starIcon2').innerHTML = 'Баланс Flash ' + STAR;
 
+        function getMonthRange() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = now.getMonth();
+            const start = `${y}-${String(m+1).padStart(2,'0')}-01`;
+            const lastDay = new Date(y, m+1, 0).getDate();
+            const end = `${y}-${String(m+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+            return { start, end };
+        }
+
         async function loadBalance() {
             const resp = await fetch(`${SERVER_URL}/get_balance?user_id=${userId}&session_token=${sessionToken}`);
             const d = await resp.json();
@@ -132,6 +142,21 @@
             const dF = await respF.json();
             const costF = dF.data && dF.data[today] ? dF.data[today].cost : 0;
             document.getElementById('todayFlash').innerHTML = STAR + ' ' + costF.toFixed(2);
+        }
+
+        async function loadMonthCost() {
+            const { start, end } = getMonthRange();
+            const respP = await fetch(`${SERVER_URL}/get_usage_range?user_id=${userId}&model=pro&start_date=${start}&end_date=${end}&session_token=${sessionToken}`);
+            const dP = await respP.json();
+            let costP = 0;
+            Object.values(dP.data || {}).forEach(d => costP += d.cost);
+            document.getElementById('monthPro').innerHTML = STAR + ' ' + costP.toFixed(2);
+
+            const respF = await fetch(`${SERVER_URL}/get_usage_range?user_id=${userId}&model=flash&start_date=${start}&end_date=${end}&session_token=${sessionToken}`);
+            const dF = await respF.json();
+            let costF = 0;
+            Object.values(dF.data || {}).forEach(d => costF += d.cost);
+            document.getElementById('monthFlash').innerHTML = STAR + ' ' + costF.toFixed(2);
         }
 
         async function loadChartRange(start, end) {
@@ -232,32 +257,12 @@
             el.style.display = 'block';
             el.innerHTML = `${rangeStart} – ${rangeEnd}: ${(pt+ct).toLocaleString()} токенов (вход: ${(pt-ch).toLocaleString()}, кэш: ${ch.toLocaleString()}, выход: ${ct.toLocaleString()}) | ${cost.toFixed(2)} ${STAR} Stars`;
         }
-        async function loadMonthCost() {
-            const now = new Date();
-            const start = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-            const end = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(new Date(now.getFullYear(), now.getMonth()+1, 0).getDate()).padStart(2,'0')}`;
-            
-            const respP = await fetch(`${SERVER_URL}/get_usage_range?user_id=${userId}&model=pro&start_date=${start}&end_date=${end}&session_token=${sessionToken}`);
-            const dP = await respP.json();
-            let costP = 0;
-            Object.values(dP.data || {}).forEach(d => costP += d.cost);
-            
-            const respF = await fetch(`${SERVER_URL}/get_usage_range?user_id=${userId}&model=flash&start_date=${start}&end_date=${end}&session_token=${sessionToken}`);
-            const dF = await respF.json();
-            let costF = 0;
-            Object.values(dF.data || {}).forEach(d => costF += d.cost);
-
-            document.getElementById('monthPro').innerHTML = STAR + ' ' + costP.toFixed(2);
-            document.getElementById('monthFlash').innerHTML = STAR + ' ' + costF.toFixed(2);
-        }
-
 
         function switchModel() {
             currentModel = document.getElementById('modelSelect').value;
             rangeStart = null; rangeEnd = null;
-            const now = new Date(); calYear = now.getFullYear(); calMonth = now.getMonth();
-            const today = now.toISOString().substring(0, 10);
-            loadChartRange(today, today);
+            const { start, end } = getMonthRange();
+            loadChartRange(start, end);
         }
 
         function toggleTheme() {
@@ -267,12 +272,12 @@
 
         if (localStorage.getItem('usage_theme') === 'light') document.body.classList.add('light');
         
-        const now = new Date(); calYear = now.getFullYear(); calMonth = now.getMonth();
-        const today = now.toISOString().substring(0, 10);
         loadBalance();
         loadToday();
         loadMonthCost();
-       loadChartRange(startOfMonth, today);
+        const { start, end } = getMonthRange();
+        loadChartRange(start, end);
     </script>
+
 </body>
 </html>
