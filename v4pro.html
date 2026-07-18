@@ -3212,11 +3212,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 _abortController = null;
             }
             _fileReader = null;
-            pendingFile = null;
-            updateFileList();
             var inline = document.getElementById('fileNameInline');
             if (inline) inline.innerHTML = '';
         }
+
 
 
 
@@ -3291,7 +3290,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
             
-            let displayText = text || (pendingFile ? '[Файл: ' + pendingFile.name + ']' : '');
+            let displayText = text;
+            if (pendingFile) {
+                displayText = text ? text + '\n\n📎 ' + pendingFile.name : '📎 ' + pendingFile.name;
+            }
             chat.messages.push({ role: 'user', content: displayText });
             playSound('send');
             var area = document.getElementById('chatArea');
