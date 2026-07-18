@@ -3356,6 +3356,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }),
                     signal: abortController.signal
                 });
+                // Очищаем файл сразу после отправки запроса
+                pendingFile = null;
+                updateFileList();
 
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
