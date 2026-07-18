@@ -1223,7 +1223,7 @@
                             var lastMsg = messages[messages.length - 1];
                             if (lastMsg && lastMsg.timestamp) lastTime = new Date(lastMsg.timestamp).getTime();
                         }
-                        if (!lastTime) lastTime = parseInt(chatId) || 0;
+                        if (!lastTime) lastTime = data.last_times && data.last_times[chatId] ? new Date(data.last_times[chatId]).getTime() : (parseInt(chatId) || 0);
                         chats.push({ id: chatId, title: title, messages: messages, activeBranch: activeBranch, allBranches: allBranches, _personality: personality, lastMessageTime: lastTime });
                     }
                     chats.sort(function(a, b) { return (b.lastMessageTime || 0) - (a.lastMessageTime || 0); });
