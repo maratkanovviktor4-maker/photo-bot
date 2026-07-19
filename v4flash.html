@@ -3465,7 +3465,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (voiceActivationState === 'muted') {
                 voiceActivationState = 'listening';
                 updateVoiceActivationBtn();
-                startVoiceActivationListening(); // перезапускаем анализ тишины
             }
             var micBtn = document.getElementById('micBtn');
             if (micBtn) micBtn.style.color = '#888';
@@ -3729,6 +3728,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.interrupted) {
                         speakMessage(chat.messages.length - 1);
                     }
+                }
+                // Запуск анализатора тишины через 1 секунду после стрима
+                if (voiceActivationState !== 'off') {
+                    setTimeout(function() {
+                        startVoiceActivationListening();
+                    }, 1000);
                 }
             } catch (e) {
                 if (e.name === 'AbortError') {
