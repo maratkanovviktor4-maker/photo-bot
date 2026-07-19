@@ -2467,26 +2467,15 @@
 
         function toggleVoiceActivation() {
             if (voiceActivationState === 'off') {
-                // включение
                 voiceActivationEnabled = true;
                 voiceActivationState = 'listening';
                 localStorage.setItem('photobot_voice_activation', 'true');
                 updateVoiceActivationBtn();
                 startVoiceActivationListening();
             } else {
-                // выключение
-                if (voiceActivationContext) {
-                    voiceActivationContext.close();
-                    voiceActivationContext = null;
-                }
-                if (voiceActivationStream) {
-                    voiceActivationStream.getTracks().forEach(function(track) { track.stop(); });
-                    voiceActivationStream = null;
-                }
                 stopVoiceActivation();
             }
         }
-
 
         function startVoiceActivationListening() {
             navigator.mediaDevices.getUserMedia({ audio: true })
@@ -2502,7 +2491,7 @@
                     var dataArray = new Uint8Array(bufferLength);
                     
                     function checkSilence() {
-                        if (voiceActivationState !== 'listening' && voiceActivationState !== 'muted') return;
+                        if (voiceActivationState !== 'listening') return;
                         
                         voiceActivationAnalyser.getByteFrequencyData(dataArray);
                         var sum = 0;
@@ -2549,16 +2538,13 @@
                 voiceActivationTimer = null;
             }
             
-	    // Не останавливаем stream при переходе muted -> listening
-	    // Останавливаем только при полном выключении (off)
-
+            if (voiceActivationStream) {
+                voiceActivationStream.getTracks().forEach(function(track) { track.stop(); });
+                voiceActivationStream = null;
+            }
             
             if (voiceActivationContext) {
-            // Не закрываем контекст при выключении, 
-            // только при полном оff через toggle
-            // voiceActivationContext.close();
-            // voiceActivationContext = null;
-
+                voiceActivationContext.close();
                 voiceActivationContext = null;
             }
             
