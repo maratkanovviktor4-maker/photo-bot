@@ -588,6 +588,9 @@
                             <button id="autoSpeakBtn" class="attach-btn" onclick="toggleAutoSpeak()" title="Автоозвучка" style="color:#888;">
                                 <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" /></svg>
                             </button>
+                            <button id="voiceActivationBtn" class="attach-btn" onclick="toggleVoiceActivation()" title="Голосовая активация">
+                                <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M9.348 14.652a3.75 3.75 0 0 1 0-5.304m5.304 0a3.75 3.75 0 0 1 0 5.304m-7.425 2.121a6.75 6.75 0 0 1 0-9.546m9.546 0a6.75 6.75 0 0 1 0 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
+                            </button>
                             <button id="micBtn" class="attach-btn" onclick="toggleVoiceInput()" title="Голосовой ввод" style="color:#888;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                             </button>
@@ -2454,6 +2457,117 @@
             localStorage.setItem('photobot_auto_speak', autoSpeakEnabled.toString());
             updateAutoSpeakBtn();
         }
+        var voiceActivationEnabled = localStorage.getItem('photobot_voice_activation') === 'true';
+        var voiceActivationState = 'off'; // 'off', 'listening', 'muted'
+        var voiceActivationTimer = null;
+        var voiceActivationAnalyser = null;
+        var voiceActivationSource = null;
+        var voiceActivationStream = null;
+        var voiceActivationContext = null;
+
+        function toggleVoiceActivation() {
+            if (voiceActivationState === 'off') {
+                voiceActivationEnabled = true;
+                voiceActivationState = 'listening';
+                localStorage.setItem('photobot_voice_activation', 'true');
+                updateVoiceActivationBtn();
+                startVoiceActivationListening();
+            } else {
+                stopVoiceActivation();
+            }
+        }
+
+        function startVoiceActivationListening() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function(stream) {
+                    voiceActivationStream = stream;
+                    voiceActivationContext = new (window.AudioContext || window.webkitAudioContext)();
+                    voiceActivationAnalyser = voiceActivationContext.createAnalyser();
+                    voiceActivationAnalyser.fftSize = 256;
+                    voiceActivationSource = voiceActivationContext.createMediaStreamSource(stream);
+                    voiceActivationSource.connect(voiceActivationAnalyser);
+                    
+                    var bufferLength = voiceActivationAnalyser.frequencyBinCount;
+                    var dataArray = new Uint8Array(bufferLength);
+                    
+                    function checkSilence() {
+                        if (voiceActivationState !== 'listening') return;
+                        
+                        voiceActivationAnalyser.getByteFrequencyData(dataArray);
+                        var sum = 0;
+                        for (var i = 0; i < bufferLength; i++) {
+                            sum += dataArray[i];
+                        }
+                        var average = sum / bufferLength;
+                        
+                        if (average < 10) { // порог тишины
+                            if (!voiceActivationTimer) {
+                                voiceActivationTimer = setTimeout(function() {
+                                    if (voiceActivationState === 'listening') {
+                                        voiceActivationState = 'muted';
+                                        updateVoiceActivationBtn();
+                                        toggleVoiceInput(); // запускаем микрофон
+                                    }
+                                }, 2000);
+                            }
+                        } else {
+                            if (voiceActivationTimer) {
+                                clearTimeout(voiceActivationTimer);
+                                voiceActivationTimer = null;
+                            }
+                        }
+                        
+                        requestAnimationFrame(checkSilence);
+                    }
+                    
+                    checkSilence();
+                })
+                .catch(function() {
+                    showAlertModal('Ошибка', 'Нет доступа к микрофону.', '❌');
+                    stopVoiceActivation();
+                });
+        }
+
+        function stopVoiceActivation() {
+            voiceActivationEnabled = false;
+            voiceActivationState = 'off';
+            localStorage.setItem('photobot_voice_activation', 'false');
+            
+            if (voiceActivationTimer) {
+                clearTimeout(voiceActivationTimer);
+                voiceActivationTimer = null;
+            }
+            
+            if (voiceActivationStream) {
+                voiceActivationStream.getTracks().forEach(function(track) { track.stop(); });
+                voiceActivationStream = null;
+            }
+            
+            if (voiceActivationContext) {
+                voiceActivationContext.close();
+                voiceActivationContext = null;
+            }
+            
+            voiceActivationAnalyser = null;
+            voiceActivationSource = null;
+            
+            stopVoiceInput(); // выключаем микрофон если он был включён
+            updateVoiceActivationBtn();
+        }
+
+        function updateVoiceActivationBtn() {
+            var btn = document.getElementById('voiceActivationBtn');
+            if (!btn) return;
+            
+            if (voiceActivationState === 'off') {
+                btn.classList.remove('active');
+                btn.title = 'Голосовая активация выключена';
+            } else {
+                btn.classList.add('active');
+                btn.title = voiceActivationState === 'listening' ? 'Слушаю тишину...' : 'Микрофон активен';
+            }
+        }
+
 
         function updateAutoSpeakBtn() {
             var btn = document.getElementById('autoSpeakBtn');
@@ -2937,6 +3051,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         input.addEventListener('input', updateSendBtn);
         updateSendBtn();
         updateAutoSpeakBtn();
+        updateVoiceActivationBtn();
 
         var copyHistorySourceIndex = -1;
         var promptMsgIndex = -1;
@@ -3347,6 +3462,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 recognition = null;
             }
             voiceInputActive = false;
+            if (voiceActivationState === 'muted') {
+                voiceActivationState = 'listening';
+                updateVoiceActivationBtn();
+            }
             var micBtn = document.getElementById('micBtn');
             if (micBtn) micBtn.style.color = '#888';
         }
