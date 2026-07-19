@@ -2467,15 +2467,26 @@
 
         function toggleVoiceActivation() {
             if (voiceActivationState === 'off') {
+                // включение
                 voiceActivationEnabled = true;
                 voiceActivationState = 'listening';
                 localStorage.setItem('photobot_voice_activation', 'true');
                 updateVoiceActivationBtn();
                 startVoiceActivationListening();
             } else {
+                // выключение
+                if (voiceActivationContext) {
+                    voiceActivationContext.close();
+                    voiceActivationContext = null;
+                }
+                if (voiceActivationStream) {
+                    voiceActivationStream.getTracks().forEach(function(track) { track.stop(); });
+                    voiceActivationStream = null;
+                }
                 stopVoiceActivation();
             }
         }
+
 
         function startVoiceActivationListening() {
             navigator.mediaDevices.getUserMedia({ audio: true })
@@ -2538,13 +2549,16 @@
                 voiceActivationTimer = null;
             }
             
-            if (voiceActivationStream) {
-                voiceActivationStream.getTracks().forEach(function(track) { track.stop(); });
-                voiceActivationStream = null;
-            }
+	    // Не останавливаем stream при переходе muted -> listening
+	    // Останавливаем только при полном выключении (off)
+
             
             if (voiceActivationContext) {
-                voiceActivationContext.close();
+            // Не закрываем контекст при выключении, 
+            // только при полном оff через toggle
+            // voiceActivationContext.close();
+            // voiceActivationContext = null;
+
                 voiceActivationContext = null;
             }
             
