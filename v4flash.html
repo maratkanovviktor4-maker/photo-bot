@@ -692,6 +692,8 @@
         var tipIndex = parseInt(localStorage.getItem('photobot_tip_index') || '0');
         var tipEnabled = localStorage.getItem('photobot_tip_enabled') !== 'false';
         var tipInterval = null;
+	var _lastStreamEndTime = 0;
+
 
         function showTip(index) {
             var container = document.getElementById('tipContainer');
@@ -2478,6 +2480,10 @@
         }
 
         function startVoiceActivationListening() {
+            // Проверяем, что прошло достаточно времени с последнего стрима
+            if (Date.now() - _lastStreamEndTime < 500) {
+                return; // слишком рано, игнорируем
+            }
             navigator.mediaDevices.getUserMedia({ audio: true })
                 .then(function(stream) {
                     voiceActivationStream = stream;
@@ -3729,6 +3735,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         speakMessage(chat.messages.length - 1);
                     }
                 }
+                _lastStreamEndTime = Date.now();
+
                 // Запуск анализатора тишины через 1 секунду после стрима
                 if (voiceActivationState !== 'off') {
                     setTimeout(function() {
