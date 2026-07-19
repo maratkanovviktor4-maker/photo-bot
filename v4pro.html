@@ -3395,8 +3395,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
         async function sendMessage() {
             if (isSending) return;
-            // Прерываем проверку файла, если она идёт
-            cancelFileCheck();
             const input = document.getElementById('userInput');
             const text = input.value.trim();
             if (!text && !pendingFile) return;
@@ -3476,6 +3474,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }),
                     signal: abortController.signal
                 });
+                // Прерываем проверку файла, если она идёт
+                cancelFileCheck();
                 // Очищаем файл сразу после отправки запроса
                 pendingFile = null;
                 updateFileList();
