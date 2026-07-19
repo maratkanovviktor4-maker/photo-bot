@@ -2586,7 +2586,15 @@
             
             // Показываем спиннер
             var inline = document.getElementById('fileNameInline');
-if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#F59E0B;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(245,158,11,0.3);border-top-color:#F59E0B;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+            
+            // Проверка размера файла
+            const MAX_FILE_SIZE = 50 * 1024 * 1024;
+            if (file.size > MAX_FILE_SIZE) {
+                if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Файл слишком большой (макс. 50 МБ)</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+                document.getElementById('fileInput').value = '';
+                return;
+            }
             
             const reader = new FileReader();
             _fileReader = reader;
@@ -2641,6 +2649,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         }
 
 
+
         function setupDragDrop() {
             var inputArea = document.getElementById('inputArea');
             var dropZone = document.getElementById('dropZone');
@@ -2671,7 +2680,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     var file = files[0];
                     // Показываем спиннер
                     var inline = document.getElementById('fileNameInline');
-if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#F59E0B;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(245,158,11,0.3);border-top-color:#F59E0B;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+                    
+                    // Проверка размера файла
+                    const MAX_FILE_SIZE = 50 * 1024 * 1024;
+                    if (file.size > MAX_FILE_SIZE) {
+                        if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Файл слишком большой (макс. 50 МБ)</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+                        return;
+                    }
                     
                     var reader = new FileReader();
                     _fileReader = reader;
@@ -2728,7 +2744,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     reader.readAsDataURL(file);
                 }
             });
-
         }
 
         function setupPaste() {
@@ -2740,6 +2755,18 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     if (items[i].type.indexOf('image') !== -1) {
                         e.preventDefault();
                         var blob = items[i].getAsFile();
+                        
+                        // Показываем спиннер
+                        var inline = document.getElementById('fileNameInline');
+if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+                        
+                        // Проверка размера
+                        const MAX_FILE_SIZE = 50 * 1024 * 1024;
+                        if (blob.size > MAX_FILE_SIZE) {
+                            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Файл слишком большой (макс. 50 МБ)</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+                            return;
+                        }
+                        
                         var reader = new FileReader();
                         _fileReader = reader;
 
@@ -2748,10 +2775,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                             var base64 = ev.target.result.split(',')[1];
 
                             pendingFile = { name: 'screenshot.png', mime: blob.type, data: base64 };
-                            
-                            var inline = document.getElementById('fileNameInline');
-                            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#F59E0B;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(245,158,11,0.3);border-top-color:#F59E0B;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-
                             
                             try {
                                 _abortController = new AbortController();
@@ -2798,7 +2821,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
             });
         }
-
         setupDragDrop();
         setupPaste();
         var input = document.getElementById('userInput');
