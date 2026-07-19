@@ -104,6 +104,14 @@
         .chat-wrapper { width: 100%; max-width: 775px; display: flex; flex-direction: column; margin: 0 auto; position: relative; flex: 1 0 auto; }
         .chat-area { flex: 1 0 auto; padding: 20px 0 25px 0; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 0; }
         .scroll-bottom-btn { position: absolute; bottom: calc(100% + 16px); right: 12px; width: 36px; height: 36px; border-radius: 50%; background: #1a1a2e; color: #e0e0e0; border: 1px solid rgba(255,255,255,0.15); cursor: pointer; display: none; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10002; }
+        .attach-btn.active {
+            color: #e74c3c !important;
+            background: rgba(255,255,255,0.1) !important;
+        }
+        .attach-btn.active:hover {
+            color: #e74c3c !important;
+            background: rgba(255,255,255,0.1) !important;
+        }
 
         .scroll-bottom-btn:hover { background: rgba(255,255,255,0.2); }
         body.light .scroll-bottom-btn { background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.15); }
@@ -577,6 +585,9 @@
 
                             <span class="file-name-inline" id="fileNameInline"></span>
                             <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" transform="rotate(-45 12 12)"/></svg></button>
+                            <button id="autoSpeakBtn" class="attach-btn" onclick="toggleAutoSpeak()" title="Автоозвучка" style="color:#888;">
+                                <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" /></svg>
+                            </button>
                             <button id="micBtn" class="attach-btn" onclick="toggleVoiceInput()" title="Голосовой ввод" style="color:#888;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                             </button>
@@ -2296,6 +2307,7 @@
                 if (msg.interrupted) actionsHtml += '<button onclick="continueMessage(' + index + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                 actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + index + ')" title="Self-Play диалог" style="color:#00CBF5;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
                 actionsHtml += '<button class="prompt-btn" onclick="showPromptPopup(' + index + ', this)" title="Реплика"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg></button>';
+                actionsHtml += '<button onclick="speakMessage(' + index + ')" title="Озвучить"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" /></svg></button>';
             }
             var reasoningHtml = '';
             var contentToShow = msg.content || '';
@@ -2435,6 +2447,63 @@
                 sendMessage();
             }
         }
+        var autoSpeakEnabled = localStorage.getItem('photobot_auto_speak') === 'true';
+
+        function toggleAutoSpeak() {
+            autoSpeakEnabled = !autoSpeakEnabled;
+            localStorage.setItem('photobot_auto_speak', autoSpeakEnabled.toString());
+            updateAutoSpeakBtn();
+        }
+
+        function updateAutoSpeakBtn() {
+            var btn = document.getElementById('autoSpeakBtn');
+            if (!btn) return;
+            if (autoSpeakEnabled) {
+                btn.classList.add('active');
+                btn.title = 'Автоозвучка включена';
+            } else {
+                btn.classList.remove('active');
+                btn.title = 'Автоозвучка выключена';
+            }
+        }
+
+
+        function speakMessage(index) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[index];
+            if (!msg || msg.role !== 'assistant') return;
+            
+            var text = msg.content || '';
+            if (!text) return;
+            
+            fetch(SERVER_URL + '/text_to_speech', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                body: JSON.stringify({ text: text, model: 'flash' })  // <-- здесь модель
+            })
+            .then(function(resp) {
+                if (resp.status === 402) {
+                    return resp.json().then(function(data) {
+                        showAlertModal('Недостаточно средств', 'Требуется 1 звезда. Баланс: ' + data.balance, '⚠️');
+                    });
+                }
+                if (!resp.ok) {
+                    showAlertModal('Ошибка', 'Не удалось озвучить сообщение.', '❌');
+                    return;
+                }
+                return resp.blob().then(function(blob) {
+                    var url = URL.createObjectURL(blob);
+                    var audio = new Audio(url);
+                    audio.play();
+                    updateBalance();
+                });
+            })
+            .catch(function(e) {
+                showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету.', '❌');
+            });
+        }
+
 
         function copyMessage(index) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
@@ -2867,6 +2936,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         }
         input.addEventListener('input', updateSendBtn);
         updateSendBtn();
+        updateAutoSpeakBtn();
 
         var copyHistorySourceIndex = -1;
         var promptMsgIndex = -1;
@@ -3533,6 +3603,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 renderMessages();
                 buildNavContainer();
                 playSound('reply');
+                // Автоозвучка
+                if (autoSpeakEnabled && chat.messages.length > 0) {
+                    var lastMsg = chat.messages[chat.messages.length - 1];
+                    if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.interrupted) {
+                        speakMessage(chat.messages.length - 1);
+                    }
+                }
             } catch (e) {
                 if (e.name === 'AbortError') {
                     assistantMsg.interrupted = true;
