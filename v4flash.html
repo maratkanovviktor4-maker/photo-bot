@@ -2847,10 +2847,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         // Показываем спиннер
                         var inline = document.getElementById('fileNameInline');
 if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+
                         // Проверка формата
-                        var ext = file.name.split('.').pop().toLowerCase();
-                        var mimeOk = file.type && (file.type.startsWith('image/') || file.type.startsWith('text/') || file.type === 'application/pdf' || file.type.includes('zip') || file.type.includes('word') || file.type.includes('excel') || file.type.includes('powerpoint'));
+                        var ext = blob.name.split('.').pop().toLowerCase();
+                        var mimeOk = blob.type && (blob.type.startsWith('image/') || blob.type.startsWith('text/') || blob.type === 'application/pdf' || blob.type.includes('zip') || blob.type.includes('word') || blob.type.includes('excel') || blob.type.includes('powerpoint'));
                         var fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
+
                         if (!fileOk) {
                             if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Неподдерживаемый формат</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                             return;
