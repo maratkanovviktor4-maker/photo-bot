@@ -2546,58 +2546,13 @@
         }
 
         function autoNameChat(chat) {
-            // Берем последнюю пару user + assistant
-            var messages = chat.messages;
-            var lastUser = null;
-            var lastAssistant = null;
-            
-            // Идем с конца, ищем последнюю пару
-            for (var i = messages.length - 1; i >= 0; i--) {
-                if (messages[i].role === 'assistant' && !lastAssistant) {
-                    lastAssistant = messages[i];
-                } else if (messages[i].role === 'user' && !lastUser) {
-                    lastUser = messages[i];
-                }
-                if (lastUser && lastAssistant) break;
+            const lastAssistant = [...chat.messages].reverse().find(m => m.role === 'assistant');
+            if (lastAssistant && !lastAssistant.interrupted && (chat.title.startsWith('Чат ') || chat.title === 'Новый чат')) {
+                chat.title = lastAssistant.content.replace(/[#*`>\n]/g, ' ').split(' ').slice(0, 6).join(' ') || 'Новый чат';
+                if (chat.title.length > 40) chat.title = chat.title.substring(0, 40) + '...';
+                renderChatList();
             }
-            
-            if (!lastAssistant || lastAssistant.interrupted) return;
-            if (!chat.title.startsWith('Чат ') && chat.title !== 'Новый чат') return;
-            
-            // Формируем осмысленное название из контекста
-            var userText = lastUser ? lastUser.content.replace(/[#*`>\n]/g, ' ').trim() : '';
-            var assistantText = lastAssistant.content.replace(/[#*`>\n]/g, ' ').trim();
-            
-            // Берем первые 3-5 слов из ответа ассистента
-            var words = assistantText.split(' ').filter(function(w) { return w.length > 0; });
-            var title = words.slice(0, 5).join(' ');
-            
-            // Если слишком короткое — берем из вопроса пользователя
-            if (title.length < 10 && userText) {
-                var userWords = userText.split(' ').filter(function(w) { return w.length > 0; });
-                title = userWords.slice(0, 4).join(' ');
-            }
-            
-            // Делаем первую букву заглавной, добавляем точку в конце
-            if (title.length > 0) {
-                title = title.charAt(0).toUpperCase() + title.slice(1);
-                if (!title.endsWith('.') && !title.endsWith('?') && !title.endsWith('!')) {
-                    title += '.';
-                }
-            }
-            
-            if (!title || title.length < 5) {
-                title = 'Новый чат';
-            }
-            
-            if (title.length > 50) {
-                title = title.substring(0, 50) + '...';
-            }
-            
-            chat.title = title;
-            renderChatList();
         }
-
 
         function updateFileList() {
             const inline = document.getElementById('fileNameInline');
