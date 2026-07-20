@@ -697,22 +697,32 @@
         var tipInterval = null;
         // ===== VOICE DROPDOWN =====
         const VOICE_OPTIONS = [
-            { value: 'ermil_good', label: 'RU ermil good' },
-            { value: 'ermil_neutral', label: 'RU ermil neutral' },
-            { value: 'alena_good', label: 'RU alena good' },
-            { value: 'alena_neutral', label: 'RU alena neutral' },
-            { value: 'jane_good', label: 'RU jane good' },
-            { value: 'jane_neutral', label: 'RU jane neutral' },
-            { value: 'jane_evil', label: 'RU jane evil' },
-            { value: 'omazh_neutral', label: 'RU omazh neutral' },
-            { value: 'omazh_evil', label: 'RU omazh evil' },
-            { value: 'zahar_good', label: 'RU zahar good' },
-            { value: 'zahar_neutral', label: 'RU zahar neutral' },
-            { value: 'marina_neutral', label: 'RU marina neutral' },
-            { value: 'marina_whisper', label: 'RU marina whisper' },
-            { value: 'marina_friendly', label: 'RU marina friendly' },
-            { value: 'filipp_neutral', label: 'RU filipp neutral' },
-            { value: 'madi_ru_neutral', label: 'RU madi_ru neutral' }
+            // Русские (ru-RU)
+            { value: 'ermil_good', label: 'ru-RU ermil good' },
+            { value: 'ermil_neutral', label: 'ru-RU ermil neutral' },
+            { value: 'alena_good', label: 'ru-RU alena good' },
+            { value: 'alena_neutral', label: 'ru-RU alena neutral' },
+            { value: 'jane_good', label: 'ru-RU jane good' },
+            { value: 'jane_neutral', label: 'ru-RU jane neutral' },
+            { value: 'jane_evil', label: 'ru-RU jane evil' },
+            { value: 'omazh_neutral', label: 'ru-RU omazh neutral' },
+            { value: 'omazh_evil', label: 'ru-RU omazh evil' },
+            { value: 'zahar_good', label: 'ru-RU zahar good' },
+            { value: 'zahar_neutral', label: 'ru-RU zahar neutral' },
+            { value: 'marina_neutral', label: 'ru-RU marina neutral' },
+            { value: 'marina_whisper', label: 'ru-RU marina whisper' },
+            { value: 'marina_friendly', label: 'ru-RU marina friendly' },
+            { value: 'filipp_neutral', label: 'ru-RU filipp neutral' },
+            { value: 'madi_ru_neutral', label: 'ru-RU madi_ru neutral' },
+            // Немецкий (de-DE)
+            { value: 'lea_neutral', label: 'de-DE lea neutral' },
+            // Английский (en-US)
+            { value: 'john_neutral', label: 'en-US john neutral' },
+            // Казахские (kk-KK)
+            { value: 'amira_neutral', label: 'kk-KK amira neutral' },
+            { value: 'madi_neutral', label: 'kk-KK madi neutral' },
+            // Узбекский (uz-UZ)
+            { value: 'nigora_neutral', label: 'uz-UZ nigora neutral' }
         ];
         function initVoiceDropdown() {
             const select = document.getElementById('voiceSelect');
@@ -2614,6 +2624,15 @@
             var voice = parts[0];
             var emotion = parts[1];
             
+            // Определяем язык по голосу
+            var langMap = {
+                'ermil': 'ru-RU', 'alena': 'ru-RU', 'jane': 'ru-RU', 'omazh': 'ru-RU',
+                'zahar': 'ru-RU', 'marina': 'ru-RU', 'filipp': 'ru-RU', 'madi_ru': 'ru-RU',
+                'lea': 'de-DE', 'john': 'en-US', 'amira': 'kk-KK', 'madi': 'kk-KK',
+                'nigora': 'uz-UZ'
+            };
+            var lang = langMap[voice] || 'ru-RU';
+            
             fetch(SERVER_URL + '/text_to_speech', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
@@ -2621,7 +2640,8 @@
                     text: text, 
                     model: 'flash',
                     voice: voice,
-                    emotion: emotion
+                    emotion: emotion,
+                    lang: lang
                 })
             })
             .then(function(resp) {
