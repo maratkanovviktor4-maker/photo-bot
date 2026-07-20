@@ -3306,10 +3306,21 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             recognition.onresult = function(event) {
                 var text = event.results[0][0].transcript;
                 var input = document.getElementById('userInput');
-                input.value = text;
-                input.dispatchEvent(new Event('input'));
-                stopVoiceInput();
-                sendMessage();
+                
+                // Проверка на триггер-слово
+                var triggerWord = 'отправь';
+                if (text.toLowerCase().startsWith(triggerWord)) {
+                    // Убираем триггер-слово из текста
+                    var cleanText = text.substring(triggerWord.length).trim();
+                    input.value = cleanText;
+                    input.dispatchEvent(new Event('input'));
+                    stopVoiceInput();
+                    sendMessage();  // отправляем автоматически
+                } else {
+                    input.value = text;
+                    input.dispatchEvent(new Event('input'));
+                    stopVoiceInput();
+                }
             };
             recognition.onerror = function() {
                 stopVoiceInput();
@@ -3321,6 +3332,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             voiceInputActive = true;
             document.getElementById('micBtn').style.color = '#e74c3c';
         }
+
         var _fileReader = null;
         var _abortCheck = false;
         var _abortController = null;
