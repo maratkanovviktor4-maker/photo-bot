@@ -4466,6 +4466,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
             }
             container.innerHTML = html;
+            // Автоскролл навигации вниз
+            requestAnimationFrame(function() {
+                container.scrollTop = container.scrollHeight;
+            });
+
         }
 
         function updateActiveNavFromScroll() {
@@ -4507,28 +4512,60 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function scrollToMsg(index) {
             var main = document.querySelector('.main');
             if (!main) return;
+            
+            // Проверяем, загружено ли сообщение в DOM
             var target = main.querySelector('.message-row[data-msg-index="' + index + '"]');
-            if (target) {
-                main.style.scrollBehavior = 'auto';
-                // Ищем первый дочерний элемент, который содержит видимый контент
-                var firstChild = target.querySelector('.message-content > :first-child');
-                if (!firstChild) firstChild = target.querySelector('.message-content');
-                if (!firstChild) firstChild = target;
-                
-                var rect = firstChild.getBoundingClientRect();
-                var mainRect = main.getBoundingClientRect();
-                // Отступ от верха main до середины main
-                var offsetToCenter = (mainRect.height / 2);
-                // Прокручиваем так, чтобы верхняя граница firstChild оказалась посередине main
-                var scrollTo = rect.top + main.scrollTop - offsetToCenter;
-                main.scrollTop = Math.max(0, scrollTo);
-                main.style.scrollBehavior = 'smooth';
+            if (!target) {
+                var chat = chats.find(function(c) { return c.id === currentChatId; });
+                if (chat) {
+                    var total = chat.messages.length;
+                    var batchStart = Math.max(0, Math.floor(index / RENDER_BATCH_SIZE) * RENDER_BATCH_SIZE);
+                    
+                    if (renderedCount < total - batchStart) {
+                        var area = document.getElementById('chatArea');
+                        var html = '';
+                        var currentStart = total - renderedCount;
+                        var newStart = Math.max(0, Math.min(currentStart, batchStart));
+                        for (var i = newStart; i < currentStart; i++) {
+                            html += buildMessageHtml(i, chat.messages[i]);
+                        }
+                        var temp = document.createElement('div');
+                        temp.innerHTML = html;
+                        if (area.firstChild) {
+                            area.insertBefore(temp, area.firstChild);
+                        } else {
+                            area.appendChild(temp);
+                        }
+                        renderedCount = total - newStart;
+                        hljs.highlightAll();
+                        setupFloatingCopyButtons();
+                        updateFloatingButtons();
+                    }
+                    
+                    target = main.querySelector('.message-row[data-msg-index="' + index + '"]');
+                }
             }
+            
+            if (!target) return;
+            
+            main.style.scrollBehavior = 'auto';
+            var firstChild = target.querySelector('.message-content > :first-child');
+            if (!firstChild) firstChild = target.querySelector('.message-content');
+            if (!firstChild) firstChild = target;
+            
+            var rect = firstChild.getBoundingClientRect();
+            var mainRect = main.getBoundingClientRect();
+            var offsetToCenter = (mainRect.height / 2);
+            var scrollTo = rect.top + main.scrollTop - offsetToCenter;
+            main.scrollTop = Math.max(0, scrollTo);
+            main.style.scrollBehavior = 'smooth';
+            
             var strips = document.querySelectorAll('.nav-strip');
             for (var i = 0; i < strips.length; i++) { strips[i].classList.remove('active'); }
             var activeStrip = document.querySelector('.nav-strip[data-msg-index="' + index + '"]');
             if (activeStrip) activeStrip.classList.add('active');
         }
+
 
 
         function openHtmlPreview(code) {
