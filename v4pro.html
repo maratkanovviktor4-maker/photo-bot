@@ -1002,6 +1002,27 @@
             }
         }
 
+        function updateOpenEditorStyles() {
+            var editWrapper = document.querySelector('.message-row.user .wrapper');
+            if (!editWrapper) return;
+            var isLight = document.body.classList.contains('light');
+            var customBg = localStorage.getItem('photobot_chat_bg') || '';
+            editWrapper.style.background = customBg ? customBg : (isLight ? '#ffffff' : '#1a1a2e');
+            editWrapper.style.borderColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)';
+            
+            var textarea = editWrapper.querySelector('textarea');
+            if (textarea) {
+                textarea.style.color = isLight ? '#111' : '#e0e0e0';
+                textarea.style.background = 'transparent';
+            }
+            
+            var cancelBtn = editWrapper.querySelector('button');
+            if (cancelBtn) {
+                cancelBtn.style.background = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)';
+                cancelBtn.style.borderColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+                cancelBtn.style.color = isLight ? '#555' : '#a0a0b0';
+            }
+        }
 
 
 
@@ -1027,7 +1048,7 @@
             if (topBar) topBar.style.background = val;
             if (editModal) editModal.style.background = val;
             document.querySelectorAll('.modal-box').forEach(function(el) { el.style.background = val || ''; });
-
+            updateOpenEditorStyles();
             if (inputWrapper) {
                 if (css) {
                     inputWrapper.style.boxShadow = 'none';
@@ -1262,6 +1283,7 @@
             }
             _floatingHeaders = [];
             updateFloatingButtons();
+            updateOpenEditorStyles();
         }
         function changeHighlight() {
             var theme = document.getElementById('highlightSelect').value;
@@ -2015,183 +2037,285 @@
 
 
 
-        async function regenerateUserMessage(msgIndex) {
+        async function regenerateUserMessage(msgIndex, newText) {
             if (isSending) return;
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'user') return;
-            showEditMessageModal(msg.content, function(newText) {
-                if (!newText) return;
-                (async function() {
-                    isSending = true;
-                    if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
-                    sendBtnStop();
-                    msg.content = newText;
-                    chat.messages = chat.messages.slice(0, msgIndex + 1);
-                    
-                    // Мгновенное отображение изменённого сообщения пользователя
-                    var area = document.getElementById('chatArea');
-                    var userRow = area.querySelector('.message-row.user[data-msg-index="' + msgIndex + '"]');
-                    if (userRow) {
-                        var temp = document.createElement('div');
-                        temp.innerHTML = '<div class="message-row user"><div><div class="message-content">' + escapeHtml(newText) + '</div></div></div>';
-                        userRow.parentNode.replaceChild(temp.firstElementChild, userRow);
+            if (!newText) return;
+            (async function() {
+                isSending = true;
+                if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
+                sendBtnStop();
+                msg.content = newText;
+                chat.messages = chat.messages.slice(0, msgIndex + 1);
+                
+                // Мгновенное отображение изменённого сообщения пользователя
+                var area = document.getElementById('chatArea');
+                var userRow = area.querySelector('.message-row.user[data-msg-index="' + msgIndex + '"]');
+                if (userRow) {
+                    var temp = document.createElement('div');
+                    temp.innerHTML = '<div class="message-row user"><div><div class="message-content">' + escapeHtml(newText) + '</div></div></div>';
+                    userRow.parentNode.replaceChild(temp.firstElementChild, userRow);
+                }
+                playSound('send');
+                
+                var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
+                chat.messages.push(assistantMsg);
+                var newMsgIndex = chat.messages.length - 1;
+                var streamId = 'regen_user_stream_' + newMsgIndex;
+                activeStreamId = streamId;
+                renderMessages();
+
+                var abortController = new AbortController();
+                assistantMsg._abortController = abortController;
+
+                try {
+                    var resp = await fetch(SERVER_URL + '/regenerate_user', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText }),
+                        signal: abortController.signal
+                    });
+                    if (!resp.ok) {
+                        var errData = await resp.json().catch(() => ({}));
+                        let errorMessage = errData.error || 'Ошибка сервера.';
+                        showAlertModal('Ошибка', errorMessage, '❌');
+                        return;
                     }
-                    playSound('send');
-                    
-                    var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
-                    chat.messages.push(assistantMsg);
-                    var newMsgIndex = chat.messages.length - 1;
-                    var streamId = 'regen_user_stream_' + newMsgIndex;
-                    activeStreamId = streamId;
+                    var contentType = resp.headers.get('content-type') || '';
+                    if (!contentType.includes('text/event-stream')) {
+                        var errJson = await resp.json().catch(() => ({}));
+                        let errorMessage = errJson.error || 'Ошибка сервера.';
+                        if (errJson.error_type === 'bad_request') {
+                            errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
+                        } else if (errJson.error_type === 'rate_limited') {
+                            errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
+                        } else if (errJson.error_type === 'deepseek_error') {
+                            errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
+                        } else if (errJson.error_type === 'deepseek_overloaded') {
+                            errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                        }
+                        assistantMsg._error_type = errJson.error_type || null;
+                        assistantMsg.content = errorMessage;
+                        assistantMsg.finished = true;
+                        renderMessages();
+                        isSending = false;
+                        sendBtnArrow();
+                        return;
+                    }
+                    var reader = resp.body.getReader();
+                    var decoder = new TextDecoder();
+                    var buffer = '';
+                    var sendBtnRef = document.getElementById('sendBtn');
+                    sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
+                    sendBtnRef.onclick = function() { stopTyping(); };
+                    while (true) {
+                        var readResult = await reader.read();
+                        if (readResult.done) break;
+                        buffer += decoder.decode(readResult.value, { stream: true });
+                        var lines = buffer.split('\n');
+                        buffer = lines.pop() || '';
+                        for (var i = 0; i < lines.length; i++) {
+                            var line = lines[i];
+                            if (!line.startsWith('data: ')) continue;
+                            var dataStr = line.slice(6).trim();
+                            if (dataStr === '[DONE]') continue;
+                            try {
+                                var parsed = JSON.parse(dataStr);
+                                if (parsed.error_type) {
+                                    let errorMessage = 'Ошибка сервера.';
+                                    if (parsed.error_type === 'bad_request') {
+                                        errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
+                                    } else if (parsed.error_type === 'rate_limited') {
+                                        errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
+                                    } else if (parsed.error_type === 'deepseek_error') {
+                                        errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
+                                    } else if (parsed.error_type === 'deepseek_overloaded') {
+                                        errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
+                                } else if (parsed.error_type === 'server_timeout') {
+                                        errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
+                                }
+                                    showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
+                                    return;
+                                }
+
+                                if (parsed.assistant_msg_id) {
+                                    assistantMsg.msg_id = parsed.assistant_msg_id;
+                                } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
+                                    if (parsed.reasoning) {
+                                        assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                    }
+                                    if (parsed.content) {
+                                        assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
+                                    }
+                                    assistantMsg.content = assistantMsg._fullBuffer || '';
+                                    var msgEl = document.getElementById('stream-' + newMsgIndex);
+                                    if (msgEl) {
+                                        requestAnimationFrame(function() {
+                                            streamUpdateDOM(msgEl, assistantMsg);
+                                        });
+                                    }
+
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                    assistantMsg.finished = true;
+                    assistantMsg._streaming = false;
+                    assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
+                    await updateBranchesFromServer();
+                    if (chat.allBranches && chat.allBranches[currentBranchId]) {
+                        var branchMsgs = chat.allBranches[currentBranchId].messages || [];
+                        var lastMsg = branchMsgs[branchMsgs.length - 1];
+                        if (lastMsg && lastMsg.role === 'assistant') {
+                            lastMsg.reasoning = assistantMsg._reasoningBuffer || '';
+                            lastMsg._reasoningBuffer = assistantMsg._reasoningBuffer || '';
+                        }
+                        chat.messages = branchMsgs;
+                    }
+                    chat.lastMessageTime = Date.now();
+                    chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                    autoNameChat(chat);
                     renderMessages();
-
-                    var abortController = new AbortController();
-                    assistantMsg._abortController = abortController;
-
-                    try {
-                        var resp = await fetch(SERVER_URL + '/regenerate_user', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                            body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText }),
-                            signal: abortController.signal
-                        });
-                        if (!resp.ok) {
-                            var errData = await resp.json().catch(() => ({}));
-                            let errorMessage = errData.error || 'Ошибка сервера.';
-                            showAlertModal('Ошибка', errorMessage, '❌');
-                            return;
+                    renderChatList();
+                    renderBranchesPanel();
+                    updateBalance();
+                    playSound('reply');
+                    // Автоозвучка
+                    if (autoSpeakEnabled && chat.messages.length > 0) {
+                        var lastMsg = chat.messages[chat.messages.length - 1];
+                        if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.interrupted) {
+                            speakMessage(chat.messages.length - 1);
                         }
-                        var contentType = resp.headers.get('content-type') || '';
-                        if (!contentType.includes('text/event-stream')) {
-                            var errJson = await resp.json().catch(() => ({}));
-                            let errorMessage = errJson.error || 'Ошибка сервера.';
-                            if (errJson.error_type === 'bad_request') {
-                                errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
-                            } else if (errJson.error_type === 'rate_limited') {
-                                errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
-                            } else if (errJson.error_type === 'deepseek_error') {
-                                errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
-                            } else if (errJson.error_type === 'deepseek_overloaded') {
-                                errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                            }
-                            assistantMsg._error_type = errJson.error_type || null;
-                            assistantMsg.content = errorMessage;
-                            assistantMsg.finished = true;
-                            renderMessages();
-                            isSending = false;
-                            sendBtnArrow();
-                            return;
-                        }
-                        var reader = resp.body.getReader();
-                        var decoder = new TextDecoder();
-                        var buffer = '';
-                        var sendBtnRef = document.getElementById('sendBtn');
-                        sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
-                        sendBtnRef.onclick = function() { stopTyping(); };
-                        while (true) {
-                            var readResult = await reader.read();
-                            if (readResult.done) break;
-                            buffer += decoder.decode(readResult.value, { stream: true });
-                            var lines = buffer.split('\n');
-                            buffer = lines.pop() || '';
-                            for (var i = 0; i < lines.length; i++) {
-                                var line = lines[i];
-                                if (!line.startsWith('data: ')) continue;
-                                var dataStr = line.slice(6).trim();
-                                if (dataStr === '[DONE]') continue;
-                                try {
-                                    var parsed = JSON.parse(dataStr);
-                                    if (parsed.error_type) {
-                                        let errorMessage = 'Ошибка сервера.';
-                                        if (parsed.error_type === 'bad_request') {
-                                            errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
-                                        } else if (parsed.error_type === 'rate_limited') {
-                                            errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
-                                        } else if (parsed.error_type === 'deepseek_error') {
-                                            errorMessage = 'Ошибка DeepSeek. Пожалуйста, повторите запрос после непродолжительной паузы.';
-                                        } else if (parsed.error_type === 'deepseek_overloaded') {
-                                            errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
-                                	} else if (parsed.error_type === 'server_timeout') {
-                                    	    errorMessage = 'Сервер не дождался ответа от DeepSeek 000503. Попробуйте позже.';
-                                	}
-                                        showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
-                                        return;
-                                    }
-
-                                    if (parsed.assistant_msg_id) {
-                                        assistantMsg.msg_id = parsed.assistant_msg_id;
-                                    } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
-                                        if (parsed.reasoning) {
-                                            assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
-                                        }
-                                        if (parsed.content) {
-                                            assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
-                                        }
-                                        assistantMsg.content = assistantMsg._fullBuffer || '';
-                                        var msgEl = document.getElementById('stream-' + newMsgIndex);
-                                        if (msgEl) {
-                                            requestAnimationFrame(function() {
-                                                streamUpdateDOM(msgEl, assistantMsg);
-                                            });
-                                        }
-
-                                    }
-                                } catch (e) {}
-                            }
-                        }
+                    }
+                    isSending = false;
+                    updateContextBattery();
+                    activeStreamId = null;
+                    sendBtnArrow();
+                } catch (e) {
+                    if (e.name === 'AbortError') {
+                        assistantMsg.interrupted = true;
                         assistantMsg.finished = true;
                         assistantMsg._streaming = false;
-                        assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
-                        await updateBranchesFromServer();
-                        if (chat.allBranches && chat.allBranches[currentBranchId]) {
-                            var branchMsgs = chat.allBranches[currentBranchId].messages || [];
-                            var lastMsg = branchMsgs[branchMsgs.length - 1];
-                            if (lastMsg && lastMsg.role === 'assistant') {
-                                lastMsg.reasoning = assistantMsg._reasoningBuffer || '';
-                                lastMsg._reasoningBuffer = assistantMsg._reasoningBuffer || '';
-                            }
-                            chat.messages = branchMsgs;
-                        }
-                        chat.lastMessageTime = Date.now();
-                        chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
-                        autoNameChat(chat);
-                        renderMessages();
-                        renderChatList();
-                        renderBranchesPanel();
-                        updateBalance();
-                        playSound('reply');
-                        // Автоозвучка
-                        if (autoSpeakEnabled && chat.messages.length > 0) {
-                            var lastMsg = chat.messages[chat.messages.length - 1];
-                            if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.interrupted) {
-                                speakMessage(chat.messages.length - 1);
-                            }
-                        }
                         isSending = false;
-                        updateContextBattery();
                         activeStreamId = null;
                         sendBtnArrow();
-                    } catch (e) {
-                        if (e.name === 'AbortError') {
-                            assistantMsg.interrupted = true;
-                            assistantMsg.finished = true;
-                            assistantMsg._streaming = false;
-                            isSending = false;
-                            activeStreamId = null;
-                            sendBtnArrow();
-                        } else {
-                            console.error('regenerateUserMessage error:', e);
-                            showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
-                            isSending = false;
-                            sendBtnArrow();
-                        }
+                    } else {
+                        console.error('regenerateUserMessage error:', e);
+                        showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
+                        isSending = false;
+                        sendBtnArrow();
                     }
-                })();
-            });
+                }
+            })();
+        
         }
-
+        function toggleInlineEdit(index) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[index];
+            if (!msg || msg.role !== 'user') return;
+            
+            var area = document.getElementById('chatArea');
+            var row = area.querySelector('.message-row.user[data-msg-index="' + index + '"]');
+            if (!row) return;
+            
+            if (row._editing) return;
+            row._editing = true;
+            
+            var originalContent = msg.content;
+            var contentDiv = row.querySelector('.message-content');
+            contentDiv.style.display = 'none';
+            
+            var isLight = document.body.classList.contains('light');
+            var customBg = localStorage.getItem('photobot_chat_bg') || '';
+            var bgColor = customBg ? customBg : (isLight ? '#ffffff' : '#1a1a2e');
+            var borderColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)';
+            var textColor = isLight ? '#111' : '#e0e0e0';
+            var btnBg = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)';
+            var btnBorder = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+            var btnColor = isLight ? '#555' : '#a0a0b0';
+            
+            var wrapper = document.createElement('div');
+            wrapper.style.cssText = 'width:100%;flex-shrink:0;background:' + bgColor + ';border:2px solid ' + borderColor + ';border-radius:16px;overflow:hidden;';
+            wrapper.classList.add('wrapper');
+            var textarea = document.createElement('textarea');
+            textarea.value = originalContent;
+            textarea.style.cssText = 'width:100%;padding:10px 14px;background:transparent;color:' + textColor + ';border:none;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',\'Roboto\',\'Helvetica Neue\',Arial,sans-serif;font-size:15px;outline:none;resize:none;min-height:48px;max-height:300px;overflow-y:auto;line-height:1.5;box-sizing:border-box;';
+            
+            var toolbar = document.createElement('div');
+            toolbar.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;justify-content:flex-end;';
+            
+            var excessLabel = document.createElement('span');
+            excessLabel.style.cssText = 'display:none;color:#e74c3c;font-size:12px;font-family:Inter,sans-serif;margin-right:auto;';
+            
+            var cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Отмена';
+            cancelBtn.style.cssText = 'padding:6px 16px;background:' + btnBg + ';border:1px solid ' + btnBorder + ';color:' + btnColor + ';border-radius:16px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;font-weight:500;transition:transform 0.2s ease;';
+            cancelBtn.onmouseenter = function() { cancelBtn.style.transform = 'translateY(-2px)'; };
+            cancelBtn.onmouseleave = function() { cancelBtn.style.transform = 'translateY(0)'; };
+            
+            var saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Отправить';
+            saveBtn.style.cssText = 'padding:6px 16px;background:linear-gradient(90deg,#00CBF5,#14E9FC);border:2px solid transparent;color:#201F28;border-radius:16px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;font-weight:600;transition:transform 0.2s ease;box-shadow:0 4px 16px rgba(0,203,245,0.3);';
+            saveBtn.onmouseenter = function() { saveBtn.style.transform = 'translateY(-2px)'; };
+            saveBtn.onmouseleave = function() { saveBtn.style.transform = 'translateY(0)'; };
+            
+            function updateExcess() {
+                var text = textarea.value;
+                var MAX_LENGTH = 500000;
+                var excess = text.length - MAX_LENGTH;
+                if (excess > 0) {
+                    var percent = Math.ceil((excess / MAX_LENGTH) * 100);
+                    excessLabel.textContent = '+' + percent + '%';
+                    excessLabel.style.display = 'inline';
+                    saveBtn.disabled = true;
+                    saveBtn.style.opacity = '0.5';
+                    saveBtn.style.cursor = 'not-allowed';
+                } else {
+                    excessLabel.style.display = 'none';
+                    saveBtn.disabled = false;
+                    saveBtn.style.opacity = '1';
+                    saveBtn.style.cursor = 'pointer';
+                }
+            }
+            
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 300) + 'px';
+                updateExcess();
+            });
+            
+            cancelBtn.onclick = function() {
+                contentDiv.style.display = '';
+                wrapper.remove();
+                row._editing = false;
+            };
+            
+            saveBtn.onclick = function() {
+                if (saveBtn.disabled) return;
+                var newText = textarea.value.trim();
+                if (!newText) return;
+                contentDiv.style.display = '';
+                wrapper.remove();
+                row._editing = false;
+                regenerateUserMessage(index, newText);
+            };
+            
+            toolbar.appendChild(excessLabel);
+            toolbar.appendChild(cancelBtn);
+            toolbar.appendChild(saveBtn);
+            wrapper.appendChild(textarea);
+            wrapper.appendChild(toolbar);
+            
+            var msgDiv = row.querySelector('div');
+            var actionsDiv = msgDiv.querySelector('.message-actions');
+            msgDiv.insertBefore(wrapper, actionsDiv);
+            
+            setTimeout(function() { textarea.focus(); }, 50);
+        }
 
 
         function showRegeneratePopup(msgIndex, btnElement) {
@@ -2474,7 +2598,7 @@
             var actionsHtml = '';
             if (msg.role === 'user') {
                 actionsHtml += '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
-                actionsHtml += '<button onclick="regenerateUserMessage(' + index + ')" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>';
+                actionsHtml += '<button onclick="toggleInlineEdit(' + index + ')" title="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>';
                 actionsHtml += '<button class="branch-btn" onclick="createBranchFromMessage(' + index + ')" title="Ответвить от этого сообщения"><svg width="14" height="14" viewBox="0 0 48 48" style="transform: scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg></button>';
             } else {
                 actionsHtml += '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
