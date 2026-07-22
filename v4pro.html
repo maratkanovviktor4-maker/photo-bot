@@ -2689,11 +2689,26 @@
                 if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
                 return;
             }
-            area.innerHTML = chat.messages.map((m, i) => buildMessageHtml(i, m)).join('');
+            var total = chat.messages.length;
+            var start = Math.max(0, total - RENDER_BATCH_SIZE);
+            renderedCount = total - start;
+            var html = '';
+            for (var i = start; i < total; i++) {
+                html += buildMessageHtml(i, chat.messages[i]);
+            }
+            area.innerHTML = html;
+
             hljs.highlightAll();
             setupFloatingCopyButtons();
             updateFloatingButtons();
             buildNavContainer();
+            if (!window._mainScrollListenerAdded) {
+                var mainEl3 = document.querySelector('.main');
+                if (mainEl3) {
+                    mainEl3.addEventListener('scroll', handleScrollLoad);
+                    window._mainScrollListenerAdded = true;
+                }
+            }
             updateBranchIndicator();
             if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
             if (!window._mainScrollListenerAdded) {
@@ -2712,8 +2727,9 @@
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
             if (!chat || chat.messages.length === 0) {
-                area.innerHTML = '<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Pro" onerror="this.style.display=\'none\'"><div class="title">DeepSeek V4 Pro</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>';
+                area.innerHTML = '<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display=\'none\'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>';
                 _floatingHeaders = [];
+                renderedCount = 0;
                 hljs.highlightAll();
                 setupFloatingCopyButtons();
                 updateFloatingButtons();
@@ -2722,32 +2738,81 @@
                 if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
                 return;
             }
-            var emptyState = area.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
-            removeRedundantMessages(area, chat.messages.length);
-            for (let i = 0; i < chat.messages.length; i++) {
-                const m = chat.messages[i];
-                const shouldUpdate = m._streaming || !area.children[i] || String(area.children[i].dataset.msgIndex) !== String(i);
-                if (shouldUpdate) {
-                    const newHtml = buildMessageHtml(i, m);
-                    patchMessageDom(area, i, newHtml);
-                }
+            
+            var total = chat.messages.length;
+            var start = Math.max(0, total - RENDER_BATCH_SIZE);
+            renderedCount = total - start;
+            
+            var html = '';
+            for (var i = start; i < total; i++) {
+                html += buildMessageHtml(i, chat.messages[i]);
             }
+            area.innerHTML = html;
+            
             _floatingHeaders = [];
             hljs.highlightAll();
             setupFloatingCopyButtons();
             updateFloatingButtons();
             buildNavContainer();
             updateBranchIndicator();
-            if (autoScroll) { var main2 = document.querySelector('.main'); if (main2) { main2.style.scrollBehavior = 'auto'; main2.scrollTop = main2.scrollHeight; main2.style.scrollBehavior = 'smooth'; } }
+            
+            if (autoScroll) {
+                var main2 = document.querySelector('.main');
+                if (main2) {
+                    main2.style.scrollBehavior = 'auto';
+                    main2.scrollTop = main2.scrollHeight;
+                    main2.style.scrollBehavior = 'smooth';
+                }
+            }
+            
             if (!window._mainScrollListenerAdded) {
                 var mainEl3 = document.querySelector('.main');
                 if (mainEl3) {
-                    mainEl3.addEventListener('scroll', updateFloatingButtons);
+                    mainEl3.addEventListener('scroll', handleScrollLoad);
                     window._mainScrollListenerAdded = true;
                 }
             }
         }
+        
+        function handleScrollLoad() {
+            var chat = chats.find(c => c.id === currentChatId);
+            if (!chat || renderedCount >= chat.messages.length) return;
+
+            var main = document.querySelector('.main');
+            if (!main) return;
+            if (main.scrollTop < RENDER_TRIGGER_OFFSET * 30) {
+                loadMoreMessages();
+            }
+        }
+        
+        function loadMoreMessages() {
+            var chat = chats.find(c => c.id === currentChatId);
+            if (!chat) return;
+            var total = chat.messages.length;
+            if (renderedCount >= total) return;
+            
+            var currentStart = total - renderedCount;
+            var newStart = Math.max(0, currentStart - RENDER_BATCH_SIZE);
+            var count = currentStart - newStart;
+            
+            var area = document.getElementById('chatArea');
+            var html = '';
+            for (var i = newStart; i < currentStart; i++) {
+                html += buildMessageHtml(i, chat.messages[i]);
+            }
+            
+            var temp = document.createElement('div');
+            temp.innerHTML = html;
+            area.insertBefore(temp, area.firstChild);
+            
+            renderedCount += count;
+            
+            hljs.highlightAll();
+            setupFloatingCopyButtons();
+            updateFloatingButtons();
+            buildNavContainer();
+        }
+
 
 
 
@@ -3311,7 +3376,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         input.addEventListener('input', function() { updateSendBtn(); updateLengthExcess(); });
         updateSendBtn();
         updateAutoSpeakBtn();
-        
+        var RENDER_BATCH_SIZE = 50;
+        var RENDER_TRIGGER_OFFSET = 40;
+        var renderedCount = 0;
+
         var copyHistorySourceIndex = -1;
         var promptMsgIndex = -1;
 
