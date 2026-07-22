@@ -2194,46 +2194,41 @@
             if (!msg || msg.role !== 'user') return;
             
             var area = document.getElementById('chatArea');
-            var row = area.querySelector('.message-row[data-msg-index="' + index + '"]');
+            var row = area.querySelector('.message-row.user[data-msg-index="' + index + '"]');
             if (!row) return;
             
-            if (row._editing) {
-                return;
-            }
+            if (row._editing) return;
             row._editing = true;
             
             var originalContent = msg.content;
             var contentDiv = row.querySelector('.message-content');
+            var originalHTML = contentDiv.innerHTML;
             contentDiv.style.display = 'none';
             
-            var editContainer = document.createElement('div');
-            editContainer.style.cssText = 'display:flex;flex-direction:column;gap:8px;width:100%;';
+            var wrapper = document.createElement('div');
+            wrapper.style.cssText = 'width:100%;background:' + (document.body.classList.contains('light') ? '#ffffff' : '#1a1a2e') + ';border:2px solid ' + (document.body.classList.contains('light') ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)') + ';border-radius:16px;overflow:hidden;';
             
             var textarea = document.createElement('textarea');
             textarea.value = originalContent;
-            textarea.style.cssText = 'width:100%;padding:10px 14px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:14px;font-family:Inter,sans-serif;outline:none;resize:none;min-height:60px;';
-            if (document.body.classList.contains('light')) {
-                textarea.style.background = '#ffffff';
-                textarea.style.color = '#111';
-                textarea.style.border = '2px solid rgba(0,0,0,0.1)';
-            }
-            textarea.style.height = 'auto';
-            textarea.style.height = Math.min(textarea.scrollHeight, 300) + 'px';
+            textarea.style.cssText = 'width:100%;padding:10px 14px;background:transparent;color:' + (document.body.classList.contains('light') ? '#111' : '#e0e0e0') + ';border:none;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',\'Roboto\',\'Helvetica Neue\',Arial,sans-serif;font-size:15px;outline:none;resize:none;min-height:48px;max-height:300px;overflow-y:auto;line-height:1.5;box-sizing:border-box;';
             
             var toolbar = document.createElement('div');
-            toolbar.style.cssText = 'display:flex;align-items:center;gap:8px;';
+            toolbar.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;justify-content:flex-end;';
             
             var excessLabel = document.createElement('span');
-            excessLabel.id = 'editExcess_' + index;
-            excessLabel.style.cssText = 'display:none;color:#e74c3c;font-size:12px;font-family:Inter,sans-serif;';
+            excessLabel.style.cssText = 'display:none;color:#e74c3c;font-size:12px;font-family:Inter,sans-serif;margin-right:auto;';
             
             var cancelBtn = document.createElement('button');
             cancelBtn.textContent = 'Отмена';
-            cancelBtn.style.cssText = 'padding:6px 16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#a0a0b0;border-radius:16px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;font-weight:500;';
+            cancelBtn.style.cssText = 'padding:6px 16px;background:' + (document.body.classList.contains('light') ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)') + ';border:1px solid ' + (document.body.classList.contains('light') ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)') + ';color:' + (document.body.classList.contains('light') ? '#555' : '#a0a0b0') + ';border-radius:16px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;font-weight:500;transition:transform 0.2s ease;';
+            cancelBtn.onmouseenter = function() { cancelBtn.style.transform = 'translateY(-2px)'; };
+            cancelBtn.onmouseleave = function() { cancelBtn.style.transform = 'translateY(0)'; };
             
             var saveBtn = document.createElement('button');
             saveBtn.textContent = 'Отправить';
-            saveBtn.style.cssText = 'padding:6px 16px;background:linear-gradient(90deg,#00CBF5,#14E9FC);border:2px solid transparent;color:#201F28;border-radius:16px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;font-weight:600;';
+            saveBtn.style.cssText = 'padding:6px 16px;background:linear-gradient(90deg,#00CBF5,#14E9FC);border:2px solid transparent;color:#201F28;border-radius:16px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;font-weight:600;transition:transform 0.2s ease;box-shadow:0 4px 16px rgba(0,203,245,0.3);';
+            saveBtn.onmouseenter = function() { saveBtn.style.transform = 'translateY(-2px)'; };
+            saveBtn.onmouseleave = function() { saveBtn.style.transform = 'translateY(0)'; };
             
             function updateExcess() {
                 var text = textarea.value;
@@ -2244,9 +2239,13 @@
                     excessLabel.textContent = '+' + percent + '%';
                     excessLabel.style.display = 'inline';
                     saveBtn.disabled = true;
+                    saveBtn.style.opacity = '0.5';
+                    saveBtn.style.cursor = 'not-allowed';
                 } else {
                     excessLabel.style.display = 'none';
                     saveBtn.disabled = false;
+                    saveBtn.style.opacity = '1';
+                    saveBtn.style.cursor = 'pointer';
                 }
             }
             
@@ -2258,27 +2257,28 @@
             
             cancelBtn.onclick = function() {
                 contentDiv.style.display = '';
-                editContainer.remove();
+                wrapper.remove();
                 row._editing = false;
             };
             
             saveBtn.onclick = function() {
+                if (saveBtn.disabled) return;
                 var newText = textarea.value.trim();
                 if (!newText) return;
                 contentDiv.style.display = '';
-                editContainer.remove();
+                wrapper.remove();
                 row._editing = false;
-                regenerateUserMessage(index);
+                regenerateUserMessage(index, newText);
             };
             
             toolbar.appendChild(excessLabel);
             toolbar.appendChild(cancelBtn);
             toolbar.appendChild(saveBtn);
-            editContainer.appendChild(textarea);
-            editContainer.appendChild(toolbar);
-            row.querySelector('div').appendChild(editContainer);
+            wrapper.appendChild(textarea);
+            wrapper.appendChild(toolbar);
+            row.querySelector('div').appendChild(wrapper);
             
-            textarea.focus();
+            setTimeout(function() { textarea.focus(); }, 50);
         }
 
 
