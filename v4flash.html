@@ -2202,15 +2202,23 @@
             
             var originalContent = msg.content;
             var contentDiv = row.querySelector('.message-content');
-            var originalHTML = contentDiv.innerHTML;
             contentDiv.style.display = 'none';
             
+            var isLight = document.body.classList.contains('light');
+            var customBg = localStorage.getItem('photobot_chat_bg') || '';
+            var bgColor = customBg ? customBg : (isLight ? '#ffffff' : '#1a1a2e');
+            var borderColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)';
+            var textColor = isLight ? '#111' : '#e0e0e0';
+            var btnBg = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)';
+            var btnBorder = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+            var btnColor = isLight ? '#555' : '#a0a0b0';
+            
             var wrapper = document.createElement('div');
-            wrapper.style.cssText = 'width:100%;background:' + (document.body.classList.contains('light') ? '#ffffff' : '#1a1a2e') + ';border:2px solid ' + (document.body.classList.contains('light') ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)') + ';border-radius:16px;overflow:hidden;';
+            wrapper.style.cssText = 'min-width:300px;background:' + bgColor + ';border:2px solid ' + borderColor + ';border-radius:16px;overflow:hidden;';
             
             var textarea = document.createElement('textarea');
             textarea.value = originalContent;
-            textarea.style.cssText = 'width:100%;padding:10px 14px;background:transparent;color:' + (document.body.classList.contains('light') ? '#111' : '#e0e0e0') + ';border:none;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',\'Roboto\',\'Helvetica Neue\',Arial,sans-serif;font-size:15px;outline:none;resize:none;min-height:48px;max-height:300px;overflow-y:auto;line-height:1.5;box-sizing:border-box;';
+            textarea.style.cssText = 'width:100%;padding:10px 14px;background:transparent;color:' + textColor + ';border:none;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',\'Roboto\',\'Helvetica Neue\',Arial,sans-serif;font-size:15px;outline:none;resize:none;min-height:48px;max-height:300px;overflow-y:auto;line-height:1.5;box-sizing:border-box;';
             
             var toolbar = document.createElement('div');
             toolbar.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;justify-content:flex-end;';
@@ -2220,7 +2228,7 @@
             
             var cancelBtn = document.createElement('button');
             cancelBtn.textContent = 'Отмена';
-            cancelBtn.style.cssText = 'padding:6px 16px;background:' + (document.body.classList.contains('light') ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)') + ';border:1px solid ' + (document.body.classList.contains('light') ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)') + ';color:' + (document.body.classList.contains('light') ? '#555' : '#a0a0b0') + ';border-radius:16px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;font-weight:500;transition:transform 0.2s ease;';
+            cancelBtn.style.cssText = 'padding:6px 16px;background:' + btnBg + ';border:1px solid ' + btnBorder + ';color:' + btnColor + ';border-radius:16px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;font-weight:500;transition:transform 0.2s ease;';
             cancelBtn.onmouseenter = function() { cancelBtn.style.transform = 'translateY(-2px)'; };
             cancelBtn.onmouseleave = function() { cancelBtn.style.transform = 'translateY(0)'; };
             
@@ -2276,10 +2284,14 @@
             toolbar.appendChild(saveBtn);
             wrapper.appendChild(textarea);
             wrapper.appendChild(toolbar);
-            row.querySelector('div').appendChild(wrapper);
+            
+            var msgDiv = row.querySelector('div');
+            var actionsDiv = msgDiv.querySelector('.message-actions');
+            msgDiv.insertBefore(wrapper, actionsDiv);
             
             setTimeout(function() { textarea.focus(); }, 50);
         }
+
 
 
         function showRegeneratePopup(msgIndex, btnElement) {
