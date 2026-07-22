@@ -1025,6 +1025,7 @@
             if (topBar) topBar.style.background = val;
             if (editModal) editModal.style.background = val;
             document.querySelectorAll('.modal-box').forEach(function(el) { el.style.background = val || ''; });
+            updateOpenEditorStyles();
 
             if (inputWrapper) {
                 if (css) {
@@ -1047,6 +1048,27 @@
                 }
             } else {
                 document.body.classList.remove('custom-dark-bg');
+            }
+        }
+        function updateOpenEditorStyles() {
+            var editWrapper = document.querySelector('.message-row.user .wrapper');
+            if (!editWrapper) return;
+            var isLight = document.body.classList.contains('light');
+            var customBg = localStorage.getItem('photobot_chat_bg') || '';
+            editWrapper.style.background = customBg ? customBg : (isLight ? '#ffffff' : '#1a1a2e');
+            editWrapper.style.borderColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)';
+            
+            var textarea = editWrapper.querySelector('textarea');
+            if (textarea) {
+                textarea.style.color = isLight ? '#111' : '#e0e0e0';
+                textarea.style.background = 'transparent';
+            }
+            
+            var cancelBtn = editWrapper.querySelector('button');
+            if (cancelBtn) {
+                cancelBtn.style.background = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)';
+                cancelBtn.style.borderColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+                cancelBtn.style.color = isLight ? '#555' : '#a0a0b0';
             }
         }
 
@@ -1260,6 +1282,7 @@
             }
             _floatingHeaders = [];
             updateFloatingButtons();
+            updateOpenEditorStyles();
         }
         function changeHighlight() {
             var theme = document.getElementById('highlightSelect').value;
@@ -2214,8 +2237,8 @@
             var btnColor = isLight ? '#555' : '#a0a0b0';
             
             var wrapper = document.createElement('div');
-            wrapper.style.cssText = 'min-width:300px;background:' + bgColor + ';border:2px solid ' + borderColor + ';border-radius:16px;overflow:hidden;';
-            
+            wrapper.style.cssText = 'width:100%;flex-shrink:0;background:' + bgColor + ';border:2px solid ' + borderColor + ';border-radius:16px;overflow:hidden;';
+            wrapper.classList.add('wrapper');
             var textarea = document.createElement('textarea');
             textarea.value = originalContent;
             textarea.style.cssText = 'width:100%;padding:10px 14px;background:transparent;color:' + textColor + ';border:none;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',\'Roboto\',\'Helvetica Neue\',Arial,sans-serif;font-size:15px;outline:none;resize:none;min-height:48px;max-height:300px;overflow-y:auto;line-height:1.5;box-sizing:border-box;';
