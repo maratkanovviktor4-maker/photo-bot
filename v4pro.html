@@ -600,6 +600,7 @@
                             <button class="mode-btn" id="reasonerToggle" onclick="toggleReasoner()" style="font-size:11px;padding:4px 10px;display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;"><ellipse cx="12" cy="12" rx="10" ry="4" /><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(72 12 12)" /><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(144 12 12)" /><circle cx="12" cy="12" r="2" fill="currentColor" /><circle cx="22" cy="12" r="1.5" fill="currentColor" /><circle cx="8" cy="5" r="1" fill="currentColor" /><circle cx="16" cy="19" r="1.2" fill="currentColor" /></svg> Глубокое мышление</button>
 
                             <span class="file-name-inline" id="fileNameInline"></span>
+                            <span id="lengthExcess" style="display:none; color:#e74c3c; font-size:12px; font-family:'Inter',sans-serif; cursor:pointer;" title="суммарное превышение длины текста"></span>
                             <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" transform="rotate(-45 12 12)"/></svg></button>
                             <button id="autoSpeakBtn" class="attach-btn" onclick="toggleAutoSpeak()" title="Автоозвучка" style="color:#888;">
                                 <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" /></svg>
@@ -2823,6 +2824,31 @@
                 renderChatList();
             }
         }
+        function updateLengthExcess() {
+            var text = document.getElementById('userInput').value;
+            var fileLength = 0;
+            if (pendingFile && pendingFile.data) {
+                try {
+                    var decoded = atob(pendingFile.data);
+                    fileLength = decoded.length;
+                } catch(e) {}
+            }
+            var total = text.length + fileLength;
+            var MAX_LENGTH = 500000;
+            var excess = total - MAX_LENGTH;
+            var el = document.getElementById('lengthExcess');
+            var btn = document.getElementById('sendBtn');
+            
+            if (excess > 0) {
+                var percent = Math.ceil((excess / MAX_LENGTH) * 100);
+                el.textContent = '+' + percent + '%';
+                el.style.display = 'inline';
+                btn.disabled = true;
+            } else {
+                el.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
 
         function updateFileList() {
             const inline = document.getElementById('fileNameInline');
@@ -2846,8 +2872,10 @@
                 }
                 sizeInfo += ')';
             }
-            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:' + color + ';">' + icon + ' ' + escapeHtml(pendingFile.name) + sizeInfo + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:' + color + ';">' + icon + ' ' + escapeHtml(pendingFile.name) + sizeInfo + '</span> <button onclick="pendingFile=null;updateFileList();updateLengthExcess();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
             updateSendBtn();
+            updateLengthExcess();
+
         }
 
         async function handleFileSelect(e) {
@@ -3135,7 +3163,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             }
             btn.disabled = !((hasText || hasFile) && fileOk);
         }
-        input.addEventListener('input', updateSendBtn);
+        input.addEventListener('input', function() { updateSendBtn(); updateLengthExcess(); });
         updateSendBtn();
         updateAutoSpeakBtn();
         
@@ -3536,6 +3564,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             pendingFile = null;
             var inline = document.getElementById('fileNameInline');
             if (inline) inline.innerHTML = '';
+            updateLengthExcess();
         }
 
 
