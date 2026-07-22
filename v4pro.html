@@ -3710,7 +3710,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 // Очищаем файл сразу после отправки запроса
                 pendingFile = null;
                 updateFileList();
-
+                if (resp.status === 406) {
+                    var errData = await resp.json().catch(() => ({}));
+                    showAlertModal('Слишком длинный текст', errData.error || 'Суммарная длина текста превышает лимит.', '⚠️');
+                    return;
+                }
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
