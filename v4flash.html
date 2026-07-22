@@ -2242,9 +2242,7 @@
             wrapper.style.cssText = 'width:581px;flex-shrink:0;background:' + bgColor + ';border:2px solid ' + borderColor + ';border-radius:16px;overflow:hidden;';
             wrapper.classList.add('wrapper');
             var textarea = document.createElement('textarea');
-            textarea.value = originalContent;
-            textarea.style.height = 'auto';
-            textarea.style.height = Math.min(textarea.scrollHeight, 300) + 'px';            
+            textarea.value = originalContent;            
             textarea.style.cssText = 'width:100%;padding:10px 14px;background:transparent;color:' + textColor + ';border:none;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',\'Roboto\',\'Helvetica Neue\',Arial,sans-serif;font-size:15px;outline:none;resize:none;min-height:36px;max-height:300px;overflow-y:auto;line-height:1.5;box-sizing:border-box;';
             
             var toolbar = document.createElement('div');
@@ -2323,7 +2321,8 @@
             var msgDiv = row.querySelector('div');
             var actionsDiv = msgDiv.querySelector('.message-actions');
             msgDiv.insertBefore(wrapper, actionsDiv);
-            
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 300) + 'px';                       
             setTimeout(function() { textarea.focus(); }, 50);
         }
 
