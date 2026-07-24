@@ -744,7 +744,7 @@
             } catch (err) { document.getElementById("status").textContent = 'Ошибка: ' + err.message; }
             genBtn.disabled = false; genBtn.textContent = "Сгенерировать";
         }
-        async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); if (resp.ok) { const data = await resp.json(); if (data.has_etalon && (selectedMode === "svoboda" || selectedMode === "svoboda_male" || selectedMode === "documents" || selectedMode === "beach" || selectedMode === "birthday" || selectedMode === "flowers" || selectedMode === "mirror_male")) { document.getElementById('etalonBtn').style.display = 'block'; } } } catch (err) {} }
+        async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); if (resp.ok) { const data = await resp.json(); var img2imgPanel = document.getElementById('fluxImg2imgPanel'); if (data.has_etalon && img2imgPanel && img2imgPanel.style.display === 'block') { document.getElementById('etalonBtn').style.display = 'block'; } } } catch (err) {} }
         async function useEtalon() { try { const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`); if (!resp.ok) return; const blob = await resp.blob(); uploadedFile = new File([blob], 'etalon.jpg', { type: 'image/jpeg' }); const reader = new FileReader(); reader.onload = function(ev) { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display = 'block'; }; reader.readAsDataURL(blob); } catch (err) {} }
         async function loadGemmaHistory() {
             if (!currentUserId) return;
