@@ -349,7 +349,7 @@
         function toggleTheme() { document.body.classList.toggle('light'); var isLight = document.body.classList.contains('light'); localStorage.setItem('photobot_theme', isLight ? 'light' : 'dark'); document.getElementById('themeToggle').textContent = isLight ? '🌙' : '☀️'; var banner = document.getElementById('bannerImg'); if (banner) { banner.src = isLight ? 'collages/banner_light.jpg' : 'collages/banner.jpg'; } }
         (function() { var saved = localStorage.getItem('photobot_theme'); if (saved === 'light') { document.body.classList.add('light'); document.getElementById('themeToggle').textContent = '🌙'; var banner = document.getElementById('bannerImg'); if (banner) { banner.src = 'collages/banner_light.jpg'; } } })();
         function acceptCookies() { localStorage.setItem('cookies_accepted', '1'); document.getElementById('cookie-banner').style.display = 'none'; }
-        window.addEventListener('focus', function() { if (!currentUserId) document.getElementById('authBlock').style.display = 'block'; if (currentUserId) checkSubscription(); if (currentUserId) updateUnviewedCount(); });
+        window.addEventListener('focus', function() { if (!currentUserId) document.getElementById('authBlock').style.display = 'block'; if (currentUserId) checkSubscription(); if (currentUserId) checkEtalonAvailability(); if (currentUserId) updateUnviewedCount(); });
         async function updateUnviewedCount() { if (!currentUserId || !sessionToken) return; try { const resp = await fetch(`${SERVER_URL}/unviewed_count?user_id=${currentUserId}&session_token=${sessionToken}`); if (resp.ok) { const data = await resp.json(); const count = data.count || 0; const el = document.getElementById('storageCount'); if (el) { if (count > 0) { el.textContent = count; el.style.display = 'block'; } else { el.style.display = 'none'; } } } } catch(e) {} }
         function toggleDeepSeekMenu() { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } else { menu.style.display = 'block'; menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; requestAnimationFrame(() => { menu.style.transition = 'opacity 0.15s, transform 0.15s'; menu.style.opacity = '1'; menu.style.transform = 'translateX(-50%) translateY(0)'; }); } }
         document.addEventListener('click', function(e) { if (!e.target.closest('[onclick="toggleDeepSeekMenu()"]')) { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } } });
@@ -372,8 +372,6 @@
                 document.getElementById('photoInput').style.display = 'none';
                 document.getElementById('preview').style.display = 'none';
                 selectMode('text2img');
-                document.getElementById('etalonBtn').style.display = 'none';
-                
             }
         });
         document.getElementById('fluxImg2imgBtn').addEventListener('click', function() {
@@ -393,12 +391,7 @@
                 btn.classList.add('selected');
                 document.getElementById('caption').style.display = 'block';
                 document.getElementById('photoInput').style.display = 'block';
-                var mode = document.getElementById('fluxImg2imgType').value;
-                if (mode === 'ready') {
-                    selectMode(document.getElementById('fluxReadyMode').value);
-                } else {
-                    selectMode(mode);
-                }
+                document.getElementById('fluxImg2imgType').dispatchEvent(new Event('change'));
             }
         });
         document.getElementById('fluxImg2imgType').addEventListener('change', function() {
@@ -439,9 +432,6 @@
             } else {
                 currentGroup = group;
                 showCollagesForGroup(group);
-                if (group !== 'flux') {
-                    document.getElementById('etalonBtn').style.display = 'none';
-                }
                 if (group === 'flux') {
                     document.getElementById('fluxImg2imgPanel').style.display = 'none';
                     document.getElementById('fluxImg2imgSettings').style.display = 'none';
@@ -466,8 +456,6 @@
                     } else {
                         document.getElementById('modelName').style.display = 'none';
                         document.getElementById('modelName').value = '';
-                        document.getElementById('etalonBtn').style.display = 'none';
-
                     }
                 } else {
                     document.getElementById('photoInput').style.display = 'none';
@@ -534,19 +522,6 @@
             if (mode === "gemma_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("gemmaChat").style.display = "flex"; }
             if (mode === "hunyuan_free") { document.getElementById("caption").style.display = "none"; document.getElementById("lyrics").style.display = "none"; document.getElementById("modelName").style.display = "block"; }
             else { document.getElementById("modelName").style.display = "none"; document.getElementById("modelName").value = ''; }
-            if (mode && mode.startsWith("flux") || mode === "img2img" || currentGroup === "flux") {
-                checkEtalonAvailability();
-            } else {
-                document.getElementById('etalonBtn').style.display = 'none';
-            } 
-            const isFluxImg2img = currentGroup === 'flux' && document.getElementById('fluxImg2imgPanel').style.display === 'block';
-            if (isFluxImg2img) {
-                checkEtalonAvailability();
-            } else {
-                document.getElementById('etalonBtn').style.display = 'none';
-            }
-
-
         }
         async function checkSubscription() { if (!currentUserId) return; try { const r = await fetch(`${SERVER_URL}/check_subscription`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserId }) }); const d = await r.json(); isSubscribed = d.subscribed; if (isSubscribed) { document.getElementById("subscribeBlock").style.display = "none"; document.getElementById("subscribeOk").style.display = "block"; } else { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; } } catch (err) { document.getElementById('status').textContent = 'Ошибка'; } }
         document.getElementById("photoInput").addEventListener("change", function(e) { const file = e.target.files[0]; if (file) { uploadedFile = file; const reader = new FileReader(); reader.onload = function(ev) { document.getElementById("preview").src = ev.target.result; document.getElementById("preview").style.display = "block"; }; reader.readAsDataURL(file); } });
@@ -764,7 +739,7 @@
             } catch (err) { document.getElementById("status").textContent = 'Ошибка: ' + err.message; }
             genBtn.disabled = false; genBtn.textContent = "Сгенерировать";
         }
-        async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); if (resp.ok) { const data = await resp.json(); if (data.has_etalon) document.getElementById('etalonBtn').style.display = 'block'; } } catch (err) {} }
+        async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); if (resp.ok) { const data = await resp.json(); if (data.has_etalon) if (currentGroup === 'flux') document.getElementById('etalonBtn').style.display = 'block'; } } catch (err) {} }
         async function useEtalon() { try { const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`); if (!resp.ok) return; const blob = await resp.blob(); uploadedFile = new File([blob], 'etalon.jpg', { type: 'image/jpeg' }); const reader = new FileReader(); reader.onload = function(ev) { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display = 'block'; }; reader.readAsDataURL(blob); } catch (err) {} }
         async function loadGemmaHistory() {
             if (!currentUserId) return;
