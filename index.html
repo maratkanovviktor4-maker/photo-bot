@@ -529,9 +529,29 @@
 }
         
         }
-        async function checkSubscription() { if (!currentUserId) return; try { const r = await fetch(`${SERVER_URL}/check_subscription`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserId }) }); const d = await r.json(); isSubscribed = d.subscribed; document.getElementById("subscribeBlock").scrollIntoView({ behavior: "smooth" }); } catch (err) { document.getElementById('status').textContent = 'Ошибка'; } }
-        document.getElementById("photoInput").addEventListener("change", function(e) { const file = e.target.files[0]; if (file) { uploadedFile = file; const reader = new FileReader(); reader.onload = function(ev) { document.getElementById("preview").src = ev.target.result; document.getElementById("preview").style.display = "block"; }; reader.readAsDataURL(file); } });
-        document.getElementById("aceDuration").addEventListener("input", function() { if (parseInt(this.value) > 180) this.value = 180; if (parseInt(this.value) < 1) this.value = 1; });
+        async function checkSubscription() {
+            if (!currentUserId) return;
+            try {
+                const r = await fetch(`${SERVER_URL}/check_subscription`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ user_id: currentUserId })
+                });
+                const d = await r.json();
+                isSubscribed = d.subscribed;
+                if (isSubscribed) {
+                    document.getElementById("subscribeBlock").style.display = "none";
+                    document.getElementById("subscribeOk").style.display = "block";
+                } else {
+                    document.getElementById("subscribeBlock").style.display = "block";
+                    document.getElementById("subscribeOk").style.display = "none";
+                }
+                document.getElementById("subscribeBlock").scrollIntoView({ behavior: "smooth" });
+            } catch (err) {
+                document.getElementById('status').textContent = 'Ошибка';
+            }
+        }
+
         function handleGemmaFile(input) { if (input.files[0]) { gemmaFile = input.files[0]; document.getElementById('gemmaFileName').textContent = gemmaFile.name; document.getElementById('gemmaFileName').style.display = 'inline'; document.getElementById('gemmaFileRemove').style.display = 'inline'; } }
         async function sendGemma() {
             if (!currentUserId) { document.getElementById('authBlock').style.display = 'block'; return; }
