@@ -679,7 +679,7 @@
                     if (!resp.ok) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
                     const data = await resp.json();
                     if (data.job_id) {
-                        document.getElementById("status").textContent = "Добавлено в очередь...";
+                        document.getElementById("status").textContent = "Добавлено в очередь. Номер: " + data.job_id;
                         for (let i = 0; i < 180; i++) {
                             await new Promise(r => setTimeout(r, 2000));
                             const pendResp = await fetch(`${SERVER_URL}/pending_ace_audio?user_id=${currentUserId}&session_token=${sessionToken}`);
@@ -696,7 +696,7 @@
                     if (!resp.ok) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
                     const data = await resp.json();
                     if (data.job_id) {
-                        document.getElementById("status").textContent = "Добавлено в очередь...";
+                        document.getElementById("status").textContent = "Добавлено в очередь. Номер: " + data.job_id;
                         for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); const pendResp = await fetch(`${SERVER_URL}/pending_audio?user_id=${currentUserId}&session_token=${sessionToken}`); if (pendResp.ok) { const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { document.getElementById("status").textContent = "Готово! Аудио в Хранилище."; updateUnviewedCount(); genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; } } }
                     }
                 } else if (selectedMode === "hunyuan_free") {
@@ -713,7 +713,7 @@
                     if (!resp.ok) { const err = await resp.json().catch(()=>({})); document.getElementById("status").textContent = err.error || "Ошибка"; genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
                     const data = await resp.json();
                     if (data.job_id) {
-                        document.getElementById("status").textContent = "Добавлено в очередь...";
+                        document.getElementById("status").textContent = "Добавлено в очередь. Номер: " + data.job_id;
                         for (let i = 0; i < 300; i++) {
                             await new Promise(r => setTimeout(r, 2000));
                             const pendResp = await fetch(`${SERVER_URL}/pending_hunyuan?user_id=${currentUserId}&session_token=${sessionToken}`);
@@ -731,7 +731,7 @@
                         formData.append("height", document.getElementById(selectedMode === 'text2img' ? 'text2imgHeight' : 'svobodaHeight').value);
                     }
                     if (sessionToken) formData.append("session_token", sessionToken);
-                    document.getElementById("status").textContent = "Добавлено в очередь...";
+                    document.getElementById("status").textContent = "Добавлено в очередь. Номер: " + data.job_id;
                     const enqResp = await fetch(`${SERVER_URL}/enqueue`, { method: "POST", body: formData, headers: { "X-Session-Token": sessionToken } });
                     if (!enqResp.ok) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
                     const enqData = await enqResp.json();
