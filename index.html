@@ -432,6 +432,9 @@
             } else {
                 currentGroup = group;
                 showCollagesForGroup(group);
+                if (group !== 'flux') {
+                    document.getElementById('etalonBtn').style.display = 'none';
+                }
                 if (group === 'flux') {
                     document.getElementById('fluxImg2imgPanel').style.display = 'none';
                     document.getElementById('fluxImg2imgSettings').style.display = 'none';
@@ -522,6 +525,11 @@
             if (mode === "gemma_free") { document.getElementById("photoInput").style.display = "none"; document.getElementById("preview").style.display = "none"; document.getElementById("gemmaChat").style.display = "flex"; }
             if (mode === "hunyuan_free") { document.getElementById("caption").style.display = "none"; document.getElementById("lyrics").style.display = "none"; document.getElementById("modelName").style.display = "block"; }
             else { document.getElementById("modelName").style.display = "none"; document.getElementById("modelName").value = ''; }
+            if (mode && mode.startsWith("flux") || mode === "img2img" || currentGroup === "flux") {
+                checkEtalonAvailability();
+            } else {
+                document.getElementById('etalonBtn').style.display = 'none';
+            }       
         }
         async function checkSubscription() { if (!currentUserId) return; try { const r = await fetch(`${SERVER_URL}/check_subscription`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserId }) }); const d = await r.json(); isSubscribed = d.subscribed; if (isSubscribed) { document.getElementById("subscribeBlock").style.display = "none"; document.getElementById("subscribeOk").style.display = "block"; } else { document.getElementById("subscribeBlock").style.display = "block"; document.getElementById("subscribeOk").style.display = "none"; } } catch (err) { document.getElementById('status').textContent = 'Ошибка'; } }
         document.getElementById("photoInput").addEventListener("change", function(e) { const file = e.target.files[0]; if (file) { uploadedFile = file; const reader = new FileReader(); reader.onload = function(ev) { document.getElementById("preview").src = ev.target.result; document.getElementById("preview").style.display = "block"; }; reader.readAsDataURL(file); } });
