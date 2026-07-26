@@ -377,7 +377,7 @@
         function toggleTheme() { document.body.classList.toggle('light'); var isLight = document.body.classList.contains('light'); localStorage.setItem('photobot_theme', isLight ? 'light' : 'dark'); document.getElementById('themeToggle').textContent = isLight ? '🌙' : '☀️'; var banner = document.getElementById('bannerImg'); if (banner) { banner.src = isLight ? 'collages/banner_light.jpg' : 'collages/banner.jpg'; } }
         (function() { var saved = localStorage.getItem('photobot_theme'); if (saved === 'light') { document.body.classList.add('light'); document.getElementById('themeToggle').textContent = '🌙'; var banner = document.getElementById('bannerImg'); if (banner) { banner.src = 'collages/banner_light.jpg'; } } })();
         function acceptCookies() { localStorage.setItem('cookies_accepted', '1'); document.getElementById('cookie-banner').style.display = 'none'; }
-        window.addEventListener('focus', function() { if (currentUserId) { checkSubscription(); updateUnviewedCount(); document.getElementById('etalonBtn').style.display = 'none'; } });
+        window.addEventListener('focus', function() { if (currentUserId) { checkSubscription(); checkEtalonAvailability(); updateUnviewedCount(); } });
 
         async function updateUnviewedCount() { if (!currentUserId || !sessionToken) return; try { const resp = await fetch(`${SERVER_URL}/unviewed_count?user_id=${currentUserId}&session_token=${sessionToken}`); if (resp.ok) { const data = await resp.json(); const count = data.count || 0; const el = document.getElementById('storageCount'); if (el) { if (count > 0) { el.textContent = count; el.style.display = 'block'; } else { el.style.display = 'none'; } } } } catch(e) {} }
         function toggleDeepSeekMenu() { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } else { menu.style.display = 'block'; menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; requestAnimationFrame(() => { menu.style.transition = 'opacity 0.15s, transform 0.15s'; menu.style.opacity = '1'; menu.style.transform = 'translateX(-50%) translateY(0)'; }); } }
@@ -415,8 +415,9 @@
                 document.getElementById('photoInput').style.display = 'none';
                 document.getElementById('preview').style.display = 'none';
                 document.getElementById('etalonBtn').style.display = 'none';
-
             } else {
+
+
                 panel.style.display = 'block';
                 settings.style.display = 'flex';
                 btn.classList.add('selected');
@@ -447,6 +448,8 @@
             groups.forEach(g => { const div = document.getElementById('group-' + g); if (!div) return; if (g === group && currentGroup !== group) { div.style.maxHeight = g === 'flux' ? '600px' : '300px'; } else { div.style.maxHeight = '0'; } });
             if (currentGroup === group) {
                 currentGroup = null;
+                document.getElementById('etalonBtn').style.display = 'none';
+
                 document.querySelectorAll('.mode-group-btn').forEach(btn => btn.classList.remove('dimmed'));
 
                 document.querySelectorAll('#collages img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; });
@@ -549,6 +552,8 @@
             selectMode(this.value);
         });
         function selectMode(mode) {
+            document.getElementById('etalonBtn').style.display = 'none';
+
             selectedMode = mode;
             document.getElementById('etalonBtn').style.display = 'none';
             document.querySelectorAll(".mode-sub-btn").forEach(b => b.classList.remove("selected"));
