@@ -378,9 +378,24 @@
                 block.id = 'authBlock';
                 block.innerHTML = '<div style="font-size:13px;color:#aaa;margin-bottom:8px;" data-t="auth_code">Введите код авторизации из бота</div><input type="text" id="authCode" maxlength="4" placeholder="0000"><button class="send-btn" id="sendBtn" disabled data-t="send">Отправить</button>';
                 document.getElementById('modes').before(block);
+                
+                // НАВЕШИВАЕМ ОБРАБОТЧИК ЗДЕСЬ
+                document.getElementById('authCode').addEventListener('input', function() {
+                    const b = document.getElementById('sendBtn');
+                    if (this.value.length === 4) {
+                        b.classList.add('active');
+                        b.disabled = false;
+                        b.style.cursor = 'pointer';
+                    } else {
+                        b.classList.remove('active');
+                        b.disabled = true;
+                        b.style.cursor = 'not-allowed';
+                    }
+                });
             }
             block.style.display = 'block';
         }
+
 
         function toggleTheme() { document.body.classList.toggle('light'); var isLight = document.body.classList.contains('light'); localStorage.setItem('photobot_theme', isLight ? 'light' : 'dark'); document.getElementById('themeToggle').textContent = isLight ? '🌙' : '☀️'; var banner = document.getElementById('bannerImg'); if (banner) { banner.src = isLight ? 'collages/banner_light.jpg' : 'collages/banner.jpg'; } }
         (function() { var saved = localStorage.getItem('photobot_theme'); if (saved === 'light') { document.body.classList.add('light'); document.getElementById('themeToggle').textContent = '🌙'; var banner = document.getElementById('bannerImg'); if (banner) { banner.src = 'collages/banner_light.jpg'; } } })();
