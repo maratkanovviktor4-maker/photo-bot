@@ -597,9 +597,7 @@
                         </div>
                         <div class="input-toolbar">
                             <button class="mode-btn" id="reasonerToggle" onclick="toggleReasoner()" style="font-size:11px;padding:4px 10px;display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;"><ellipse cx="12" cy="12" rx="10" ry="4" /><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(72 12 12)" /><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(144 12 12)" /><circle cx="12" cy="12" r="2" fill="currentColor" /><circle cx="22" cy="12" r="1.5" fill="currentColor" /><circle cx="8" cy="5" r="1" fill="currentColor" /><circle cx="16" cy="19" r="1.2" fill="currentColor" /></svg> Глубокое мышление</button>
-                            <button class="mode-btn" id="webSearchToggle" style="font-size:11px;padding:4px 10px;display:inline-flex;align-items:center;gap:4px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Поиск
-                            </button>
+
                             <span class="file-name-inline" id="fileNameInline"></span>
                             <span id="lengthExcess" style="display:none; color:#e74c3c; font-size:12px; font-family:'Inter',sans-serif; cursor:pointer;" title="суммарное превышение длины текста"></span>
 
@@ -794,8 +792,6 @@
                     dropdown.appendChild(item);
                 });
             }
-            var webSearchEnabled = false;
-
 
             function openVoiceDropdown() {
                 if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
@@ -841,15 +837,7 @@
             window.toggleVoiceDropdown = toggleVoiceDropdown;
             window.closeVoiceDropdown = closeVoiceDropdown;
         }
-        function toggleWebSearch() {
-                webSearchEnabled = !webSearchEnabled;
-                var btn = document.getElementById('webSearchToggle');
-                if (webSearchEnabled) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            }
+
         function changeVoice() {
             const val = document.getElementById('voiceSelect').value;
             localStorage.setItem('photobot_voice', val);
@@ -2644,8 +2632,7 @@
                 if (msg.interrupted) actionsHtml += '<button onclick="continueMessage(' + index + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                 actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + index + ')" title="Self-Play диалог" style="color:#00CBF5;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
                 actionsHtml += '<button class="prompt-btn" onclick="showPromptPopup(' + index + ', this)" title="Реплика"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg></button>';
-                actionsHtml += '<button onclick="speakMessage(' + index + ')" title="Озвучить"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" /></svg></button>' + (window._lastSearchResults && window._lastSearchMsgIndex === index - 1 ? function(){ var r=window._lastSearchResults; var o=20; var tw=r.length*24-(r.length-1)*o; var h='<div style="position:relative;width:'+tw+'px;height:24px;margin-left:4px;display:inline-block;vertical-align:middle;">'; for(var si=0;si<r.length;si++){ var left=si*(24-o); var domain=r[si].link.split('/')[2]; h+='<img src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" style="position:absolute;left:'+left+'px;width:24px;height:24px;border-radius:4px;border:2px solid '+(document.body.classList.contains('light')?'#fff':'#1a1a2e')+';cursor:pointer;z-index:'+(r.length-si)+';" onclick="showSourcesPreview('+(index-1)+')" title="'+r[si].title.replace(/'/g,"\\'")+'">'; } h+='</div>'; return h; }() : '');
-
+                actionsHtml += '<button onclick="speakMessage(' + index + ')" title="Озвучить"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" /></svg></button>';
             }
             var reasoningHtml = '';
             var contentToShow = msg.content || '';
@@ -2674,29 +2661,6 @@
             }
             return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
         }
-        function showSourcesPreview(msgIndex) {
-            if (!window._lastSearchResults) return;
-            var results = window._lastSearchResults;
-            var html = '<div style="padding:14px;font-family:Inter,sans-serif;">';
-            html += '<h3 style="margin:0 0 12px;font-size:16px;color:#e0e0e0;">Источники</h3>';
-            html += '<div style="display:flex;flex-direction:column;gap:10px;">';
-            for (var i = 0; i < results.length; i++) {
-                var r = results[i];
-                var domain = r.link.split('/')[2];
-                html += '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;border:1px solid rgba(255,255,255,0.06);">';
-                html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
-                html += '<img src="https://www.google.com/s2/favicons?domain=' + domain + '&sz=32" style="width:20px;height:20px;border-radius:3px;">';
-                html += '<span style="font-weight:600;font-size:13px;color:#00CBF5;">[' + (i + 1) + '] ' + r.title + '</span>';
-                html += '</div>';
-                html += '<div style="font-size:12px;color:#aaa;line-height:1.5;margin-bottom:6px;">' + r.snippet + '</div>';
-                html += '<a href="' + r.link + '" target="_blank" style="font-size:11px;color:#888;text-decoration:none;">' + domain + '</a>';
-                html += '</div>';
-            }
-            html += '</div></div>';
-            
-            openHtmlPreview(html);
-        }
-
         function removeRedundantMessages(area, expectedCount) {
             while (area.children.length > expectedCount) {
                 area.removeChild(area.lastChild);
@@ -2886,7 +2850,6 @@
             }
         }
         var autoSpeakEnabled = localStorage.getItem('photobot_auto_speak') === 'true';
-        var webSearchEnabled = false;
 
         function toggleAutoSpeak() {
             autoSpeakEnabled = !autoSpeakEnabled;
@@ -3992,33 +3955,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             assistantMsg._abortController = abortController;
 
             try {
-                var searchContext = '';
-                if (webSearchEnabled) {
-                    try {
-                        var searchResp = await fetch(SERVER_URL + '/web_search', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                            body: JSON.stringify({ query: text })
-                        });
-                        var searchData = await searchResp.json();
-                        if (searchData.results && searchData.results.length > 0) {
-                            searchContext = '\n\nРезультаты поиска в интернете (используй их как источник фактов, указывай номера источников в формате [1], [2] и т.д.):\n';
-                            searchData.results.forEach(function(r, i) {
-                                searchContext += '[' + (i + 1) + '] ' + r.title + '\n   ' + r.snippet + '\n   URL: ' + r.link + '\n\n';
-                            });
-                            // Сохраняем результаты для отображения иконок
-                            window._lastSearchResults = searchData.results;
-                            window._lastSearchMsgIndex = chat.messages.length;
-                        }
-                    } catch(e) {}
-                }
-
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
                     body: JSON.stringify({
                         user_id: currentUserId,
-                        message: text + searchContext,
+                        message: text,
                         model: 'flash',
                         mode: currentMode,
                         chat_id: currentChatId,
@@ -5447,8 +5389,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         document.addEventListener('DOMContentLoaded', function() {
             initPersonalityDropdown();
             initVoiceDropdown();
-            document.getElementById('webSearchToggle').addEventListener('click', toggleWebSearch);
-
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('#personalityCustom')) {
                     if (window.closePersonalityDropdown) window.closePersonalityDropdown();
