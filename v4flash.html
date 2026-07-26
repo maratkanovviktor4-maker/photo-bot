@@ -485,7 +485,6 @@
         body.light.custom-dark-bg .logo-text {
             color: #00CBF5 !important;
         }
-        #filePreviewThumb { transition: all 0.3s ease; }
 
 
     </style>
@@ -3075,36 +3074,6 @@
             }
         updateSendBtn();           
         }
-        function toggleFilePreview() {
-            var img = document.getElementById('filePreviewThumb');
-            if (!img) return;
-            if (img.style.maxWidth === '60px' || !img.style.maxWidth || img.style.maxWidth === '') {
-                img.style.maxWidth = '400px';
-                img.style.maxHeight = '400px';
-                img.style.objectFit = 'contain';
-                img.style.position = 'fixed';
-                img.style.top = '50%';
-                img.style.left = '50%';
-                img.style.transform = 'translate(-50%, -50%)';
-                img.style.zIndex = '99999';
-                img.style.borderRadius = '12px';
-                img.style.boxShadow = '0 20px 60px rgba(0,0,0,0.5)';
-                img.style.transition = 'all 0.3s ease';
-                img.style.cursor = 'zoom-out';
-            } else {
-                img.style.maxWidth = '60px';
-                img.style.maxHeight = '60px';
-                img.style.objectFit = 'cover';
-                img.style.position = 'static';
-                img.style.transform = 'none';
-                img.style.zIndex = '';
-                img.style.borderRadius = '6px';
-                img.style.boxShadow = 'none';
-                img.style.transition = 'all 0.3s ease';
-                img.style.cursor = 'pointer';
-
-            }
-        }
 
         function updateFileList() {
             const inline = document.getElementById('fileNameInline');
@@ -3117,8 +3086,7 @@
             var sizeInfo = '';
             var previewHtml = '';
             if (pendingFile && pendingFile.mime && pendingFile.mime.startsWith('image/')) {
-                previewHtml = '<img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" id="filePreviewThumb" style="max-width:60px;max-height:60px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;cursor:pointer;transition:all 0.3s ease;" onclick="toggleFilePreview()">';
-
+                previewHtml = '<img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:60px;max-height:60px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;">';
             }
             if (pendingFile.data) {
                 var bytes = Math.round(pendingFile.data.length * 3 / 4);
