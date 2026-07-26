@@ -3074,6 +3074,19 @@
             }
         updateSendBtn();           
         }
+        function toggleFullPreview(imgEl) {
+            var existing = document.getElementById('fullPreviewOverlay');
+            if (existing) { existing.remove(); return; }
+            var overlay = document.createElement('div');
+            overlay.id = 'fullPreviewOverlay';
+            overlay.onclick = function() { this.remove(); };
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:pointer;';
+            var fullImg = document.createElement('img');
+            fullImg.src = imgEl.src;
+            fullImg.style.cssText = 'max-width:90vw;max-height:90vh;object-fit:contain;border-radius:12px;';
+            overlay.appendChild(fullImg);
+            document.body.appendChild(overlay);
+        }
 
         function updateFileList() {
             const inline = document.getElementById('fileNameInline');
@@ -3085,9 +3098,12 @@
             var color = fileOk ? '#00CBF5' : '#e74c3c';
             var sizeInfo = '';
             var previewHtml = '';
+            var previewFullHtml = '';
             if (pendingFile && pendingFile.mime && pendingFile.mime.startsWith('image/')) {
-                previewHtml = '<img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:60px;max-height:60px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;">';
+                previewHtml = '<img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:60px;max-height:60px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;cursor:pointer;" onclick="toggleFullPreview(this)">';
+                previewFullHtml = '<div id="fullPreviewOverlay" onclick="this.remove()" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:pointer;"><img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:12px;"></div>';
             }
+
             if (pendingFile.data) {
                 var bytes = Math.round(pendingFile.data.length * 3 / 4);
                 var sizeStr = bytes < 1024 ? bytes + ' B' : (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB');
