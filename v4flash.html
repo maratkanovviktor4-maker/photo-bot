@@ -3053,10 +3053,14 @@
             var text = document.getElementById('userInput').value;
             var fileLength = 0;
             if (pendingFile && pendingFile.data) {
-                try {
-                    var decoded = atob(pendingFile.data);
-                    fileLength = decoded.length;
-                } catch(e) {}
+                if (pendingFile.mime && pendingFile.mime.startsWith('image/')) {
+                    fileLength = 0;
+                } else {
+                    try {
+                        var decoded = atob(pendingFile.data);
+                        fileLength = decoded.length;
+                    } catch(e) {}
+                }
             }
             var total = text.length + fileLength;
             var MAX_LENGTH = 500000;
