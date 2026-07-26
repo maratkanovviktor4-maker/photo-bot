@@ -3104,7 +3104,11 @@
         }
 
         async function handleFileSelect(e) {
+            if (_abortController) { _abortController.abort(); _abortController = null; }
+            _fileReader = null;
+            _abortCheck = false;
             const file = e.target.files[0];
+
             if (!file) return;
             
             // Показываем спиннер
@@ -3208,7 +3212,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             }
 
             inputArea.addEventListener('drop', async function(e) {
+                if (_abortController) { _abortController.abort(); _abortController = null; }
+                _fileReader = null;
+                _abortCheck = false;
                 var files = e.dataTransfer.files;
+
                 if (files.length > 0) {
                     var file = files[0];
                     // Показываем спиннер
@@ -3292,7 +3300,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var userInput = document.getElementById('userInput');
             if (!userInput) return;
             userInput.addEventListener('paste', function(e) {
+                if (_abortController) { _abortController.abort(); _abortController = null; }
+                _fileReader = null;
+                _abortCheck = false;
                 var items = e.clipboardData.items;
+
                 for (var i = 0; i < items.length; i++) {
                     if (items[i].type.indexOf('image') !== -1) {
                         e.preventDefault();
