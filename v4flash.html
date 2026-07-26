@@ -3084,6 +3084,10 @@
             var icon = fileOk ? '📎' : '⚠️';
             var color = fileOk ? '#00CBF5' : '#e74c3c';
             var sizeInfo = '';
+            var previewHtml = '';
+            if (pendingFile && pendingFile.mime && pendingFile.mime.startsWith('image/')) {
+                previewHtml = '<img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:60px;max-height:60px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;">';
+            }
             if (pendingFile.data) {
                 var bytes = Math.round(pendingFile.data.length * 3 / 4);
                 var sizeStr = bytes < 1024 ? bytes + ' B' : (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB');
@@ -3097,7 +3101,7 @@
                 }
                 sizeInfo += ')';
             }
-            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:' + color + ';">' + icon + ' ' + escapeHtml(pendingFile.name) + sizeInfo + '</span> <button onclick="pendingFile=null;updateFileList();updateLengthExcess();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;">' + previewHtml + '<span style="color:' + color + ';">' + icon + ' ' + escapeHtml(pendingFile.name) + sizeInfo + '</span> <button onclick="pendingFile=null;updateFileList();updateLengthExcess();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
             updateSendBtn();
             updateLengthExcess();
 
