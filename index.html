@@ -310,13 +310,6 @@
             <input type="file" id="photoInput" accept="image/*" style="display:none;">
             <img id="preview" alt="Превью" style="display:none;">
             <div class="actions"><button id="generate" onclick="startGeneration()" data-t="generate">Сгенерировать</button></div>
-            <div id="progressContainer" style="display:none; margin-top:8px;">
-                <div id="progressBar" style="width:100%; height:6px; background:#2a2a2a; border-radius:10px; overflow:hidden;">
-                    <div id="progressFill" style="width:0%; height:100%; background:linear-gradient(90deg,#00CBF5,#14E9FC); border-radius:10px; transition:width 0.3s;"></div>
-                </div>
-                <div id="progressText" style="text-align:center; color:#aaa; font-size:11px; margin-top:4px;"></div>
-            </div>
-
             <div id="status"></div>
             <a href="prompts.html" class="nav-btn" data-t="prompts">База промтов</a>
             <div style="position:relative;">
@@ -721,22 +714,6 @@
                     const data = await resp.json();
                     if (data.job_id) {
                         document.getElementById("status").textContent = "Добавлено в очередь. Номер: " + data.job_id;
-                        const progressContainer = document.getElementById('progressContainer');
-                        const progressFill = document.getElementById('progressFill');
-                        const progressText = document.getElementById('progressText');
-                        if (progressContainer) progressContainer.style.display = 'block';
-                        const progressInterval = setInterval(async () => {
-                            try {
-                                const resp = await fetch(`${SERVER_URL}/job_status?job_id=${data.job_id}`);
-                                const respData = await resp.json();
-                                if (progressFill) progressFill.style.width = (respData.progress || 0) + '%';
-                                if (progressText) progressText.textContent = (respData.progress || 0) + '%';
-                                if (respData.status === 'ready' || respData.status === 'failed' || respData.status === 'delivered' || respData.status === 'not_found') {
-                                    clearInterval(progressInterval);
-                                    if (progressContainer) progressContainer.style.display = 'none';
-                                }
-                            } catch(e) {}
-                        }, 3000);
                         for (let i = 0; i < 180; i++) {
                             await new Promise(r => setTimeout(r, 2000));
                             const pendResp = await fetch(`${SERVER_URL}/pending_ace_audio?user_id=${currentUserId}&session_token=${sessionToken}`);
@@ -754,22 +731,6 @@
                     const data = await resp.json();
                     if (data.job_id) {
                         document.getElementById("status").textContent = "Добавлено в очередь. Номер: " + data.job_id;
-                        const progressContainer = document.getElementById('progressContainer');
-                        const progressFill = document.getElementById('progressFill');
-                        const progressText = document.getElementById('progressText');
-                        if (progressContainer) progressContainer.style.display = 'block';
-                        const progressInterval = setInterval(async () => {
-                            try {
-                                const resp = await fetch(`${SERVER_URL}/job_status?job_id=${data.job_id}`);
-                                const respData = await resp.json();
-                                if (progressFill) progressFill.style.width = (respData.progress || 0) + '%';
-                                if (progressText) progressText.textContent = (respData.progress || 0) + '%';
-                                if (respData.status === 'ready' || respData.status === 'failed' || respData.status === 'delivered' || respData.status === 'not_found') {
-                                    clearInterval(progressInterval);
-                                    if (progressContainer) progressContainer.style.display = 'none';
-                                }
-                            } catch(e) {}
-                        }, 3000);
                         for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); const pendResp = await fetch(`${SERVER_URL}/pending_audio?user_id=${currentUserId}&session_token=${sessionToken}`); if (pendResp.ok) { const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { document.getElementById("status").textContent = "Готово! Аудио в Хранилище."; updateUnviewedCount(); genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; } } }
                     }
                 } else if (selectedMode === "hunyuan_free") {
@@ -787,22 +748,6 @@
                     const data = await resp.json();
                     if (data.job_id) {
                         document.getElementById("status").textContent = "Добавлено в очередь. Номер: " + data.job_id;
-                        const progressContainer = document.getElementById('progressContainer');
-                        const progressFill = document.getElementById('progressFill');
-                        const progressText = document.getElementById('progressText');
-                        if (progressContainer) progressContainer.style.display = 'block';
-                        const progressInterval = setInterval(async () => {
-                            try {
-                                const resp = await fetch(`${SERVER_URL}/job_status?job_id=${data.job_id}`);
-                                const respData = await resp.json();
-                                if (progressFill) progressFill.style.width = (respData.progress || 0) + '%';
-                                if (progressText) progressText.textContent = (respData.progress || 0) + '%';
-                                if (respData.status === 'ready' || respData.status === 'failed' || respData.status === 'delivered' || respData.status === 'not_found') {
-                                    clearInterval(progressInterval);
-                                    if (progressContainer) progressContainer.style.display = 'none';
-                                }
-                            } catch(e) {}
-                        }, 3000);
                         for (let i = 0; i < 300; i++) {
                             await new Promise(r => setTimeout(r, 2000));
                             const pendResp = await fetch(`${SERVER_URL}/pending_hunyuan?user_id=${currentUserId}&session_token=${sessionToken}`);
@@ -826,23 +771,6 @@
                     if (!enqData.job_id) { genBtn.disabled = false; genBtn.textContent = "Сгенерировать"; return; }
                     document.getElementById("status").textContent = "Добавлено в очередь. Номер: " + enqData.job_id;
 
-                    const progressContainer = document.getElementById('progressContainer');
-                    const progressFill = document.getElementById('progressFill');
-                    const progressText = document.getElementById('progressText');
-                    if (progressContainer) progressContainer.style.display = 'block';
-                    const progressInterval = setInterval(async () => {
-                        try {
-                            const resp = await fetch(`${SERVER_URL}/job_status?job_id=${enqData.job_id}`);
-                            const respData = await resp.json();
-                            if (progressFill) progressFill.style.width = (respData.progress || 0) + '%';
-                            if (progressText) progressText.textContent = (respData.progress || 0) + '%';
-                            if (respData.status === 'ready' || respData.status === 'failed' || respData.status === 'delivered' || respData.status === 'not_found') {
-                                clearInterval(progressInterval);
-                                if (progressContainer) progressContainer.style.display = 'none';
-                            }
-                        } catch(e) {}
-                    }, 3000);
-
                     let found = false;
                     for (let i = 0; i < 180; i++) { await new Promise(r => setTimeout(r, 2000)); try { const pendResp = await fetch(`${SERVER_URL}/pending?user_id=${currentUserId}&source=web&session_token=${sessionToken}`); if (pendResp.ok) { const pendData = await pendResp.json(); if (pendData.results && pendData.results.length > 0) { document.getElementById("status").textContent = "Готово! Фото в Хранилище."; updateUnviewedCount(); found = true; break; } } } catch(err) {} }
                     if (!found) { document.getElementById("status").textContent = "Время ожидания истекло."; }
@@ -850,7 +778,6 @@
             } catch (err) { document.getElementById("status").textContent = 'Ошибка: ' + err.message; }
             genBtn.disabled = false; genBtn.textContent = "Сгенерировать";
         }
-
         async function checkEtalonAvailability() { if (!currentUserId) return; try { const resp = await fetch(`${SERVER_URL}/check_etalon?user_id=${currentUserId}`); if (resp.ok) { const data = await resp.json(); var img2imgPanel = document.getElementById('fluxImg2imgPanel'); if (data.has_etalon && img2imgPanel && img2imgPanel.style.display === 'block') { document.getElementById('etalonBtn').style.display = 'block'; } } } catch (err) {} }
         async function useEtalon() { try { const resp = await fetch(`${SERVER_URL}/get_etalon?user_id=${currentUserId}`); if (!resp.ok) return; const blob = await resp.blob(); uploadedFile = new File([blob], 'etalon.jpg', { type: 'image/jpeg' }); const reader = new FileReader(); reader.onload = function(ev) { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display = 'block'; }; reader.readAsDataURL(blob); } catch (err) {} }
         async function loadGemmaHistory() {
