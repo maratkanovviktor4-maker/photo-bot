@@ -3882,6 +3882,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 }
                 setupFloatingCopyButtonsForMsg(el);
+                if (msg && msg.finished) {
+                    el.querySelectorAll('.floating-code-header button').forEach(function(b) {
+                        b.style.pointerEvents = 'auto';
+                        b.style.opacity = '';
+                    });
+                }
+
                 updateFloatingButtons();
                 if (autoScroll) {
                     var main = document.querySelector('.main');
@@ -4389,6 +4396,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 toggleCodeEditor(pre);
             });
             actions.insertBefore(editBtn, actions.firstChild);
+            header.querySelectorAll('button').forEach(function(b) {
+                b.style.pointerEvents = 'none';
+                b.style.opacity = '0.5';
+            });
+
         }
 
         function _makeActionBtn(title, innerHTML, clickHandler) {
