@@ -167,6 +167,8 @@
         body.light #fluxInfoBlock .flux-desc, body.light #textModelsInfo, body.light #audioInfoBlock div, body.light #aceInfoBlock div, body.light #gemmaInfoBlock div, body.light #hunyuanInfoBlock div { color: #333 !important; }
         body.light #hunyuanViewer { background: rgba(0,0,0,0.12) !important; }
         #aceExamples > div::-webkit-scrollbar { width: 4px; } #aceExamples > div::-webkit-scrollbar-track { background: transparent; } #aceExamples > div::-webkit-scrollbar-thumb { background: #F59E0B; border-radius: 2px; }
+        #modes .mode-group-btn.dimmed { opacity: 0.4; filter: grayscale(0.5); pointer-events: none; }
+
     </style>
 <script src="config.js"></script>
 </head>
@@ -436,10 +438,15 @@
             selectMode(this.value);
         });
         function toggleModeGroup(group) {
+            document.querySelectorAll('.mode-group-btn').forEach(btn => btn.classList.add('dimmed'));
+            event.currentTarget.classList.remove('dimmed');
+
             const groups = ['flux', 'audio', 'ace', 'gemma', 'hunyuan', 'text'];
             groups.forEach(g => { const div = document.getElementById('group-' + g); if (!div) return; if (g === group && currentGroup !== group) { div.style.maxHeight = g === 'flux' ? '600px' : '300px'; } else { div.style.maxHeight = '0'; } });
             if (currentGroup === group) {
                 currentGroup = null;
+                document.querySelectorAll('.mode-group-btn').forEach(btn => btn.classList.remove('dimmed'));
+
                 document.querySelectorAll('#collages img').forEach(img => { img.classList.remove('appearing', 'show'); img.style.display = 'none'; });
                 const blocks = ['textModelsInfo','fluxInfoBlock','audioInfoBlock','aceInfoBlock','gemmaInfoBlock','hunyuanInfoBlock'];
                 blocks.forEach(id => { const el = document.getElementById(id); if (el) { el.style.display = 'none'; if (el.classList) el.classList.remove('show'); } });
