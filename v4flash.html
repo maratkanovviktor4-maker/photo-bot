@@ -2672,7 +2672,7 @@
             }
             var contentHtml = formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
-                contentHtml = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+                contentHtml = '<div class="typing-dots" style="min-height:14px;display:flex;align-items:center;"><span></span><span></span><span></span></div>';
             }
             return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
         }
@@ -3888,11 +3888,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (_streamTimers[id]) return;
             _streamTimers[id] = setTimeout(function() {
                 _streamTimers[id] = null;
-                if (el.querySelector('.typing-dots') && !msg.content && !msg._reasoningBuffer) {
-                    el.style.minHeight = '14px';
-                } else {
-                    el.style.minHeight = '';
-                }
                 var reasoningHtml = (msg._reasoningBuffer)
                     ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
                     : '';
