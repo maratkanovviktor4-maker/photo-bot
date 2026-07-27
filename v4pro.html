@@ -12,6 +12,8 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
+        .chat-wrapper { justify-content: center; }
+        .chat-wrapper.has-messages { justify-content: flex-start; }
         .typing-dots { display: inline-flex; gap: 4px; padding: 4px 0; }
         .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: #666; animation: dotPulse 1.2s infinite; }
         .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
@@ -101,7 +103,7 @@
         body.light .mode-btn:hover:not(.active) { color: #111; }
         #balanceDisplay { font-size: 12px; color: #F59E0B; font-family: 'Inter', sans-serif; white-space: nowrap; }
         #branchIndicatorTop { font-size: 12px; color: #F59E0B; font-family: 'Inter', sans-serif; display: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; margin-left: 4px; }
-        .chat-wrapper { width: 100%; max-width: 775px; display: flex; flex-direction: column; margin: 0 auto; position: relative; flex: 1 0 auto; }
+        .chat-wrapper { width: 100%; max-width: 775px; display: flex; flex-direction: column; margin: 0 auto; position: relative; flex: 1; min-height: 0; }
         .chat-area { flex: 1 0 auto; padding: 20px 0 25px 0; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 0; }
         .scroll-bottom-btn { position: absolute; bottom: calc(100% + 16px); right: 12px; width: 36px; height: 36px; border-radius: 50%; background: #1a1a2e; color: #e0e0e0; border: 1px solid rgba(255,255,255,0.15); cursor: pointer; display: none; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10002; }
         .attach-btn.active {
@@ -1538,6 +1540,8 @@
             var area = document.getElementById('chatArea');
             area.innerHTML = '<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Pro" onerror="this.style.display=\'none\'"><div class="title">DeepSeek V4 Pro</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>';
             document.getElementById('branchesPanel').style.display = 'none';
+            document.querySelector('.chat-wrapper').classList.add('empty-state-active');
+            document.querySelector('.chat-wrapper').classList.remove('has-messages');
         }
 
         function openChat(id) {
@@ -1565,7 +1569,8 @@
                     }
                 }
                 currentBranchId = chat.activeBranch || 'main';
-
+                document.querySelector('.chat-wrapper').classList.remove('empty-state-active');
+                document.querySelector('.chat-wrapper').classList.add('has-messages');
             }
             loadChatMessages(currentChatId).then(function() {
                 _floatingHeaders = [];
@@ -3944,6 +3949,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             userRow.className = 'message-row user';
             userRow.innerHTML = '<div><div class="message-content">' + escapeHtml(displayText) + '</div></div>';
             area.appendChild(userRow);
+            document.querySelector('.chat-wrapper').classList.add('has-messages');
+            document.querySelector('.chat-wrapper').classList.remove('empty-state-active');
             chat.lastMessageTime = Date.now();
             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             renderChatList();
