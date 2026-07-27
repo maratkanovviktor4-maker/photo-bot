@@ -2396,12 +2396,15 @@
             popup.style.transform = 'translateY(-8px)';
             popup.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
             var rect = btnElement.getBoundingClientRect();
-            var popupHeight = 5 * 36 + 8;
-            var spaceBelow = window.innerHeight - rect.bottom - 8;
-            if (spaceBelow < popupHeight) {
-                popup.style.top = (rect.top - popupHeight) + 'px';
+            var popupHeight = popup.offsetHeight || (10 * 36 + 8);
+            var docHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
+            var popupHeight = popup.offsetHeight || 180;
+            var spaceBelow = docHeight - rect.bottom - 8;
+            var spaceAbove = rect.top - 8;
+            if (spaceBelow >= popupHeight || spaceAbove < popupHeight) {
+                popup.style.top = Math.min(rect.bottom + 4, docHeight - popupHeight - 8) + 'px';
             } else {
-                popup.style.top = (rect.bottom + 4) + 'px';
+                popup.style.top = Math.max(8, rect.top - popupHeight) + 'px';
             }
             popup.style.left = rect.left + 'px';
 
@@ -2421,6 +2424,15 @@
                 return '<button onclick="doPrompt(\'' + text.replace(/'/g, "\\'") + '\')">' + text + '</button>';
             }).join('');
             document.body.appendChild(popup);
+            popupHeight = popup.offsetHeight;
+            docHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
+            spaceBelow = docHeight - rect.bottom - 8;
+            spaceAbove = rect.top - 8;
+            if (spaceBelow >= popupHeight || spaceAbove < popupHeight) {
+                popup.style.top = Math.min(rect.bottom + 4, docHeight - popupHeight - 8) + 'px';
+            } else {
+                popup.style.top = Math.max(8, rect.top - popupHeight) + 'px';
+            }            
             requestAnimationFrame(function() {
                 popup.style.opacity = '1';
                 popup.style.transform = 'translateY(0)';
