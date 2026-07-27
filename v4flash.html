@@ -2395,8 +2395,11 @@
             var rect = btnElement.getBoundingClientRect();
             var popupHeight = 5 * 36 + 8;
             var spaceBelow = window.innerHeight - rect.bottom - 8;
-            if (spaceBelow < popupHeight) {
-                popup.style.top = (rect.top - popupHeight) + 'px';
+            var spaceAbove = rect.top - 8;
+            if (spaceBelow < popupHeight && spaceAbove >= popupHeight) {
+                popup.style.top = Math.max(8, rect.top - popupHeight) + 'px';
+            } else if (spaceBelow < popupHeight) {
+                popup.style.top = Math.max(8, window.innerHeight - popupHeight - 8) + 'px';
             } else {
                 popup.style.top = (rect.bottom + 4) + 'px';
             }
