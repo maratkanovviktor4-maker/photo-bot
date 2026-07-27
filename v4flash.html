@@ -3891,13 +3891,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
                     : '';
                 var contentHtml = formatMessage(msg.content || '');
-                var prevHeight = el.offsetHeight;
-                el.style.transition = 'none';
+                var container = el.parentElement;
+                var actions = container.parentElement.querySelector('.message-actions');
+                var actionsHeight = actions ? actions.offsetHeight : 0;
+                var prevHeight = el.offsetHeight + actionsHeight;
                 el.innerHTML = reasoningHtml + contentHtml;
-                if (prevHeight > 0) {
-                    el.style.minHeight = prevHeight + 'px';
-                }
-                requestAnimationFrame(function() { el.style.transition = ''; });
+                el.style.minHeight = (prevHeight - actionsHeight) + 'px';
                 var codeBlocks = el.querySelectorAll('pre code');
                 for (var i = 0; i < codeBlocks.length; i++) {
                     var block = codeBlocks[i];
