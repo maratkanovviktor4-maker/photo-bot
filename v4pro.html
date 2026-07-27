@@ -3889,7 +3889,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
                     : '';
                 var contentHtml = formatMessage(msg.content || '');
+                var prevHeight = el.offsetHeight;
                 el.innerHTML = reasoningHtml + contentHtml;
+                if (prevHeight > 0) {
+                    el.style.minHeight = prevHeight + 'px';
+                }
                 var codeBlocks = el.querySelectorAll('pre code');
                 for (var i = 0; i < codeBlocks.length; i++) {
                     var block = codeBlocks[i];
