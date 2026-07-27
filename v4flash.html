@@ -2811,17 +2811,19 @@
             temp.innerHTML = html;
             area.insertBefore(temp, area.firstChild);
             
-            var allMsgs = area.children;
-            for (var g = 1; g < allMsgs.length; g++) {
-                var prevBottom = allMsgs[g-1].offsetTop + allMsgs[g-1].offsetHeight;
-                var currTop = allMsgs[g].offsetTop;
-                var diff = currTop - prevBottom;
-                if (diff !== 20) {
-                    allMsgs[g].style.marginTop = (20 - diff) + 'px';
-                }
+            renderedCount += count;
+            var newRows = area.querySelectorAll('.message-row.user');
+            for (var r = 0; r < newRows.length; r++) {
+                newRows[r].style.marginLeft = 'auto';
+            }
+
+            // Принудительное применение стилей для сообщений user
+            var newRows = area.querySelectorAll('.message-row.user');
+            for (var r = 0; r < newRows.length; r++) {
+                newRows[r].style.alignSelf = 'flex-end';
+                newRows[r].style.flexDirection = 'row-reverse';
             }
             
-            renderedCount += count;
             hljs.highlightAll();
             setupFloatingCopyButtons();
             updateFloatingButtons();
