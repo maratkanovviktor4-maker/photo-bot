@@ -12,6 +12,8 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
+        .chat-wrapper { justify-content: center; }
+        .chat-wrapper.has-messages { justify-content: flex-start; }
         .typing-dots { display: inline-flex; gap: 4px; padding: 4px 0; }
         .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: #666; animation: dotPulse 1.2s infinite; }
         .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
@@ -1536,6 +1538,7 @@
             var area = document.getElementById('chatArea');
             area.innerHTML = '<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek V4 Flash" onerror="this.style.display=\'none\'"><div class="title">DeepSeek V4 Flash</div><div style="color:#666;font-size:13px;">Задайте любой вопрос или прикрепите файл</div></div>';
             document.getElementById('branchesPanel').style.display = 'none';
+            document.querySelector('.chat-wrapper').classList.remove('has-messages');
         }
 
         function openChat(id) {
@@ -3947,6 +3950,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             userRow.className = 'message-row user';
             userRow.innerHTML = '<div><div class="message-content">' + escapeHtml(displayText) + '</div></div>';
             area.appendChild(userRow);
+            document.querySelector('.chat-wrapper').classList.add('has-messages');
             chat.lastMessageTime = Date.now();
             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             renderChatList();
