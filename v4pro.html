@@ -2912,7 +2912,11 @@
                 'nigora': 'uz-UZ'
             };
             var lang = langMap[voice] || 'ru-RU';
-            
+            var btn = document.querySelector('.message-row[data-msg-index="' + index + '"] .message-actions button[onclick*="speakMessage"]');
+            if (btn) {
+                btn.style.color = '#e74c3c';
+                setTimeout(function() { btn.style.color = ''; }, 3000);
+            }
             fetch(SERVER_URL + '/text_to_speech', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
