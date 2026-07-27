@@ -122,7 +122,6 @@
             background: rgba(0,0,0,0.06) !important;
         }
 
-        .message-row.assistant > div > .message-actions { min-height: 32px; }
         .scroll-bottom-btn:hover { background: #2a2a3e; }
         body.light .scroll-bottom-btn { background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.15); }
         body.light .scroll-bottom-btn:hover { background: #e0e0e0; }
@@ -3892,7 +3891,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
                     : '';
                 var contentHtml = formatMessage(msg.content || '');
+                var prevHeight = el.offsetHeight;
                 el.innerHTML = reasoningHtml + contentHtml;
+                if (prevHeight > 0) {
+                    el.style.minHeight = prevHeight + 'px';
+                }
                 var codeBlocks = el.querySelectorAll('pre code');
                 for (var i = 0; i < codeBlocks.length; i++) {
                     var block = codeBlocks[i];
