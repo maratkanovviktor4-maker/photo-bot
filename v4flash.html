@@ -3892,10 +3892,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     : '';
                 var contentHtml = formatMessage(msg.content || '');
                 var prevHeight = el.offsetHeight;
+                el.style.transition = 'none';
                 el.innerHTML = reasoningHtml + contentHtml;
                 if (prevHeight > 0) {
                     el.style.minHeight = prevHeight + 'px';
                 }
+                requestAnimationFrame(function() { el.style.transition = ''; });
                 var codeBlocks = el.querySelectorAll('pre code');
                 for (var i = 0; i < codeBlocks.length; i++) {
                     var block = codeBlocks[i];
