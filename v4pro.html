@@ -2810,7 +2810,11 @@
             
             var temp = document.createElement('div');
             temp.innerHTML = html;
-            area.insertBefore(temp, area.firstChild);
+            var fragment = document.createDocumentFragment();
+            while (temp.firstChild) {
+                fragment.appendChild(temp.firstChild);
+            }
+            area.insertBefore(fragment, area.firstChild);
             
             renderedCount += count;
             var newRows = area.querySelectorAll('.message-row.user');
@@ -4588,7 +4592,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         var temp = document.createElement('div');
                         temp.innerHTML = html;
                         if (area.firstChild) {
-                            area.insertBefore(temp, area.firstChild);
+                            var fragment = document.createDocumentFragment();
+                            while (temp.firstChild) {
+                                fragment.appendChild(temp.firstChild);
+                            }
+                            area.insertBefore(fragment, area.firstChild);
                         } else {
                             area.appendChild(temp);
                         }
