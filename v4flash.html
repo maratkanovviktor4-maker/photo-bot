@@ -3888,6 +3888,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (_streamTimers[id]) return;
             _streamTimers[id] = setTimeout(function() {
                 _streamTimers[id] = null;
+                if (el.querySelector('.typing-dots') && !msg.content && !msg._reasoningBuffer) {
+                    el.style.minHeight = el.offsetHeight + 'px';
+                } else {
+                    el.style.minHeight = '';
+                }
                 var reasoningHtml = (msg._reasoningBuffer)
                     ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
                     : '';
