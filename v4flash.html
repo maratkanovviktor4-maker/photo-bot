@@ -3888,11 +3888,15 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (_streamTimers[id]) return;
             _streamTimers[id] = setTimeout(function() {
                 _streamTimers[id] = null;
+                if (!el._initialHeight) {
+                    el._initialHeight = el.offsetHeight;
+                }
                 var reasoningHtml = (msg._reasoningBuffer)
                     ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
                     : '';
                 var contentHtml = formatMessage(msg.content || '');
                 el.innerHTML = reasoningHtml + contentHtml;
+                el.style.minHeight = el._initialHeight + 'px';
                 var codeBlocks = el.querySelectorAll('pre code');
                 for (var i = 0; i < codeBlocks.length; i++) {
                     var block = codeBlocks[i];
