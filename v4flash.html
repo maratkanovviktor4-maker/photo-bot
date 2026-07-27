@@ -4596,7 +4596,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         var temp = document.createElement('div');
                         temp.innerHTML = html;
                         if (area.firstChild) {
-                            area.insertBefore(temp, area.firstChild);
+                            var fragment = document.createDocumentFragment();
+                            while (temp.firstChild) {
+                                fragment.appendChild(temp.firstChild);
+                            }
+                            area.insertBefore(fragment, area.firstChild);
                         } else {
                             area.appendChild(temp);
                         }
