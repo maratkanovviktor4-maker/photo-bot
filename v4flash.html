@@ -2819,10 +2819,13 @@
                 } catch(e) {}
 
                 chat.messages.splice(index, 1);
-                renderBranchesPanel();
-                updateBranchesFromServer().then(function() {
-                    fullRender();
-                });
+                if (chat.messages.length === 0 && currentBranchId !== 'main') {
+                    deleteBranch(currentBranchId);
+                } else {
+                    renderMessages();
+                    renderBranchesPanel();
+                    updateBranchesFromServer();
+                }
             });
         }        
         function removeRedundantMessages(area, expectedCount) {
