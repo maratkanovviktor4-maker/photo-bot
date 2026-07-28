@@ -4140,6 +4140,16 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             const input = document.getElementById('userInput');
             const text = input.value.trim();
             if (!text && !pendingFile) return;
+            
+            if (!currentUserId) { showAlertModal('Ошибка', 'Авторизуйтесь на главной странице', '❌'); return; }
+            if (!currentChatId) {
+                currentChatId = Date.now().toString();
+                var newChatObj = { id: currentChatId, title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: {}, lastMessageTime: Date.now(), _personality: currentPersonality };
+                chats.push(newChatObj);
+                renderChatList();
+            }
+            const chat = chats.find(c => c.id === currentChatId);
+            if (!chat) return;
             if (genModeActive && genModeType) {
                 var formData = new FormData();
                 formData.append('user_id', currentUserId);
@@ -4173,16 +4183,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
                 return;
             }            
-            if (!currentUserId) { showAlertModal('Ошибка', 'Авторизуйтесь на главной странице', '❌'); return; }
-            if (!currentChatId) {
-                currentChatId = Date.now().toString();
-                var newChatObj = { id: currentChatId, title: 'Новый чат', messages: [], activeBranch: 'main', allBranches: {}, lastMessageTime: Date.now(), _personality: currentPersonality };
-                chats.push(newChatObj);
-                renderChatList();
-            }
-            const chat = chats.find(c => c.id === currentChatId);
-            if (!chat) return;
-            
             let displayText = text;
             if (pendingFile) {
                 displayText = text ? text + '\n\n📎 ' + pendingFile.name : '📎 ' + pendingFile.name;
