@@ -2819,8 +2819,16 @@
                 } catch(e) {}
 
                 chat.messages.splice(index, 1);
-                if (chat.messages.length === 0 && currentBranchId !== 'main') {
-                    deleteBranch(currentBranchId);
+                if (chat.messages.length === 0) {
+                    if (currentBranchId !== 'main') {
+                        deleteBranch(currentBranchId);
+                    } else {
+                        renderMessages();
+                        renderBranchesPanel();
+                        updateBranchesFromServer().then(function() {
+                            newChat();
+                        });
+                    }
                 } else {
                     renderMessages();
                     renderBranchesPanel();
