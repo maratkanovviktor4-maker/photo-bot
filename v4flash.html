@@ -1407,7 +1407,6 @@
 
         async function loadChatsFromServer() {
             showLoading();
-            renderedCount = 0;
             try {
                 var resp = await fetch(SERVER_URL + '/get_chat_history?user_id=' + currentUserId + '&model=flash&session_token=' + sessionToken + '&meta_only=true');
                 if (resp.status === 403) {
@@ -1464,7 +1463,6 @@
             } else {
                 setTimeout(function() { scrollToBottom(); }, 100);
             }
-            setTimeout(function() { buildNavContainer(); }, 200);
         }
 
         async function loadChatMessages(chatId) {
@@ -4631,20 +4629,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var nav = document.getElementById('navContainer');
             if (nav) nav.addEventListener('wheel', function(e) { e.stopPropagation(); });
         })();
-        function scrollToTarget(target) {
-            var main = document.querySelector('.main');
-            if (!main || !target) return;
-            main.style.scrollBehavior = 'auto';
-            var firstChild = target.querySelector('.message-content > :first-child');
-            if (!firstChild) firstChild = target.querySelector('.message-content');
-            if (!firstChild) firstChild = target;
-            var rect = firstChild.getBoundingClientRect();
-            var mainRect = main.getBoundingClientRect();
-            var offsetToCenter = (mainRect.height / 2);
-            var scrollTo = rect.top + main.scrollTop - offsetToCenter;
-            main.scrollTop = Math.max(0, scrollTo);
-            main.style.scrollBehavior = 'smooth';
-        }
+
         function scrollToMsg(index) {
             var main = document.querySelector('.main');
             if (!main) return;
@@ -4680,17 +4665,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         hljs.highlightAll();
                         setupFloatingCopyButtons();
                         updateFloatingButtons();
-                        
-                        target = area.querySelector('.message-row[data-msg-index="' + index + '"]');
-                        if (target) {
-                            var userRows = main.querySelectorAll('.message-row.user');
-                            for (var r = 0; r < userRows.length; r++) {
-                                userRows[r].style.marginLeft = 'auto';
-                            }
-                            scrollToTarget(target);
-                            return;
-                        }
                     }
+                    
+                    target = main.querySelector('.message-row[data-msg-index="' + index + '"]');
                 }
             }
             if (target) {
