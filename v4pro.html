@@ -2697,9 +2697,22 @@
                 } catch(e) {}
 
                 chat.messages.splice(index, 1);
-                renderMessages();
-                renderBranchesPanel();
-                updateBranchesFromServer();
+                if (chat.messages.length === 0) {
+                    if (currentBranchId !== 'main') {
+                        deleteBranch(currentBranchId);
+                    } else {
+                        fetch(SERVER_URL + '/delete_chat?user_id=' + currentUserId + '&model=pro&chat_id=' + currentChatId + '&session_token=' + sessionToken, { method: 'DELETE' })
+                            .then(function() {
+                                chats = chats.filter(function(c) { return c.id !== currentChatId; });
+                                renderChatList();
+                                newChat();
+                            });
+                    }
+                } else {
+                    renderMessages();
+                    renderBranchesPanel();
+                    updateBranchesFromServer();
+                }
             });
         }
         function showMessageMenu(event, index) {
