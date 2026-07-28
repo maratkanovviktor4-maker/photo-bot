@@ -12,6 +12,7 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
+        .top-bar.collapsed > :not(#topBarToggle):not(#contextBattery):not(#balanceDisplay) { display: none !important; }        
         body.light .empty-state { color: #111; }
         body:not(.light) .empty-state { color: #e0e0e0; }
         .chat-wrapper.empty-state-active { justify-content: center; }
@@ -541,6 +542,7 @@
         <div class="top-bar">
             <span id="contextBattery" title="Контекст" style="display:inline-flex;align-items:center;cursor:pointer;"></span>
             <span id="balanceDisplay"></span>
+            <button class="theme-btn" onclick="toggleTopBar()" id="topBarToggle" title="Скрыть/показать панель" style="margin-right:4px;display:inline-flex;align-items:center;gap:4px;">‹</button>
             <span id="branchIndicatorTop"></span>
             <div id="personalityCustom" style="position:relative;display:inline-block;">
                 <select id="personalitySelect" onchange="changePersonality()" style="display:none;"></select>
@@ -848,7 +850,12 @@
             window.toggleVoiceDropdown = toggleVoiceDropdown;
             window.closeVoiceDropdown = closeVoiceDropdown;
         }
-
+        function toggleTopBar() {
+            var bar = document.querySelector('.top-bar');
+            bar.classList.toggle('collapsed');
+            var btn = document.getElementById('topBarToggle');
+            btn.innerHTML = bar.classList.contains('collapsed') ? '›' : '‹';
+        }
         function changeVoice() {
             const val = document.getElementById('voiceSelect').value;
             localStorage.setItem('photobot_voice', val);
