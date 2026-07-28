@@ -2823,11 +2823,12 @@
                     if (currentBranchId !== 'main') {
                         deleteBranch(currentBranchId);
                     } else {
-                        renderMessages();
-                        renderBranchesPanel();
-                        updateBranchesFromServer().then(function() {
-                            newChat();
-                        });
+                        fetch(SERVER_URL + '/delete_chat?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&session_token=' + sessionToken, { method: 'DELETE' })
+                            .then(function() {
+                                chats = chats.filter(function(c) { return c.id !== currentChatId; });
+                                renderChatList();
+                                newChat();
+                            });
                     }
                 } else {
                     renderMessages();
