@@ -2819,9 +2819,10 @@
                 } catch(e) {}
 
                 chat.messages.splice(index, 1);
-                renderMessages();
                 renderBranchesPanel();
-                updateBranchesFromServer();
+                updateBranchesFromServer().then(function() {
+                    fullRender();
+                });
             });
         }        
         function removeRedundantMessages(area, expectedCount) {
