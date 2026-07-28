@@ -4136,9 +4136,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         }
 
         async function sendMessage() {
-            if (isSending) return;
+            if (isSending) return;            
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            if (!text && !pendingFile) return;
             if (genModeActive && genModeType) {
-                // Отправка в генерацию вместо DeepSeek
                 var formData = new FormData();
                 formData.append('user_id', currentUserId);
                 formData.append('caption', text);
@@ -4171,9 +4173,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
                 return;
             }            
-            const input = document.getElementById('userInput');
-            const text = input.value.trim();
-            if (!text && !pendingFile) return;
             if (!currentUserId) { showAlertModal('Ошибка', 'Авторизуйтесь на главной странице', '❌'); return; }
             if (!currentChatId) {
                 currentChatId = Date.now().toString();
