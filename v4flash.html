@@ -4178,6 +4178,36 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var resp = await fetch(SERVER_URL + endpoint, { method: 'POST', body: formData, headers: { 'X-Session-Token': sessionToken } });
                 var data = await resp.json();
                 if (data.job_id) {
+                    var jobId = data.job_id;
+                    chat.messages[chat.messages.length - 1].content = '🔄 Генерация запущена (ID: ' + jobId + ')';
+                    renderMessages();
+                    
+                    // Polling каждые 2 секунды
+                    var pollCount = 0;
+                    var pollTimer = setInterval(async function() {
+                        pollCount++;
+                        if (pollCount > 90) { // 3 минуты максимум
+                            clearInterval(pollTimer);
+                            chat.messages[chat.messages.length - 1].content = '⏱ Время ожидания истекло. Проверьте хранилище.';
+                            renderMessages();
+                            return;
+                        }
+                        
+                        var pendResp = await fetch(SERVER_URL + '/pending?user_id=' + currentUserId + '&session_token=' + sessionToken + '&after=' + encodeURIComponent(jobId));
+                        if (!pendResp.ok) return;
+                        var pendData = await pendResp.json();
+                        if (pendData.results && pendData.results.length > 0) {
+                            clearInterval(pollTimer);
+                            var imgData = pendData.results[0].data;
+                            var imgHtml = '<img src="data:image/jpeg;base64,' + imgData + '" style="max-width:100%;border-radius:12px;">';
+                            chat.messages[chat.messages.length - 1].content = imgHtml;
+                            chat.messages[chat.messages.length - 1]._html = true;
+                            renderMessages();
+                            updateUnviewedCount();
+                            genModeActive = false;
+                            document.getElementById('genModeBtn').textContent = '🎨';
+                        }
+                    }, 2000);
                     chat.messages[chat.messages.length - 1].content += '\n\n🔄 Генерация запущена (ID: ' + data.job_id + ')';
                     renderMessages();
                 }
