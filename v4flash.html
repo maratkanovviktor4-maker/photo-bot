@@ -125,7 +125,7 @@
             color: #e74c3c !important;
             background: rgba(0,0,0,0.06) !important;
         }
-
+        .top-bar.collapsed > :not(#topBarToggle):not(#contextBattery):not(#balanceDisplay) { display: none !important; }
         .scroll-bottom-btn:hover { background: #2a2a3e; }
         body.light .scroll-bottom-btn { background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.15); }
         body.light .scroll-bottom-btn:hover { background: #e0e0e0; }
@@ -572,6 +572,7 @@
                 </button>
                 <div id="voiceDropdown" style="position:absolute;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:220px;max-height:300px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
             </div>
+            <button class="theme-btn" onclick="toggleTopBar()" id="topBarToggle" title="Скрыть/показать панель" style="margin-right:4px;display:inline-flex;align-items:center;gap:4px;">‹</button>
             <button class="theme-btn" onclick="toggleTips()" id="tipToggleBtn" title="Подсказки" style="display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;"></button>
 	    <button class="theme-btn" onclick="window.open('api-docs.html','_blank')" title="API документация" style="display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"/></svg> API
@@ -1014,11 +1015,12 @@
             }
         }
 
-
-
-
-
-
+        function toggleTopBar() {
+            var bar = document.querySelector('.top-bar');
+            bar.classList.toggle('collapsed');
+            var btn = document.getElementById('topBarToggle');
+            btn.innerHTML = bar.classList.contains('collapsed') ? '›' : '‹';
+        }
 
         function saveChatBg(css) {
             localStorage.setItem('photobot_chat_bg', css);
