@@ -975,6 +975,12 @@
         ];
         function loadChatBg() {
             const saved = localStorage.getItem('photobot_chat_bg');
+            var bgName = 'Стандарт';
+            for (var i = 0; i < BG_PRESETS.length; i++) {
+                if (BG_PRESETS[i].css === saved) { bgName = BG_PRESETS[i].name; break; }
+            }
+            var label = document.getElementById('bgCurrentLabel');
+            if (label) label.textContent = bgName;
             const inputWrapper = document.querySelector('.input-row-wrapper');
             if (saved) {
                 const main = document.querySelector('.main');
