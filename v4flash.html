@@ -866,102 +866,7 @@
             textEl.textContent = tip.text;
             container.style.opacity = '1';
         }
-        // ===== INLINE SELECTION MENU =====
-        var selectedText = '';
-        var selectionRange = null;
 
-        document.addEventListener('mouseup', function(e) {
-            // Убираем существующее меню
-            var existing = document.querySelector('.selection-menu');
-            if (existing) existing.remove();
-
-            var sel = window.getSelection();
-            if (!sel || sel.isCollapsed || !sel.toString().trim()) return;
-
-            // Проверяем, что выделение внутри .message-content
-            var node = sel.anchorNode;
-            if (!node) return;
-            var contentEl = node.nodeType === 3 ? node.parentElement : node;
-            while (contentEl && contentEl.className && contentEl.className.indexOf('message-content') === -1) {
-                contentEl = contentEl.parentElement;
-            }
-            if (!contentEl) return;
-
-            selectedText = sel.toString().trim();
-            if (!selectedText || selectedText.length < 2) return;
-            window._selectionText = selectedText;
-            selectionRange = sel.getRangeAt(0);
-
-            // Создаём меню
-            var menu = document.createElement('div');
-            menu.className = 'selection-menu';
-            menu.style.cssText = 'position:fixed;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;box-shadow:0 8px 24px rgba(0,0,0,0.4);opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease,transform 0.2s ease;';
-            if (document.body.classList.contains('light')) {
-                menu.style.background = '#ffffff';
-                menu.style.border = '1px solid rgba(0,0,0,0.1)';
-                menu.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
-            }
-
-            var items = [
-            { label: 'Расспросить подробнее об этом', icon: '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"/></svg>', action: function() { askAboutSelection(window._selectionText); } },
-            { label: 'Искать в интернете', icon: '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"/></svg>', action: function() { searchSelection(window._selectionText); } }
-            ];
-            var capturedText = selectedText;
-            items.forEach(function(item) {
-                var el = document.createElement('div');
-                el.innerHTML = item.icon + ' ' + item.label;
-                el.style.cssText = 'padding:8px 12px;font-size:13px;color:' + (document.body.classList.contains('light') ? '#333' : '#e0e0e0') + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;display:flex;align-items:center;gap:8px;transition:background 0.1s;white-space:nowrap;';
-                el.addEventListener('mouseenter', function() { this.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; });
-                el.addEventListener('mouseleave', function() { this.style.background = 'transparent'; });
-                el.addEventListener('click', function() { menu.remove(); item.action(); });
-                menu.appendChild(el);
-            });
-
-            document.body.appendChild(menu);
-
-            // Позиционируем меню над выделением
-            var rect = selectionRange.getBoundingClientRect();
-            var menuWidth = menu.offsetWidth || 200;
-            var left = Math.min(rect.left + rect.width / 2 - menuWidth / 2, window.innerWidth - menuWidth - 8);
-            left = Math.max(8, left);
-            var top = rect.top - menu.offsetHeight - 8;
-            if (top < 8) {
-                top = rect.bottom + 8;
-            }
-            menu.style.left = left + 'px';
-            menu.style.top = top + 'px';
-
-            requestAnimationFrame(function() {
-                menu.style.opacity = '1';
-                menu.style.transform = 'translateY(0)';
-            });
-
-            // Закрытие по клику вне меню
-            setTimeout(function() {
-                document.addEventListener('click', function closeMenu(e) {
-                    if (!menu.contains(e.target)) {
-                        menu.style.opacity = '0';
-                        menu.style.transform = 'translateY(-8px)';
-                        setTimeout(function() { menu.remove(); }, 200);
-                        document.removeEventListener('click', closeMenu);
-                    }
-                });
-            }, 10);
-        });
-
-        function askAboutSelection(text) {
-            if (!text) return;
-            var input = document.getElementById('userInput');
-            input.value = 'Расскажи подробнее об этом: "' + text + '"';
-            input.dispatchEvent(new Event('input'));
-            input.focus();
-        }
-
-        function searchSelection(text) {
-            if (!text) return;
-            var query = encodeURIComponent(text);
-            window.open('https://www.google.com/search?q=' + query, '_blank');
-        }
         function startTipRotation() {
             if (tipInterval) clearInterval(tipInterval);
             if (!tipEnabled) return;
@@ -2782,14 +2687,14 @@
             var items = [];
             if (msg.role === 'assistant') {
                 items.push(
-                    { label: 'Продолжить в новой ветке', icon: '<svg width="14" height="14" viewBox="0 0 48 48" style="transform:scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg>', action: function() { createBranchFromMessage(index); } },
+                    { label: 'Ответвить', icon: '<svg width="14" height="14" viewBox="0 0 48 48" style="transform:scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg>', action: function() { createBranchFromMessage(index); } },
                     { label: 'Удалить', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>', action: function() { deleteMessage(index); } },
-                    { label: 'Склеить ветки', icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg>', action: function() { showCopyHistoryModal(index); } },
+                    { label: 'Перенести историю', icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg>', action: function() { showCopyHistoryModal(index); } },
                     { label: 'Поделиться', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg>', action: function() { shareChat(currentChatId); } }
                 );
             } else if (msg.role === 'user') {
                 items.push(
-                    { label: 'Переспросить в новой ветке', icon: '<svg width="14" height="14" viewBox="0 0 48 48" style="transform:scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg>', action: function() { createBranchFromMessage(index); } },
+                    { label: 'Ответвить', icon: '<svg width="14" height="14" viewBox="0 0 48 48" style="transform:scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg>', action: function() { createBranchFromMessage(index); } },
                     { label: 'Удалить', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>', action: function() { deleteMessage(index); } }
                 );
             }
@@ -2860,10 +2765,10 @@
                 actionsHtml += '<button onclick="copyMessage(' + index + ')" id="copy-btn-' + index + '" title="Копировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
                 actionsHtml += '<button onclick="downloadMessage(' + index + ')" id="download-btn-' + index + '" title="Скачать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
                 actionsHtml += '<button class="roll-btn" onclick="showRegeneratePopup(' + index + ', this)" title="Регенерировать ответ"><svg width="14" height="14" viewBox="0 -1 16 16" fill="currentColor"><path d="M15.854,6.146a.5.5,0,0,0-.708,0L14,7.293V7a7,7,0,1,0-7,7,.5.5,0,0,0,0-1,6,6,0,1,1,6-6v.293L11.854,6.146a.5.5,0,0,0-.708.708l2,2a.518.518,0,0,0,.163.109.5.5,0,0,0,.382,0,.518.518,0,0,0,.163-.109l2-2A.5.5,0,0,0,15.854,6.146Z"/></svg></button>';
-                if (msg.interrupted) actionsHtml += '<button onclick="continueMessage(' + index + ')" title="Продолжить ответ"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
+                if (msg.interrupted) actionsHtml += '<button onclick="continueMessage(' + index + ')" title="Продолжить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>';
                 actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + index + ')" title="Self-Play диалог" style="color:#00CBF5;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>';
-                actionsHtml += '<button class="prompt-btn" onclick="showPromptPopup(' + index + ', this)" title="Готовые реплики"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg></button>';
-                actionsHtml += '<button onclick="speakMessage(' + index + ')" title="Озвучить это сообщение"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" /></svg></button>';
+                actionsHtml += '<button class="prompt-btn" onclick="showPromptPopup(' + index + ', this)" title="Реплика"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg></button>';
+                actionsHtml += '<button onclick="speakMessage(' + index + ')" title="Озвучить"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" /></svg></button>';
                 actionsHtml += '<button onclick="showMessageMenu(event, ' + index + ')" title="Ещё"><svg fill="currentColor" viewBox="0 0 16 16" width="14" height="14"><path d="M8 2.5a1.22 1.22 0 0 1 1.25 1.17A1.21 1.21 0 0 1 8 4.84a1.21 1.21 0 0 1-1.25-1.17A1.22 1.22 0 0 1 8 2.5zm0 8.66a1.17 1.17 0 1 1-1.25 1.17A1.21 1.21 0 0 1 8 11.16zm0-4.33a1.17 1.17 0 1 1 0 2.34 1.17 1.17 0 1 1 0-2.34z"/></svg></button>';           
             }
             var reasoningHtml = '';
