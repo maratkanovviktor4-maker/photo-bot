@@ -1757,7 +1757,8 @@
                 toggle.title = 'Свернуть панель';
                 localStorage.setItem('photobot_sidebar', 'expanded');
             }
-            setTimeout(function() { _floatingHeaders = []; updateFloatingButtons(); }, 100);
+            _floatingHeaders = [];
+            updateFloatingButtons();
         }
 
         function renderBranchesPanel() {
@@ -4736,6 +4737,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     header.style.width = blockRect.width + 'px';
                     header.style.display = 'flex';
                     header.style.borderRadius = '0 0 10px 10px';
+                } else if (header.style.position === 'fixed') {
+                    header.style.left = blockRect.left + 'px';
+                    header.style.width = blockRect.width + 'px';
                 } else {
                     header.style.position = 'static';
                     header.style.top = '';
