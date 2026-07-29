@@ -4379,6 +4379,19 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 [/~~(.+?)~~/g, '<del>$1</del>'],
                 [/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">'],
                 [/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>'],
+                [/^\|(.+)\|$/gm, function(match, content) {
+                    var rows = content.trim().split('|');
+                    var isHeader = false;
+                    var headerRegex = /^[\s:-]+$/;
+                    if (rows.every(function(cell) { return headerRegex.test(cell.trim()); })) {
+                        return '';
+                    }
+                    var cells = rows.map(function(cell) { return '<td>' + cell.trim() + '</td>'; }).join('');
+                    var tag = 'tr';
+                    return '<' + tag + '>' + cells + '</' + tag + '>';
+                }],
+                [/<tr>(?:<td>[\s:-]+<\/td>)+<\/tr>/g, ''],
+                [/((?:<tr>.*<\/tr>\s*)+)/g, '<table>$1</table>'],
                 [/\n/g, '<br>']
             ];
             var result = '';
