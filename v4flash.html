@@ -4339,7 +4339,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
         function formatMessage(text) {
             var B = _formatBacktick;
-            text = text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank">$1</a>');
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) { text = B + B + B + 'html\n' + text + '\n' + B + B + B; }
             var parts = [];
             var lastIndex = 0;
@@ -4434,6 +4433,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     result += text2;
                 }
             }
+            result = result.replace(/<a href="([^"]+)" target="_blank">[^<]+<\/a>/g, function(match, url) {
+                return '<a href="' + url + '" target="_blank">' + url + '</a>';
+            });
             return result;
         }
 
