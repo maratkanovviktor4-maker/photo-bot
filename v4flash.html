@@ -880,7 +880,12 @@
 
             // Проверяем, что выделение внутри .message-content
             var node = sel.anchorNode;
-            if (!node || !node.parentElement || node.parentElement.className.indexOf('message-content') === -1) return;
+            if (!node) return;
+            var contentEl = node.nodeType === 3 ? node.parentElement : node;
+            while (contentEl && contentEl.className && contentEl.className.indexOf('message-content') === -1) {
+                contentEl = contentEl.parentElement;
+            }
+            if (!contentEl) return;
 
             selectedText = sel.toString().trim();
             if (!selectedText || selectedText.length < 2) return;
