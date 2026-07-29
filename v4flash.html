@@ -4413,6 +4413,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     result += text2;
                 }
             }
+            result = result.replace(/<table>[\s\S]*?<\/table>/g, function(tableMatch) {
+                return tableMatch.replace(/<br>/g, '\n');
+            });
             return result;
         }
 
