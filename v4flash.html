@@ -1757,7 +1757,12 @@
                 toggle.title = 'Свернуть панель';
                 localStorage.setItem('photobot_sidebar', 'expanded');
             }
-            setTimeout(function() { updateFloatingButtons(); }, 50);
+            var mainEl = document.querySelector('.main');
+            var onEnd = function() {
+                updateFloatingButtons();
+                mainEl.removeEventListener('transitionend', onEnd);
+            };
+            mainEl.addEventListener('transitionend', onEnd);
         }
 
         function renderBranchesPanel() {
