@@ -4377,7 +4377,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 [/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">'],
                 [/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>'],
                 [/^\|(.+)\|$/gm, function(match, content) {
-                    content = content.replace(/^\s*[\r\n]+/gm, '');
                     var rows = content.trim().split('|');
                     var headerRegex = /^[\s:-]+$/;
                     if (rows.length > 1 && rows.every(function(cell) { return headerRegex.test(cell.trim()); })) {
@@ -4387,13 +4386,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     return '<tr>' + cells + '</tr>';
                 }],
                 [/((?:<tr>.*<\/tr>\s*)+)/g, function(match, tableContent) {
-                    tableContent = tableContent.replace(/^\s*[\r\n]+/gm, '');
                     var rows = tableContent.match(/<tr>.*?<\/tr>/g) || [];
                     if (rows.length >= 2) {
                         var headerRow = rows[0].replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
                         rows[0] = headerRow;
                     }
-                    return '<table>' + rows.join('') + '</table>';
+                    return '<table>' + rows.join('\n') + '</table>';
                 }],
                 [/\n/g, '<br>']
             ];
