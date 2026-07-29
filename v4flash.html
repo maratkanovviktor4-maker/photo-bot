@@ -4376,6 +4376,32 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 [/~~(.+?)~~/g, '<del>$1</del>'],
                 [/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">'],
                 [/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>'],
+                [/^\|(.+)\|$/gm, function(match, content) {
+                    var cells = content.split('|');
+                    var isHeader = false;
+                    var html = '<table>';
+                    var lines = match.split('\n');
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i].trim();
+                        if (!line || !line.startsWith('|')) continue;
+                        var parts = line.split('|').filter(function(c) { return c.trim() !== ''; });
+                        if (parts.length === 0) continue;
+                        // Проверка на разделитель (|---|)
+                        if (parts.every(function(p) { return /^[\s:-]+$/.test(p); })) {
+                            isHeader = true;
+                            continue;
+                        }
+                        html += '<tr>';
+                        for (var j = 0; j < parts.length; j++) {
+                            var tag = isHeader ? 'th' : 'td';
+                            html += '<' + tag + '>' + parts[j].trim() + '</' + tag + '>';
+                        }
+                        html += '</tr>';
+                        isHeader = false;
+                    }
+                    html += '</table>';
+                    return html;
+                }],
                 [/\n/g, '<br>']
             ];
             var result = '';
