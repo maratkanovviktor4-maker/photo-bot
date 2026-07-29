@@ -2752,9 +2752,18 @@
                 }
             });
         }
+        var selectedText = '';
+        
+        document.addEventListener('selectionchange', function() {
+            var sel = window.getSelection();
+            var text = sel.toString().trim();
+            if (text && text.length <= 200) {
+                selectedText = text;
+            }
+        });        
         document.addEventListener('mouseup', function(e) {
             var selection = window.getSelection();
-            var text = selection.toString().trim();
+            var text = selectedText;
             if (!text) {
                 var popup = document.querySelector('.text-selection-popup');
                 if (popup) popup.remove();
