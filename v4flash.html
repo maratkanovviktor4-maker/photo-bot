@@ -4340,6 +4340,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function formatMessage(text) {
             var B = _formatBacktick;
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) { text = B + B + B + 'html\n' + text + '\n' + B + B + B; }
+            text = text.replace(/^\|(.+)\|[\s\S]*?^\|(.+)\|$/gm, function(match) {
+                return '\n' + match;
+            });
             var parts = [];
             var lastIndex = 0;
             if (!_formatRegex) _formatRegex = new RegExp(B + B + B + '(\\w*)\\r?\\n([\\s\\S]*?)' + B + B + B, 'g');
