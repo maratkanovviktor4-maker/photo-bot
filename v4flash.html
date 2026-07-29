@@ -4427,7 +4427,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
                 } else {
                     var text2 = part.content;
-                    text2 = text2.replace(/(https?:\/\/[^\s<>]+)/g, '<a href="$1" target="_blank">$1</a>');
+                    while (/(https?:\/\/[^\s<>]+)/.test(text2)) {
+                        text2 = text2.replace(/(https?:\/\/[^\s<>]+)/, '<a href="$1" target="_blank">$1</a>');
+                    }
                     text2 = escapeHtml(text2);
                     for (var r = 0; r < _inlineRules.length; r++) {
                         text2 = text2.replace(_inlineRules[r][0], _inlineRules[r][1]);
