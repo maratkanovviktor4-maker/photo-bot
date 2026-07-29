@@ -4378,13 +4378,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 [/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>'],
                 [/\n/g, '<br>']
             ];
-            // Предобработка markdown-таблиц
-            text = text.replace(/^\|(.+)\|$/gm, function(match, content) {
-                var cells = content.split('|').map(function(c) { return c.trim(); });
-                return '<tr><td>' + cells.join('</td><td>') + '</td></tr>';
-            });
-            text = text.replace(/((?:<tr>.*<\/tr>\s*)+)/g, '<table>$1</table>');
-            text = text.replace(/^\|[\s\-:]+\|$/gm, '');            
             var result = '';
             for (var p = 0; p < parts.length; p++) {
                 var part = parts[p];
@@ -4392,7 +4385,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     var lang = part.lang || '';
                     result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
                 } else {
-                    var text2 = escapeHtml(part.content);
+                    var text2 = part.content;
+                    text2 = text2.replace(/^\|(.+)\|$/gm, function(match, content) {
+                        var cells = content.split('|').map(function(c) { return c.trim(); });
+                        return '<tr><td>' + cells.join('</td><td>') + '</td></tr>';
+                    });
+                    text2 = text2.replace(/((?:<tr>.*<\/tr>\s*)+)/g, '<table>$1</table>');
+                    text2 = text2.replace(/^\|[\s\-:]+\|$/gm, '');
+                    text2 = escapeHtml(text2);
                     for (var r = 0; r < _inlineRules.length; r++) {
                         text2 = text2.replace(_inlineRules[r][0], _inlineRules[r][1]);
                     }
