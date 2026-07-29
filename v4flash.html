@@ -4395,6 +4395,17 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                     return '<table>' + rows.join('') + '</table>';
                 }],
+                [/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank">$1</a>'],
+                [/^[\s]*[-][\s][\[x\]](.+)$/gm, '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;"><input type="checkbox" checked disabled><span>$1</span></div>'],
+                [/^[\s]*[-][\s][\[ \]](.+)$/gm, '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;"><input type="checkbox" disabled><span>$1</span></div>'],
+                [/^(\s{2,})([-*]\s.+)$/gm, function(match, indent, item) {
+                    var depth = Math.floor(indent.length / 2);
+                    var margin = depth * 16;
+                    return '<div style="margin-left:' + margin + 'px;">' + item + '</div>';
+                }],
+                [/\[\^(\d+)\]:\s(.+)$/gm, '<div style="font-size:12px;color:#888;margin-top:4px;">[^$1]: $2</div>'],
+                [/\[\^(\d+)\]/g, '<sup style="color:#00CBF5;cursor:help;" title="Сноска $1">[$1]</sup>'],
+                [/(<mark>)(.*?)(<\/mark>)/g, '<span style="background:#ffeb3b;color:#000;padding:0 4px;border-radius:3px;">$2</span>'],
                 [/\n/g, '<br>']
             ];
             var result = '';
