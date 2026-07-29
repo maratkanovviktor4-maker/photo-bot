@@ -2854,8 +2854,6 @@
         }
         function fullRender() {
             _floatingHeaders = [];
-            var area = document.getElementById('chatArea');
-            if (area) area.style.paddingTop = '0';
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
             if (!chat || chat.messages.length === 0) {
@@ -2905,8 +2903,6 @@
 
         function renderMessages() {
             const chat = chats.find(c => c.id === currentChatId);
-            var area = document.getElementById('chatArea');
-            if (area) area.style.paddingTop = '0';
             const area = document.getElementById('chatArea');
             if (!chat || chat.messages.length === 0) {
                 area.innerHTML = '<div class="empty-state" style="display:flex;flex-direction:row;align-items:center;gap:12px;justify-content:center;"><img src="deepseek_logo.png" class="logo-lg" alt="V4 Flash" onerror="this.style.display=\'none\'" style="height:32px;opacity:1;"><div style="display:flex;flex-direction:row;align-items:center;gap:8px;"><span style="font-size:16px;font-weight:700;color:inherit;">V4 Flash</span><span style="font-size:16px;font-weight:700;color:inherit;">·</span><span style="font-size:16px;font-weight:700;color:inherit;">Задайте любой вопрос или прикрепите файл</span></div></div>';
@@ -2957,25 +2953,11 @@
         }
         
         function handleScrollLoad() {
-            var main = document.querySelector('.main');
-            if (!main) return;
-            
-            // Сброс paddingTop при скролле вниз
-            if (main.scrollHeight - main.scrollTop - main.clientHeight < 200) {
-                var area = document.getElementById('chatArea');
-                var pt = parseFloat(area.style.paddingTop) || 0;
-                if (pt > 0) {
-                    area.style.paddingTop = '0';
-                    renderedCount = 0;
-                    fullRender();
-                    setTimeout(function() { scrollToBottom(); }, 0);
-                    return;
-                }
-            }
-            
             var chat = chats.find(c => c.id === currentChatId);
             if (!chat || renderedCount >= chat.messages.length) return;
-            
+
+            var main = document.querySelector('.main');
+            if (!main) return;
             if (main.scrollTop < RENDER_TRIGGER_OFFSET * 30) {
                 loadMoreMessages();
             }
@@ -2999,34 +2981,22 @@
             
             var temp = document.createElement('div');
             temp.innerHTML = html;
-            if (area.firstChild) {
-                var fragment = document.createDocumentFragment();
-                while (temp.firstChild) {
-                    fragment.appendChild(temp.firstChild);
-                }
-                area.insertBefore(fragment, area.firstChild);
-            } else {
-                area.appendChild(temp);
+            var fragment = document.createDocumentFragment();
+            while (temp.firstChild) {
+                fragment.appendChild(temp.firstChild);
             }
+            area.insertBefore(fragment, area.firstChild);
+
             
             renderedCount += count;
-            
-            // Ограничение DOM до 100 сообщений
-            var allRows = area.querySelectorAll('.message-row');
-            if (allRows.length > 100) {
-                var excess = allRows.length - 100;
-                var removedHeight = 0;
-                for (var r = 0; r < excess; r++) {
-                    removedHeight += allRows[r].offsetHeight + 20;
-                    allRows[r].remove();
-                }
-                area.style.paddingTop = (parseFloat(area.style.paddingTop) || 0) + removedHeight + 'px';
-            }
-            renderedCount = Math.min(renderedCount, 100);
-            
-            var newRows = temp.querySelectorAll('.message-row.user');
+            var newRows = area.querySelectorAll('.message-row.user');
             for (var r = 0; r < newRows.length; r++) {
                 newRows[r].style.marginLeft = 'auto';
+            }
+
+            // Принудительное применение стилей для сообщений user
+            var newRows = area.querySelectorAll('.message-row.user');
+            for (var r = 0; r < newRows.length; r++) {
                 newRows[r].style.alignSelf = 'flex-end';
                 newRows[r].style.flexDirection = 'row-reverse';
             }
@@ -5127,7 +5097,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         (function() {
             var modalClosePairs = [
                 ['copyHistoryModal', function() { document.getElementById('copyHistoryModal').style.display = 'none'; copyHistorySourceIndex = -1; }],
-                ['selfPlayModal', function() { closeSelfPlayModal(); }],
+                ['selfPlayModal', closeSelfPlayModal],
                 ['renameModal', closeRenameModal],
                 ['customPersonalityModal', closeCustomPersonalityModal]
             ];
