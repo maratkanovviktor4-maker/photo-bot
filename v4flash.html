@@ -12,7 +12,6 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
-        mark { background: #ffeb3b; color: #000; padding: 0 4px; border-radius: 3px; }
         .chat-wrapper { justify-content: center; }
         .chat-wrapper.has-messages { justify-content: flex-start; }
         .typing-dots { display: inline-flex; gap: 4px; padding: 4px 0; }
@@ -4339,8 +4338,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         var _formatBacktick = String.fromCharCode(96);
 
         function formatMessage(text) {
-            text = text.replace(/^(\s*)-\s+\[x\]\s+(.+)$/gm, '$1<div style="display:flex;align-items:center;gap:6px;margin:2px 0;"><input type="checkbox" checked disabled><span>$2</span></div>');
-            text = text.replace(/^(\s*)-\s+\[ \]\s+(.+)$/gm, '$1<div style="display:flex;align-items:center;gap:6px;margin:2px 0;"><input type="checkbox" disabled><span>$2</span></div>');
             var B = _formatBacktick;
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) { text = B + B + B + 'html\n' + text + '\n' + B + B + B; }
             var parts = [];
@@ -4399,6 +4396,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     return '<table>' + rows.join('') + '</table>';
                 }],
                 [/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank">$1</a>'],
+                [/^[\s]*[-][\s][\[x\]](.+)$/gm, '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;"><input type="checkbox" checked disabled><span>$1</span></div>'],
+                [/^[\s]*[-][\s][\[ \]](.+)$/gm, '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;"><input type="checkbox" disabled><span>$1</span></div>'],
                 [/^(\s{2,})([-*]\s.+)$/gm, function(match, indent, item) {
                     var depth = Math.floor(indent.length / 2);
                     var margin = depth * 16;
@@ -4406,6 +4405,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }],
                 [/\[\^(\d+)\]:\s(.+)$/gm, '<div style="font-size:12px;color:#888;margin-top:4px;">[^$1]: $2</div>'],
                 [/\[\^(\d+)\]/g, '<sup style="color:#00CBF5;cursor:help;" title="Сноска $1">[$1]</sup>'],
+                [/(<mark>)(.*?)(<\/mark>)/g, '<span style="background:#ffeb3b;color:#000;padding:0 4px;border-radius:3px;">$2</span>'],
                 [/\n/g, '<br>']
             ];
             var result = '';
