@@ -4375,10 +4375,22 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 [/^## (.+)$/gm, '<h2>$1</h2>'],
                 [/^# (.+)$/gm, '<h1>$1</h1>'],
                 [/^---$/gm, '<hr>'],
-                [/^[-*]\s(.+)$/gm, '<li>$1</li>'],
-                [/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>'],
-                [/^\d+\.\s(.+)$/gm, '<li>$1</li>'],
-                [/((?:<li>.*<\/li>\s*)+)/g, '<ol>$1</ol>'],
+                [/^(\s*)([-*])\s(\[x\])\s(.+)$/gm, function(match, indent, bullet, check, text) {
+                    var margin = indent ? Math.floor(indent.length / 2) * 16 : 0;
+                    return '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;margin-left:' + margin + 'px;"><input type="checkbox" checked disabled><span>' + text + '</span></div>';
+                }],
+                [/^(\s*)([-*])\s(\[ \])\s(.+)$/gm, function(match, indent, bullet, check, text) {
+                    var margin = indent ? Math.floor(indent.length / 2) * 16 : 0;
+                    return '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;margin-left:' + margin + 'px;"><input type="checkbox" disabled><span>' + text + '</span></div>';
+                }],
+                [/^(\s*)([-*])\s(.+)$/gm, function(match, indent, bullet, text) {
+                    var margin = indent ? Math.floor(indent.length / 2) * 16 : 0;
+                    return '<div style="margin:2px 0;margin-left:' + margin + 'px;">• ' + text + '</div>';
+                }],
+                [/^(\s*)(\d+)\.\s(.+)$/gm, function(match, indent, num, text) {
+                    var margin = indent ? Math.floor(indent.length / 2) * 16 : 0;
+                    return '<div style="margin:2px 0;margin-left:' + margin + 'px;">' + num + '. ' + text + '</div>';
+                }],
                 [/~~(.+?)~~/g, '<del>$1</del>'],
                 [/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">'],
                 [/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>'],
