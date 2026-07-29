@@ -4339,9 +4339,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         var _formatBacktick = String.fromCharCode(96);
 
         function formatMessage(text) {
-            text = text.replace(/\n{2,}(?=\|)/g, '\n');
             var B = _formatBacktick;
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) { text = B + B + B + 'html\n' + text + '\n' + B + B + B; }
+            text = text.replace(/(\n{3,})(?=\|)/g, '\n\n');
             var parts = [];
             var lastIndex = 0;
             if (!_formatRegex) _formatRegex = new RegExp(B + B + B + '(\\w*)\\r?\\n([\\s\\S]*?)' + B + B + B, 'g');
