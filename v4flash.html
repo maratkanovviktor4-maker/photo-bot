@@ -4338,7 +4338,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         var _formatBacktick = String.fromCharCode(96);
 
         function formatMessage(text) {
-            text = text.replace(/\n{3,}/g, '\n\n');
             var B = _formatBacktick;
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) { text = B + B + B + 'html\n' + text + '\n' + B + B + B; }
             var parts = [];
@@ -4377,6 +4376,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 [/~~(.+?)~~/g, '<del>$1</del>'],
                 [/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">'],
                 [/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>'],
+                [/^\s*$/gm, ''],
                 [/^\|(.+)\|$/gm, function(match, content) {
                     var rows = content.trim().split('|');
                     var headerRegex = /^[\s:-]+$/;
