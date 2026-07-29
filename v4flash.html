@@ -4376,32 +4376,15 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 [/~~(.+?)~~/g, '<del>$1</del>'],
                 [/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">'],
                 [/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>'],
-                [/^(?:\|.+\|(?:$|\n))+$/gm, function(match) {
-                    var lines = match.trim().split('\n');
-                    var html = '<div style="overflow-x:auto;margin:8px 0;"><table style="border-collapse:collapse;width:100%;font-size:14px;">';
-                    var isHeader = false;
-                    for (var i = 0; i < lines.length; i++) {
-                        var line = lines[i].trim();
-                        if (!line || !line.startsWith('|')) continue;
-                        var parts = line.split('|').filter(function(c) { return c.trim() !== ''; });
-                        if (parts.length === 0) continue;
-                        if (parts.every(function(p) { return /^[\s:-]+$/.test(p); })) {
-                            isHeader = true;
-                            continue;
-                        }
-                        html += '<tr>';
-                        for (var j = 0; j < parts.length; j++) {
-                            var tag = isHeader ? 'th' : 'td';
-                            html += '<' + tag + ' style="border:1px solid rgba(255,255,255,0.2);padding:6px 10px;text-align:left;">' + parts[j].trim() + '</' + tag + '>';
-                        }
-                        html += '</tr>';
-                        isHeader = false;
-                    }
-                    html += '</table></div>';
-                    return html;
-                }],                
                 [/\n/g, '<br>']
-            ];           
+            ];
+            // Предобработка markdown-таблиц
+            text = text.replace(/^\|(.+)\|$/gm, function(match, content) {
+                var cells = content.split('|').map(function(c) { return c.trim(); });
+                return '<tr><td>' + cells.join('</td><td>') + '</td></tr>';
+            });
+            text = text.replace(/((?:<tr>.*<\/tr>\s*)+)/g, '<table>$1</table>');
+            text = text.replace(/^\|[\s\-:]+\|$/gm, '');            
             var result = '';
             for (var p = 0; p < parts.length; p++) {
                 var part = parts[p];
