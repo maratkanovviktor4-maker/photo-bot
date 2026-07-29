@@ -4433,7 +4433,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     var lang = part.lang || '';
                     result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
                 } else {
-                    var text2 = escapeHtml(part.content);
+                    var text2 = part.content.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank">$1</a>');
+                    text2 = escapeHtml(text2);
                     for (var r = 0; r < _inlineRules.length; r++) {
                         text2 = text2.replace(_inlineRules[r][0], _inlineRules[r][1]);
                     }
