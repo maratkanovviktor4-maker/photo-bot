@@ -4338,9 +4338,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         var _formatBacktick = String.fromCharCode(96);
 
         function formatMessage(text) {
-            text = text.replace(/^\s*[\r\n]+/gm, '');
             var B = _formatBacktick;
-            text = text.replace(/\n{2,}\|/g, '\n|');
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) { text = B + B + B + 'html\n' + text + '\n' + B + B + B; }
             var parts = [];
             var lastIndex = 0;
@@ -4362,7 +4360,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 } else { parts.push({type: 'text', content: remaining}); }
             }
             var _inlineRules = [
-                [/\n/g, '<br>'],
                 [/`([^`]+)`/g, '<code>$1</code>'],
                 [/\*\*(.+?)\*\*/g, '<strong>$1</strong>'],
                 [/\*(.+?)\*/g, '<em>$1</em>'],
@@ -4379,7 +4376,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 [/~~(.+?)~~/g, '<del>$1</del>'],
                 [/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">'],
                 [/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>'],
-                [/^\s*$/gm, ''],
                 [/^\|(.+)\|$/gm, function(match, content) {
                     var rows = content.trim().split('|');
                     var headerRegex = /^[\s:-]+$/;
@@ -4390,13 +4386,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     return '<tr>' + cells + '</tr>';
                 }],
                 [/((?:<tr>.*<\/tr>\s*)+)/g, function(match, tableContent) {
-                    tableContent = tableContent.replace(/\n+/g, '');
                     var rows = tableContent.match(/<tr>.*?<\/tr>/g) || [];
                     if (rows.length >= 2) {
                         var headerRow = rows[0].replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
                         rows[0] = headerRow;
                     }
-                    return '<table>' + rows.join('') + '</table>';
+                    return '<table>' + rows.join('\n') + '</table>';
                 }],
                 [/\n/g, '<br>']
             ];
@@ -4414,9 +4409,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     result += text2;
                 }
             }
-            result = result.replace(/<table>[\s\S]*?<\/table>/g, function(tableMatch) {
-                return tableMatch;
-            });
             return result;
         }
 
