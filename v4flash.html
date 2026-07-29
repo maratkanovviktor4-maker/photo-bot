@@ -4709,11 +4709,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
         function updateFloatingButtons() {
             _floatingHeaders.forEach(function(block) {
-                if (block._floatHeader) {
-                    block._floatHeader.style.position = '';
+                if (block._floatHeader && block._floatHeader.style.position === 'fixed') {
+                    var rect = block.getBoundingClientRect();
+                    block._floatHeader.style.left = rect.left + 'px';
+                    block._floatHeader.style.width = rect.width + 'px';
                 }
             });
-            _floatingHeaders = [];
+            if (_floatingHeaders.length === 0) _collectFloatingHeaders();
             var topBar = document.querySelector('.top-bar');
             var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
             var isLight = document.body.classList.contains('light');
