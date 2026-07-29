@@ -1769,7 +1769,16 @@
                 toggle.title = 'Свернуть панель';
                 localStorage.setItem('photobot_sidebar', 'expanded');
             }
-            updateFloatingButtons();
+            var mainEl = document.querySelector('.main');
+            var startTime = performance.now();
+            var duration = 300;
+            function animateHeaders(now) {
+                updateFloatingButtons();
+                if (now - startTime < duration) {
+                    requestAnimationFrame(animateHeaders);
+                }
+            }
+            requestAnimationFrame(animateHeaders);
         }
 
         function renderBranchesPanel() {
@@ -4714,7 +4723,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         }
 
         function updateFloatingButtons() {
-            if (_floatingHeaders.length === 0) _collectFloatingHeaders();
+            _collectFloatingHeaders();
             var topBar = document.querySelector('.top-bar');
             var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
             var isLight = document.body.classList.contains('light');
