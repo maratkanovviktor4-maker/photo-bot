@@ -4339,6 +4339,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
         function formatMessage(text) {
             var B = _formatBacktick;
+            text = text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank">$1</a>');
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) { text = B + B + B + 'html\n' + text + '\n' + B + B + B; }
             var parts = [];
             var lastIndex = 0;
@@ -4427,9 +4428,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
                 } else {
                     var text2 = escapeHtml(part.content);
-                    text2 = text2.replace(/https?:\/\/[^\s<]+/g, function(url) {
-                        return '<a href="' + url + '" target="_blank">' + url + '</a>';
-                    });
                     for (var r = 0; r < _inlineRules.length; r++) {
                         text2 = text2.replace(_inlineRules[r][0], _inlineRules[r][1]);
                     }
