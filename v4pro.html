@@ -4454,7 +4454,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
             }
             result = result.replace(/<a href="([^"]+)" target="_blank">[^<]+<\/a>/g, function(match, url) {
-                return '<a href="' + url + '" target="_blank">' + url + '</a>';
+                var domain = url.replace(/https?:\/\//, '').split('/')[0];
+                var display = domain.replace(/^www\./, '');
+                return '<a href="' + url + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:1px 8px;border-radius:20px;background:rgba(0,203,245,0.1);border:1px solid rgba(0,203,245,0.2);text-decoration:none;color:inherit;transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background=\'rgba(0,203,245,0.2)\';this.style.borderColor=\'rgba(0,203,245,0.4)\';" onmouseout="this.style.background=\'rgba(0,203,245,0.1)\';this.style.borderColor=\'rgba(0,203,245,0.2)\';"><img src="https://www.google.com/s2/favicons?domain=' + domain + '&sz=16" style="width:16px;height:16px;border-radius:3px;" onerror="this.style.display=\'none\'" alt="">' + display + '</a>';
             });
             return result;
         }
