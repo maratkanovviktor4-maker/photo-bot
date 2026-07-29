@@ -4378,17 +4378,21 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 [/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>'],
                 [/^\|(.+)\|$/gm, function(match, content) {
                     var rows = content.trim().split('|');
-                    var isHeader = false;
                     var headerRegex = /^[\s:-]+$/;
-                    if (rows.every(function(cell) { return headerRegex.test(cell.trim()); })) {
+                    if (rows.length > 1 && rows.every(function(cell) { return headerRegex.test(cell.trim()); })) {
                         return '';
                     }
                     var cells = rows.map(function(cell) { return '<td>' + cell.trim() + '</td>'; }).join('');
-                    var tag = 'tr';
-                    return '<' + tag + '>' + cells + '</' + tag + '>';
+                    return '<tr>' + cells + '</tr>';
                 }],
-                [/<tr>(?:<td>[\s:-]+<\/td>)+<\/tr>/g, ''],
-                [/((?:<tr>.*<\/tr>\s*)+)/g, '<table>$1</table>'],
+                [/((?:<tr>.*<\/tr>\s*)+)/g, function(match, tableContent) {
+                    var rows = tableContent.match(/<tr>.*?<\/tr>/g) || [];
+                    if (rows.length >= 2) {
+                        var headerRow = rows[0].replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
+                        rows[0] = headerRow;
+                    }
+                    return '<table>' + rows.join('\n') + '</table>';
+                }],
                 [/\n/g, '<br>']
             ];
             var result = '';
