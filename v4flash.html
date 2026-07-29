@@ -12,6 +12,7 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
+        body.light .message-content div[style*="background:#00CBF5"] { background: #005f7a !important; }        
         .chat-wrapper { justify-content: center; }
         .chat-wrapper.has-messages { justify-content: flex-start; }
         .typing-dots { display: inline-flex; gap: 4px; padding: 4px 0; }
@@ -4394,6 +4395,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         rows[0] = headerRow;
                     }
                     return '<table>' + rows.join('') + '</table>';
+                }],
+                [/^[-*]\s\[([ x])\]\s(.+)$/gm, function(match, checked, text) {
+                    var cls = checked === 'x' ? 'checked' : '';
+                    return '<div style="display:flex;align-items:center;gap:8px;margin:4px 0;"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border:2px solid currentColor;border-radius:4px;flex-shrink:0;' + (checked === 'x' ? 'background:#00CBF5;border-color:#00CBF5;' : '') + '">' + (checked === 'x' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#201F28" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span>' + text + '</span></div>';
                 }],
                 [/\n/g, '<br>']
             ];
