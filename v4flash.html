@@ -2662,6 +2662,89 @@
                 }
             }
         }
+        document.addEventListener('mouseup', function(e) {
+            var existing = document.querySelector('.selection-popup');
+            if (existing) existing.remove();
+
+            var selection = window.getSelection();
+            var text = selection.toString().trim();
+            if (!text || text.length < 2) return;
+
+            var range = selection.getRangeAt(0);
+            var rect = range.getBoundingClientRect();
+            if (rect.width === 0 && rect.height === 0) return;
+
+            var popup = document.createElement('div');
+            popup.className = 'selection-popup';
+            popup.style.cssText = 'position:fixed;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;display:flex;gap:4px;box-shadow:0 8px 24px rgba(0,0,0,0.4);opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease,transform 0.2s ease;';
+            if (document.body.classList.contains('light')) {
+                popup.style.background = '#ffffff';
+                popup.style.border = '1px solid rgba(0,0,0,0.1)';
+                popup.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
+            }
+
+            var detailBtn = document.createElement('button');
+            detailBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> Подробнее';
+            detailBtn.style.cssText = 'padding:6px 10px;border:none;background:transparent;color:' + (document.body.classList.contains('light') ? '#333' : '#e0e0e0') + ';cursor:pointer;border-radius:6px;font-size:12px;font-family:Inter,sans-serif;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:background 0.1s;';
+            detailBtn.addEventListener('mouseenter', function() { this.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; });
+            detailBtn.addEventListener('mouseleave', function() { this.style.background = 'transparent'; });
+            detailBtn.addEventListener('click', function() {
+                popup.remove();
+                var input = document.getElementById('userInput');
+                input.value = 'Подробнее об этом: ' + text;
+                input.dispatchEvent(new Event('input'));
+                sendMessage();
+            });
+
+            var searchBtn = document.createElement('button');
+            searchBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Поиск';
+            searchBtn.style.cssText = 'padding:6px 10px;border:none;background:transparent;color:' + (document.body.classList.contains('light') ? '#333' : '#e0e0e0') + ';cursor:pointer;border-radius:6px;font-size:12px;font-family:Inter,sans-serif;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:background 0.1s;';
+            searchBtn.addEventListener('mouseenter', function() { this.style.background = document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; });
+            searchBtn.addEventListener('mouseleave', function() { this.style.background = 'transparent'; });
+            searchBtn.addEventListener('click', function() {
+                popup.remove();
+                window.open('https://www.google.com/search?q=' + encodeURIComponent(text), '_blank');
+            });
+
+            popup.appendChild(detailBtn);
+            popup.appendChild(searchBtn);
+            document.body.appendChild(popup);
+
+            var popupWidth = popup.offsetWidth || 200;
+            var left = Math.min(rect.left + rect.width / 2 - popupWidth / 2, window.innerWidth - popupWidth - 8);
+            var top = rect.top - popup.offsetHeight - 8;
+            if (top < 0) top = rect.bottom + 8;
+            popup.style.left = Math.max(8, left) + 'px';
+            popup.style.top = top + 'px';
+
+            requestAnimationFrame(function() {
+                popup.style.opacity = '1';
+                popup.style.transform = 'translateY(0)';
+            });
+
+            var closeTimer = null;
+            function tryClose() {
+                closeTimer = setTimeout(function() {
+                    if (!popup.matches(':hover')) {
+                        popup.style.opacity = '0';
+                        popup.style.transform = 'translateY(-8px)';
+                        setTimeout(function() { popup.remove(); }, 200);
+                    }
+                }, 300);
+            }
+            function cancelClose() { if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; } }
+            popup.addEventListener('mouseleave', tryClose);
+            popup.addEventListener('mouseenter', cancelClose);
+        });
+
+        document.addEventListener('mousedown', function(e) {
+            var popup = document.querySelector('.selection-popup');
+            if (popup && !popup.contains(e.target)) {
+                popup.style.opacity = '0';
+                popup.style.transform = 'translateY(-8px)';
+                setTimeout(function() { popup.remove(); }, 200);
+            }
+        });
         function showMessageMenu(event, index) {
             event.stopPropagation();
             var existing = document.querySelector('.message-menu');
