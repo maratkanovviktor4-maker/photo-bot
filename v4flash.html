@@ -1757,17 +1757,7 @@
                 toggle.title = 'Свернуть панель';
                 localStorage.setItem('photobot_sidebar', 'expanded');
             }
-            var block = _floatingHeaders.find(function(b) { return b._floatHeader && b._floatHeader.style.position === 'fixed'; });
-            if (block) {
-                var header = block._floatHeader;
-                header.style.position = '';
-                setTimeout(function() {
-                    var rect = block.getBoundingClientRect();
-                    header.style.position = 'fixed';
-                    header.style.left = rect.left + 'px';
-                    header.style.width = rect.width + 'px';
-                }, 0);
-            }
+            setTimeout(function() { _floatingHeaders = []; updateFloatingButtons(); }, 100);
         }
 
         function renderBranchesPanel() {
