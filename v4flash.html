@@ -4407,9 +4407,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                     return '<table>' + rows.join('') + '</table>';
                 }],
-                [/https?:\/\/[^\s<]+/g, function(url) {
-                    return '<a href="' + url + '" target="_blank">' + url + '</a>';
-                }],
                 [/^[\s]*[-][\s][\[x\]](.+)$/gm, '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;"><input type="checkbox" checked disabled><span>$1</span></div>'],
                 [/^[\s]*[-][\s][\[ \]](.+)$/gm, '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;"><input type="checkbox" disabled><span>$1</span></div>'],
                 [/^(\s{2,})([-*]\s.+)$/gm, function(match, indent, item) {
@@ -4430,6 +4427,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
                 } else {
                     var text2 = escapeHtml(part.content);
+                    text2 = text2.replace(/https?:\/\/[^\s<]+/g, function(url) {
+                        return '<a href="' + url + '" target="_blank">' + url + '</a>';
+                    });
                     for (var r = 0; r < _inlineRules.length; r++) {
                         text2 = text2.replace(_inlineRules[r][0], _inlineRules[r][1]);
                     }
