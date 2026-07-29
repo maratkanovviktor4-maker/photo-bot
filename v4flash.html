@@ -4386,13 +4386,15 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
                 } else {
                     var text2 = part.content;
-                    text2 = text2.replace(/^\|(.+)\|$/gm, function(match, content) {
-                        var cells = content.split('|').map(function(c) { return c.trim(); });
+                    text2 = text2.replace(/\|/g, '__PIPE__');
+                    text2 = escapeHtml(text2);
+                    text2 = text2.replace(/^__PIPE__(.+)__PIPE__$/gm, function(match, content) {
+                        var cells = content.split('__PIPE__').map(function(c) { return c.trim(); });
                         return '<tr><td>' + cells.join('</td><td>') + '</td></tr>';
                     });
                     text2 = text2.replace(/((?:<tr>.*<\/tr>\s*)+)/g, '<table>$1</table>');
-                    text2 = text2.replace(/^\|[\s\-:]+\|$/gm, '');
-                    text2 = escapeHtml(text2);
+                    text2 = text2.replace(/^__PIPE__[\s\-:]+__PIPE__$/gm, '');
+                    text2 = text2.replace(/__PIPE__/g, '|');
                     for (var r = 0; r < _inlineRules.length; r++) {
                         text2 = text2.replace(_inlineRules[r][0], _inlineRules[r][1]);
                     }
