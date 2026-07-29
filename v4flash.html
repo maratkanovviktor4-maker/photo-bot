@@ -4067,6 +4067,15 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var contentHtml = formatMessage(msg.content || '');
                 var parentEl = el.parentElement;
                 var prevHeight = parentEl.offsetHeight;
+                var codeBlocks = el.closest('.message-row')?.querySelectorAll('.msg-code-block');
+                if (codeBlocks) {
+                    codeBlocks.forEach(function(block) {
+                        var header = block._floatHeader;
+                        if (header) {
+                            header.querySelectorAll('button').forEach(function(btn) { btn.style.opacity = '0.3'; });
+                        }
+                    });
+                }
                 el.innerHTML = reasoningHtml + contentHtml;
                 if (prevHeight > 0) {
                     parentEl.style.minHeight = prevHeight + 'px';
@@ -4080,6 +4089,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 }
                 setupFloatingCopyButtonsForMsg(el);
+                if (codeBlocks) {
+                    codeBlocks.forEach(function(block) {
+                        var header = block._floatHeader;
+                        if (header) {
+                            header.querySelectorAll('button').forEach(function(btn) { btn.style.opacity = ''; });
+                        }
+                    });
+                }
                 updateFloatingButtons();
                 if (autoScroll) {
                     var main = document.querySelector('.main');
