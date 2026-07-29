@@ -12,7 +12,6 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
-        .message-content table { margin-top: 4px; }
         .chat-wrapper { justify-content: center; }
         .chat-wrapper.has-messages { justify-content: flex-start; }
         .typing-dots { display: inline-flex; gap: 4px; padding: 4px 0; }
@@ -4341,7 +4340,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function formatMessage(text) {
             var B = _formatBacktick;
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) { text = B + B + B + 'html\n' + text + '\n' + B + B + B; }
-            text = text.replace(/(\n{3,})(?=\|)/g, '\n\n');
             var parts = [];
             var lastIndex = 0;
             if (!_formatRegex) _formatRegex = new RegExp(B + B + B + '(\\w*)\\r?\\n([\\s\\S]*?)' + B + B + B, 'g');
@@ -4378,23 +4376,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 [/~~(.+?)~~/g, '<del>$1</del>'],
                 [/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">'],
                 [/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>'],
-                [/^\|(.+)\|$/gm, function(match, content) {
-                    var rows = content.trim().split('|');
-                    var headerRegex = /^[\s:-]+$/;
-                    if (rows.length > 1 && rows.every(function(cell) { return headerRegex.test(cell.trim()); })) {
-                        return '';
-                    }
-                    var cells = rows.map(function(cell) { return '<td>' + cell.trim() + '</td>'; }).join('');
-                    return '<tr>' + cells + '</tr>';
-                }],
-                [/((?:<tr>.*<\/tr>\s*)+)/g, function(match, tableContent) {
-                    var rows = tableContent.match(/<tr>.*?<\/tr>/g) || [];
-                    if (rows.length >= 2) {
-                        var headerRow = rows[0].replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
-                        rows[0] = headerRow;
-                    }
-                    return '<table>' + rows.join('\n') + '</table>';
-                }],
                 [/\n/g, '<br>']
             ];
             var result = '';
