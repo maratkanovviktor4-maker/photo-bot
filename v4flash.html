@@ -4363,7 +4363,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 [/`([^`]+)`/g, '<code>$1</code>'],
                 [/\*\*(.+?)\*\*/g, '<strong>$1</strong>'],
                 [/\*(.+?)\*/g, '<em>$1</em>'],
-                [/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>'],
+                [/\[(.+)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>'],
                 [/^### (.+)$/gm, '<h3>$1</h3>'],
                 [/^#### (.+)$/gm, '<h4>$1</h4>'],
                 [/^## (.+)$/gm, '<h2>$1</h2>'],
@@ -4427,7 +4427,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     var lang = part.lang || '';
                     result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
                 } else {
-                    part.content = part.content.replace(/<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g, '<a href="$1" target="_blank">$2</a>');
                     var text2 = escapeHtml(part.content);
                     for (var r = 0; r < _inlineRules.length; r++) {
                         text2 = text2.replace(_inlineRules[r][0], _inlineRules[r][1]);
