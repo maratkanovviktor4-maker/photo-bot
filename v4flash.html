@@ -1758,11 +1758,15 @@
                 localStorage.setItem('photobot_sidebar', 'expanded');
             }
             var mainEl = document.querySelector('.main');
-            var onEnd = function() {
+            var startTime = performance.now();
+            var duration = 300;
+            function animateHeaders(now) {
                 updateFloatingButtons();
-                mainEl.removeEventListener('transitionend', onEnd);
-            };
-            mainEl.addEventListener('transitionend', onEnd);
+                if (now - startTime < duration) {
+                    requestAnimationFrame(animateHeaders);
+                }
+            }
+            requestAnimationFrame(animateHeaders);
         }
 
         function renderBranchesPanel() {
