@@ -4708,7 +4708,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         }
 
         function updateFloatingButtons() {
-            if (_floatingHeaders.length === 0) _collectFloatingHeaders();
+            _floatingHeaders.forEach(function(block) {
+                if (block._floatHeader) {
+                    block._floatHeader.style.position = '';
+                }
+            });
+            _floatingHeaders = [];
             var topBar = document.querySelector('.top-bar');
             var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
             var isLight = document.body.classList.contains('light');
