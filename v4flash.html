@@ -18,6 +18,9 @@
         .reasoning-block.collapsed .reasoning-toggle { transform: rotate(-90deg); }
         .reasoning-block.collapsed .reasoning-content { display: none; }
         .reasoning-block .reasoning-content { margin-top: 6px; }
+        .reasoning-block.streaming .reasoning-header span { background: linear-gradient(90deg, #888, #e0e0e0, #888); background-size: 200% 100%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 1s linear infinite; }
+        .reasoning-block:not(.streaming) .reasoning-header span { background: none; -webkit-text-fill-color: #888; animation: none; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         .typing-dots { min-height: 24px !important; }
         .message-content blockquote { display: inline; border-left: none; padding: 0; margin: 0; }
         .chat-wrapper { justify-content: center; }
@@ -4216,6 +4219,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 
                 if (reasoningText) {
                     if (existingBlock) {
+                        existingBlock.classList.add('streaming');
                         // Обновляем только текст, не трогая заголовок
                         var contentDiv = existingBlock.querySelector('.reasoning-content');
                         if (contentDiv) {
@@ -4246,6 +4250,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     el.appendChild(contentDiv);
                 }
                 contentDiv.innerHTML = contentHtml;
+                var reasoningBlock = el.querySelector('.reasoning-block');
+                if (reasoningBlock && contentHtml.trim()) {
+                    reasoningBlock.classList.remove('streaming');
+                }
+                
                 // Удаляем три точки, если они были
                 var dots = el.querySelector('.typing-dots');
                 if (dots) dots.remove();
