@@ -4201,20 +4201,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         }
         function streamUpdateDOM(el, msg) {
             var id = el.id;
-             // Если появился reasoning, убираем три точки
-             if (msg._reasoningBuffer && el.querySelector('.typing-dots')) {
-                el.innerHTML = '';
-            }           
             if (_streamTimers[id]) return;
             _streamTimers[id] = setTimeout(function() {
                 _streamTimers[id] = null;
                 
                 var reasoningText = msg._reasoningBuffer || '';
                 var contentHtml = formatMessage(msg.content || '');
-                // При первом появлении контента — очищаем всё и вставляем заново
-                if (msg._fullBuffer && msg._fullBuffer.length > 0 && !el.querySelector('.msg-content-inner')) {
-                    el.innerHTML = '';
-                }                
                 
                 var parentEl = el.parentElement;
                 var prevHeight = parentEl.offsetHeight;
@@ -4254,6 +4246,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     el.appendChild(contentDiv);
                 }
                 contentDiv.innerHTML = contentHtml;
+                // Удаляем три точки, если они были
+                var dots = el.querySelector('.typing-dots');
+                if (dots) dots.remove();
                 
                 if (prevHeight > 0) {
                     parentEl.style.minHeight = prevHeight + 'px';
