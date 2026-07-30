@@ -14,8 +14,9 @@
     <style>
         .reasoning-block .reasoning-header { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; padding: 2px 0; }
         .reasoning-block .reasoning-header:hover { opacity: 0.7; }
-        .reasoning-block .reasoning-toggle { font-size: 12px; color: #888; transition: transform 0.2s; }
-        .reasoning-block.collapsed .reasoning-toggle { transform: rotate(-90deg); }
+        .reasoning-block .reasoning-toggle { width: 14px; height: 14px; color: #888; transition: transform 0.2s; flex-shrink: 0; transform: rotate(90deg); }
+        .reasoning-block.collapsed .reasoning-toggle { transform: rotate(180deg); }
+        .reasoning-header .reasoning-label { font-size: 14px; font-weight: 600; color: #aaa; }
         .reasoning-block.collapsed .reasoning-content { display: none; }
         .reasoning-block .reasoning-content { margin-top: 6px; }
         .reasoning-block.streaming .reasoning-header span { background: linear-gradient(90deg, #888, #e0e0e0, #888); background-size: 200% 100%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 1s linear infinite; }
@@ -2989,7 +2990,7 @@
                 if (msg.msg_id && reasoningCollapsed === undefined) {
                     reasoningCollapsed = localStorage.getItem('reasoning_collapsed:' + msg.msg_id) === '1';
                 }
-                reasoningHtml = '<div class="reasoning-block' + (reasoningCollapsed ? ' collapsed' : '') + '"><div class="reasoning-header"><span class="reasoning-toggle">▼</span><span style="font-size:11px;color:#888;">Размышление</span></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div></div>';
+                reasoningHtml = '<div class="reasoning-block' + (reasoningCollapsed ? ' collapsed' : '') + '"><div class="reasoning-header"><svg fill="currentColor" viewBox="-3 -3 24 24" preserveAspectRatio="xMinYMin" width="14" height="14" style="vertical-align:middle;flex-shrink:0;"><path d="M.694 17.306c-1.91-1.912.258-7.18 4.845-11.767S15.394-1.217 17.306.694c1.91 1.912-.258 7.18-4.845 11.767S2.606 19.217.694 17.306zM2.08 15.92c.815.816 5.102-.95 8.997-4.845 3.895-3.895 5.66-8.182 4.845-8.997-.815-.816-5.102.95-8.997 4.845-3.895 3.895-5.66 8.182-4.845 8.997zm3.46-3.46C.952 7.874-1.217 2.606.694.694c1.912-1.91 7.18.258 11.767 4.845s6.756 9.855 4.845 11.767c-1.912 1.91-7.18-.258-11.767-4.845zm1.385-1.385c3.895 3.895 8.182 5.66 8.997 4.845.816-.815-.95-5.102-4.845-8.997-3.895-3.895-8.182-5.66-8.997-4.845-.816.815.95 5.102 4.845 8.997zM9 11a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg><span class="reasoning-label">Размышление</span><svg class="reasoning-toggle" width="14" height="14" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" fill="white" fill-opacity="0.01"/><path d="M31 36L19 24L31 12" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div></div>';
             }
             var contentHtml = formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
@@ -4247,7 +4248,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         var block = document.createElement('div');
                         block.className = 'reasoning-block' + (msg._reasoningCollapsed ? ' collapsed' : '');
                         block.dataset.reasoningId = id;
-                        block.innerHTML = '<div class="reasoning-header"><span class="reasoning-toggle">▼</span><span style="font-size:11px;color:#888;">Размышление</span></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div>';
+                        block.innerHTML = '<div class="reasoning-header"><svg fill="currentColor" viewBox="-3 -3 24 24" preserveAspectRatio="xMinYMin" width="14" height="14" style="vertical-align:middle;flex-shrink:0;"><path d="M.694 17.306c-1.91-1.912.258-7.18 4.845-11.767S15.394-1.217 17.306.694c1.91 1.912-.258 7.18-4.845 11.767S2.606 19.217.694 17.306zM2.08 15.92c.815.816 5.102-.95 8.997-4.845 3.895-3.895 5.66-8.182 4.845-8.997-.815-.816-5.102.95-8.997 4.845-3.895 3.895-5.66 8.182-4.845 8.997zm3.46-3.46C.952 7.874-1.217 2.606.694.694c1.912-1.91 7.18.258 11.767 4.845s6.756 9.855 4.845 11.767c-1.912 1.91-7.18-.258-11.767-4.845zm1.385-1.385c3.895 3.895 8.182 5.66 8.997 4.845.816-.815-.95-5.102-4.845-8.997-3.895-3.895-8.182-5.66-8.997-4.845-.816.815.95 5.102 4.845 8.997zM9 11a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg><span class="reasoning-label">Размышление</span><svg class="reasoning-toggle" width="14" height="14" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" fill="white" fill-opacity="0.01"/><path d="M31 36L19 24L31 12" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div>';
                         el.insertBefore(block, el.firstChild);
                     }
                 } else {
