@@ -4266,6 +4266,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var reasoningBlock = el.querySelector('.reasoning-block');
                 if (reasoningBlock && contentHtml.trim()) {
                     reasoningBlock.classList.remove('streaming');
+                    // Сохраняем свёрнутость в localStorage при появлении msg_id
+                    if (msg.msg_id) {
+                        if (msg._reasoningCollapsed) {
+                            localStorage.setItem('reasoning_collapsed:' + msg.msg_id, '1');
+                        } else {
+                            localStorage.removeItem('reasoning_collapsed:' + msg.msg_id);
+                        }
+                    }
                 }
                 // Удаляем три точки, если они были
                 var dots = el.querySelector('.typing-dots');
