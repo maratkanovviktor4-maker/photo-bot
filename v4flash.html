@@ -1904,7 +1904,6 @@
                 var loadingRow = document.createElement('div');
                 loadingRow.className = 'message-row assistant';
                 loadingRow.id = placeholderId;
-                loadingRow.style.minHeight = '24px';
                 loadingRow.innerHTML = '<div><div class="message-content"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
                 area.appendChild(loadingRow);
                 var main = document.querySelector('.main');
@@ -1985,11 +1984,6 @@
                                     streamMsgIndex = chat.messages.length - 1;
                                     var streamId = 'branch_stream_' + streamMsgIndex;
                                     activeStreamId = streamId;
-                                    // Фиксируем высоту чата перед рендером
-                                    var area = document.getElementById('chatArea');
-                                    var prevHeight = area.offsetHeight;
-                                    area.style.minHeight = prevHeight + 'px';
-                                    
                                     chat.messages[chat.messages.length - 1]._streaming = false;
                                     renderMessages();
                                     renderChatList();
@@ -2000,11 +1994,6 @@
                                     if (msgEl) {
                                         msgEl.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
                                     }
-                                    
-                                    // Снимаем фиксацию после рендера
-                                    setTimeout(function() {
-                                        area.style.minHeight = '';
-                                    }, 100);
                                 } else if (parsed.assistant_msg_id) {
                                     if (assistantMsg) {
                                         assistantMsg.msg_id = parsed.assistant_msg_id;
