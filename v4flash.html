@@ -1896,22 +1896,28 @@
             chat.messages = chat.messages.slice(0, msgIndex + 1);
             renderMessages();
             playSound('send');
-            var placeholderId = 'branch_' + Date.now();
-            var area = document.getElementById('chatArea');
-            var loadingRow = document.createElement('div');
-            loadingRow.className = 'message-row assistant';
-            loadingRow.id = placeholderId;
-            loadingRow.innerHTML = '<div><div class="message-content"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
-            area.appendChild(loadingRow);
-            var main = document.querySelector('.main');
-            if (main) { main.scrollTop = main.scrollHeight; }
-            
+            var placeholderId = null;
+            var isAssistantBranch = (msg.role === 'assistant');
+            if (!isAssistantBranch) {
+                placeholderId = 'branch_' + Date.now();
+                var area = document.getElementById('chatArea');
+                var loadingRow = document.createElement('div');
+                loadingRow.className = 'message-row assistant';
+                loadingRow.id = placeholderId;
+                loadingRow.innerHTML = '<div><div class="message-content"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
+                area.appendChild(loadingRow);
+                var main = document.querySelector('.main');
+                if (main) { main.scrollTop = main.scrollHeight; }
+            } else {
+                showLoading();
+            }
             try {
                 var resp = await fetch(SERVER_URL + '/create_branch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
                     body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: currentMode, chat_id: currentChatId, source_msg_id: msg.msg_id, branch_name: '', prompt: msg.role === 'user' ? (msg.content || '') : '' })
                 });
+                if (placeholderId) { var el = document.getElementById(placeholderId); if (el) el.remove(); }
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
@@ -1978,40 +1984,7 @@
                                     streamMsgIndex = chat.messages.length - 1;
                                     var streamId = 'branch_stream_' + streamMsgIndex;
                                     activeStreamId = streamId;
-                                    
-                                    // Вместо удаления placeholder заменяем его содержимое на сообщения ветки
-                                    var placeholderEl = document.getElementById(placeholderId);
-                                    if (placeholderEl) {
-                                        var html = '';
-                                        for (var j = 0; j < chat.messages.length - 1; j++) {
-                                            html += buildMessageHtml(j, chat.messages[j]);
-                                        }
-                                        // Для последнего сообщения (assistant) показываем загрузчик (или пустой контент)
-                                        html += '<div class="message-row assistant"><div style="min-height:60px;"><div class="message-content" id="stream-' + streamMsgIndex + '"><div class="typing-dots"><span></span><span></span><span></span></div></div></div></div>';
-                                        placeholderEl.outerHTML = '<div id="' + placeholderId + '">' + html + '</div>';
-                                        // После замены нужно обновить ссылки на DOM-элемент
-                                        // placeholderEl больше не в DOM, используем новый элемент
-                                        var newContainer = document.getElementById(placeholderId);
-                                        if (newContainer) {
-                                            // Разворачиваем контейнер: перемещаем его детей в chatArea
-                                            while (newContainer.firstChild) {
-                                                area.insertBefore(newContainer.firstChild, newContainer);
-                                            }
-                                            newContainer.remove();
-                                        }
-                                        // Сообщение user уже отрисовано, теперь нужно добавить классы и стили
-                                        var userRows = area.querySelectorAll('.message-row.user');
-                                        for (var r = 0; r < userRows.length; r++) {
-                                            userRows[r].style.marginLeft = 'auto';
-                                            userRows[r].style.alignSelf = 'flex-end';
-                                            userRows[r].style.flexDirection = 'row-reverse';
-                                        }
-                                        // Прокручиваем вниз
-                                        if (autoScroll) {
-                                            if (main) { main.style.scrollBehavior = 'auto'; main.scrollTop = main.scrollHeight; main.style.scrollBehavior = 'smooth'; }
-                                        }
-                                    }
-                                    
+                                    renderMessages();
                                     renderChatList();
                                     branchMetaReceived = true;
                                 } else if (parsed.assistant_msg_id) {
@@ -2019,6 +1992,12 @@
                                         assistantMsg.msg_id = parsed.assistant_msg_id;
                                         assistantMsg.finished = true;
                                         assistantMsg._streaming = false;
+                                    }
+                                    if (parsed.source_msg_id && branchMessages.length > 0) {
+                                        var lastUserMsg = branchMessages[branchMessages.length - 1];
+                                        if (lastUserMsg && lastUserMsg.role === 'user') {
+                                            lastUserMsg.msg_id = parsed.source_msg_id;
+                                        }
                                     }
                                 } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
                                     if (assistantMsg) {
@@ -2035,6 +2014,7 @@
                                                 streamUpdateDOM(msgEl, assistantMsg);
                                             });
                                         }
+
                                     }
                                 }
                             } catch (parseErr) {}
@@ -2060,6 +2040,7 @@
                     hideLoading();
                     updateBalance();
                     playSound('reply');
+                    // Автоозвучка
                     if (autoSpeakEnabled && chat.messages.length > 0) {
                         var lastMsg = chat.messages[chat.messages.length - 1];
                         if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.interrupted) {
