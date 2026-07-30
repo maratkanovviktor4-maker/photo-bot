@@ -4168,35 +4168,42 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(32,31,40,0.3);border-top-color:#201F28;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
             btn.onclick = null;
         }
+        var _streamTimers = {};
+
         function streamUpdateDOM(el, msg) {
-            var reasoningHtml = (msg._reasoningBuffer)
-                ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
-                : '';
-            var contentHtml = formatMessage(msg.content || '');
-            var parentEl = el.parentElement;
-            var prevHeight = parentEl.offsetHeight;
-            el.innerHTML = reasoningHtml + contentHtml;
-            if (prevHeight > 0) {
-                parentEl.style.minHeight = prevHeight + 'px';
-            }
-            var codeBlocks = el.querySelectorAll('pre code');
-            for (var i = 0; i < codeBlocks.length; i++) {
-                var block = codeBlocks[i];
-                if (!block._highlighted && typeof hljs !== 'undefined') {
-                    hljs.highlightElement(block);
-                    block._highlighted = true;
+            var id = el.id;
+            if (_streamTimers[id]) return;
+            _streamTimers[id] = setTimeout(function() {
+                _streamTimers[id] = null;
+                var reasoningHtml = (msg._reasoningBuffer)
+                    ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
+                    : '';
+                var contentHtml = formatMessage(msg.content || '');
+                var parentEl = el.parentElement;
+                var prevHeight = parentEl.offsetHeight;
+                el.innerHTML = reasoningHtml + contentHtml;
+                if (prevHeight > 0) {
+                    parentEl.style.minHeight = prevHeight + 'px';
                 }
-            }
-            setupFloatingCopyButtonsForMsg(el);
-            updateFloatingButtons();
-            if (autoScroll) {
-                var main = document.querySelector('.main');
-                if (main) {
-                    main.style.scrollBehavior = 'auto';
-                    main.scrollTop = main.scrollHeight;
-                    main.style.scrollBehavior = 'smooth';
+                var codeBlocks = el.querySelectorAll('pre code');
+                for (var i = 0; i < codeBlocks.length; i++) {
+                    var block = codeBlocks[i];
+                    if (!block._highlighted && typeof hljs !== 'undefined') {
+                        hljs.highlightElement(block);
+                        block._highlighted = true;
+                    }
                 }
-            }
+                setupFloatingCopyButtonsForMsg(el);
+                updateFloatingButtons();
+                if (autoScroll) {
+                    var main = document.querySelector('.main');
+                    if (main) {
+                        main.style.scrollBehavior = 'auto';
+                        main.scrollTop = main.scrollHeight;
+                        main.style.scrollBehavior = 'smooth';
+                    }
+                }
+            }, 16);
         }
 
         async function sendMessage() {
