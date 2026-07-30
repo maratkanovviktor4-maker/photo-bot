@@ -12,8 +12,6 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
-        .message-row.assistant.streaming .message-content > * { animation: streamFadeIn 0.15s ease-out; }
-        @keyframes streamFadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }        
         .typing-dots { min-height: 24px !important; }
         .message-content blockquote { display: inline; border-left: none; padding: 0; margin: 0; }
         .chat-wrapper { justify-content: center; }
@@ -2923,8 +2921,7 @@
             if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
                 contentHtml = '<div class="typing-dots"><span></span><span></span><span></span></div>';
             }
-            var streamingClass = msg._streaming && msg.role === 'assistant' ? ' streaming' : '';
-            return '<div class="message-row ' + msg.role + streamingClass + '" data-msg-index="' + index + '"><div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
+            return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
         }
         async function deleteMessage(index) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
