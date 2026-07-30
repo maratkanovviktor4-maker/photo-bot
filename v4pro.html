@@ -12,6 +12,12 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
+        .reasoning-block .reasoning-header { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; padding: 2px 0; }
+        .reasoning-block .reasoning-header:hover { opacity: 0.7; }
+        .reasoning-block .reasoning-toggle { font-size: 12px; color: #888; transition: transform 0.2s; }
+        .reasoning-block.collapsed .reasoning-toggle { transform: rotate(-90deg); }
+        .reasoning-block.collapsed .reasoning-content { display: none; }
+        .reasoning-block .reasoning-content { margin-top: 6px; }
         .typing-dots { min-height: 24px !important; }
         .message-content blockquote { display: inline; border-left: none; padding: 0; margin: 0; }
         .top-bar.collapsed > :not(#topBarToggle):not(#contextBattery):not(#balanceDisplay) { display: none !important; }        
@@ -2973,7 +2979,7 @@
                 }
             }
             if (hasReasoning) {
-                reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
+                reasoningHtml = '<div class="reasoning-block' + (msg._reasoningCollapsed ? ' collapsed' : '') + '"><div class="reasoning-header"><span class="reasoning-toggle">▼</span><span style="font-size:11px;color:#888;">Размышление</span></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div></div>';
             }
             var contentHtml = formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
@@ -4181,22 +4187,75 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             btn.onclick = null;
         }
         var _streamTimers = {};
-
+        function toggleReasoningBlock(headerEl) {
+            var block = headerEl.closest('.reasoning-block');
+            if (!block) return;
+            block.classList.toggle('collapsed');
+            
+            // Находим сообщение в чате и обновляем флаг
+            var msgEl = block.closest('.message-content');
+            if (msgEl) {
+                var index = msgEl.closest('[data-msg-index]')?.getAttribute('data-msg-index');
+                if (index !== undefined) {
+                    var chat = chats.find(function(c) { return c.id === currentChatId; });
+                    if (chat && chat.messages[index]) {
+                        chat.messages[index]._reasoningCollapsed = block.classList.contains('collapsed');
+                    }
+                }
+            }
+        }
         function streamUpdateDOM(el, msg) {
             var id = el.id;
             if (_streamTimers[id]) return;
             _streamTimers[id] = setTimeout(function() {
                 _streamTimers[id] = null;
-                var reasoningHtml = (msg._reasoningBuffer)
-                    ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
-                    : '';
+                
+                var reasoningText = msg._reasoningBuffer || '';
                 var contentHtml = formatMessage(msg.content || '');
+                
                 var parentEl = el.parentElement;
                 var prevHeight = parentEl.offsetHeight;
-                el.innerHTML = reasoningHtml + contentHtml;
+                
+                // Ищем существующий блок размышлений
+                var existingBlock = el.querySelector('.reasoning-block');
+                
+                if (reasoningText) {
+                    if (existingBlock) {
+                        // Обновляем только текст, не трогая заголовок
+                        var contentDiv = existingBlock.querySelector('.reasoning-content');
+                        if (contentDiv) {
+                            contentDiv.innerHTML = formatMessage(reasoningText);
+                        }
+                        if (msg._reasoningCollapsed) {
+                            existingBlock.classList.add('collapsed');
+                        } else {
+                            existingBlock.classList.remove('collapsed');
+                        }
+                    } else {
+                        // Создаём новый блок без onclick в HTML
+                        var block = document.createElement('div');
+                        block.className = 'reasoning-block' + (msg._reasoningCollapsed ? ' collapsed' : '');
+                        block.dataset.reasoningId = id;
+                        block.innerHTML = '<div class="reasoning-header"><span class="reasoning-toggle">▼</span><span style="font-size:11px;color:#888;">Размышление</span></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div>';
+                        el.insertBefore(block, el.firstChild);
+                    }
+                } else {
+                    if (existingBlock) existingBlock.remove();
+                }
+                
+                // Обновляем контент (кроме блока размышлений)
+                var contentDiv = el.querySelector('.msg-content-inner');
+                if (!contentDiv) {
+                    contentDiv = document.createElement('div');
+                    contentDiv.className = 'msg-content-inner';
+                    el.appendChild(contentDiv);
+                }
+                contentDiv.innerHTML = contentHtml;
+                
                 if (prevHeight > 0) {
                     parentEl.style.minHeight = prevHeight + 'px';
                 }
+                
                 var codeBlocks = el.querySelectorAll('pre code');
                 for (var i = 0; i < codeBlocks.length; i++) {
                     var block = codeBlocks[i];
@@ -4205,8 +4264,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         block._highlighted = true;
                     }
                 }
+                
                 setupFloatingCopyButtonsForMsg(el);
                 updateFloatingButtons();
+                
                 if (autoScroll) {
                     var main = document.querySelector('.main');
                     if (main) {
@@ -5835,7 +5896,22 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 window.highlightDropdownClose();
             }
         });
-
+        document.getElementById('chatArea').addEventListener('click', function(e) {
+            var header = e.target.closest('.reasoning-header');
+            if (!header) return;
+            var block = header.closest('.reasoning-block');
+            if (!block) return;
+            block.classList.toggle('collapsed');
+            
+            var msgEl = block.closest('[data-msg-index]');
+            if (msgEl) {
+                var index = msgEl.getAttribute('data-msg-index');
+                var chat = chats.find(function(c) { return c.id === currentChatId; });
+                if (chat && chat.messages[index]) {
+                    chat.messages[index]._reasoningCollapsed = block.classList.contains('collapsed');
+                }
+            }
+        });
     </script>
     <div id="selfPlayModal" class="modal-overlay">
         <div class="modal-box" style="max-width:600px;">
