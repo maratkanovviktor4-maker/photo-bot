@@ -2919,7 +2919,8 @@
                 }
             }
             if (hasReasoning) {
-                reasoningHtml = '<details class="reasoning-details" open><summary style="cursor:pointer;font-size:12px;color:#aaa;font-family:Inter,sans-serif;user-select:none;padding:4px 0;list-style:none;display:flex;align-items:center;gap:6px;">🧠 Рассуждение</summary><div class="reasoning-block" style="margin-top:4px;">' + formatMessage(reasoningText) + '</div></details>';
+                var isCollapsed = msg.msg_id && localStorage.getItem('reasoning_collapsed_' + msg.msg_id) === '1';
+                reasoningHtml = '<details class="reasoning-details" ' + (isCollapsed ? '' : 'open') + '><summary ...';
             }
             var contentHtml = formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
@@ -4200,6 +4201,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     details.addEventListener('toggle', function() {
                         reasoningStates[id] = details.open;
                     });
+                    if (msg.msg_id) {
+                        localStorage.setItem('reasoning_collapsed_' + msg.msg_id, details.open ? '0' : '1');
+                    }
                 }
                 
                 var codeBlocks = el.querySelectorAll('pre code');
