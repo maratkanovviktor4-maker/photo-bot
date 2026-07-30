@@ -4173,8 +4173,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function streamUpdateDOM(el, msg) {
             var id = el.id;
             if (_streamTimers[id]) return;
-            _streamTimers[id] = setTimeout(function() {
-                _streamTimers[id] = null;
+            _streamTimers[id] = true;
+            requestAnimationFrame(function() {
+                _streamTimers[id] = false;
                 var reasoningHtml = (msg._reasoningBuffer)
                     ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
                     : '';
@@ -4203,7 +4204,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         main.style.scrollBehavior = 'smooth';
                     }
                 }
-            }, 16);
+            });
         }
 
         async function sendMessage() {
