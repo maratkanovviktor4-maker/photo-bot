@@ -12,10 +12,6 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
-        .reasoning-details { margin-bottom: 8px; }
-        .reasoning-details summary { list-style: none; display: flex; align-items: center; gap: 6px; }
-        .reasoning-details summary::-webkit-details-marker { display: none; }
-        .reasoning-details[open] summary { margin-bottom: 6px; }
         .typing-dots { min-height: 24px !important; }
         .message-content blockquote { display: inline; border-left: none; padding: 0; margin: 0; }
         .chat-wrapper { justify-content: center; }
@@ -2919,9 +2915,7 @@
                 }
             }
             if (hasReasoning) {
-                var key = msg.msg_id && currentChatId ? 'reasoning_' + currentChatId + '_' + currentBranchId + '_' + msg.msg_id : null;
-                var isCollapsed = key && localStorage.getItem(key) === '1';
-                reasoningHtml = '<details class="reasoning-details" ' + (isCollapsed ? '' : 'open') + '><summary style="cursor:pointer;font-size:12px;color:#aaa;font-family:Inter,sans-serif;user-select:none;padding:4px 0;list-style:none;display:flex;align-items:center;gap:6px;">🧠 Рассуждение</summary><div class="reasoning-block" style="margin-top:4px;">' + formatMessage(reasoningText) + '</div></details>';
+                reasoningHtml = '<div class="reasoning-block">' + formatMessage(reasoningText) + '</div>';
             }
             var contentHtml = formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
@@ -4175,39 +4169,22 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             btn.onclick = null;
         }
         var _streamTimers = {};
-        var reasoningStates = {};
+
         function streamUpdateDOM(el, msg) {
             var id = el.id;
             if (_streamTimers[id]) return;
             _streamTimers[id] = setTimeout(function() {
                 _streamTimers[id] = null;
-                
-                var savedState = reasoningStates[id] !== undefined ? reasoningStates[id] : true;
-                
                 var reasoningHtml = (msg._reasoningBuffer)
-                    ? '<details class="reasoning-details" ' + (savedState ? 'open' : '') + '><summary style="cursor:pointer;font-size:12px;color:#aaa;font-family:Inter,sans-serif;user-select:none;padding:4px 0;list-style:none;display:flex;align-items:center;gap:6px;">🧠 Рассуждение</summary><div class="reasoning-block" style="margin-top:4px;">' + formatMessage(msg._reasoningBuffer) + '</div></details>'
+                    ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
                     : '';
                 var contentHtml = formatMessage(msg.content || '');
-                
                 var parentEl = el.parentElement;
                 var prevHeight = parentEl.offsetHeight;
                 el.innerHTML = reasoningHtml + contentHtml;
                 if (prevHeight > 0) {
                     parentEl.style.minHeight = prevHeight + 'px';
                 }
-                
-                var details = el.querySelector('.reasoning-details');
-                if (details) {
-                    details.open = savedState;
-                    details.addEventListener('toggle', function() {
-                        reasoningStates[id] = details.open;
-                    });
-                    if (msg.msg_id && currentChatId) {
-                        var key = 'reasoning_' + currentChatId + '_' + currentBranchId + '_' + msg.msg_id;
-                        localStorage.setItem(key, details.open ? '0' : '1');
-                    }
-                }
-                
                 var codeBlocks = el.querySelectorAll('pre code');
                 for (var i = 0; i < codeBlocks.length; i++) {
                     var block = codeBlocks[i];
