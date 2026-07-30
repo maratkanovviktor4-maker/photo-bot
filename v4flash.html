@@ -2665,131 +2665,6 @@
                 }
             }
         }
-        var selectionMode = false;
-        var selectedMsgIndices = {};
-
-        function toggleSelectionMode() {
-            selectionMode = !selectionMode;
-            selectedMsgIndices = {};
-            var chatWrapper = document.querySelector('.chat-wrapper');
-            if (selectionMode) {
-                // Создаём контейнер для чекбоксов
-                var checkContainer = document.createElement('div');
-                checkContainer.id = 'selectionCheckContainer';
-                checkContainer.style.cssText = 'position:absolute;left:-36px;top:0;z-index:100;pointer-events:none;';
-                
-                var rows = document.querySelectorAll('.message-row[data-msg-index]');
-                rows.forEach(function(row) {
-                    var index = row.getAttribute('data-msg-index');
-                    var checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.className = 'selection-checkbox';
-                    checkbox.dataset.index = index;
-                    checkbox.style.cssText = 'position:absolute;width:18px;height:18px;cursor:pointer;accent-color:#00CBF5;pointer-events:auto;';
-                    checkbox.addEventListener('change', function() {
-                        var idx = parseInt(this.dataset.index);
-                        var row = document.querySelector('.message-row[data-msg-index="' + idx + '"]');
-                        if (this.checked) {
-                            selectedMsgIndices[idx] = true;
-                            if (row) {
-                                row.style.outline = '2px solid rgba(0,203,245,0.4)';
-                                row.style.outlineOffset = '-2px';
-                                row.style.borderRadius = '12px';
-                            }
-                        } else {
-                            delete selectedMsgIndices[idx];
-                            if (row) {
-                                row.style.outline = '';
-                                row.style.outlineOffset = '';
-                                row.style.borderRadius = '';
-                            }
-                        }
-                        updateDeleteSelectedBtn();
-                    });
-                    // Позиционируем чекбокс напротив своего сообщения
-                    var rect = row.getBoundingClientRect();
-                    var wrapperRect = chatWrapper.getBoundingClientRect();
-                    checkbox.style.top = (rect.top - wrapperRect.top + rect.height / 2 - 9) + 'px';
-                    checkbox.style.left = '0px';
-                    checkContainer.appendChild(checkbox);
-                    // Подсвечиваем сообщение
-                    row.style.background = 'rgba(0,203,245,0.08)';
-                    row.style.borderRadius = '8px';
-                    row.style.margin = '0 -14px';
-                    row.style.padding = '0 14px';                    
-                });
-                
-                chatWrapper.style.position = 'relative';
-                chatWrapper.appendChild(checkContainer);
-                
-                // Добавляем кнопку "Удалить выбранные" в топбар
-                var topBar = document.querySelector('.top-bar');
-                var deleteBtn = document.createElement('button');
-                deleteBtn.id = 'deleteSelectedBtn';
-                deleteBtn.className = 'theme-btn';
-                deleteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Удалить выбранные';
-                deleteBtn.style.cssText = 'padding:6px 12px;border-radius:16px;font-size:12px;font-family:Inter,sans-serif;background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);cursor:pointer;display:none;font-weight:500;';
-                deleteBtn.onclick = deleteSelectedMessages;
-                topBar.appendChild(deleteBtn);
-            } else {
-                // Удаляем контейнер с чекбоксами
-                var container = document.getElementById('selectionCheckContainer');
-                if (container) container.remove();
-                var deleteBtn = document.getElementById('deleteSelectedBtn');
-                if (deleteBtn) deleteBtn.remove();
-                chatWrapper.style.position = '';
-                // Убираем подсветку
-                document.querySelectorAll('.message-row[data-msg-index]').forEach(function(row) {
-                    row.style.background = '';
-                    row.style.borderRadius = '';
-                    row.style.margin = '';
-                    row.style.padding = '';
-                });            
-            }
-        }
-
-        function updateDeleteSelectedBtn() {
-            var btn = document.getElementById('deleteSelectedBtn');
-            if (btn) {
-                var count = Object.keys(selectedMsgIndices).length;
-                btn.style.display = count > 0 ? 'inline-flex' : 'none';
-                if (count > 0) btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Удалить (' + count + ')';
-            }
-        }
-
-        async function deleteSelectedMessages() {
-            var indices = Object.keys(selectedMsgIndices).map(function(k) { return parseInt(k); }).sort(function(a, b) { return b - a; });
-            if (indices.length === 0) return;
-            
-            showConfirmModal('Удаление сообщений', 'Удалить выбранные сообщения (' + indices.length + ')?', ICON_WARNING, 'Удалить', 'Отмена', 'modal-btn-danger', async function() {
-                var chat = chats.find(function(c) { return c.id === currentChatId; });
-                if (!chat) return;
-                
-                for (var i = 0; i < indices.length; i++) {
-                    var msg = chat.messages[indices[i]];
-                    if (!msg) continue;
-                    try {
-                        await fetch(SERVER_URL + '/delete_message', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                            body: JSON.stringify({
-                                user_id: currentUserId,
-                                model: 'flash',
-                                chat_id: currentChatId,
-                                branch_id: currentBranchId,
-                                msg_id: msg.msg_id
-                            })
-                        });
-                    } catch(e) {}
-                    chat.messages.splice(indices[i], 1);
-                }
-                
-                toggleSelectionMode();
-                renderMessages();
-                renderBranchesPanel();
-                updateBranchesFromServer();
-            });
-        }        
         function showMessageMenu(event, index) {
             event.stopPropagation();
             var existing = document.querySelector('.message-menu');
@@ -2816,7 +2691,6 @@
             if (msg.role === 'assistant') {
                 items.push(
                     { label: 'Продолжить в новой ветке', icon: '<svg width="14" height="14" viewBox="0 0 48 48" style="transform:scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg>', action: function() { createBranchFromMessage(index); } },
-                    { label: 'Выбрать', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><polyline points="9 11 12 14 22 4"/></svg>', action: function() { toggleSelectionMode(); } },
                     { label: 'Удалить', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>', action: function() { deleteMessage(index); } },
                     { label: 'Склеить ветки', icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg>', action: function() { showCopyHistoryModal(index); } },
                     { label: 'Поделиться', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.707,11.293l-8-8A.99991.99991,0,0,0,12,4V7.54492A11.01525,11.01525,0,0,0,2,18.5V20a1,1,0,0,0,1.78418.62061,11.45625,11.45625,0,0,1,7.88672-4.04932c.0498-.00635.1748-.01611.3291-.02588V20a.99991.99991,0,0,0,1.707.707l8-8A.99962.99962,0,0,0,21.707,11.293Z"/></svg>', action: function() { shareChat(currentChatId); } }
@@ -2824,7 +2698,6 @@
             } else if (msg.role === 'user') {
                 items.push(
                     { label: 'Переспросить в новой ветке', icon: '<svg width="14" height="14" viewBox="0 0 48 48" style="transform:scaleY(-1);"><path d="M44,9a7,7,0,1,0-9,6.7V16a6,6,0,0,1-6,6H21a10.3,10.3,0,0,0-6,2V15.7a7,7,0,1,0-4,0V32.3a7,7,0,1,0,4,0V32a6,6,0,0,1,6-6h8A10,10,0,0,0,39,16v-.3A7,7,0,0,0,44,9ZM10,9a3,3,0,0,1,6,0,3,3,0,0,1-6,0Zm6,30a3,3,0,1,1-3-3A2.9,2.9,0,0,1,16,39ZM37,12a2.9,2.9,0,0,1-3-3,3,3,0,0,1,6,0A2.9,2.9,0,0,1,37,12Z" fill="currentColor"/></svg>', action: function() { createBranchFromMessage(index); } },
-                    { label: 'Выбрать', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><polyline points="9 11 12 14 22 4"/></svg>', action: function() { toggleSelectionMode(); } },
                     { label: 'Удалить', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>', action: function() { deleteMessage(index); } }
                 );
             }
