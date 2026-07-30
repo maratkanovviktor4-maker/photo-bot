@@ -1985,12 +1985,19 @@
                                     streamMsgIndex = chat.messages.length - 1;
                                     var streamId = 'branch_stream_' + streamMsgIndex;
                                     activeStreamId = streamId;
-                                    if (placeholderId) {
-                                        var placeholder = document.getElementById(placeholderId);
-                                        if (placeholder) placeholder.remove();
-                                    }
+                                    // Фиксируем высоту чата перед рендером
+                                    var area = document.getElementById('chatArea');
+                                    var prevHeight = area.offsetHeight;
+                                    area.style.minHeight = prevHeight + 'px';
+                                    
+                                    renderMessages();
                                     renderChatList();
                                     branchMetaReceived = true;
+                                    
+                                    // Снимаем фиксацию после рендера
+                                    setTimeout(function() {
+                                        area.style.minHeight = '';
+                                    }, 100);
                                 } else if (parsed.assistant_msg_id) {
                                     if (assistantMsg) {
                                         assistantMsg.msg_id = parsed.assistant_msg_id;
