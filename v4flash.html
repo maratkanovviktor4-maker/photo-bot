@@ -1896,18 +1896,11 @@
             chat.messages = chat.messages.slice(0, msgIndex + 1);
             renderMessages();
             playSound('send');
-            var placeholderId = null;
             var isAssistantBranch = (msg.role === 'assistant');
             if (!isAssistantBranch) {
-                placeholderId = 'branch_' + Date.now();
-                var area = document.getElementById('chatArea');
-                var loadingRow = document.createElement('div');
-                loadingRow.className = 'message-row assistant';
-                loadingRow.id = placeholderId;
-                loadingRow.innerHTML = '<div><div class="message-content"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
-                area.appendChild(loadingRow);
-                var main = document.querySelector('.main');
-                if (main) { main.scrollTop = main.scrollHeight; }
+                chat.messages.push({ role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null });
+                renderMessages();
+                scrollToBottom();
             } else {
                 showLoading();
             }
@@ -1917,7 +1910,6 @@
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
                     body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: currentMode, chat_id: currentChatId, source_msg_id: msg.msg_id, branch_name: '', prompt: msg.role === 'user' ? (msg.content || '') : '' })
                 });
-                if (placeholderId) { var el = document.getElementById(placeholderId); if (el) el.remove(); }
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
