@@ -2671,16 +2671,21 @@
         function toggleSelectionMode() {
             selectionMode = !selectionMode;
             selectedMsgIndices = {};
+            var chatWrapper = document.querySelector('.chat-wrapper');
             if (selectionMode) {
-                // Добавляем чекбоксы к каждому сообщению
+                // Создаём контейнер для чекбоксов
+                var checkContainer = document.createElement('div');
+                checkContainer.id = 'selectionCheckContainer';
+                checkContainer.style.cssText = 'position:absolute;left:-36px;top:0;z-index:100;pointer-events:none;';
+                
                 var rows = document.querySelectorAll('.message-row[data-msg-index]');
                 rows.forEach(function(row) {
                     var index = row.getAttribute('data-msg-index');
                     var checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.className = 'selection-checkbox';
-                    checkbox.style.cssText = 'position:absolute;left:8px;top:50%;transform:translateY(-50%);width:18px;height:18px;cursor:pointer;accent-color:#00CBF5;z-index:5;';
                     checkbox.dataset.index = index;
+                    checkbox.style.cssText = 'position:absolute;width:18px;height:18px;cursor:pointer;accent-color:#00CBF5;pointer-events:auto;';
                     checkbox.addEventListener('change', function() {
                         var idx = parseInt(this.dataset.index);
                         if (this.checked) {
@@ -2690,9 +2695,17 @@
                         }
                         updateDeleteSelectedBtn();
                     });
-                    row.style.position = 'relative';
-                    row.appendChild(checkbox);
+                    // Позиционируем чекбокс напротив своего сообщения
+                    var rect = row.getBoundingClientRect();
+                    var wrapperRect = chatWrapper.getBoundingClientRect();
+                    checkbox.style.top = (rect.top - wrapperRect.top + rect.height / 2 - 9) + 'px';
+                    checkbox.style.left = '0px';
+                    checkContainer.appendChild(checkbox);
                 });
+                
+                chatWrapper.style.position = 'relative';
+                chatWrapper.appendChild(checkContainer);
+                
                 // Добавляем кнопку "Удалить выбранные" в топбар
                 var topBar = document.querySelector('.top-bar');
                 var deleteBtn = document.createElement('button');
@@ -2703,13 +2716,12 @@
                 deleteBtn.onclick = deleteSelectedMessages;
                 topBar.appendChild(deleteBtn);
             } else {
-                // Удаляем чекбоксы и кнопку
-                document.querySelectorAll('.selection-checkbox').forEach(function(el) { el.remove(); });
+                // Удаляем контейнер с чекбоксами
+                var container = document.getElementById('selectionCheckContainer');
+                if (container) container.remove();
                 var deleteBtn = document.getElementById('deleteSelectedBtn');
                 if (deleteBtn) deleteBtn.remove();
-                document.querySelectorAll('.message-row[data-msg-index]').forEach(function(row) {
-                    row.style.position = '';
-                });
+                chatWrapper.style.position = '';
             }
         }
 
