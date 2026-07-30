@@ -2921,7 +2921,12 @@
                 }
             }
             if (hasReasoning) {
-                reasoningHtml = '<div class="reasoning-block' + (msg._reasoningCollapsed ? ' collapsed' : '') + '"><div class="reasoning-header"><span class="reasoning-toggle">▼</span><span style="font-size:11px;color:#888;">Размышление</span></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div></div>';
+                var reasoningCollapsed = msg._reasoningCollapsed;
+                // Проверяем localStorage, если есть msg_id
+                if (msg.msg_id && reasoningCollapsed === undefined) {
+                    reasoningCollapsed = localStorage.getItem('reasoning_collapsed:' + msg.msg_id) === '1';
+                }
+                reasoningHtml = '<div class="reasoning-block' + (reasoningCollapsed ? ' collapsed' : '') + '"><div class="reasoning-header"><span class="reasoning-toggle">▼</span><span style="font-size:11px;color:#888;">Размышление</span></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div></div>';
             }
             var contentHtml = formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
@@ -2949,7 +2954,9 @@
                         })
                     });
                 } catch(e) {}
-
+                if (msg.msg_id) {
+                    localStorage.removeItem('reasoning_collapsed:' + msg.msg_id);
+                }
                 chat.messages.splice(index, 1);
                 if (chat.messages.length === 0) {
                     if (currentBranchId !== 'main') {
@@ -4194,12 +4201,20 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         }
         function streamUpdateDOM(el, msg) {
             var id = el.id;
+             // Если появился reasoning, убираем три точки
+             if (msg._reasoningBuffer && el.querySelector('.typing-dots')) {
+                el.innerHTML = '';
+            }           
             if (_streamTimers[id]) return;
             _streamTimers[id] = setTimeout(function() {
                 _streamTimers[id] = null;
                 
                 var reasoningText = msg._reasoningBuffer || '';
                 var contentHtml = formatMessage(msg.content || '');
+                // При первом появлении контента — очищаем всё и вставляем заново
+                if (msg._fullBuffer && msg._fullBuffer.length > 0 && !el.querySelector('.msg-content-inner')) {
+                    el.innerHTML = '';
+                }                
                 
                 var parentEl = el.parentElement;
                 var prevHeight = parentEl.offsetHeight;
@@ -5897,7 +5912,17 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var index = msgEl.getAttribute('data-msg-index');
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (chat && chat.messages[index]) {
-                    chat.messages[index]._reasoningCollapsed = block.classList.contains('collapsed');
+                    var msg = chat.messages[index];
+                    var isCollapsed = block.classList.contains('collapsed');
+                    msg._reasoningCollapsed = isCollapsed;
+                    // Сохраняем в localStorage, если есть msg_id
+                    if (msg.msg_id) {
+                        if (isCollapsed) {
+                            localStorage.setItem('reasoning_collapsed:' + msg.msg_id, '1');
+                        } else {
+                            localStorage.removeItem('reasoning_collapsed:' + msg.msg_id);
+                        }
+                    }
                 }
             }
         });
