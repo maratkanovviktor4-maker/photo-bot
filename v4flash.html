@@ -2667,34 +2667,52 @@
         }
         var selectionMode = false;
         var selectedMsgIndices = {};
+        var lastCheckedIndex = null;
 
         function toggleSelectionMode() {
             selectionMode = !selectionMode;
             selectedMsgIndices = {};
+            lastCheckedIndex = null;
             if (selectionMode) {
-                // Добавляем чекбоксы к каждому сообщению
                 var rows = document.querySelectorAll('.message-row[data-msg-index]');
                 rows.forEach(function(row) {
-                    var index = row.getAttribute('data-msg-index');
+                    var index = parseInt(row.getAttribute('data-msg-index'));
                     var checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.className = 'selection-checkbox';
-                    checkbox.style.cssText = 'position:absolute;left:-30px;top:50%;transform:translateY(-50%);width:18px;height:18px;cursor:pointer;accent-color:#00CBF5;';
+                    checkbox.style.cssText = 'position:absolute;left:-30px;top:50%;transform:translateY(-50%);width:18px;height:18px;cursor:pointer;accent-color:#00CBF5;z-index:5;';
                     checkbox.dataset.index = index;
-                    checkbox.addEventListener('change', function() {
+                    checkbox.addEventListener('change', function(e) {
                         var idx = parseInt(this.dataset.index);
-                        if (this.checked) {
-                            selectedMsgIndices[idx] = true;
+                        if (e.shiftKey && lastCheckedIndex !== null && lastCheckedIndex !== idx) {
+                            var start = Math.min(lastCheckedIndex, idx);
+                            var end = Math.max(lastCheckedIndex, idx);
+                            var checked = this.checked;
+                            document.querySelectorAll('.selection-checkbox').forEach(function(cb) {
+                                var ci = parseInt(cb.dataset.index);
+                                if (ci >= start && ci <= end) {
+                                    cb.checked = checked;
+                                    if (checked) {
+                                        selectedMsgIndices[ci] = true;
+                                    } else {
+                                        delete selectedMsgIndices[ci];
+                                    }
+                                }
+                            });
                         } else {
-                            delete selectedMsgIndices[idx];
+                            if (this.checked) {
+                                selectedMsgIndices[idx] = true;
+                            } else {
+                                delete selectedMsgIndices[idx];
+                            }
                         }
+                        lastCheckedIndex = idx;
                         updateDeleteSelectedBtn();
                     });
                     row.style.position = 'relative';
                     row.style.paddingLeft = '30px';
-                    row.appendChild(checkbox);
+                    row.insertBefore(checkbox, row.firstChild);
                 });
-                // Добавляем кнопку "Удалить выбранные" в топбар
                 var topBar = document.querySelector('.top-bar');
                 var deleteBtn = document.createElement('button');
                 deleteBtn.id = 'deleteSelectedBtn';
@@ -2704,7 +2722,6 @@
                 deleteBtn.onclick = deleteSelectedMessages;
                 topBar.appendChild(deleteBtn);
             } else {
-                // Удаляем чекбоксы и кнопку
                 document.querySelectorAll('.selection-checkbox').forEach(function(el) { el.remove(); });
                 var deleteBtn = document.getElementById('deleteSelectedBtn');
                 if (deleteBtn) deleteBtn.remove();
