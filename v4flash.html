@@ -12,6 +12,10 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
+        .reasoning-details { margin-bottom: 8px; }
+        .reasoning-details summary { list-style: none; display: flex; align-items: center; gap: 6px; }
+        .reasoning-details summary::-webkit-details-marker { display: none; }
+        .reasoning-details[open] summary { margin-bottom: 6px; }
         .typing-dots { min-height: 24px !important; }
         .message-content blockquote { display: inline; border-left: none; padding: 0; margin: 0; }
         .chat-wrapper { justify-content: center; }
@@ -4176,7 +4180,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             _streamTimers[id] = setTimeout(function() {
                 _streamTimers[id] = null;
                 var reasoningHtml = (msg._reasoningBuffer)
-                    ? '<div class="reasoning-block">' + formatMessage(msg._reasoningBuffer) + '</div>'
+                    ? '<details class="reasoning-details" open><summary style="cursor:pointer;font-size:12px;color:#aaa;font-family:Inter,sans-serif;user-select:none;padding:4px 0;">🧠 Рассуждение</summary><div class="reasoning-block" style="margin-top:4px;">' + formatMessage(msg._reasoningBuffer) + '</div></details>'
                     : '';
                 var contentHtml = formatMessage(msg.content || '');
                 var parentEl = el.parentElement;
