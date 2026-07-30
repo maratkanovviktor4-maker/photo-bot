@@ -12,6 +12,9 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
+        @keyframes reasoningSpin { to { transform: rotate(360deg); } }
+        .reasoning-block.has-content .reasoning-spinner { display: none; }
+        .reasoning-block.has-content .reasoning-toggle { display: inline; }
         .reasoning-block .reasoning-header { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; padding: 2px 0; }
         .reasoning-block .reasoning-header:hover { opacity: 0.7; }
         .reasoning-block .reasoning-toggle { font-size: 12px; color: #888; transition: transform 0.2s; }
@@ -4229,9 +4232,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     } else {
                         // Создаём новый блок без onclick в HTML
                         var block = document.createElement('div');
-                        block.className = 'reasoning-block' + (msg._reasoningCollapsed ? ' collapsed' : '');
+                        block.className = 'reasoning-block';
                         block.dataset.reasoningId = id;
-                        block.innerHTML = '<div class="reasoning-header"><span class="reasoning-toggle">▼</span><span style="font-size:11px;color:#888;">Размышление</span></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div>';
+                        block.innerHTML = '<div class="reasoning-header"><span class="reasoning-toggle" style="display:none;">▼</span><span style="font-size:11px;color:#888;"><span class="reasoning-spinner" style="display:inline-block;width:12px;height:12px;border:2px solid #888;border-top-color:transparent;border-radius:50%;animation:reasoningSpin 0.8s linear infinite;vertical-align:middle;margin-right:4px;"></span> Размышление...</span></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div>';
                         el.insertBefore(block, el.firstChild);
                     }
                 } else {
