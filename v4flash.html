@@ -4452,16 +4452,22 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                             } else {
                                 if (parsed.reasoning) {
                                     assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
+                                    var msgEl = document.getElementById('stream-' + msgIndex);
+                                    if (msgEl) {
+                                        requestAnimationFrame(function() {
+                                            streamUpdateDOM(msgEl, assistantMsg);
+                                        });
+                                    }
                                 }
                                 if (parsed.content) {
                                     assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + parsed.content;
-                                }
-                                assistantMsg.content = assistantMsg._fullBuffer || '';
-                                var msgEl = document.getElementById('stream-' + msgIndex);
-                                if (msgEl) {
-                                    requestAnimationFrame(function() {
-                                        streamUpdateDOM(msgEl, assistantMsg);
-                                    });
+                                    assistantMsg.content = assistantMsg._fullBuffer || '';
+                                    var msgEl = document.getElementById('stream-' + msgIndex);
+                                    if (msgEl) {
+                                        requestAnimationFrame(function() {
+                                            streamUpdateDOM(msgEl, assistantMsg);
+                                        });
+                                    }
                                 }
                             }
                         } catch (e) {
