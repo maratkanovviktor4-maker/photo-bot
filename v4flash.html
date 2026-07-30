@@ -1990,9 +1990,16 @@
                                     var prevHeight = area.offsetHeight;
                                     area.style.minHeight = prevHeight + 'px';
                                     
+                                    chat.messages[chat.messages.length - 1]._streaming = false;
                                     renderMessages();
                                     renderChatList();
                                     branchMetaReceived = true;
+                                    chat.messages[chat.messages.length - 1]._streaming = true;
+                                    chat.messages[chat.messages.length - 1]._fullBuffer = '';
+                                    var msgEl = document.getElementById('stream-' + (chat.messages.length - 1));
+                                    if (msgEl) {
+                                        msgEl.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+                                    }
                                     
                                     // Снимаем фиксацию после рендера
                                     setTimeout(function() {
