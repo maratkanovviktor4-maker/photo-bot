@@ -1894,7 +1894,11 @@
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
             chat.messages = chat.messages.slice(0, msgIndex + 1);
-            renderMessages();
+            // Удаляем из DOM сообщения после точки ветвления (не перерисовывая весь чат)
+            var area = document.getElementById('chatArea');
+            while (area.children.length > msgIndex + 1) {
+                area.removeChild(area.lastChild);
+            }
             playSound('send');
             var placeholderId = null;
             var isAssistantBranch = (msg.role === 'assistant');
