@@ -2677,7 +2677,6 @@
             selectionMode = !selectionMode;
             selectedMsgIndices = {};
             if (selectionMode) {
-                // Добавляем чекбоксы к каждому сообщению
                 var rows = document.querySelectorAll('.message-row[data-msg-index]');
                 rows.forEach(function(row) {
                     var index = row.getAttribute('data-msg-index');
@@ -2699,7 +2698,6 @@
                     row.style.paddingLeft = '30px';
                     row.appendChild(checkbox);
                 });
-                // Добавляем кнопку "Удалить выбранные" в топбар
                 var topBar = document.querySelector('.top-bar');
                 var deleteBtn = document.createElement('button');
                 deleteBtn.id = 'deleteSelectedBtn';
@@ -2715,8 +2713,15 @@
                 cancelBtn.style.cssText = 'padding:6px 12px;border-radius:16px;font-size:12px;font-family:Inter,sans-serif;background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.1);cursor:pointer;font-weight:500;';
                 cancelBtn.onclick = toggleSelectionMode;
                 topBar.appendChild(cancelBtn);
+                requestAnimationFrame(function() {
+                    var startTime = performance.now();
+                    function animateHeaders(now) {
+                        updateFloatingButtons();
+                        if (now - startTime < 300) requestAnimationFrame(animateHeaders);
+                    }
+                    requestAnimationFrame(animateHeaders);
+                });
             } else {
-                // Удаляем чекбоксы и кнопки
                 document.querySelectorAll('.selection-checkbox').forEach(function(el) { el.remove(); });
                 var deleteBtn = document.getElementById('deleteSelectedBtn');
                 if (deleteBtn) deleteBtn.remove();
@@ -2725,6 +2730,14 @@
                 document.querySelectorAll('.message-row[data-msg-index]').forEach(function(row) {
                     row.style.position = '';
                     row.style.paddingLeft = '';
+                });
+                requestAnimationFrame(function() {
+                    var startTime = performance.now();
+                    function animateHeaders(now) {
+                        updateFloatingButtons();
+                        if (now - startTime < 300) requestAnimationFrame(animateHeaders);
+                    }
+                    requestAnimationFrame(animateHeaders);
                 });
             }
         }
