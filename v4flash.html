@@ -2921,12 +2921,7 @@
                 }
             }
             if (hasReasoning) {
-                var reasoningCollapsed = msg._reasoningCollapsed;
-                // Проверяем localStorage, если есть msg_id
-                if (msg.msg_id && reasoningCollapsed === undefined) {
-                    reasoningCollapsed = localStorage.getItem('reasoning_collapsed:' + msg.msg_id) === '1';
-                }
-                reasoningHtml = '<div class="reasoning-block' + (reasoningCollapsed ? ' collapsed' : '') + '"><div class="reasoning-header"><span class="reasoning-toggle">▼</span><span style="font-size:11px;color:#888;">Размышление</span></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div></div>';
+                reasoningHtml = '<div class="reasoning-block' + (msg._reasoningCollapsed ? ' collapsed' : '') + '"><div class="reasoning-header"><span class="reasoning-toggle">▼</span><span style="font-size:11px;color:#888;">Размышление</span></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div></div>';
             }
             var contentHtml = formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
@@ -2954,9 +2949,7 @@
                         })
                     });
                 } catch(e) {}
-                if (msg.msg_id) {
-                    localStorage.removeItem('reasoning_collapsed:' + msg.msg_id);
-                }
+
                 chat.messages.splice(index, 1);
                 if (chat.messages.length === 0) {
                     if (currentBranchId !== 'main') {
@@ -5904,17 +5897,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var index = msgEl.getAttribute('data-msg-index');
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (chat && chat.messages[index]) {
-                    var msg = chat.messages[index];
-                    var isCollapsed = block.classList.contains('collapsed');
-                    msg._reasoningCollapsed = isCollapsed;
-                    // Сохраняем в localStorage, если есть msg_id
-                    if (msg.msg_id) {
-                        if (isCollapsed) {
-                            localStorage.setItem('reasoning_collapsed:' + msg.msg_id, '1');
-                        } else {
-                            localStorage.removeItem('reasoning_collapsed:' + msg.msg_id);
-                        }
-                    }
+                    chat.messages[index]._reasoningCollapsed = block.classList.contains('collapsed');
                 }
             }
         });
