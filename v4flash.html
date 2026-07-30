@@ -12,23 +12,6 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
-        @keyframes shimmer {
-            0% { background-position: -200% center; }
-            100% { background-position: 200% center; }
-        }
-        .reasoning-header.shimmer { 
-            background: linear-gradient(90deg, #888 0%, #e0e0e0 50%, #888 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: shimmer 2s linear infinite;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            user-select: none;
-        }
         .reasoning-block .reasoning-header { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; padding: 2px 0; }
         .reasoning-block .reasoning-header:hover { opacity: 0.7; }
         .reasoning-block .reasoning-toggle { font-size: 12px; color: #888; transition: transform 0.2s; }
@@ -2923,8 +2906,8 @@
             var contentToShow = msg.content || '';
             var hasReasoning = false;
             var reasoningText = '';
-            if (msg._reasoningBuffer !== undefined) {
-                reasoningText = msg._reasoningBuffer || '';
+            if (msg._reasoningBuffer) {
+                reasoningText = msg._reasoningBuffer;
                 hasReasoning = true;
             } else if (msg.reasoning) {
                 reasoningText = msg.reasoning;
@@ -2939,15 +2922,13 @@
             }
             if (hasReasoning) {
                 var reasoningCollapsed = msg._reasoningCollapsed;
+                // Проверяем localStorage, если есть msg_id
                 if (msg.msg_id && reasoningCollapsed === undefined) {
                     reasoningCollapsed = localStorage.getItem('reasoning_collapsed:' + msg.msg_id) === '1';
                 }
-                // Если резонер включён и стримим, добавляем класс shimmer
-                var shimmerClass = (msg._streaming && currentMode === 'reasoner') ? ' shimmer' : '';
-                reasoningHtml = '<div class="reasoning-block' + (reasoningCollapsed ? ' collapsed' : '') + '"><div class="reasoning-header' + shimmerClass + '"><span class="reasoning-toggle">▼</span><span style="font-size:11px;">Размышление</span></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div></div>';
+                reasoningHtml = '<div class="reasoning-block' + (reasoningCollapsed ? ' collapsed' : '') + '"><div class="reasoning-header"><span class="reasoning-toggle">▼</span><span style="font-size:11px;color:#888;">Размышление</span></div><div class="reasoning-content">' + formatMessage(reasoningText) + '</div></div>';
             }
             var contentHtml = formatMessage(contentToShow);
-            // Не показываем три точки, если есть заголовок размышления
             if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
                 contentHtml = '<div class="typing-dots"><span></span><span></span><span></span></div>';
             }
@@ -4347,9 +4328,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             }
             
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
-            if (currentMode === 'reasoner') {
-                assistantMsg._reasoningBuffer = '';
-            }
             chat.messages.push(assistantMsg);
             const msgIndex = chat.messages.length - 1;
             const streamId = 'stream_' + msgIndex;
