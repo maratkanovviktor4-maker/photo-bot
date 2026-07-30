@@ -1985,7 +1985,10 @@
                                     streamMsgIndex = chat.messages.length - 1;
                                     var streamId = 'branch_stream_' + streamMsgIndex;
                                     activeStreamId = streamId;
-                                    renderMessages();
+                                    if (placeholderId) {
+                                        var placeholder = document.getElementById(placeholderId);
+                                        if (placeholder) placeholder.remove();
+                                    }
                                     renderChatList();
                                     branchMetaReceived = true;
                                 } else if (parsed.assistant_msg_id) {
