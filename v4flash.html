@@ -4173,24 +4173,35 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             btn.onclick = null;
         }
         var _streamTimers = {};
-
+        var reasoningStates = {};
         function streamUpdateDOM(el, msg) {
             var id = el.id;
             if (_streamTimers[id]) return;
             _streamTimers[id] = setTimeout(function() {
                 _streamTimers[id] = null;
+                
+                var savedState = reasoningStates[id] !== undefined ? reasoningStates[id] : true;
+                
                 var reasoningHtml = (msg._reasoningBuffer)
-                    ? '<details class="reasoning-details" open><summary style="cursor:pointer;font-size:12px;color:#aaa;font-family:Inter,sans-serif;user-select:none;padding:4px 0;">🧠 Рассуждение</summary><div class="reasoning-block" style="margin-top:4px;">' + formatMessage(msg._reasoningBuffer) + '</div></details>'
+                    ? '<details class="reasoning-details" ' + (savedState ? 'open' : '') + '><summary style="cursor:pointer;font-size:12px;color:#aaa;font-family:Inter,sans-serif;user-select:none;padding:4px 0;list-style:none;display:flex;align-items:center;gap:6px;">🧠 Рассуждение</summary><div class="reasoning-block" style="margin-top:4px;">' + formatMessage(msg._reasoningBuffer) + '</div></details>'
                     : '';
                 var contentHtml = formatMessage(msg.content || '');
+                
                 var parentEl = el.parentElement;
                 var prevHeight = parentEl.offsetHeight;
                 el.innerHTML = reasoningHtml + contentHtml;
-                var d = el.querySelector('.reasoning-details');
-                if (d) d.open = true;
                 if (prevHeight > 0) {
                     parentEl.style.minHeight = prevHeight + 'px';
                 }
+                
+                var details = el.querySelector('.reasoning-details');
+                if (details) {
+                    details.open = savedState;
+                    details.addEventListener('toggle', function() {
+                        reasoningStates[id] = details.open;
+                    });
+                }
+                
                 var codeBlocks = el.querySelectorAll('pre code');
                 for (var i = 0; i < codeBlocks.length; i++) {
                     var block = codeBlocks[i];
