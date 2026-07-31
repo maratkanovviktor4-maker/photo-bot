@@ -2795,10 +2795,14 @@
                     if (currentBranchId !== 'main') {
                         await deleteBranch(currentBranchId);
                     } else {
-                        await fetch(SERVER_URL + '/delete_chat?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&session_token=' + sessionToken, { method: 'DELETE' });
-                        chats = chats.filter(function(c) { return c.id !== currentChatId; });
-                        renderChatList();
-                        newChat();
+                        showConfirmModal('Удаление чата', 'В чате не осталось сообщений. Удалить чат?', ICON_WARNING, 'Удалить', 'Отмена', 'modal-btn-danger', async function() {
+                            await fetch(SERVER_URL + '/delete_chat?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&session_token=' + sessionToken, { method: 'DELETE' });
+                            chats = chats.filter(function(c) { return c.id !== currentChatId; });
+                            renderChatList();
+                            newChat();
+                        });
+                        renderMessages();
+                        renderBranchesPanel();
                     }
                     return;
                 }
@@ -2971,26 +2975,28 @@
                         })
                     });
                 } catch(e) {}
-                if (msg.msg_id) {
-                    localStorage.removeItem('reasoning_collapsed:' + msg.msg_id);
-                }
+
                 chat.messages.splice(index, 1);
+
                 if (chat.messages.length === 0) {
                     if (currentBranchId !== 'main') {
-                        deleteBranch(currentBranchId);
+                        await deleteBranch(currentBranchId);
                     } else {
-                        fetch(SERVER_URL + '/delete_chat?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&session_token=' + sessionToken, { method: 'DELETE' })
-                            .then(function() {
-                                chats = chats.filter(function(c) { return c.id !== currentChatId; });
-                                renderChatList();
-                                newChat();
-                            });
+                        showConfirmModal('Удаление чата', 'В чате не осталось сообщений. Удалить чат?', ICON_WARNING, 'Удалить', 'Отмена', 'modal-btn-danger', async function() {
+                            await fetch(SERVER_URL + '/delete_chat?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&session_token=' + sessionToken, { method: 'DELETE' });
+                            chats = chats.filter(function(c) { return c.id !== currentChatId; });
+                            renderChatList();
+                            newChat();
+                        });
+                        renderMessages();
+                        renderBranchesPanel();
                     }
-                } else {
-                    renderMessages();
-                    renderBranchesPanel();
-                    updateBranchesFromServer();
+                    return;
                 }
+
+                renderMessages();
+                renderBranchesPanel();
+                updateBranchesFromServer();
             });
         }        
         function removeRedundantMessages(area, expectedCount) {
