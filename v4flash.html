@@ -2789,6 +2789,21 @@
                     chat.messages.splice(indices[i], 1);
                 }
                 
+                if (chat.messages.length === 0) {
+                    toggleSelectionMode();
+                    if (currentBranchId !== 'main') {
+                        deleteBranch(currentBranchId);
+                    } else {
+                        fetch(SERVER_URL + '/delete_chat?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&session_token=' + sessionToken, { method: 'DELETE' })
+                            .then(function() {
+                                chats = chats.filter(function(c) { return c.id !== currentChatId; });
+                                renderChatList();
+                                newChat();
+                            });
+                    }
+                    return;
+                }
+                
                 toggleSelectionMode();
                 renderMessages();
                 renderBranchesPanel();
