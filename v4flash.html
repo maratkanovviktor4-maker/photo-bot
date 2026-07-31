@@ -2796,10 +2796,14 @@
                         await deleteBranch(currentBranchId);
                     } else {
                         showConfirmModal('Удаление чата', 'В чате не осталось сообщений. Удалить чат?', ICON_WARNING, 'Удалить', 'Отмена', 'modal-btn-danger', async function() {
-                            await fetch(SERVER_URL + '/delete_chat?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&session_token=' + sessionToken, { method: 'DELETE' });
+                            showLoading();
+                            try {
+                                await fetch(SERVER_URL + '/delete_chat?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&session_token=' + sessionToken, { method: 'DELETE' });
+                            } catch(e) {}
                             chats = chats.filter(function(c) { return c.id !== currentChatId; });
                             renderChatList();
                             newChat();
+                            hideLoading();
                         });
                         renderMessages();
                         renderBranchesPanel();
@@ -2983,10 +2987,14 @@
                         await deleteBranch(currentBranchId);
                     } else {
                         showConfirmModal('Удаление чата', 'В чате не осталось сообщений. Удалить чат?', ICON_WARNING, 'Удалить', 'Отмена', 'modal-btn-danger', async function() {
-                            await fetch(SERVER_URL + '/delete_chat?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&session_token=' + sessionToken, { method: 'DELETE' });
+                            showLoading();
+                            try {
+                                await fetch(SERVER_URL + '/delete_chat?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&session_token=' + sessionToken, { method: 'DELETE' });
+                            } catch(e) {}
                             chats = chats.filter(function(c) { return c.id !== currentChatId; });
                             renderChatList();
                             newChat();
+                            hideLoading();
                         });
                         renderMessages();
                         renderBranchesPanel();
