@@ -2716,6 +2716,12 @@
                 } catch(e) {}
 
                 chat.messages.splice(index, 1);
+                if (chat.allBranches && chat.allBranches[currentBranchId] && msg.msg_id) {
+                    var ids = chat.allBranches[currentBranchId].msg_ids || [];
+                    var pos = ids.indexOf(msg.msg_id);
+                    if (pos !== -1) ids.splice(pos, 1);
+                    chat.allBranches[currentBranchId].msg_ids = ids;
+                }
 
                 if (chat.messages.length === 0) {
                     renderMessages();
@@ -2853,6 +2859,12 @@
                         });
                     } catch(e) {}
                     chat.messages.splice(indices[i], 1);
+                    if (chat.allBranches && chat.allBranches[currentBranchId] && msg.msg_id) {
+                        var ids = chat.allBranches[currentBranchId].msg_ids || [];
+                        var pos = ids.indexOf(msg.msg_id);
+                        if (pos !== -1) ids.splice(pos, 1);
+                        chat.allBranches[currentBranchId].msg_ids = ids;
+                    }
                 }
                 
                 toggleSelectionMode();
