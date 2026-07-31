@@ -1704,24 +1704,12 @@
                         await fetch(SERVER_URL + '/delete_chat?user_id=' + currentUserId + '&model=flash&chat_id=' + id + '&session_token=' + sessionToken, { method: 'DELETE' });
                     } catch (e) {}
                     chats = chats.filter(function(c) { return c.id !== id; });
-                    if (currentChatId === id) {
-                        currentChatId = chats.length > 0 ? chats[chats.length - 1].id : null;
-                        if (currentChatId) {
-                            var chat = chats.find(function(c) { return c.id === currentChatId; });
-                            if (chat) currentBranchId = chat.activeBranch || 'main';
-                        }
-                        if (!currentChatId) {
-                            newChat();
-                        } else {
-                            document.querySelector('.chat-wrapper').classList.remove('empty-state-active');
-                        }
-                    }
-                    renderChatList();
-                    renderBranchesPanel();
-                    fullRender();
-                    updateContextBattery();
                     var dropdowns = document.querySelectorAll('.chat-menu-dropdown');
                     for (var i = 0; i < dropdowns.length; i++) { dropdowns[i].classList.remove('show'); }
+                    renderChatList();
+                    newChat();
+                    renderBranchesPanel();
+                    updateContextBattery();
                     hideLoading();
                 }
             );
