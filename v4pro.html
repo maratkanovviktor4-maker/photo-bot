@@ -5967,7 +5967,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     var msg = chat.messages[index];
                     var isCollapsed = block.classList.contains('collapsed');
                     msg._reasoningCollapsed = isCollapsed;
-                    // Сохраняем в localStorage, если есть msg_id
                     if (msg.msg_id) {
                         if (isCollapsed) {
                             localStorage.setItem('reasoning_collapsed:' + msg.msg_id, '1');
@@ -5977,6 +5976,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 }
             }
+            
+            // Пересчитываем позиции хедеров блоков кода
+            setTimeout(function() { updateFloatingButtons(); }, 50);
         });
     </script>
     <div id="selfPlayModal" class="modal-overlay">
