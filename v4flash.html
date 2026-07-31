@@ -1878,17 +1878,15 @@
                     try {
                         var resp = await fetch(SERVER_URL + '/delete_branch?user_id=' + currentUserId + '&model=flash&chat_id=' + currentChatId + '&branch_id=' + branchId + '&session_token=' + sessionToken, { method: 'DELETE' });
                         if (resp.ok) {
-                            // Если удалили текущую ветку — переключаемся на main
                             if (branchId === currentBranchId) {
                                 currentBranchId = 'main';
-                                var chat = chats.find(function(c) { return c.id === currentChatId; });
-                                if (chat) {
-                                    chat.activeBranch = 'main';
-                                }
                             }
-                            // Полная перезагрузка чатов (внутри вызовет openChat и полный рендер)
-                            await loadChatsFromServer();
-                            renderBranchesPanel();
+                            var chat = chats.find(function(c) { return c.id === currentChatId; });
+                            if (chat) {
+                                chat.activeBranch = currentBranchId;
+                            }
+                            await loadChatMessages(currentChatId);
+                            updateBranchIndicator();
                             updateContextBattery();
                         }
                     } catch(e) { console.error('deleteBranch error:', e); }
