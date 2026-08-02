@@ -4331,8 +4331,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     var main = document.querySelector('.main');
                     if (main) {
                         main.style.scrollBehavior = 'auto';
-                        main.scrollTop = main.scrollHeight;
-                        main.style.scrollBehavior = 'smooth';
+                        requestAnimationFrame(function() {
+                            main.scrollTop = main.scrollHeight;
+                            main.style.scrollBehavior = 'smooth';
+                        });
                     }
                 }
             }, 16);
@@ -5027,12 +5029,24 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var blockRect = block.getBoundingClientRect();
 
                 if (header._isSticky) {
-                    // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
-                    if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
-                        header._isSticky = false;
-                        applyReasoningStatic(header);
+                    // Если блок свёрнут, но мы ещё не скроллили — оставляем прилипшим
+                    if (header._collapsedWhileSticky) {
+                        var mainEl = document.querySelector('.main');
+                        if (header._stickyTop !== undefined && mainEl.scrollTop !== header._stickyTop) {
+                            header._isSticky = false;
+                            header._collapsedWhileSticky = false;
+                            applyReasoningStatic(header);
+                        } else {
+                            applyReasoningSticky(header, tbBottom, blockRect);
+                        }
                     } else {
-                        applyReasoningSticky(header, tbBottom, blockRect);
+                        // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
+                        if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
+                            header._isSticky = false;
+                            applyReasoningStatic(header);
+                        } else {
+                            applyReasoningSticky(header, tbBottom, blockRect);
+                        }
                     }
                 } else {
                     // Прилипаем, если блок достаточно пересекает топбар
@@ -5048,6 +5062,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
         function applyReasoningSticky(header, tbBottom, blockRect) {
             var mainEl = document.querySelector('.main');
+            header._stickyTop = mainEl.scrollTop;            
             var mainBg = getComputedStyle(mainEl).backgroundColor;
             var mainBgImage = getComputedStyle(mainEl).backgroundImage;
             var fullBg = mainBgImage !== 'none' ? mainBgImage : mainBg;
@@ -5064,6 +5079,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         }
 
         function applyReasoningStatic(header) {
+            header._isSticky = false;
+            header._collapsedWhileSticky = false;            
             header.style.position = 'static';
             header.style.top = '';
             header.style.left = '';
@@ -6029,7 +6046,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var block = header.closest('.reasoning-block');
             if (!block) return;
             block.classList.toggle('collapsed');
-            
+            if (block.classList.contains('collapsed')) {
+                var hdr = block.querySelector('.reasoning-header');
+                if (hdr && hdr._isSticky) {
+                    hdr._collapsedWhileSticky = true;
+                }
+            }            
             if (block.classList.contains('collapsed')) {
                 var contentInner = block.closest('.message-content').querySelector('.msg-content-inner');
                 if (contentInner && !contentInner.textContent.trim()) {
