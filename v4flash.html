@@ -5018,57 +5018,52 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var header = block.querySelector('.reasoning-header');
                 if (!header) continue;
                 var blockRect = block.getBoundingClientRect();
-                var headerHeight = header.offsetHeight || 40;
 
-                // Если уже прилип — проверяем, не ушёл ли блок слишком далеко вверх
-                if (block._reasoningSticky) {
-                    if (blockRect.top < tbBottom) {
-                        // блок всё ещё касается верхнего бара — остаёмся прилипшим
-                        header.style.position = 'fixed';
-                        header.style.top = tbBottom + 'px';
-                        header.style.left = blockRect.left + 'px';
-                        header.style.width = blockRect.width + 'px';
-                        header.style.zIndex = 100;
-                        var mainBg = getComputedStyle(document.querySelector('.main')).backgroundColor;
-                        var mainBgImage = getComputedStyle(document.querySelector('.main')).backgroundImage;
-                        header.style.background = mainBgImage !== 'none' ? mainBgImage : mainBg;
-                        var colorMatch = mainBgImage !== 'none' ? mainBgImage.match(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))/) : null;
-                        header.style.boxShadow = '0 20px 20px 10px ' + (colorMatch ? colorMatch[1] : mainBg);
-                        header.style.paddingBottom = '5px';
-                        header.style.opacity = '1';
-                        continue;
+                if (header._isSticky) {
+                    // Остаёмся прилипшими, пока блок полностью не уйдёт выше топбара
+                    if (blockRect.bottom <= tbBottom + 1) {
+                        header._isSticky = false;
+                        applyReasoningStatic(header);
                     } else {
-                        block._reasoningSticky = false;
+                        applyReasoningSticky(header, tbBottom, blockRect);
+                    }
+                } else {
+                    if (blockRect.top < tbBottom && blockRect.bottom > tbBottom) {
+                        header._isSticky = true;
+                        applyReasoningSticky(header, tbBottom, blockRect);
+                    } else {
+                        applyReasoningStatic(header);
                     }
                 }
-
-                if (blockRect.top < tbBottom && blockRect.bottom > tbBottom) {
-                    block._reasoningSticky = true;
-                    header.style.position = 'fixed';
-                    header.style.top = tbBottom + 'px';
-                    header.style.left = blockRect.left + 'px';
-                    header.style.width = blockRect.width + 'px';
-                    header.style.zIndex = 100;
-                    var mainBg2 = getComputedStyle(document.querySelector('.main')).backgroundColor;
-                    var mainBgImage2 = getComputedStyle(document.querySelector('.main')).backgroundImage;
-                    header.style.background = mainBgImage2 !== 'none' ? mainBgImage2 : mainBg2;
-                    var colorMatch2 = mainBgImage2 !== 'none' ? mainBgImage2.match(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))/) : null;
-                    header.style.boxShadow = '0 20px 20px 10px ' + (colorMatch2 ? colorMatch2[1] : mainBg2);
-                    header.style.paddingBottom = '5px';
-                    header.style.opacity = '1';
-                } else {
-                    block._reasoningSticky = false;
-                    header.style.position = 'static';
-                    header.style.top = '';
-                    header.style.left = '';
-                    header.style.width = '';
-                    header.style.zIndex = '';
-                    header.style.boxShadow = '';
-                    header.style.background = '';
-                    header.style.paddingBottom = '';
-                    header.style.opacity = '';
-                }
             }
+        }
+
+        function applyReasoningSticky(header, tbBottom, blockRect) {
+            var mainEl = document.querySelector('.main');
+            var mainBg = getComputedStyle(mainEl).backgroundColor;
+            var mainBgImage = getComputedStyle(mainEl).backgroundImage;
+            var fullBg = mainBgImage !== 'none' ? mainBgImage : mainBg;
+            header.style.position = 'fixed';
+            header.style.top = tbBottom + 'px';
+            header.style.left = blockRect.left + 'px';
+            header.style.width = blockRect.width + 'px';
+            header.style.zIndex = 100;
+            header.style.background = fullBg;
+            var colorMatch = mainBgImage !== 'none' ? mainBgImage.match(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))/) : null;
+            var shadowColor = colorMatch ? colorMatch[1] : ((mainBg && mainBg !== 'rgba(0, 0, 0, 0)') ? mainBg : 'rgba(0,0,0,0.5)');
+            header.style.boxShadow = '0 20px 20px 10px ' + shadowColor;
+            header.style.paddingBottom = '5px';
+        }
+
+        function applyReasoningStatic(header) {
+            header.style.position = 'static';
+            header.style.top = '';
+            header.style.left = '';
+            header.style.width = '';
+            header.style.zIndex = '';
+            header.style.boxShadow = '';
+            header.style.background = '';
+            header.style.paddingBottom = '';
         }
 
         function buildNavContainer() {
