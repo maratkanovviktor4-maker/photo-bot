@@ -5018,6 +5018,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 if (!header) continue;
                 var blockRect = block.getBoundingClientRect();
                 if (blockRect.top < tbBottom && blockRect.bottom > tbBottom) {
+                    if (!header._wasFixed) {
+                        header._wasFixed = true;
+                        var headerHeight = header.offsetHeight;
+                        block.style.paddingTop = headerHeight + 'px';
+                        header.style.marginTop = '-' + headerHeight + 'px';
+                    }
                     header.style.position = 'fixed';
                     header.style.top = tbBottom + 'px';
                     header.style.left = blockRect.left + 'px';
@@ -5027,6 +5033,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     header.style.background = mainEl ? getComputedStyle(mainEl).background : '#151517';
                     header.style.boxShadow = '0 5px 10px rgba(0,0,0,0.3)';
                 } else {
+                    if (header._wasFixed) {
+                        header._wasFixed = false;
+                        block.style.paddingTop = '';
+                        header.style.marginTop = '';
+                    }
                     header.style.position = 'static';
                     header.style.top = '';
                     header.style.left = '';
