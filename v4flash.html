@@ -4255,6 +4255,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 
                 var parentEl = el.parentElement;
                 var prevHeight = parentEl.offsetHeight;
+                el._streamParent = parentEl;                
                 
                 // Ищем существующий блок размышлений
                 var existingBlock = el.querySelector('.reasoning-block');
@@ -5981,7 +5982,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 }
             }
-            
+            var streamEl = block.closest('.message-content[id^="stream-"]');
+            if (streamEl && streamEl._streamParent) {
+                streamEl._streamParent.style.minHeight = streamEl._streamParent.offsetHeight + 'px';
+            }            
             // Пересчитываем позиции хедеров блоков кода
             setTimeout(function() { updateFloatingButtons(); }, 50);
         });
