@@ -6003,6 +6003,19 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (!block) return;
             block.classList.toggle('collapsed');
             if (block.classList.contains('collapsed')) {
+                var header = block.querySelector('.reasoning-header');
+                if (header) {
+                    header.style.position = 'static';
+                    header.style.top = '';
+                    header.style.left = '';
+                    header.style.width = '';
+                    header.style.zIndex = '';
+                    header.style.boxShadow = '';
+                    header.style.background = '';
+                    header.style.paddingBottom = '';
+                }
+            }            
+            if (block.classList.contains('collapsed')) {
                 var contentInner = block.closest('.message-content').querySelector('.msg-content-inner');
                 if (contentInner && !contentInner.textContent.trim()) {
                     var parent = block.closest('.message-row').querySelector('div');
@@ -6029,7 +6042,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             }
             
             // Пересчитываем позиции хедеров блоков кода
-            setTimeout(function() { updateFloatingButtons(); updateFloatingReasoningHeaders(); }, 50);
+            setTimeout(function() { updateFloatingButtons(); }, 50);
         });
     </script>
     <div id="selfPlayModal" class="modal-overlay">
