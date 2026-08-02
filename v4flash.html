@@ -6024,27 +6024,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var block = header.closest('.reasoning-block');
             if (!block) return;
             block.classList.toggle('collapsed');
-            if (block.classList.contains('collapsed')) {
-                var header = block.querySelector('.reasoning-header');
-                if (header) {
-                    header.style.position = 'static';
-                    header.style.top = '';
-                    header.style.left = '';
-                    header.style.width = '';
-                    header.style.zIndex = '';
-                    header.style.boxShadow = '';
-                    header.style.background = '';
-                    header.style.paddingBottom = '';
-                }
-            }            
-            if (block.classList.contains('collapsed')) {
-                var contentInner = block.closest('.message-content').querySelector('.msg-content-inner');
-                if (contentInner && !contentInner.textContent.trim()) {
-                    var parent = block.closest('.message-row').querySelector('div');
-                    parent.style.minHeight = '0';
-                }
-            }            
-            
             var msgEl = block.closest('[data-msg-index]');
             if (msgEl) {
                 var index = msgEl.getAttribute('data-msg-index');
@@ -6062,8 +6041,32 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 }
             }
-            
-            // Пересчитываем позиции хедеров блоков кода
+            if (block.classList.contains('collapsed')) {
+                var header2 = block.querySelector('.reasoning-header');
+                if (header2) {
+                    header2.style.position = 'static';
+                    header2.style.top = '';
+                    header2.style.left = '';
+                    header2.style.width = '';
+                    header2.style.zIndex = '';
+                    header2.style.boxShadow = '';
+                    header2.style.background = '';
+                    header2.style.paddingBottom = '';
+                }
+            }
+            // Принудительная прокрутка вниз после изменения высоты
+            if (autoScroll) {
+                var main = document.querySelector('.main');
+                if (main) {
+                    main.style.scrollBehavior = 'auto';
+                    requestAnimationFrame(function() {
+                        requestAnimationFrame(function() {
+                            main.scrollTop = main.scrollHeight;
+                            main.style.scrollBehavior = 'smooth';
+                        });
+                    });
+                }
+            }
             setTimeout(function() { updateFloatingButtons(); }, 50);
         });
     </script>
