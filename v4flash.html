@@ -5018,10 +5018,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var header = block.querySelector('.reasoning-header');
                 if (!header) continue;
                 var blockRect = block.getBoundingClientRect();
+                var isCollapsed = block.classList.contains('collapsed');
 
-                // Если блок свёрнут — снимаем закрепление при первом же пересчёте (скролле)
-                if (block.classList.contains('collapsed')) {
-                    if (header._isSticky) {
+                // Свёрнутый блок не должен прилипать заново
+                if (isCollapsed) {
+                    // Если он был прилипшим, отлипаем при обычном условии
+                    if (header._isSticky && (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10)) {
                         header._isSticky = false;
                         applyReasoningStatic(header);
                     }
@@ -5029,7 +5031,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
 
                 if (header._isSticky) {
-                    // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
                     if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
                         header._isSticky = false;
                         applyReasoningStatic(header);
@@ -5037,7 +5038,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         applyReasoningSticky(header, tbBottom, blockRect);
                     }
                 } else {
-                    // Прилипаем, если блок достаточно пересекает топбар
                     if (blockRect.top < tbBottom - 10 && blockRect.bottom > tbBottom + 10) {
                         header._isSticky = true;
                         applyReasoningSticky(header, tbBottom, blockRect);
@@ -6029,21 +6029,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var header = e.target.closest('.reasoning-header');
             if (!header) return;
             var block = header.closest('.reasoning-block');
-            if (!block) return;
-            block.classList.toggle('collapsed');
-            if (block.classList.contains('collapsed')) {
-                var header = block.querySelector('.reasoning-header');
-                if (header && !header._isSticky) {
-                    header.style.position = 'static';
-                    header.style.top = '';
-                    header.style.left = '';
-                    header.style.width = '';
-                    header.style.zIndex = '';
-                    header.style.boxShadow = '';
-                    header.style.background = '';
-                    header.style.paddingBottom = '';
-                }
-            }            
+            if (!block) return;            
             if (block.classList.contains('collapsed')) {
                 var contentInner = block.closest('.message-content').querySelector('.msg-content-inner');
                 if (contentInner && !contentInner.textContent.trim()) {
