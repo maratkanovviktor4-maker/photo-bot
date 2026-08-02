@@ -5020,15 +5020,16 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var blockRect = block.getBoundingClientRect();
 
                 if (header._isSticky) {
-                    // Отлипаем, когда верх блока опускается ниже топбара (движение вниз)
-                    if (blockRect.top >= tbBottom - 1) {
+                    // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
+                    if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
                         header._isSticky = false;
                         applyReasoningStatic(header);
                     } else {
                         applyReasoningSticky(header, tbBottom, blockRect);
                     }
                 } else {
-                    if (blockRect.top < tbBottom && blockRect.bottom > tbBottom) {
+                    // Прилипаем, если блок достаточно пересекает топбар
+                    if (blockRect.top < tbBottom - 10 && blockRect.bottom > tbBottom + 10) {
                         header._isSticky = true;
                         applyReasoningSticky(header, tbBottom, blockRect);
                     } else {
