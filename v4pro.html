@@ -5029,32 +5029,53 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var header = block.querySelector('.reasoning-header');
                 if (!header) continue;
                 var blockRect = block.getBoundingClientRect();
-                if (blockRect.top < tbBottom && blockRect.bottom > tbBottom) {
-                    header.style.position = 'fixed';
-                    header.style.top = tbBottom + 'px';
-                    header.style.left = blockRect.left + 'px';
-                    header.style.width = blockRect.width + 'px';
-                    header.style.zIndex = 100;
-                    var mainEl = document.querySelector('.main');
-                    var mainBg = getComputedStyle(mainEl).backgroundColor;
-                    var mainBgImage = getComputedStyle(mainEl).backgroundImage;
-                    var fullBg = mainBgImage !== 'none' ? mainBgImage : mainBg;
-                    header.style.background = fullBg;
-                    var colorMatch = mainBgImage !== 'none' ? mainBgImage.match(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))/) : null;
-                    var shadowColor = colorMatch ? colorMatch[1] : ((mainBg && mainBg !== 'rgba(0, 0, 0, 0)') ? mainBg : 'rgba(0,0,0,0.5)');
-                    header.style.boxShadow = '0 20px 20px 10px ' + shadowColor;
-                    header.style.paddingBottom = '5px';
+
+                if (header._isSticky) {
+                    // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
+                    if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
+                        header._isSticky = false;
+                        applyReasoningStatic(header);
+                    } else {
+                        applyReasoningSticky(header, tbBottom, blockRect);
+                    }
                 } else {
-                    header.style.position = 'static';
-                    header.style.top = '';
-                    header.style.left = '';
-                    header.style.width = '';
-                    header.style.zIndex = '';
-                    header.style.boxShadow = '';
-                    header.style.background = '';
-                    header.style.paddingBottom = '';
+                    // Прилипаем, если блок достаточно пересекает топбар
+                    if (blockRect.top < tbBottom - 10 && blockRect.bottom > tbBottom + 10) {
+                        header._isSticky = true;
+                        applyReasoningSticky(header, tbBottom, blockRect);
+                    } else {
+                        applyReasoningStatic(header);
+                    }
                 }
             }
+        }
+
+        function applyReasoningSticky(header, tbBottom, blockRect) {
+            var mainEl = document.querySelector('.main');
+            var mainBg = getComputedStyle(mainEl).backgroundColor;
+            var mainBgImage = getComputedStyle(mainEl).backgroundImage;
+            var fullBg = mainBgImage !== 'none' ? mainBgImage : mainBg;
+            header.style.position = 'fixed';
+            header.style.top = tbBottom + 'px';
+            header.style.left = blockRect.left + 'px';
+            header.style.width = blockRect.width + 'px';
+            header.style.zIndex = 100;
+            header.style.background = fullBg;
+            var colorMatch = mainBgImage !== 'none' ? mainBgImage.match(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))/) : null;
+            var shadowColor = colorMatch ? colorMatch[1] : ((mainBg && mainBg !== 'rgba(0, 0, 0, 0)') ? mainBg : 'rgba(0,0,0,0.5)');
+            header.style.boxShadow = '0 20px 20px 10px ' + shadowColor;
+            header.style.paddingBottom = '5px';
+        }
+
+        function applyReasoningStatic(header) {
+            header.style.position = 'static';
+            header.style.top = '';
+            header.style.left = '';
+            header.style.width = '';
+            header.style.zIndex = '';
+            header.style.boxShadow = '';
+            header.style.background = '';
+            header.style.paddingBottom = '';
         }
         function buildNavContainer() {
             var container = document.getElementById('navContainer');
