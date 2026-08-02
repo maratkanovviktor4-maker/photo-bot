@@ -1386,6 +1386,8 @@
             var main = document.querySelector('.main');
             if (!main) return;
             main.addEventListener('scroll', function() {
+                document.querySelectorAll('.reasoning-header').forEach(function(h) { h._suppressUpdate = false; });
+                updateFloatingButtons();            
                 var btn = document.getElementById('scrollBottomBtn');
                 if (!btn) return;
                 var atBottom = main.scrollHeight - main.scrollTop - main.clientHeight < 2;
@@ -5016,6 +5018,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             for (var i = 0; i < blocks.length; i++) {
                 var block = blocks[i];
                 var header = block.querySelector('.reasoning-header');
+                if (header._suppressUpdate) continue;                
                 if (!header) continue;
                 var blockRect = block.getBoundingClientRect();
 
@@ -6022,6 +6025,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var block = header.closest('.reasoning-block');
             if (!block) return;
             block.classList.toggle('collapsed');
+            var headerEl = block.querySelector('.reasoning-header');
+            if (headerEl) headerEl._suppressUpdate = true;            
             if (block.classList.contains('collapsed')) {
                 var header = block.querySelector('.reasoning-header');
                 if (header) {
