@@ -13,11 +13,10 @@
     </style>
     <style>
         .reasoning-block .reasoning-header { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; padding: 2px 0; }
-        .reasoning-block .reasoning-header:hover { opacity: 1; }
+        .reasoning-block .reasoning-header:hover { opacity: 0.7; }
         .reasoning-block .reasoning-toggle { transform: rotate(-90deg); }
         .reasoning-block.collapsed .reasoning-toggle { transform: rotate(180deg); }
-        .reasoning-header .reasoning-label { font-size: 16px; font-weight: 600; color: #aaa; }
-        .reasoning-header { height: 40px; line-height: 18px; padding: 0 16px; display: flex; align-items: center; gap: 6px; }
+        .reasoning-header .reasoning-label { font-size: 14px; font-weight: 600; color: #aaa; }
         .reasoning-block.collapsed .reasoning-content { display: none; }
         .reasoning-block .reasoning-content { margin-top: 6px; }
         .reasoning-block.streaming .reasoning-header span { background: linear-gradient(90deg, #888, #e0e0e0, #888); background-size: 200% 100%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 2s linear infinite; }
@@ -110,7 +109,7 @@
         body.light .top-bar { background: rgba(240,240,240,0.8); backdrop-filter: blur(10px); border-bottom: none; }
         .mode-btn { padding: 6px 16px; border-radius: 16px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid transparent; font-family: 'Inter', sans-serif; transition: 0.3s ease; background: rgba(34,34,34,0.8); color: #a0a0b0; }
         body.light .mode-btn { background: rgba(0,0,0,0.05); color: #555; }
-        .mode-btn.active { background: rgba(0,203,245,0.08); border-color: transparent; color: #00CBF5; box-shadow: none; }
+        .mode-btn.active { background: rgba(0,203,245,0.18); border-color: transparent; color: #00CBF5; box-shadow: none; }
         body.light .mode-btn.active { background: rgba(0,203,245,0.1); border-color: rgba(0,203,245,0.25); color: #00CBF5; box-shadow: none; }
 
         .mode-btn:hover:not(.active) { border-color: #00CBF5; color: #e0e0e0; }
@@ -224,8 +223,7 @@
         .nav-container::-webkit-scrollbar { width: 4px; }
         .nav-container::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
         .nav-container:hover::-webkit-scrollbar-thumb { background: rgba(170,170,170,0.4); }
-        .reasoning-block { margin-bottom: 12px; font-size: 14px; color: #888; }
-        .reasoning-content { border-left: 2px solid #555; padding-left: 14px; }
+        .reasoning-block { border-left: 2px solid #555; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; color: #888; }
         body.light .reasoning-block { color: #666; }
         .preview-panel { position: fixed; right: 0; top: 0; width: var(--preview-width, 50%); height: 100vh; background: #ffffff; z-index: 9998; border-left: 1px solid rgba(0,0,0,0.08); display: none; flex-direction: column; }
         .preview-panel.active { display: flex; }
@@ -1059,7 +1057,7 @@
             if (editModal) editModal.style.background = val;
             document.querySelectorAll('.modal-box').forEach(function(el) { el.style.background = val || ''; });
             updateOpenEditorStyles();
-            updateFloatingButtons();
+
             if (inputWrapper) {
                 if (css) {
                     inputWrapper.style.boxShadow = 'none';
@@ -5007,65 +5005,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     header.style.display = (blockRect.bottom > tbBottom && blockRect.top < window.innerHeight) ? 'flex' : 'none';
                 }
             }
-            updateFloatingReasoningHeaders();            
-        }
-        function updateFloatingReasoningHeaders() {
-            var topBar = document.querySelector('.top-bar');
-            var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
-            var blocks = document.querySelectorAll('.reasoning-block:not(.collapsed)');
-            for (var i = 0; i < blocks.length; i++) {
-                var block = blocks[i];
-                var header = block.querySelector('.reasoning-header');
-                if (!header) continue;
-                var blockRect = block.getBoundingClientRect();
-
-                if (header._isSticky) {
-                    // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
-                    if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
-                        header._isSticky = false;
-                        applyReasoningStatic(header);
-                    } else {
-                        applyReasoningSticky(header, tbBottom, blockRect);
-                    }
-                } else {
-                    // Прилипаем, если блок достаточно пересекает топбар
-                    if (blockRect.top < tbBottom - 10 && blockRect.bottom > tbBottom + 10) {
-                        header._isSticky = true;
-                        applyReasoningSticky(header, tbBottom, blockRect);
-                    } else {
-                        applyReasoningStatic(header);
-                    }
-                }
-            }
         }
 
-        function applyReasoningSticky(header, tbBottom, blockRect) {
-            var mainEl = document.querySelector('.main');
-            var mainBg = getComputedStyle(mainEl).backgroundColor;
-            var mainBgImage = getComputedStyle(mainEl).backgroundImage;
-            var fullBg = mainBgImage !== 'none' ? mainBgImage : mainBg;
-            header.style.position = 'fixed';
-            header.style.top = tbBottom + 'px';
-            header.style.left = blockRect.left + 'px';
-            header.style.width = blockRect.width + 'px';
-            header.style.zIndex = 100;
-            header.style.background = fullBg;
-            var colorMatch = mainBgImage !== 'none' ? mainBgImage.match(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))/) : null;
-            var shadowColor = colorMatch ? colorMatch[1] : ((mainBg && mainBg !== 'rgba(0, 0, 0, 0)') ? mainBg : 'rgba(0,0,0,0.5)');
-            header.style.boxShadow = '0 20px 20px 10px ' + shadowColor;
-            header.style.paddingBottom = '5px';
-        }
-
-        function applyReasoningStatic(header) {
-            header.style.position = 'static';
-            header.style.top = '';
-            header.style.left = '';
-            header.style.width = '';
-            header.style.zIndex = '';
-            header.style.boxShadow = '';
-            header.style.background = '';
-            header.style.paddingBottom = '';
-        }
 
         function buildNavContainer() {
             var container = document.getElementById('navContainer');
@@ -6022,26 +5963,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var block = header.closest('.reasoning-block');
             if (!block) return;
             block.classList.toggle('collapsed');
-            if (block.classList.contains('collapsed')) {
-                var header = block.querySelector('.reasoning-header');
-                if (header) {
-                    header.style.position = 'static';
-                    header.style.top = '';
-                    header.style.left = '';
-                    header.style.width = '';
-                    header.style.zIndex = '';
-                    header.style.boxShadow = '';
-                    header.style.background = '';
-                    header.style.paddingBottom = '';
-                }
-            }            
-            if (block.classList.contains('collapsed')) {
-                var contentInner = block.closest('.message-content').querySelector('.msg-content-inner');
-                if (contentInner && !contentInner.textContent.trim()) {
-                    var parent = block.closest('.message-row').querySelector('div');
-                    parent.style.minHeight = '0';
-                }
-            }            
             
             var msgEl = block.closest('[data-msg-index]');
             if (msgEl) {
