@@ -5030,7 +5030,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     var mainBgImage = getComputedStyle(mainEl).backgroundImage;
                     var fullBg = mainBgImage !== 'none' ? mainBgImage : mainBg;
                     header.style.background = fullBg;
-                    var shadowColor = (mainBg && mainBg !== 'rgba(0, 0, 0, 0)') ? mainBg : 'rgba(0,0,0,0.5)';
+                    var colorMatch = mainBgImage !== 'none' ? mainBgImage.match(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))/) : null;
+                    var shadowColor = colorMatch ? colorMatch[1] : ((mainBg && mainBg !== 'rgba(0, 0, 0, 0)') ? mainBg : 'rgba(0,0,0,0.5)');
                     header.style.boxShadow = '0 20px 20px 10px ' + shadowColor;
                     header.style.paddingBottom = '5px';
                 } else {
