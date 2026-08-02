@@ -5973,7 +5973,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var block = header.closest('.reasoning-block');
             if (!block) return;
             block.classList.toggle('collapsed');
-            
+            if (block.classList.contains('collapsed')) {
+                var contentInner = block.closest('.message-content').querySelector('.msg-content-inner');
+                if (contentInner && !contentInner.textContent.trim()) {
+                    var parent = block.closest('.message-row').querySelector('div');
+                    parent.style.minHeight = '0';
+                }
+            }            
             var msgEl = block.closest('[data-msg-index]');
             if (msgEl) {
                 var index = msgEl.getAttribute('data-msg-index');
