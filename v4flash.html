@@ -12,11 +12,6 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
-        .reasoning-header,
-        .floating-code-header {
-            transition: none !important;
-            will-change: top, left;
-        }
         .reasoning-block .reasoning-header { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; padding: 2px 0; }
         .reasoning-block .reasoning-header:hover { opacity: 1; }
         .reasoning-block .reasoning-toggle { transform: rotate(-90deg); }
@@ -5023,28 +5018,23 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var header = block.querySelector('.reasoning-header');
                 if (!header) continue;
                 var blockRect = block.getBoundingClientRect();
-                if (blockRect.top < tbBottom && blockRect.bottom > tbBottom) {
-                    var mainEl = document.querySelector('.main');
-                    var mainBg = getComputedStyle(mainEl).backgroundColor;
-                    var mainBgImage = getComputedStyle(mainEl).backgroundImage;
-                    var fullBg = mainBgImage !== 'none' ? mainBgImage : mainBg;
-                    header.style.position = 'fixed';
-                    header.style.top = tbBottom + 'px';
-                    header.style.left = blockRect.left + 'px';
-                    header.style.width = blockRect.width + 'px';
-                    header.style.zIndex = 100;
-                    header.style.background = fullBg;
-                    var colorMatch = mainBgImage !== 'none' ? mainBgImage.match(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))/) : null;
-                    var shadowColor = colorMatch ? colorMatch[1] : ((mainBg && mainBg !== 'rgba(0, 0, 0, 0)') ? mainBg : 'rgba(0,0,0,0.5)');
-                    header.style.boxShadow = '0 20px 20px 10px ' + shadowColor;
+
+                if (header._isSticky) {
+                    // Отлипаем, когда верх блока опустился заметно ниже верхнего бара (на 5px)
+                    if (blockRect.top > tbBottom + 5) {
+                        header._isSticky = false;
+                        applyReasoningStatic(header);
+                    } else {
+                        applyReasoningSticky(header, tbBottom, blockRect);
+                    }
                 } else {
-                    header.style.position = 'static';
-                    header.style.top = '';
-                    header.style.left = '';
-                    header.style.width = '';
-                    header.style.zIndex = '';
-                    header.style.boxShadow = '';
-                    header.style.background = '';
+                    // Прилипаем ровно в момент касания верхней кромкой блока верхнего бара
+                    if (blockRect.top < tbBottom && blockRect.bottom > tbBottom) {
+                        header._isSticky = true;
+                        applyReasoningSticky(header, tbBottom, blockRect);
+                    } else {
+                        applyReasoningStatic(header);
+                    }
                 }
             }
         }
