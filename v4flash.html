@@ -5014,39 +5014,20 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function updateFloatingReasoningHeaders() {
             var topBar = document.querySelector('.top-bar');
             var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
-            var blocks = document.querySelectorAll('.reasoning-block');
+            var blocks = document.querySelectorAll('.reasoning-block:not(.collapsed)');
             for (var i = 0; i < blocks.length; i++) {
                 var block = blocks[i];
                 var header = block.querySelector('.reasoning-header');
                 if (!header) continue;
-                var isCollapsed = block.classList.contains('collapsed');
-                if (isCollapsed && header._isSticky) {
-                    header._isSticky = false;
-                    applyReasoningStatic(header);
-                    continue;
-                }
-                if (isCollapsed) continue;                
                 var blockRect = block.getBoundingClientRect();
 
                 if (header._isSticky) {
-                    // Если блок свёрнут, но мы ещё не скроллили — оставляем прилипшим
-                    if (header._collapsedWhileSticky) {
-                        var mainEl = document.querySelector('.main');
-                        if (header._stickyTop !== undefined && mainEl.scrollTop !== header._stickyTop) {
-                            header._isSticky = false;
-                            header._collapsedWhileSticky = false;
-                            applyReasoningStatic(header);
-                        } else {
-                            applyReasoningSticky(header, tbBottom, blockRect);
-                        }
+                    // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
+                    if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
+                        header._isSticky = false;
+                        applyReasoningStatic(header);
                     } else {
-                        // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
-                        if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
-                            header._isSticky = false;
-                            applyReasoningStatic(header);
-                        } else {
-                            applyReasoningSticky(header, tbBottom, blockRect);
-                        }
+                        applyReasoningSticky(header, tbBottom, blockRect);
                     }
                 } else {
                     // Прилипаем, если блок достаточно пересекает топбар
@@ -5062,7 +5043,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
         function applyReasoningSticky(header, tbBottom, blockRect) {
             var mainEl = document.querySelector('.main');
-            header._stickyTop = mainEl.scrollTop;            
             var mainBg = getComputedStyle(mainEl).backgroundColor;
             var mainBgImage = getComputedStyle(mainEl).backgroundImage;
             var fullBg = mainBgImage !== 'none' ? mainBgImage : mainBg;
@@ -5079,8 +5059,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         }
 
         function applyReasoningStatic(header) {
-            header._isSticky = false;
-            header._collapsedWhileSticky = false;            
             header.style.position = 'static';
             header.style.top = '';
             header.style.left = '';
@@ -6047,9 +6025,16 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (!block) return;
             block.classList.toggle('collapsed');
             if (block.classList.contains('collapsed')) {
-                var hdr = block.querySelector('.reasoning-header');
-                if (hdr && hdr._isSticky) {
-                    hdr._collapsedWhileSticky = true;
+                var header = block.querySelector('.reasoning-header');
+                if (header) {
+                    header.style.position = 'static';
+                    header.style.top = '';
+                    header.style.left = '';
+                    header.style.width = '';
+                    header.style.zIndex = '';
+                    header.style.boxShadow = '';
+                    header.style.background = '';
+                    header.style.paddingBottom = '';
                 }
             }            
             if (block.classList.contains('collapsed')) {
