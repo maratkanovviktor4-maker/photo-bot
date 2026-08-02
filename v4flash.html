@@ -5012,12 +5012,21 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function updateFloatingReasoningHeaders() {
             var topBar = document.querySelector('.top-bar');
             var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
-            var blocks = document.querySelectorAll('.reasoning-block:not(.collapsed)');
+            var blocks = document.querySelectorAll('.reasoning-block');
             for (var i = 0; i < blocks.length; i++) {
                 var block = blocks[i];
                 var header = block.querySelector('.reasoning-header');
                 if (!header) continue;
                 var blockRect = block.getBoundingClientRect();
+
+                // Если блок свёрнут — снимаем закрепление при первом же пересчёте (скролле)
+                if (block.classList.contains('collapsed')) {
+                    if (header._isSticky) {
+                        header._isSticky = false;
+                        applyReasoningStatic(header);
+                    }
+                    continue;
+                }
 
                 if (header._isSticky) {
                     // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
@@ -6024,7 +6033,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             block.classList.toggle('collapsed');
             if (block.classList.contains('collapsed')) {
                 var header = block.querySelector('.reasoning-header');
-                if (header) {
+                if (header && !header._isSticky) {
                     header.style.position = 'static';
                     header.style.top = '';
                     header.style.left = '';
