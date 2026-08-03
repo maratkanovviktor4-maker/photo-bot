@@ -5012,15 +5012,16 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function updateFloatingReasoningHeaders() {
             var topBar = document.querySelector('.top-bar');
             var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
-            var blocks = document.querySelectorAll('.reasoning-block:not(.collapsed)');
+            var blocks = document.querySelectorAll('.reasoning-block');
             for (var i = 0; i < blocks.length; i++) {
                 var block = blocks[i];
                 var header = block.querySelector('.reasoning-header');
                 if (!header) continue;
                 var blockRect = block.getBoundingClientRect();
+                var isCollapsed = block.classList.contains('collapsed');
 
                 if (header._isSticky) {
-                    // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
+                    // Отлипаем, если блок ушёл далеко ввверх или вниз
                     if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
                         header._isSticky = false;
                         applyReasoningStatic(header);
@@ -5028,8 +5029,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         applyReasoningSticky(header, tbBottom, blockRect);
                     }
                 } else {
-                    // Прилипаем, если блок достаточно пересекает топбар И видимая часть больше 50px
-                    if (blockRect.top < tbBottom - 10 && (blockRect.bottom - tbBottom) > 50) {
+                    // Для свёрнутого блока — прилипаем при пересечении топбара
+                    var shouldStick = isCollapsed
+                        ? (blockRect.top < tbBottom && blockRect.bottom > tbBottom)
+                        : (blockRect.top < tbBottom - 10 && (blockRect.bottom - tbBottom) > 50);
+                    if (shouldStick) {
                         header._isSticky = true;
                         applyReasoningSticky(header, tbBottom, blockRect);
                     } else {
