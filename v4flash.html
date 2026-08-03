@@ -12,6 +12,7 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
+        .reasoning-block { overflow-anchor: none; }        
         .reasoning-block .reasoning-header { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; padding: 2px 0; }
         .reasoning-block .reasoning-header:hover { opacity: 1; }
         .reasoning-block .reasoning-toggle { transform: rotate(-90deg); }
@@ -6022,37 +6023,17 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var block = header.closest('.reasoning-block');
             if (!block) return;
             block.classList.toggle('collapsed');
-            var isCollapsedNow = block.classList.contains('collapsed');
-            var msgData = null;
-            var msgEl = block.closest('[data-msg-index]');
-            if (msgEl) {
-                var index = msgEl.getAttribute('data-msg-index');
-                var chat = chats.find(function(c) { return c.id === currentChatId; });
-                if (chat && chat.messages[index]) {
-                    msgData = chat.messages[index];
-                }
-            }
-
-            if (isCollapsedNow) {
-                // Если идёт стрим — сбрасываем fixed (как раньше)
-                if (msgData && msgData._streaming) {
-                    var header = block.querySelector('.reasoning-header');
-                    if (header) {
-                        header.style.position = 'static';
-                        header.style.top = '';
-                        header.style.left = '';
-                        header.style.width = '';
-                        header.style.zIndex = '';
-                        header.style.boxShadow = '';
-                        header.style.background = '';
-                        header.style.paddingBottom = '';
-                    }
-                }
-                // В любом случае обнуляем min-height, чтобы тело подтянулось
-                var msgRow = block.closest('.message-row');
-                if (msgRow) {
-                    var wrapper = msgRow.querySelector('div');
-                    if (wrapper) wrapper.style.minHeight = '0';
+            if (block.classList.contains('collapsed')) {
+                var header = block.querySelector('.reasoning-header');
+                if (header) {
+                    header.style.position = 'static';
+                    header.style.top = '';
+                    header.style.left = '';
+                    header.style.width = '';
+                    header.style.zIndex = '';
+                    header.style.boxShadow = '';
+                    header.style.background = '';
+                    header.style.paddingBottom = '';
                 }
             }            
             if (block.classList.contains('collapsed')) {
