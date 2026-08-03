@@ -5017,30 +5017,23 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var block = blocks[i];
                 var header = block.querySelector('.reasoning-header');
                 if (!header) continue;
-                if (header._stickyCollapsed && block.classList.contains('collapsed')) {
-                    continue;
-                }
                 var blockRect = block.getBoundingClientRect();
 
                 if (header._isSticky) {
+                    // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
                     if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
                         header._isSticky = false;
                         applyReasoningStatic(header);
-                        header._stickyCollapsed = false;
-                        block.style.minHeight = '';
                     } else {
                         applyReasoningSticky(header, tbBottom, blockRect);
-                        block.style.minHeight = block.classList.contains('collapsed') ? header.offsetHeight + 'px' : '';
                     }
                 } else {
+                    // Прилипаем, если блок достаточно пересекает топбар И видимая часть больше 50px
                     if (blockRect.top < tbBottom - 10 && (blockRect.bottom - tbBottom) > 50) {
                         header._isSticky = true;
                         applyReasoningSticky(header, tbBottom, blockRect);
-                        block.style.minHeight = block.classList.contains('collapsed') ? header.offsetHeight + 'px' : '';
                     } else {
                         applyReasoningStatic(header);
-                        header._stickyCollapsed = false;
-                        block.style.minHeight = '';
                     }
                 }
             }
@@ -5061,7 +5054,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var shadowColor = colorMatch ? colorMatch[1] : ((mainBg && mainBg !== 'rgba(0, 0, 0, 0)') ? mainBg : 'rgba(0,0,0,0.5)');
             header.style.boxShadow = '0 20px 20px 10px ' + shadowColor;
             header.style.paddingBottom = '5px';
-            header.style.opacity = '1';
         }
 
         function applyReasoningStatic(header) {
@@ -5073,7 +5065,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             header.style.boxShadow = '';
             header.style.background = '';
             header.style.paddingBottom = '';
-            header.style.opacity = '';
         }
 
         function buildNavContainer() {
@@ -6031,33 +6022,39 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var block = header.closest('.reasoning-block');
             if (!block) return;
             block.classList.toggle('collapsed');
-            if (block.classList.contains('collapsed')) {
-                var header = block.querySelector('.reasoning-header');
-                if (header) {
-                    header._isSticky = false;
-                    header._stickyCollapsed = true;
-                    header.style.position = 'static';
-                    header.style.top = '';
-                    header.style.left = '';
-                    header.style.width = '';
-                    header.style.zIndex = '';
-                    header.style.boxShadow = '';
-                    header.style.background = '';
-                    header.style.paddingBottom = '';
-                    block.style.minHeight = header.offsetHeight + 'px';
+            var isCollapsedNow = block.classList.contains('collapsed');
+            var msgData = null;
+            var msgEl = block.closest('[data-msg-index]');
+            if (msgEl) {
+                var index = msgEl.getAttribute('data-msg-index');
+                var chat = chats.find(function(c) { return c.id === currentChatId; });
+                if (chat && chat.messages[index]) {
+                    msgData = chat.messages[index];
                 }
-            } else {
-                var header2 = block.querySelector('.reasoning-header');
-                if (header2) {
-                    header2._isSticky = false;
-                    header2._stickyCollapsed = false;
-                    header2.style.position = '';
-                }
-                block.style.minHeight = '';
             }
-            requestAnimationFrame(function() {
-                updateFloatingReasoningHeaders();
-            });            
+
+            if (isCollapsedNow) {
+                // Если идёт стрим — сбрасываем fixed (как раньше)
+                if (msgData && msgData._streaming) {
+                    var header = block.querySelector('.reasoning-header');
+                    if (header) {
+                        header.style.position = 'static';
+                        header.style.top = '';
+                        header.style.left = '';
+                        header.style.width = '';
+                        header.style.zIndex = '';
+                        header.style.boxShadow = '';
+                        header.style.background = '';
+                        header.style.paddingBottom = '';
+                    }
+                }
+                // В любом случае обнуляем min-height, чтобы тело подтянулось
+                var msgRow = block.closest('.message-row');
+                if (msgRow) {
+                    var wrapper = msgRow.querySelector('div');
+                    if (wrapper) wrapper.style.minHeight = '0';
+                }
+            }            
             if (block.classList.contains('collapsed')) {
                 var contentInner = block.closest('.message-content').querySelector('.msg-content-inner');
                 if (contentInner && !contentInner.textContent.trim()) {
