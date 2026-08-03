@@ -6021,35 +6021,48 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (!header) return;
             var block = header.closest('.reasoning-block');
             if (!block) return;
+
+            var isSticky = header.style.position === 'fixed';
+            var wasCollapsed = block.classList.contains('collapsed');
+
             block.classList.toggle('collapsed');
-            if (block.classList.contains('collapsed')) {
-                var header = block.querySelector('.reasoning-header');
-                if (header) {
-                    header.style.position = 'static';
-                    header.style.top = '';
-                    header.style.left = '';
-                    header.style.width = '';
-                    header.style.zIndex = '';
-                    header.style.boxShadow = '';
-                    header.style.background = '';
-                    header.style.paddingBottom = '';
+            var isCollapsed = block.classList.contains('collapsed');
+
+            // Если свернули прилипший заголовок — прокручиваем к ближайшему вышестоящему user
+            if (isCollapsed && !wasCollapsed && isSticky) {
+                var msgEl = block.closest('[data-msg-index]');
+                if (msgEl) {
+                    var currentIndex = parseInt(msgEl.getAttribute('data-msg-index'));
+                    var chat = chats.find(function(c) { return c.id === currentChatId; });
+                    if (chat) {
+                        var targetIndex = -1;
+                        for (var i = currentIndex - 1; i >= 0; i--) {
+                            if (chat.messages[i] && chat.messages[i].role === 'user') {
+                                targetIndex = i;
+                                break;
+                            }
+                        }
+                        if (targetIndex !== -1) {
+                            var targetEl = document.querySelector('.message-row.user[data-msg-index="' + targetIndex + '"]');
+                            if (targetEl) {
+                                var main = document.querySelector('.main');
+                                var topBar = document.querySelector('.top-bar');
+                                var offset = topBar ? topBar.offsetHeight + 10 : 10;
+                                var targetRect = targetEl.getBoundingClientRect();
+                                var mainRect = main.getBoundingClientRect();
+                                main.scrollTop = targetRect.top - mainRect.top + main.scrollTop - offset;
+                            }
+                        }
+                    }
                 }
-            }            
-            if (block.classList.contains('collapsed')) {
-                var contentInner = block.closest('.message-content').querySelector('.msg-content-inner');
-                if (contentInner && !contentInner.textContent.trim()) {
-                    var parent = block.closest('.message-row').querySelector('div');
-                    parent.style.minHeight = '0';
-                }
-            }            
-            
+            }
+
             var msgEl = block.closest('[data-msg-index]');
             if (msgEl) {
                 var index = msgEl.getAttribute('data-msg-index');
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (chat && chat.messages[index]) {
                     var msg = chat.messages[index];
-                    var isCollapsed = block.classList.contains('collapsed');
                     msg._reasoningCollapsed = isCollapsed;
                     if (msg.msg_id) {
                         if (isCollapsed) {
@@ -6060,8 +6073,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 }
             }
-            
-            // Пересчитываем позиции хедеров блоков кода
+
             setTimeout(function() { updateFloatingButtons(); }, 50);
         });
     </script>
