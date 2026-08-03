@@ -5012,7 +5012,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function updateFloatingReasoningHeaders() {
             var topBar = document.querySelector('.top-bar');
             var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
-            var blocks = document.querySelectorAll('.reasoning-block:not(.collapsed)');
+            var blocks = document.querySelectorAll('.reasoning-block');
             for (var i = 0; i < blocks.length; i++) {
                 var block = blocks[i];
                 var header = block.querySelector('.reasoning-header');
@@ -5020,7 +5020,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var blockRect = block.getBoundingClientRect();
 
                 if (header._isSticky) {
-                    // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
                     if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
                         header._isSticky = false;
                         applyReasoningStatic(header);
@@ -5028,8 +5027,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         applyReasoningSticky(header, tbBottom, blockRect);
                     }
                 } else {
-                    // Прилипаем, если блок достаточно пересекает топбар И видимая часть больше 50px
-                    if (blockRect.top < tbBottom - 10 && (blockRect.bottom - tbBottom) > 50) {
+                    var hasEnoughBody = block.classList.contains('collapsed') || (blockRect.bottom - tbBottom) > 50;
+                    if (blockRect.top < tbBottom - 10 && hasEnoughBody) {
                         header._isSticky = true;
                         applyReasoningSticky(header, tbBottom, blockRect);
                     } else {
@@ -6063,20 +6062,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             
             // Пересчитываем позиции хедеров блоков кода
             setTimeout(function() { updateFloatingButtons(); }, 50);
-            // Если блок размышления свернут — прокручиваем к началу основного контента
-            if (block.classList.contains('collapsed')) {
-                var contentInner = block.closest('.message-content').querySelector('.msg-content-inner');
-                if (contentInner) {
-                    var main = document.querySelector('.main');
-                    var topBar = document.querySelector('.top-bar');
-                    var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
-                    var contentRect = contentInner.getBoundingClientRect();
-                    var mainTop = main.getBoundingClientRect().top;
-                    var targetScroll = main.scrollTop + (contentRect.top - mainTop) - tbBottom + 10;
-                    targetScroll = Math.max(0, targetScroll);
-                    main.scrollTop = targetScroll;
-                }
-            }            
         });
     </script>
     <div id="selfPlayModal" class="modal-overlay">
