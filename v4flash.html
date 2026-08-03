@@ -5019,26 +5019,28 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 if (!header) continue;
                 if (header._stickyCollapsed && block.classList.contains('collapsed')) {
                     continue;
-                }                
+                }
                 var blockRect = block.getBoundingClientRect();
 
                 if (header._isSticky) {
-                    // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
                     if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
                         header._isSticky = false;
                         applyReasoningStatic(header);
-                        header._stickyCollapsed = false;                        
+                        header._stickyCollapsed = false;
+                        block.style.minHeight = '';
                     } else {
                         applyReasoningSticky(header, tbBottom, blockRect);
+                        block.style.minHeight = block.classList.contains('collapsed') ? header.offsetHeight + 'px' : '';
                     }
                 } else {
-                    // Прилипаем, если блок достаточно пересекает топбар И видимая часть больше 50px
                     if (blockRect.top < tbBottom - 10 && (blockRect.bottom - tbBottom) > 50) {
                         header._isSticky = true;
                         applyReasoningSticky(header, tbBottom, blockRect);
+                        block.style.minHeight = block.classList.contains('collapsed') ? header.offsetHeight + 'px' : '';
                     } else {
                         applyReasoningStatic(header);
-                        header._stickyCollapsed = false;                        
+                        header._stickyCollapsed = false;
+                        block.style.minHeight = '';
                     }
                 }
             }
@@ -5059,6 +5061,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var shadowColor = colorMatch ? colorMatch[1] : ((mainBg && mainBg !== 'rgba(0, 0, 0, 0)') ? mainBg : 'rgba(0,0,0,0.5)');
             header.style.boxShadow = '0 20px 20px 10px ' + shadowColor;
             header.style.paddingBottom = '5px';
+            header.style.opacity = '1';
         }
 
         function applyReasoningStatic(header) {
@@ -5070,6 +5073,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             header.style.boxShadow = '';
             header.style.background = '';
             header.style.paddingBottom = '';
+            header.style.opacity = '';
         }
 
         function buildNavContainer() {
@@ -6031,19 +6035,15 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var header = block.querySelector('.reasoning-header');
                 if (header) {
                     header._stickyCollapsed = true;
-                    var contentInner = header.closest('.message-content').querySelector('.msg-content-inner');
-                    if (contentInner) {
-                        contentInner.style.marginTop = '40px';
+                    if (header.style.position === 'fixed') {
+                        block.style.minHeight = header.offsetHeight + 'px';
                     }
                 }
             } else {
                 var header2 = block.querySelector('.reasoning-header');
                 if (header2) {
                     header2._stickyCollapsed = false;
-                    var contentInner2 = block.closest('.message-content').querySelector('.msg-content-inner');
-                    if (contentInner2) {
-                        contentInner2.style.marginTop = '0px';
-                    }
+                    block.style.minHeight = '';
                 }
             }            
             if (block.classList.contains('collapsed')) {
