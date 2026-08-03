@@ -6066,8 +6066,13 @@ document.getElementById('chatArea').addEventListener('click', function(e) {
             // Принудительный скролл вверх, если заголовок был прилипшим
             if (wasSticky && expandedHeight > 0) {
                 var main = document.querySelector('.main');
-                if (main) {
-                    main.scrollTop -= expandedHeight;
+                var topBar = document.querySelector('.top-bar');
+                var tbBottom = topBar.getBoundingClientRect().bottom;
+                var blockRect = block.getBoundingClientRect();
+                var visibleHeight = blockRect.bottom - tbBottom;
+                var scrollAmount = expandedHeight - visibleHeight;
+                if (main && scrollAmount > 0) {
+                    main.scrollTop -= scrollAmount;
                 }
             }
             
