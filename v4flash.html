@@ -6021,15 +6021,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (!header) return;
             var block = header.closest('.reasoning-block');
             if (!block) return;
-
-            var isSticky = header.style.position === 'fixed';
             var wasCollapsed = block.classList.contains('collapsed');
-
             block.classList.toggle('collapsed');
             var isCollapsed = block.classList.contains('collapsed');
-
+            
             // Если свернули прилипший заголовок — прокручиваем к ближайшему вышестоящему user
-            if (isCollapsed && !wasCollapsed && isSticky) {
+            if (isCollapsed && !wasCollapsed && header.style.position === 'fixed') {
                 var msgEl = block.closest('[data-msg-index]');
                 if (msgEl) {
                     var currentIndex = parseInt(msgEl.getAttribute('data-msg-index'));
@@ -6056,7 +6053,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 }
             }
-
+            
             var msgEl = block.closest('[data-msg-index]');
             if (msgEl) {
                 var index = msgEl.getAttribute('data-msg-index');
@@ -6073,7 +6070,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 }
             }
-
+            
             setTimeout(function() { updateFloatingButtons(); }, 50);
         });
     </script>
