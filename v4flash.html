@@ -6038,11 +6038,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             block.classList.toggle('collapsed');
             var nowCollapsed = block.classList.contains('collapsed');
 
-            if (nowCollapsed && wasSticky) {
-                block.style.height = savedHeight + 'px';
-            } else if (nowCollapsed && !wasSticky) {
+            if (nowCollapsed) {
+                // Не сохраняем высоту — блок сжимается до заголовка, пустота исчезает
                 block.style.height = '';
-            } else if (!nowCollapsed) {
+            } else {
                 block.style.height = '';
                 header._isSticky = false;
                 applyReasoningStatic(header);
