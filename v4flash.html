@@ -6021,12 +6021,36 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (!header) return;
             var block = header.closest('.reasoning-block');
             if (!block) return;
+
+            var isSticky = header.style.position === 'fixed';
             var wasCollapsed = block.classList.contains('collapsed');
+
             block.classList.toggle('collapsed');
-            var isCollapsed = block.classList.contains('collapsed');
-            
-            // Если свернули прилипший заголовок — прокручиваем к ближайшему вышестоящему user
-            if (isCollapsed && !wasCollapsed && header.style.position === 'fixed') {
+
+            if (block.classList.contains('collapsed')) {
+                var hdr = block.querySelector('.reasoning-header');
+                if (hdr) {
+                    hdr.style.position = 'static';
+                    hdr.style.top = '';
+                    hdr.style.left = '';
+                    hdr.style.width = '';
+                    hdr.style.zIndex = '';
+                    hdr.style.boxShadow = '';
+                    hdr.style.background = '';
+                    hdr.style.paddingBottom = '';
+                }
+            }
+
+            if (block.classList.contains('collapsed')) {
+                var contentInner = block.closest('.message-content').querySelector('.msg-content-inner');
+                if (contentInner && !contentInner.textContent.trim()) {
+                    var parent = block.closest('.message-row').querySelector('div');
+                    parent.style.minHeight = '0';
+                }
+            }
+
+            // Если свернули прилипший заголовок — прокрутка к ближайшему вышестоящему user
+            if (block.classList.contains('collapsed') && !wasCollapsed && isSticky) {
                 var msgEl = block.closest('[data-msg-index]');
                 if (msgEl) {
                     var currentIndex = parseInt(msgEl.getAttribute('data-msg-index'));
@@ -6053,13 +6077,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 }
             }
-            
+
             var msgEl = block.closest('[data-msg-index]');
             if (msgEl) {
                 var index = msgEl.getAttribute('data-msg-index');
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (chat && chat.messages[index]) {
                     var msg = chat.messages[index];
+                    var isCollapsed = block.classList.contains('collapsed');
                     msg._reasoningCollapsed = isCollapsed;
                     if (msg.msg_id) {
                         if (isCollapsed) {
@@ -6070,7 +6095,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 }
             }
-            
+
             setTimeout(function() { updateFloatingButtons(); }, 50);
         });
     </script>
