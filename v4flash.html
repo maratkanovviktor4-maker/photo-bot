@@ -5054,12 +5054,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var shadowColor = colorMatch ? colorMatch[1] : ((mainBg && mainBg !== 'rgba(0, 0, 0, 0)') ? mainBg : 'rgba(0,0,0,0.5)');
             header.style.boxShadow = '0 20px 20px 10px ' + shadowColor;
             header.style.paddingBottom = '5px';
-
-            // Компенсируем выпадение header из потока — прижимаем контент вниз
-            var contentInner = header.closest('.message-content') ? header.closest('.message-content').querySelector('.msg-content-inner') : null;
-            if (contentInner) {
-                contentInner.style.paddingTop = (header.offsetHeight + 5) + 'px';
-            }
         }
 
         function applyReasoningStatic(header) {
@@ -5071,12 +5065,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             header.style.boxShadow = '';
             header.style.background = '';
             header.style.paddingBottom = '';
-
-            // Сбрасываем компенсацию
-            var contentInner = header.closest('.message-content') ? header.closest('.message-content').querySelector('.msg-content-inner') : null;
-            if (contentInner) {
-                contentInner.style.paddingTop = '';
-            }
         }
 
         function buildNavContainer() {
@@ -6034,41 +6022,27 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var block = header.closest('.reasoning-block');
             if (!block) return;
             block.classList.toggle('collapsed');
-            var headerEl = block.querySelector('.reasoning-header');
-
             if (block.classList.contains('collapsed')) {
-                if (headerEl && !headerEl._isSticky) {
-                    headerEl.style.position = 'static';
-                    headerEl.style.top = '';
-                    headerEl.style.left = '';
-                    headerEl.style.width = '';
-                    headerEl.style.zIndex = '';
-                    headerEl.style.boxShadow = '';
-                    headerEl.style.background = '';
-                    headerEl.style.paddingBottom = '';
+                var header = block.querySelector('.reasoning-header');
+                if (header) {
+                    header.style.position = 'static';
+                    header.style.top = '';
+                    header.style.left = '';
+                    header.style.width = '';
+                    header.style.zIndex = '';
+                    header.style.boxShadow = '';
+                    header.style.background = '';
+                    header.style.paddingBottom = '';
                 }
-                // Сброс лишней высоты, если нет основного контента
+            }            
+            if (block.classList.contains('collapsed')) {
                 var contentInner = block.closest('.message-content').querySelector('.msg-content-inner');
                 if (contentInner && !contentInner.textContent.trim()) {
                     var parent = block.closest('.message-row').querySelector('div');
                     parent.style.minHeight = '0';
                 }
-            } else {
-                // При разворачивании — вернуть в поток и пересчитать позицию
-                if (headerEl) {
-                    headerEl._isSticky = false;
-                    headerEl.style.position = 'static';
-                    headerEl.style.top = '';
-                    headerEl.style.left = '';
-                    headerEl.style.width = '';
-                    headerEl.style.zIndex = '';
-                    headerEl.style.boxShadow = '';
-                    headerEl.style.background = '';
-                    headerEl.style.paddingBottom = '';
-                }
-                setTimeout(function() { updateFloatingReasoningHeaders(); }, 0);
-            }
-
+            }            
+            
             var msgEl = block.closest('[data-msg-index]');
             if (msgEl) {
                 var index = msgEl.getAttribute('data-msg-index');
@@ -6086,7 +6060,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 }
             }
-
+            
+            // Пересчитываем позиции хедеров блоков кода
             setTimeout(function() { updateFloatingButtons(); }, 50);
         });
     </script>
