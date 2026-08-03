@@ -5017,6 +5017,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var block = blocks[i];
                 var header = block.querySelector('.reasoning-header');
                 if (!header) continue;
+                if (header._stickyCollapsed && block.classList.contains('collapsed')) {
+                    continue;
+                }                
                 var blockRect = block.getBoundingClientRect();
 
                 if (header._isSticky) {
@@ -5024,6 +5027,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
                         header._isSticky = false;
                         applyReasoningStatic(header);
+                        header._stickyCollapsed = false;                        
                     } else {
                         applyReasoningSticky(header, tbBottom, blockRect);
                     }
@@ -5034,6 +5038,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         applyReasoningSticky(header, tbBottom, blockRect);
                     } else {
                         applyReasoningStatic(header);
+                        header._stickyCollapsed = false;                        
                     }
                 }
             }
@@ -6025,14 +6030,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (block.classList.contains('collapsed')) {
                 var header = block.querySelector('.reasoning-header');
                 if (header) {
-                    header.style.position = 'static';
-                    header.style.top = '';
-                    header.style.left = '';
-                    header.style.width = '';
-                    header.style.zIndex = '';
-                    header.style.boxShadow = '';
-                    header.style.background = '';
-                    header.style.paddingBottom = '';
+                    header._stickyCollapsed = true;
                 }
             }            
             if (block.classList.contains('collapsed')) {
