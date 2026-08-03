@@ -5012,16 +5012,15 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function updateFloatingReasoningHeaders() {
             var topBar = document.querySelector('.top-bar');
             var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
-            var blocks = document.querySelectorAll('.reasoning-block');
+            var blocks = document.querySelectorAll('.reasoning-block:not(.collapsed)');
             for (var i = 0; i < blocks.length; i++) {
                 var block = blocks[i];
                 var header = block.querySelector('.reasoning-header');
                 if (!header) continue;
                 var blockRect = block.getBoundingClientRect();
-                var isCollapsed = block.classList.contains('collapsed');
 
                 if (header._isSticky) {
-                    // Отлипаем, если блок ушёл далеко ввверх или вниз
+                    // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
                     if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
                         header._isSticky = false;
                         applyReasoningStatic(header);
@@ -5029,11 +5028,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         applyReasoningSticky(header, tbBottom, blockRect);
                     }
                 } else {
-                    // Для свёрнутого блока — прилипаем при пересечении топбара
-                    var shouldStick = isCollapsed
-                        ? (blockRect.top < tbBottom && blockRect.bottom > tbBottom)
-                        : (blockRect.top < tbBottom - 10 && (blockRect.bottom - tbBottom) > 50);
-                    if (shouldStick) {
+                    // Прилипаем, если блок достаточно пересекает топбар И видимая часть больше 50px
+                    if (blockRect.top < tbBottom - 10 && (blockRect.bottom - tbBottom) > 50) {
                         header._isSticky = true;
                         applyReasoningSticky(header, tbBottom, blockRect);
                     } else {
@@ -6020,11 +6016,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 window.highlightDropdownClose();
             }
         });
-        document.getElementById('chatArea').addEventListener('click', function(e) {
+document.getElementById('chatArea').addEventListener('click', function(e) {
             var header = e.target.closest('.reasoning-header');
             if (!header) return;
             var block = header.closest('.reasoning-block');
             if (!block) return;
+            var wasSticky = header._isSticky === true;
+            var expandedHeight = block.offsetHeight;
             block.classList.toggle('collapsed');
             if (block.classList.contains('collapsed')) {
                 var header = block.querySelector('.reasoning-header');
@@ -6062,6 +6060,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                             localStorage.removeItem('reasoning_collapsed:' + msg.msg_id);
                         }
                     }
+                }
+            }
+            
+            // Принудительный скролл вверх, если заголовок был прилипшим
+            if (wasSticky && expandedHeight > 0) {
+                var main = document.querySelector('.main');
+                if (main) {
+                    main.scrollTop -= expandedHeight;
                 }
             }
             
