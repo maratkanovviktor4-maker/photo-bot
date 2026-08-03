@@ -5054,6 +5054,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var shadowColor = colorMatch ? colorMatch[1] : ((mainBg && mainBg !== 'rgba(0, 0, 0, 0)') ? mainBg : 'rgba(0,0,0,0.5)');
             header.style.boxShadow = '0 20px 20px 10px ' + shadowColor;
             header.style.paddingBottom = '5px';
+
+            // Компенсируем выпадение header из потока — прижимаем контент вниз
+            var contentInner = header.closest('.message-content') ? header.closest('.message-content').querySelector('.msg-content-inner') : null;
+            if (contentInner) {
+                contentInner.style.paddingTop = (header.offsetHeight + 5) + 'px';
+            }
         }
 
         function applyReasoningStatic(header) {
@@ -5065,6 +5071,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             header.style.boxShadow = '';
             header.style.background = '';
             header.style.paddingBottom = '';
+
+            // Сбрасываем компенсацию
+            var contentInner = header.closest('.message-content') ? header.closest('.message-content').querySelector('.msg-content-inner') : null;
+            if (contentInner) {
+                contentInner.style.paddingTop = '';
+            }
         }
 
         function buildNavContainer() {
