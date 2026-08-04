@@ -5033,6 +5033,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     if (blockRect.top <= tbBottom && (blockRect.bottom - tbBottom) > 50) {
                         header._isSticky = true;
                         createReasoningPlaceholder(block);
+                        // Принудительный reflow, чтобы заглушка заняла место до фиксации
+                        void block.offsetHeight;
                         applyReasoningSticky(header, tbBottom, blockRect);
                     } else {
                         applyReasoningStatic(header);
@@ -5043,7 +5045,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function createReasoningPlaceholder(block) {
             if (!block._placeholder) {
                 var ph = document.createElement('div');
-                ph.style.height = '80px';
+                ph.style.height = '60px';
                 ph.className = 'reasoning-header-placeholder';
                 block.insertBefore(ph, block.querySelector('.reasoning-header'));
                 block._placeholder = ph;
