@@ -5020,17 +5020,19 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var blockRect = block.getBoundingClientRect();
 
                 if (header._isSticky) {
-                    // Отлипаем, если блок ушёл далеко вверх или вниз относительно топбара
                     if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
                         header._isSticky = false;
+                        removeReasoningPlaceholder(block);
                         applyReasoningStatic(header);
                     } else {
+                        createReasoningPlaceholder(block);
                         applyReasoningSticky(header, tbBottom, blockRect);
                     }
                 } else {
-                    // Прилипаем, если блок достаточно пересекает топбар И видимая часть больше 50px
-                    if (blockRect.top < tbBottom - 10 && (blockRect.bottom - tbBottom) > 50) {
+                    // Прилипаем при первом касании верхней границы блока с топбаром, если видимая часть больше 50px
+                    if (blockRect.top <= tbBottom && (blockRect.bottom - tbBottom) > 50) {
                         header._isSticky = true;
+                        createReasoningPlaceholder(block);
                         applyReasoningSticky(header, tbBottom, blockRect);
                     } else {
                         applyReasoningStatic(header);
@@ -5038,7 +5040,22 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
             }
         }
+        function createReasoningPlaceholder(block) {
+            if (!block._placeholder) {
+                var ph = document.createElement('div');
+                ph.style.height = '40px';
+                ph.className = 'reasoning-header-placeholder';
+                block.insertBefore(ph, block.querySelector('.reasoning-header'));
+                block._placeholder = ph;
+            }
+        }
 
+        function removeReasoningPlaceholder(block) {
+            if (block._placeholder) {
+                block._placeholder.remove();
+                block._placeholder = null;
+            }
+        }
         function applyReasoningSticky(header, tbBottom, blockRect) {
             var mainEl = document.querySelector('.main');
             var mainBg = getComputedStyle(mainEl).backgroundColor;
@@ -6028,6 +6045,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             block.classList.toggle('collapsed');
 
             if (block.classList.contains('collapsed')) {
+                removeReasoningPlaceholder(block);            
                 var hdr = block.querySelector('.reasoning-header');
                 if (hdr) {
                     hdr.style.position = 'static';
