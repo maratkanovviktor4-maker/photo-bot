@@ -5455,17 +5455,27 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 container.querySelectorAll('.mermaid-wrapper').forEach(function(wrapper) {
                     var diagram = wrapper.querySelector('.mermaid-diagram');
                     if (!diagram || diagram.dataset.rendered) return;
+                    // Проверяем видимость контейнера
+                    if (wrapper.offsetParent === null) {
+                        return; // не видим, пропускаем
+                    }
                     var source = wrapper.querySelector('.mermaid-source code').textContent.trim();
                     if (!source) return;
                     var id = 'mermaid-' + Math.random().toString(36).slice(2, 10);
                     diagram.innerHTML = '<div style="padding:10px;color:#888;">Отрисовка...</div>';
-                    mermaid.render(id, source).then(function(svg) {
-                        diagram.innerHTML = svg.svg;
-                        diagram.dataset.rendered = '1';
-                    }).catch(function(err) {
-                        diagram.textContent = 'Ошибка рендера Mermaid: ' + err.message;
-                        diagram.dataset.rendered = '1';
-                    });
+                    setTimeout(function() {
+                        mermaid.render(id, source).then(function(svg) {
+                            if (wrapper.offsetParent !== null) {
+                                diagram.innerHTML = svg.svg;
+                                diagram.dataset.rendered = '1';
+                            }
+                        }).catch(function(err) {
+                            if (wrapper.offsetParent !== null) {
+                                diagram.textContent = 'Ошибка рендера Mermaid: ' + err.message;
+                                diagram.dataset.rendered = '1';
+                            }
+                        });
+                    }, 100);
                 });
             } catch (e) {
                 console.warn('Mermaid render error:', e);
