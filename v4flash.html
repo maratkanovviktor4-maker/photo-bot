@@ -4922,7 +4922,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             }
             var isMermaid = lang === 'mermaid';
             if (isMermaid) {
-                var mermaidBtn = _makeActionBtn('Диаграмма', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="8.5" r="1.5"/><circle cx="8.5" cy="15.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/><path d="M10 8.5h4M8.5 10v4M15.5 10v4M10 15.5h4"/></svg> Диаграмма', async function() {
+                var mermaidIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="8.5" r="1.5"/><circle cx="8.5" cy="15.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/><path d="M10 8.5h4M8.5 10v4M15.5 10v4M10 15.5h4"/></svg>';
+                var mermaidBtn = _makeActionBtn('Диаграмма', mermaidIcon + ' Диаграмма', function() {
                     var code = pre._editorActive && pre._textarea ? pre._textarea.value : (pre.querySelector('code') ? pre.querySelector('code').textContent : '');
                     var renderDiv = block.querySelector('.mermaid-render');
                     if (!renderDiv) {
@@ -4930,32 +4931,26 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         renderDiv.className = 'mermaid-render';
                         block.appendChild(renderDiv);
                     }
-                    if (mermaidBtn.textContent.indexOf('Диаграмма') !== -1) {
-                        // Рендерим
-                        mermaidBtn.textContent = 'Код';
-                        if (pre) pre.style.display = 'none';
+                    if (renderDiv.style.display === 'none' || !renderDiv.style.display) {
+                        // Показываем диаграмму
                         renderDiv.style.display = 'block';
+                        if (pre) pre.style.display = 'none';
+                        mermaidBtn.innerHTML = mermaidIcon + ' Код';
                         if (!renderDiv.dataset.rendered) {
                             renderDiv.id = 'mermaid_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-                            try {
-                                // Принудительно инициализируем mermaid перед рендером
-                                if (window.mermaid && !window.mermaid._initialized) {
-                                    mermaid.initialize({ startOnLoad: false, theme: 'dark' });
-                                    window.mermaid._initialized = true;
-                                }
-                                var result = await mermaid.render(renderDiv.id, code);
+                            mermaid.render(renderDiv.id, code).then(function(result) {
                                 renderDiv.innerHTML = result.svg;
                                 renderDiv.dataset.rendered = '1';
-                            } catch(e) {
-                                console.error('Mermaid render error:', e);
-                                renderDiv.textContent = 'Ошибка: ' + e.message;
-                            }
+                            }).catch(function(err) {
+                                renderDiv.innerHTML = '<span style="color:#e74c3c;">Ошибка: ' + err.message + '</span>';
+                                console.error(err);
+                            });
                         }
                     } else {
-                        // Возвращаем код
-                        mermaidBtn.textContent = 'Диаграмма';
+                        // Показываем код
                         renderDiv.style.display = 'none';
                         if (pre) pre.style.display = '';
+                        mermaidBtn.innerHTML = mermaidIcon + ' Диаграмма';
                     }
                 });
                 actions.appendChild(mermaidBtn);
