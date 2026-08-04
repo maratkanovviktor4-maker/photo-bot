@@ -6069,17 +6069,17 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
             }
 
-            // Если свернули прилипший заголовок — прокрутка к самому сообщению (блоку размышления)
+            // Если свернули прилипший заголовок — прокрутка к самому сообщению
             if (block.classList.contains('collapsed') && !wasCollapsed && isSticky) {
                 var msgEl = block.closest('[data-msg-index]');
                 if (msgEl) {
-                    var targetEl = msgEl;
                     var main = document.querySelector('.main');
                     var topBar = document.querySelector('.top-bar');
-                    var offset = topBar ? topBar.offsetHeight : 0;
-                    var targetRect = targetEl.getBoundingClientRect();
-                    var mainRect = main.getBoundingClientRect();
-                    main.scrollTop = targetRect.top - mainRect.top + main.scrollTop - offset;
+                    requestAnimationFrame(function() {
+                        var tbBottom = topBar ? topBar.getBoundingClientRect().bottom : 0;
+                        var targetRect = msgEl.getBoundingClientRect();
+                        main.scrollTop += targetRect.top - tbBottom;
+                    });
                 }
             }
 
