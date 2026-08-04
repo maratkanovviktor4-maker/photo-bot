@@ -12,6 +12,14 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
+        .mermaid-block { width: 775px; max-width: 100%; margin: 8px 0; box-sizing: border-box; background: #1a1a2e; border-radius: 10px; overflow-x: auto; }
+        .mermaid-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 14px; background: #545557; border-radius: 10px 10px 0 0; font-size: 12px; color: #aaa; }
+        .mermaid-toggle { background: #00CBF5; color: #1a1a2e; border: none; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-weight: 600; font-size: 11px; }
+        .mermaid-render { padding: 14px; }
+        .mermaid-source { padding: 14px; }
+        .mermaid-source pre { background: transparent; margin: 0; }
+        body.light .mermaid-block { background: #f8f8f8; }
+        body.light .mermaid-header { background: #e0e0e0; color: #333; }
         .reasoning-block blockquote {
             border-left: none !important;
             padding: 2px 12px !important;
@@ -533,6 +541,12 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script>
+        if (window.mermaid) {
+            mermaid.initialize({ startOnLoad: false });
+        }
+    </script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
     <script src="config.js"></script>
@@ -3086,6 +3100,7 @@
             }
             area.innerHTML = html;
             renderMathInChat(area);
+            renderAllMermaid();
             hljs.highlightAll();
             setupFloatingCopyButtons();
             updateFloatingButtons();
@@ -3137,7 +3152,8 @@
                 html += buildMessageHtml(i, chat.messages[i]);
             }
             area.innerHTML = html;
-            renderMathInChat(area);            
+            renderMathInChat(area);  
+            renderAllMermaid();          
             _floatingHeaders = [];
             hljs.highlightAll();
             setupFloatingCopyButtons();
@@ -3213,7 +3229,8 @@
             }
             
             hljs.highlightAll();
-            renderMathInChat(area);            
+            renderMathInChat(area); 
+            renderAllMermaid();           
             setupFloatingCopyButtons();
             updateFloatingButtons();
             buildNavContainer();
@@ -4718,7 +4735,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var part = parts[p];
                 if (part.type === 'code') {
                     var lang = part.lang || '';
-                    result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
+                    if (lang.toLowerCase() === 'mermaid') {
+                        result += '<div class="mermaid-block" data-code="' + escapeHtml(part.content) + '"><div class="mermaid-header"><button class="mermaid-toggle" onclick="toggleMermaidView(this)">Диаграмма</button></div><div class="mermaid-render"></div><div class="mermaid-source" style="display:none;"><pre><code class="language-mermaid">' + escapeHtml(part.content) + '</code></pre></div></div>';
+                    } else {
+                        result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
+                    }
                 } else {
                     var text2 = escapeHtml(part.content);
                     for (var r = 0; r < _inlineRules.length; r++) {
@@ -5505,7 +5526,39 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             }, 100);
 
         }
+        async function toggleMermaidView(btn) {
+            var block = btn.closest('.mermaid-block');
+            var renderEl = block.querySelector('.mermaid-render');
+            var sourceEl = block.querySelector('.mermaid-source');
+            if (sourceEl.style.display === 'none') {
+                sourceEl.style.display = 'block';
+                renderEl.style.display = 'none';
+                btn.textContent = 'Диаграмма';
+            } else {
+                sourceEl.style.display = 'none';
+                renderEl.style.display = 'block';
+                btn.textContent = 'Код';
+                await renderMermaidBlock(block);
+            }
+        }
 
+        async function renderMermaidBlock(block) {
+            var renderEl = block.querySelector('.mermaid-render');
+            if (renderEl.dataset.rendered) return;
+            var code = block.dataset.code || '';
+            renderEl.innerHTML = '<div class="mermaid">' + code + '</div>';
+            try {
+                await mermaid.run();
+                renderEl.dataset.rendered = '1';
+            } catch(e) {
+                renderEl.innerHTML = '<pre>' + escapeHtml(code) + '</pre>';
+            }
+        }
+        function renderAllMermaid() {
+            document.querySelectorAll('.mermaid-block:not(.rendered)').forEach(function(block) {
+                renderMermaidBlock(block);
+            });
+        }        
         function closeEditMessageModal() {
             document.getElementById('editMessageModal').classList.remove('active');
             editMessageCallback = null;
