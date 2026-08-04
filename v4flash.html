@@ -5546,10 +5546,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var renderEl = block.querySelector('.mermaid-render');
             if (renderEl.dataset.rendered) return;
             var code = block.dataset.code || '';
-            renderEl.innerHTML = '<div class="mermaid">' + code + '</div>';
+            var uid = 'mermaid-' + Math.random().toString(36).slice(2, 8);
+            renderEl.innerHTML = '<div id="' + uid + '" class="mermaid" style="display:none;">' + code + '</div>';
             try {
-                await mermaid.run();
-                renderEl.dataset.rendered = '1';
+                renderEl.style.display = 'block';
+                mermaid.render(uid, code).then(function(svg) {
+                    renderEl.innerHTML = svg;
+                    renderEl.dataset.rendered = '1';
+                });
             } catch(e) {
                 renderEl.innerHTML = '<pre>' + escapeHtml(code) + '</pre>';
             }
