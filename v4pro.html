@@ -537,6 +537,9 @@
     </style>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
     <script src="config.js"></script>
 </head>
 <body>
@@ -3101,7 +3104,7 @@
                 html += buildMessageHtml(i, chat.messages[i]);
             }
             area.innerHTML = html;
-
+            renderMathInChat(area);
             hljs.highlightAll();
             setupFloatingCopyButtons();
             updateFloatingButtons();
@@ -3152,7 +3155,7 @@
                 html += buildMessageHtml(i, chat.messages[i]);
             }
             area.innerHTML = html;
-            
+            renderMathInChat(area);            
             _floatingHeaders = [];
             hljs.highlightAll();
             setupFloatingCopyButtons();
@@ -3227,6 +3230,7 @@
             }
             
             hljs.highlightAll();
+            renderMathInChat(area);            
             setupFloatingCopyButtons();
             updateFloatingButtons();
             buildNavContainer();
@@ -4332,6 +4336,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     el.appendChild(contentDiv);
                 }
                 contentDiv.innerHTML = contentHtml;
+                renderMathInChat(contentDiv);                
                 var reasoningBlock = el.querySelector('.reasoning-block');
                 if (reasoningBlock && contentHtml.trim()) {
                     reasoningBlock.classList.remove('streaming');
@@ -5428,7 +5433,16 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function showLoading() { document.getElementById('loadingSpinner').style.display = 'flex'; }
         function hideLoading() { document.getElementById('loadingSpinner').style.display = 'none'; }
 
-
+        function renderMathInChat(container) {
+            if (!window.renderMathInElement || !container) return;
+            renderMathInElement(container, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false
+            });
+        }
     </script>
 
     <div id="modalOverlay" class="modal-overlay">
