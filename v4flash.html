@@ -12,6 +12,7 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
+        .mermaid-view { padding: 12px; overflow-x: auto; }        
         .reasoning-block blockquote {
             border-left: none !important;
             padding: 2px 12px !important;
@@ -535,6 +536,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script src="config.js"></script>
 </head>
 <body>
@@ -691,6 +693,7 @@
     <script>
         var autoScroll = true;
         const SERVER_URL = CONFIG.SERVER_URL;
+        mermaid.initialize({ startOnLoad: false, theme: 'dark' });        
         const ICON_MOON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
         const ICON_SUN = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
         const ICON_MUTE = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z"/></svg>';
@@ -4919,6 +4922,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 toggleCodeEditor(pre);
             });
             actions.insertBefore(editBtn, actions.firstChild);
+            if (lang === 'mermaid') {
+                var mermaidBtn = _makeActionBtn('Диаграмма', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>', function() {
+                    toggleMermaidView(block);
+                });
+                actions.insertBefore(mermaidBtn, editBtn);
+            }            
         }
 
         function _makeActionBtn(title, innerHTML, clickHandler) {
@@ -4987,7 +4996,39 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 toolbar.querySelector('.editor-cancel-btn').onclick = function() { var orig = pre._originalCode || ''; codeEl.textContent = orig; toggleCodeEditor(pre); };
             }
         }
-
+        function toggleMermaidView(block) {
+            var pre = block.querySelector('pre');
+            var codeEl = block.querySelector('code');
+            var holder = block.querySelector('.mermaid-view');
+            if (!holder) {
+                holder = document.createElement('div');
+                holder.className = 'mermaid-view';
+                block.appendChild(holder);
+            }
+            var code = pre._editorActive && pre._textarea ? pre._textarea.value : (codeEl ? codeEl.textContent : '');
+            if (!holder.dataset.rendered) {
+                var renderId = 'mermaid-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+                mermaid.render(renderId, code).then(function(svg) {
+                    holder.innerHTML = svg;
+                    holder.dataset.rendered = '1';
+                    pre.style.display = 'none';
+                    holder.style.display = 'block';
+                    if (autoScroll) {
+                        var main = document.querySelector('.main');
+                        if (main) main.scrollTop = main.scrollHeight;
+                    }
+                    updateFloatingButtons();
+                }).catch(function(err) {
+                    console.error('Mermaid render error:', err);
+                    alert('Ошибка рендеринга диаграммы');
+                });
+            } else {
+                var preVisible = pre.style.display !== 'none';
+                pre.style.display = preVisible ? 'none' : 'block';
+                holder.style.display = preVisible ? 'block' : 'none';
+                updateFloatingButtons();
+            }
+        }
         var _floatingHeaders = [];
 
         function _collectFloatingHeaders() {
