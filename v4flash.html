@@ -5448,15 +5448,26 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function renderMermaidBlocks() {
             if (typeof mermaid === 'undefined') return;
             var blocks = document.querySelectorAll('.mermaid-block');
-            blocks.forEach(function(block) {
+            blocks.forEach(function(block, index) {
                 if (block.dataset.rendered) return;
                 var code = block.textContent.trim();
                 if (!code) return;
-                block.innerHTML = '<div class="mermaid">' + code + '</div>';
+                var id = 'mermaid-' + Date.now() + '-' + index;
+                // Прячем исходный код
+                block.textContent = '';
                 block.dataset.rendered = '1';
-                try {
-                    mermaid.run({ nodes: [block.querySelector('.mermaid')] });
-                } catch(e) { console.error('Mermaid render error:', e); }
+                // Создаём контейнер
+                var container = document.createElement('div');
+                container.className = 'mermaid';
+                container.dataset.mermaidId = id;
+                block.appendChild(container);
+                // Рендер с уникальным id
+                mermaid.render(id, code).then(function(result) {
+                    container.innerHTML = result.svg;
+                }).catch(function(e) {
+                    container.textContent = code;
+                    console.error('Mermaid render error:', e);
+                });
             });
         }        
     </script>
