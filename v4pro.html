@@ -4341,6 +4341,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     el.appendChild(contentDiv);
                 }
                 contentDiv.innerHTML = contentHtml;
+                if (!msg._streaming) {
+                    renderMermaidBlocks();
+                }                
                 // рендер Mermaid внутри контента
                 if (contentDiv.querySelector('.mermaid-block')) renderMermaidBlocks();
                 renderMathInChat(contentDiv);                
@@ -5461,18 +5464,18 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var blocks = document.querySelectorAll('.mermaid-block');
             blocks.forEach(function(block, index) {
                 if (block.dataset.rendered) return;
+                // Пропускаем блоки в стримящихся сообщениях
+                var msgRow = block.closest('.message-row');
+                if (msgRow && msgRow.dataset.streaming === 'true') return;
                 var code = block.textContent.trim();
                 if (!code) return;
                 var id = 'mermaid-' + Date.now() + '-' + index;
-                // Прячем исходный код
                 block.textContent = '';
                 block.dataset.rendered = '1';
-                // Создаём контейнер
                 var container = document.createElement('div');
                 container.className = 'mermaid';
                 container.dataset.mermaidId = id;
                 block.appendChild(container);
-                // Рендер с уникальным id
                 mermaid.render(id, code).then(function(result) {
                     container.innerHTML = result.svg;
                 }).catch(function(e) {
