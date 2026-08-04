@@ -12,8 +12,6 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
-        .mermaid-block { overflow-x: auto; }
-        .mermaid-block .mermaid { background: transparent; }
         .reasoning-block blockquote {
             border-left: none !important;
             padding: 2px 12px !important;
@@ -542,7 +540,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script src="config.js"></script>
 </head>
 <body>
@@ -3107,7 +3104,6 @@
                 html += buildMessageHtml(i, chat.messages[i]);
             }
             area.innerHTML = html;
-            renderMermaidBlocks();
             renderMathInChat(area);
             hljs.highlightAll();
             setupFloatingCopyButtons();
@@ -3159,7 +3155,6 @@
                 html += buildMessageHtml(i, chat.messages[i]);
             }
             area.innerHTML = html;
-            renderMermaidBlocks();
             renderMathInChat(area);            
             _floatingHeaders = [];
             hljs.highlightAll();
@@ -4341,11 +4336,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     el.appendChild(contentDiv);
                 }
                 contentDiv.innerHTML = contentHtml;
-                if (!msg._streaming) {
-                    renderMermaidBlocks();
-                }                
-                // рендер Mermaid внутри контента
-                if (contentDiv.querySelector('.mermaid-block')) renderMermaidBlocks();
                 renderMathInChat(contentDiv);                
                 var reasoningBlock = el.querySelector('.reasoning-block');
                 if (reasoningBlock && contentHtml.trim()) {
@@ -4739,12 +4729,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var part = parts[p];
                 if (part.type === 'code') {
                     var lang = part.lang || '';
-                    if (lang === 'mermaid') {
-                        var escaped = escapeHtml(part.content);
-                        result += '<div class="mermaid-block">' + escaped + '</div>';
-                    } else {
-                        result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
-                    }
+                    result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
                 } else {
                     var text2 = escapeHtml(part.content);
                     for (var r = 0; r < _inlineRules.length; r++) {
@@ -4889,7 +4874,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
 
         function _setupSingleCodeBlock(block) {
-            if (block.classList.contains('mermaid-block')) return;
             if (block.querySelector('.floating-code-header')) return;
             var pre = block.tagName === 'PRE' ? block : block.querySelector('pre');
             if (!pre) return;
@@ -5019,7 +5003,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
         function _collectFloatingHeaders() {
             _floatingHeaders = [];
-            var blocks = document.querySelectorAll('.msg-code-block:not(.mermaid-block)');
+            var blocks = document.querySelectorAll('.msg-code-block');
             for (var i = 0; i < blocks.length; i++) {
                 if (blocks[i]._floatHeader) _floatingHeaders.push(blocks[i]);
             }
@@ -5459,31 +5443,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 throwOnError: false
             });
         }
-        function renderMermaidBlocks() {
-            if (typeof mermaid === 'undefined') return;
-            var blocks = document.querySelectorAll('.mermaid-block');
-            blocks.forEach(function(block, index) {
-                if (block.dataset.rendered) return;
-                // Пропускаем блоки в стримящихся сообщениях
-                var msgRow = block.closest('.message-row');
-                if (msgRow && msgRow.dataset.streaming === 'true') return;
-                var code = block.textContent.trim();
-                if (!code) return;
-                var id = 'mermaid-' + Date.now() + '-' + index;
-                block.textContent = '';
-                block.dataset.rendered = '1';
-                var container = document.createElement('div');
-                container.className = 'mermaid';
-                container.dataset.mermaidId = id;
-                block.appendChild(container);
-                mermaid.render(id, code).then(function(result) {
-                    container.innerHTML = result.svg;
-                }).catch(function(e) {
-                    container.textContent = code;
-                    console.error('Mermaid render error:', e);
-                });
-            });
-        }        
     </script>
 
     <div id="modalOverlay" class="modal-overlay">
