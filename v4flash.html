@@ -5022,17 +5022,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 if (header._isSticky) {
                     if (blockRect.top > tbBottom + 10 || blockRect.bottom < tbBottom - 10) {
                         header._isSticky = false;
-                        removeReasoningPlaceholder(block);
                         applyReasoningStatic(header);
                     } else {
-                        createReasoningPlaceholder(block);
                         applyReasoningSticky(header, tbBottom, blockRect);
                     }
                 } else {
                     // Прилипаем при первом касании верхней границы блока с топбаром, если видимая часть больше 50px
                     if (blockRect.top <= tbBottom && (blockRect.bottom - tbBottom) > 50) {
                         header._isSticky = true;
-                        createReasoningPlaceholder(block);
                         // Принудительный reflow, чтобы заглушка заняла место до фиксации
                         void block.offsetHeight;
                         applyReasoningSticky(header, tbBottom, blockRect);
@@ -5042,22 +5039,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
             }
         }
-        function createReasoningPlaceholder(block) {
-            if (!block._placeholder) {
-                var ph = document.createElement('div');
-                ph.style.height = '40px';
-                ph.className = 'reasoning-header-placeholder';
-                block.insertBefore(ph, block.querySelector('.reasoning-header'));
-                block._placeholder = ph;
-            }
-        }
 
-        function removeReasoningPlaceholder(block) {
-            if (block._placeholder) {
-                block._placeholder.remove();
-                block._placeholder = null;
-            }
-        }
         function applyReasoningSticky(header, tbBottom, blockRect) {
             var mainEl = document.querySelector('.main');
             var mainBg = getComputedStyle(mainEl).backgroundColor;
@@ -5073,6 +5055,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var shadowColor = colorMatch ? colorMatch[1] : ((mainBg && mainBg !== 'rgba(0, 0, 0, 0)') ? mainBg : 'rgba(0,0,0,0.5)');
             header.style.boxShadow = '0 10px 15px 5px ' + shadowColor;
             header.style.paddingBottom = '5px';
+            block.style.paddingTop = '40px';            
         }
 
         function applyReasoningStatic(header) {
@@ -5084,6 +5067,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             header.style.boxShadow = '';
             header.style.background = '';
             header.style.paddingBottom = '';
+            block.style.paddingTop = '';            
         }
 
         function buildNavContainer() {
@@ -6047,7 +6031,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             block.classList.toggle('collapsed');
 
             if (block.classList.contains('collapsed')) {
-                removeReasoningPlaceholder(block);            
                 var hdr = block.querySelector('.reasoning-header');
                 if (hdr) {
                     hdr.style.position = 'static';
