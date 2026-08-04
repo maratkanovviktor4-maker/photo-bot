@@ -5447,24 +5447,29 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         }
         function renderMermaidBlocks(container) {
             if (!window.mermaid || !container) return;
-            if (!window._mermaidInitialized) {
-                mermaid.initialize({ startOnLoad: false });
-                window._mermaidInitialized = true;
-            }
-            container.querySelectorAll('.mermaid-wrapper').forEach(function(wrapper) {
-                var diagram = wrapper.querySelector('.mermaid-diagram');
-                if (!diagram || diagram.dataset.rendered) return;
-                var source = wrapper.querySelector('.mermaid-source code').textContent.trim();
-                if (!source) return;
-                var id = 'mermaid-' + Math.random().toString(36).slice(2, 10);
-                mermaid.render(id, source).then(function(svg) {
-                    diagram.innerHTML = svg.svg;
-                    diagram.dataset.rendered = '1';
-                }).catch(function(err) {
-                    diagram.textContent = 'Ошибка рендера Mermaid: ' + err.message;
-                    diagram.dataset.rendered = '1';
+            try {
+                if (!window._mermaidInitialized) {
+                    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'dark' });
+                    window._mermaidInitialized = true;
+                }
+                container.querySelectorAll('.mermaid-wrapper').forEach(function(wrapper) {
+                    var diagram = wrapper.querySelector('.mermaid-diagram');
+                    if (!diagram || diagram.dataset.rendered) return;
+                    var source = wrapper.querySelector('.mermaid-source code').textContent.trim();
+                    if (!source) return;
+                    var id = 'mermaid-' + Math.random().toString(36).slice(2, 10);
+                    diagram.innerHTML = '<div style="padding:10px;color:#888;">Отрисовка...</div>';
+                    mermaid.render(id, source).then(function(svg) {
+                        diagram.innerHTML = svg.svg;
+                        diagram.dataset.rendered = '1';
+                    }).catch(function(err) {
+                        diagram.textContent = 'Ошибка рендера Mermaid: ' + err.message;
+                        diagram.dataset.rendered = '1';
+                    });
                 });
-            });
+            } catch (e) {
+                console.warn('Mermaid render error:', e);
+            }
         }
 
         function toggleMermaid(e) {
