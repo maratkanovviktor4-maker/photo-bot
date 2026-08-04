@@ -535,6 +535,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+    </script>
     <script src="config.js"></script>
 </head>
 <body>
@@ -4718,7 +4722,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var part = parts[p];
                 if (part.type === 'code') {
                     var lang = part.lang || '';
-                    result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
+                    if (lang === 'mermaid') {
+                        result += '<div class="msg-code-block mermaid-block"><pre class="mermaid-source" style="display:none;"><code class="language-mermaid">' + escapeHtml(part.content) + '</code></pre></div>';
+                    } else {
+                        result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
+                    }
                 } else {
                     var text2 = escapeHtml(part.content);
                     for (var r = 0; r < _inlineRules.length; r++) {
@@ -4920,7 +4928,52 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             });
             actions.insertBefore(editBtn, actions.firstChild);
         }
+        function setupMermaidBlock(block) {
+            var pre = block.querySelector('.mermaid-source');
+            if (!pre || pre._mermaidSetup) return;
+            pre._mermaidSetup = true;
+            var codeEl = pre.querySelector('code');
+            var code = codeEl ? codeEl.textContent : '';
 
+            var header = block.querySelector('.floating-code-header');
+            if (!header) return;
+            var actions = header.querySelector('span:last-child');
+            if (!actions) return;
+
+            // Контейнер диаграммы
+            var chart = document.createElement('div');
+            chart.className = 'mermaid-chart';
+            chart.style.display = 'none';
+            pre.parentNode.insertBefore(chart, pre.nextSibling);
+
+            // Кнопка переключения
+            var btn = _makeActionBtn('Диаграмма', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>', function() {
+                var isChartVisible = chart.style.display !== 'none';
+                if (isChartVisible) {
+                    chart.style.display = 'none';
+                    pre.style.display = 'block';
+                    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg> Диаграмма';
+                } else {
+                    if (chart.innerHTML === '') {
+                        try {
+                            mermaid.render('mermaid_' + Date.now(), code).then(function(result) {
+                                chart.innerHTML = result.svg;
+                                chart.style.display = 'block';
+                                pre.style.display = 'none';
+                                btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M8 18v-8M12 18v-5M16 18v-3"/></svg> Код';
+                            });
+                        } catch(e) {
+                            console.error('Mermaid error:', e);
+                        }
+                    } else {
+                        chart.style.display = 'block';
+                        pre.style.display = 'none';
+                        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M8 18v-8M12 18v-5M16 18v-3"/></svg> Код';
+                    }
+                }
+            });
+            actions.insertBefore(btn, actions.firstChild);
+        }
         function _makeActionBtn(title, innerHTML, clickHandler) {
             var btn = document.createElement('button');
             btn.title = title;
@@ -4937,6 +4990,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var blocks = document.querySelectorAll('.msg-code-block');
             for (var i = 0; i < blocks.length; i++) {
                 _setupSingleCodeBlock(blocks[i]);
+                setupMermaidBlock(blocks[i]);
             }
             _floatingHeaders = [];
             updateFloatingButtons();
@@ -4948,6 +5002,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             for (var i = 0; i < blocks.length; i++) {
                 if (blocks[i].querySelector('.floating-code-header')) continue;
                 _setupSingleCodeBlock(blocks[i]);
+                setupMermaidBlock(blocks[i]);
             }
             _floatingHeaders = [];
             updateFloatingButtons();
