@@ -4933,7 +4933,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (!pre || pre._mermaidSetup) return;
             pre._mermaidSetup = true;
             var codeEl = pre.querySelector('code');
-            var code = codeEl ? codeEl.textContent.replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/&amp;/g, '&').replace(/&quot;/g, '"') : '';
+            var code = codeEl ? codeEl.textContent : '';
 
             var header = block.querySelector('.floating-code-header');
             if (!header) return;
@@ -4973,12 +4973,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
             });
             actions.insertBefore(btn, actions.firstChild);
-            setTimeout(function() {
-                if (!block._mermaidAutoRendered) {
-                    block._mermaidAutoRendered = true;
-                    btn.click();
-                }
-            }, 10);            
         }
         function _makeActionBtn(title, innerHTML, clickHandler) {
             var btn = document.createElement('button');
