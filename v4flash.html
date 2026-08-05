@@ -4948,32 +4948,59 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             pre.parentNode.insertBefore(chart, pre.nextSibling);
 
             // Кнопка переключения
-            var btn = _makeActionBtn('Диаграмма', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg> Диаграмма', function() {
-                var isChartVisible = chart.style.display !== 'none';
-                if (isChartVisible) {
-                    chart.style.display = 'none';
-                    pre.style.display = 'block';
-                    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg> Диаграмма';
+            // View switcher: диаграмма / код
+            var btnChart = _makeActionBtn('Показать диаграмму', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M8 18v-8M12 18v-5M16 18v-3"/></svg>', function() { showChart(); });
+            var btnCode = _makeActionBtn('Показать код', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>', function() { showCode(); });
+
+            actions.insertBefore(btnChart, actions.firstChild);
+            actions.insertBefore(btnCode, actions.firstChild);
+
+            function setActive(btn, active) {
+                if (active) {
+                    btn.style.background = 'rgba(0,203,245,0.15)';
+                    btn.style.color = '#00CBF5';
                 } else {
-                    if (chart.innerHTML === '') {
-                        try {
-                            mermaid.render('mermaid_' + Date.now(), code).then(function(result) {
-                                chart.innerHTML = result.svg;
-                                chart.style.display = 'block';
-                                pre.style.display = 'none';
-                                btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M8 18v-8M12 18v-5M16 18v-3"/></svg> Код';
-                            });
-                        } catch(e) {
-                            console.error('Mermaid error:', e);
-                        }
-                    } else {
-                        chart.style.display = 'block';
-                        pre.style.display = 'none';
-                        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M8 18v-8M12 18v-5M16 18v-3"/></svg> Код';
-                    }
+                    btn.style.background = 'transparent';
+                    btn.style.color = '#aaa';
                 }
-            });
-            actions.insertBefore(btn, actions.firstChild);
+            }
+
+            function showChart() {
+                if (chart.innerHTML === '') {
+                    try {
+                        mermaid.render('mermaid_' + Date.now(), code).then(function(result) {
+                            chart.innerHTML = result.svg;
+                            chart.style.display = 'block';
+                            pre.style.display = 'none';
+                            setActive(btnChart, true);
+                            setActive(btnCode, false);
+                            btnChart.title = 'Показать код';
+                            btnCode.title = 'Показать диаграмму';
+                        });
+                    } catch(e) {
+                        console.error('Mermaid error:', e);
+                    }
+                } else {
+                    chart.style.display = 'block';
+                    pre.style.display = 'none';
+                    setActive(btnChart, true);
+                    setActive(btnCode, false);
+                    btnChart.title = 'Показать код';
+                    btnCode.title = 'Показать диаграмму';
+                }
+            }
+
+            function showCode() {
+                chart.style.display = 'none';
+                pre.style.display = 'block';
+                setActive(btnChart, false);
+                setActive(btnCode, true);
+                btnChart.title = 'Показать диаграмму';
+                btnCode.title = 'Показать код';
+            }
+
+            // Начальное состояние — показан код
+            showCode();
         }
         function _makeActionBtn(title, innerHTML, clickHandler) {
             var btn = document.createElement('button');
