@@ -5110,6 +5110,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
             function showOverlay(svgEl) {
                 if (!svgEl) return;
+                var svgHtml = svgEl.outerHTML;
                 var overlay = document.createElement('div');
                 overlay.className = 'mermaid-fullscreen-overlay';
                 overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99998;display:flex;align-items:center;justify-content:center;cursor:zoom-in;overflow:hidden;';
@@ -5118,9 +5119,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
 
                 var container = document.createElement('div');
-                container.className = 'mermaid-fullscreen-container';
-                container.style.cssText = 'max-width:90vw;max-height:90vh;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;';
-                container.appendChild(svgEl.cloneNode(true));
+                container.style.cssText = 'width:90vw;height:90vh;display:flex;align-items:center;justify-content:center;overflow:hidden;';
+                container.innerHTML = svgHtml;
 
                 var closeBtn = document.createElement('button');
                 closeBtn.innerHTML = '✕';
@@ -5145,37 +5145,29 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     container.style.transform = 'scale(' + scale + ') translate(' + moveX + 'px, ' + moveY + 'px)';
                 }
 
-                function setCursor() {
-                    if (isDragging) {
-                        container.style.cursor = 'grabbing';
-                    } else if (isMax) {
-                        container.style.cursor = 'zoom-out';
-                    } else {
-                        container.style.cursor = 'zoom-in';
-                    }
-                }
-
                 function toggleMax() {
                     if (isDragging) return;
                     isMax = !isMax;
                     if (isMax) {
+                        container.style.width = 'auto';
+                        container.style.height = 'auto';
                         container.style.maxWidth = 'none';
                         container.style.maxHeight = 'none';
                     } else {
-                        container.style.maxWidth = '90vw';
-                        container.style.maxHeight = '90vh';
+                        container.style.width = '90vw';
+                        container.style.height = '90vh';
                     }
                     scale = 1;
                     moveX = 0;
                     moveY = 0;
                     applyTransform();
-                    setCursor();
                 }
+
+                container.style.cursor = 'zoom-in';
 
                 overlay.addEventListener('wheel', function(e) {
                     e.preventDefault();
-                    if (e.deltaY < 0) scale = Math.min(scale * 1.2, 10);
-                    else scale = Math.max(scale / 1.2, 0.1);
+                    scale = Math.min(10, Math.max(0.1, scale * (e.deltaY < 0 ? 1.2 : 0.8)));
                     applyTransform();
                 }, { passive: false });
 
@@ -5185,33 +5177,24 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     isDragging = true;
                     startX = e.clientX - moveX;
                     startY = e.clientY - moveY;
-                    setCursor();
                 });
 
                 overlay.addEventListener('mousemove', function(e) {
-                    if (!isDragging) return;
-                    moveX = e.clientX - startX;
-                    moveY = e.clientY - startY;
-                    applyTransform();
+                    if (isDragging) {
+                        moveX = e.clientX - startX;
+                        moveY = e.clientY - startY;
+                        applyTransform();
+                    }
                 });
 
                 overlay.addEventListener('mouseup', function(e) {
-                    if (isDragging) {
-                        isDragging = false;
-                        setCursor();
-                        return;
-                    }
-                    if (e.target === overlay || e.target === container || e.target === container.firstChild) {
+                    if (isDragging) { isDragging = false; return; }
+                    if (e.target === container || e.target === container.firstChild) {
                         toggleMax();
                     }
                 });
 
-                overlay.addEventListener('mouseleave', function() {
-                    isDragging = false;
-                    setCursor();
-                });
-
-                setCursor();
+                overlay.addEventListener('mouseleave', function() { isDragging = false; });
             }
 
             if (svg) {
