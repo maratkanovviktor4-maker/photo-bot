@@ -11,7 +11,8 @@
         .hljs { background: #1a1a2e; border-radius: 10px; padding: 14px; font-size: 14px; font-family: 'Courier New', monospace; }
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
-    <style> 
+    <style>
+        .mermaid-fullscreen-overlay svg { max-width: 90vw; max-height: 90vh; width: auto; height: auto; }     
         .mermaid-fullscreen-overlay svg { max-width: 100%; max-height: 100%; width: auto; height: auto; }
         .mermaid-fullscreen-container svg { display: block; }        
         .mermaid-segmented {
@@ -5109,22 +5110,19 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
             function showOverlay(svgEl) {
                 if (!svgEl) return;
-                var clonedSvg = svgEl.cloneNode(true);
                 var overlay = document.createElement('div');
-                overlay.className = 'mermaid-fullscreen-overlay';
                 overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99998;display:flex;align-items:center;justify-content:center;cursor:zoom-in;';
                 if (document.body.classList.contains('light')) {
                     overlay.style.background = 'rgba(255,255,255,0.92)';
                 }
 
                 var container = document.createElement('div');
-                container.className = 'mermaid-fullscreen-container';
-                container.style.cssText = 'max-width:90%;max-height:90%;overflow:auto;cursor:grab;';
-                container.appendChild(clonedSvg);
+                container.style.cssText = 'max-width:90%;max-height:90%;overflow:auto;text-align:center;';
+                container.appendChild(svgEl.cloneNode(true));
 
                 var closeBtn = document.createElement('button');
                 closeBtn.innerHTML = '✕';
-                closeBtn.style.cssText = 'position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:18px;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;';
+                closeBtn.style.cssText = 'position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:18px;cursor:pointer;z-index:2;';
                 if (document.body.classList.contains('light')) {
                     closeBtn.style.background = 'rgba(0,0,0,0.08)';
                     closeBtn.style.borderColor = 'rgba(0,0,0,0.15)';
@@ -5137,23 +5135,25 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 document.body.appendChild(overlay);
 
                 var scale = 1;
-                function updateScale() {
-                    container.style.transform = 'scale(' + scale + ')';
-                }
-                function zoomIn() { scale = Math.min(scale + 0.2, 5); updateScale(); }
-                function zoomOut() { scale = Math.max(scale - 0.2, 0.2); updateScale(); }
+                function update() { container.style.transform = 'scale(' + scale + ')'; }
 
                 overlay.addEventListener('wheel', function(e) {
                     e.preventDefault();
-                    if (e.deltaY < 0) zoomIn(); else zoomOut();
+                    scale = Math.max(0.2, Math.min(5, scale + (e.deltaY < 0 ? 0.2 : -0.2)));
+                    update();
                 }, { passive: false });
 
                 overlay.addEventListener('click', function(e) {
-                    if (e.target === overlay) zoomIn();
+                    if (e.target === overlay) {
+                        scale = Math.min(5, scale + 0.2);
+                        update();
+                    }
                 });
+
                 overlay.addEventListener('contextmenu', function(e) {
                     e.preventDefault();
-                    zoomOut();
+                    scale = Math.max(0.2, scale - 0.2);
+                    update();
                 });
             }
 
@@ -5165,11 +5165,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var codeEl = block.querySelector('.mermaid-source code');
             if (!codeEl) return;
             mermaid.render('mermaid_fs_' + Date.now(), codeEl.textContent).then(function(result) {
-                if (chart) {
-                    chart.innerHTML = result.svg;
-                    chart.style.display = 'block';
-                }
-                showOverlay(chart.querySelector('svg'));
+                var temp = document.createElement('div');
+                temp.innerHTML = result.svg;
+                var tempSvg = temp.querySelector('svg');
+                if (tempSvg) showOverlay(tempSvg);
             }).catch(function(e) { console.error('Mermaid fullscreen render error:', e); });
         }                
         function setupMermaidBlock(block) {
