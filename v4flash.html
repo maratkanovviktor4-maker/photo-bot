@@ -11,7 +11,9 @@
         .hljs { background: #1a1a2e; border-radius: 10px; padding: 14px; font-size: 14px; font-family: 'Courier New', monospace; }
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
-    <style>     
+    <style> 
+        .mermaid-fullscreen-overlay svg { max-width: 100%; max-height: 100%; width: auto; height: auto; }
+        .mermaid-fullscreen-container svg { display: block; }        
         .mermaid-segmented {
             display: inline-flex;
             border-radius: 10px;
@@ -5100,7 +5102,74 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     document.removeEventListener('click', closeOnOutside);
                 }
             });
-        }        
+        }
+        function openMermaidFullscreen(block) {
+            var svg = block.querySelector('.mermaid-chart svg');
+            var code = block.querySelector('.mermaid-source code');
+            var svgHtml = '';
+            if (svg) {
+                svgHtml = svg.outerHTML;
+            } else if (code) {
+                // Если диаграмма не отрендерена — рендерим временно
+                var pre = block.querySelector('.mermaid-source');
+                var chart = block.querySelector('.mermaid-chart');
+                svgHtml = '';
+                try {
+                    mermaid.render('mermaid_fs_' + Date.now(), code.textContent).then(function(result) {
+                        if (chart) chart.innerHTML = result.svg;
+                        openMermaidFullscreen(block);
+                    });
+                    return;
+                } catch(e) { console.error(e); return; }
+            }
+            if (!svgHtml) return;
+
+            var overlay = document.createElement('div');
+            overlay.className = 'mermaid-fullscreen-overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99998;display:flex;align-items:center;justify-content:center;cursor:zoom-in;';
+            if (document.body.classList.contains('light')) {
+                overlay.style.background = 'rgba(255,255,255,0.92)';
+            }
+
+            var container = document.createElement('div');
+            container.className = 'mermaid-fullscreen-container';
+            container.style.cssText = 'max-width:90%;max-height:90%;overflow:auto;transform-origin:center;transition:transform 0.1s ease;cursor:grab;';
+            container.innerHTML = svgHtml;
+
+            var closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '✕';
+            closeBtn.style.cssText = 'position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:18px;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;';
+            if (document.body.classList.contains('light')) {
+                closeBtn.style.background = 'rgba(0,0,0,0.08)';
+                closeBtn.style.borderColor = 'rgba(0,0,0,0.15)';
+                closeBtn.style.color = '#111';
+            }
+            closeBtn.onclick = function() { overlay.remove(); };
+
+            overlay.appendChild(closeBtn);
+            overlay.appendChild(container);
+            document.body.appendChild(overlay);
+
+            var scale = 1;
+            function updateScale() {
+                container.style.transform = 'scale(' + scale + ')';
+            }
+            function zoomIn() { scale = Math.min(scale + 0.2, 5); updateScale(); }
+            function zoomOut() { scale = Math.max(scale - 0.2, 0.2); updateScale(); }
+
+            overlay.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                if (e.deltaY < 0) zoomIn(); else zoomOut();
+            }, { passive: false });
+
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) zoomIn();
+            });
+            overlay.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                zoomOut();
+            });
+        }                
         function setupMermaidBlock(block) {
             var pre = block.querySelector('.mermaid-source');
             if (!pre || pre._mermaidSetup) return;
@@ -5161,6 +5230,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     showMermaidDownloadPopup(block, downloadBtn);
                 };
             }
+            // Кнопка полного экрана
+            var fullscreenBtn = _makeActionBtn('Полный экран', '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>', function(e) {
+                e.stopPropagation();
+                openMermaidFullscreen(block);
+            });
+            actions.appendChild(fullscreenBtn);            
             function showCode() {
                 diagramBtn.classList.remove('selected');
                 codeBtn.classList.add('selected');
