@@ -12,9 +12,7 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
-        .mermaid-fullscreen-overlay svg { max-width: 90vw; max-height: 90vh; width: auto; height: auto; }        
-        .mermaid-fullscreen-overlay svg { max-width: 100%; max-height: 100%; width: auto; height: auto; }
-        .mermaid-fullscreen-container svg { display: block; }        
+        .mermaid-fullscreen-overlay svg { max-width: 90vw; max-height: 90vh; width: auto; height: auto; }               
         .mermaid-segmented {
             display: inline-flex;
             border-radius: 10px;
@@ -5128,7 +5126,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
 
                 var container = document.createElement('div');
-                container.style.cssText = 'max-width:90%;max-height:90%;overflow:auto;text-align:center;';
+                container.style.cssText = 'max-width:90%;max-height:90%;overflow:auto;text-align:center;transform-origin:center;transition:transform 0.1s ease;cursor:grab;user-select:none;';
                 container.appendChild(svgEl.cloneNode(true));
 
                 var closeBtn = document.createElement('button');
@@ -5146,25 +5144,64 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 document.body.appendChild(overlay);
 
                 var scale = 1;
-                function update() { container.style.transform = 'scale(' + scale + ')'; }
+                var tx = 0, ty = 0;
+                var dragging = false;
+                var startX = 0, startY = 0;
+
+                function applyTransform() {
+                    container.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
+                }
+
+                function updateCursor() {
+                    overlay.style.cursor = scale > 1 ? 'grab' : 'zoom-in';
+                }
 
                 overlay.addEventListener('wheel', function(e) {
                     e.preventDefault();
-                    scale = Math.max(0.2, Math.min(5, scale + (e.deltaY < 0 ? 0.2 : -0.2)));
-                    update();
+                    var delta = e.deltaY < 0 ? 0.2 : -0.2;
+                    scale = Math.max(0.2, Math.min(5, scale + delta));
+                    // zoom относительно указателя — упрощённо, просто центр
+                    applyTransform();
+                    updateCursor();
                 }, { passive: false });
 
                 overlay.addEventListener('click', function(e) {
                     if (e.target === overlay) {
                         scale = Math.min(5, scale + 0.2);
-                        update();
+                        applyTransform();
+                        updateCursor();
                     }
                 });
 
                 overlay.addEventListener('contextmenu', function(e) {
                     e.preventDefault();
                     scale = Math.max(0.2, scale - 0.2);
-                    update();
+                    applyTransform();
+                    updateCursor();
+                });
+
+                container.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    dragging = true;
+                    startX = e.clientX - tx;
+                    startY = e.clientY - ty;
+                    container.style.cursor = 'grabbing';
+                });
+
+                document.addEventListener('mousemove', function onMove(e) {
+                    if (!dragging) return;
+                    tx = e.clientX - startX;
+                    ty = e.clientY - startY;
+                    applyTransform();
+                });
+
+                document.addEventListener('mouseup', function onUp() {
+                    if (dragging) {
+                        dragging = false;
+                        container.style.cursor = 'grab';
+                    }
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
                 });
             }
 
