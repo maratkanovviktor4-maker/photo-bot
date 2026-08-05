@@ -5103,6 +5103,62 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
             });
         }
+        var scale = 1, posX = 0, posY = 0, zoomed = false;
+
+        function update() {
+            container.style.transform = 'translate(' + posX + 'px,' + posY + 'px) scale(' + scale + ')';
+        }
+        function zoomIn() {
+            scale = Math.min(5, scale + 0.2);
+            zoomed = true;
+            overlay.style.cursor = 'grab';
+            update();
+        }
+        function zoomOut() {
+            scale = Math.max(0.2, scale - 0.2);
+            update();
+        }
+
+        overlay.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            if (e.deltaY < 0) zoomIn(); else zoomOut();
+        }, { passive: false });
+
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay || e.target === container) {
+                zoomIn();
+            }
+        });
+
+        overlay.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            zoomOut();
+        });
+
+        // Перетаскивание
+        var dragging = false, startX, startY;
+
+        container.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            dragging = true;
+            startX = e.clientX - posX;
+            startY = e.clientY - posY;
+            overlay.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!dragging) return;
+            posX = e.clientX - startX;
+            posY = e.clientY - startY;
+            update();
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (dragging) {
+                dragging = false;
+                overlay.style.cursor = zoomed ? 'grab' : 'zoom-in';
+            }
+        });        
         function openMermaidFullscreen(block) {
             var chart = block.querySelector('.mermaid-chart');
             var svg = chart ? chart.querySelector('svg') : null;
