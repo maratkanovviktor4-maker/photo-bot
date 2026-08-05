@@ -575,7 +575,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
     <script>
-        mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+        mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose', htmlLabels: false });
     </script>
     <script src="config.js"></script>
 </head>
@@ -5022,11 +5022,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             function downloadPng() {
                 popup.remove();
                 getSvgString().then(function(svgStr) {
+                    // Убираем foreignObject и image, которые вызывают taint
+                    svgStr = svgStr.replace(/<foreignObject[\s\S]*?<\/foreignObject>/g, '');
+                    svgStr = svgStr.replace(/<image[\s\S]*?\/>/g, '');
+
                     var img = new Image();
-                    var svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-                    var url = URL.createObjectURL(svgBlob);
+                    var url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
                     img.onload = function() {
-                        // Определяем размеры из SVG
                         var width = 800;
                         var height = 600;
                         var vBox = svgStr.match(/viewBox="([^"]+)"/);
@@ -5042,10 +5044,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         ctx.fillStyle = '#ffffff';
                         ctx.fillRect(0, 0, width, height);
                         ctx.drawImage(img, 0, 0, width, height);
-                        canvas.toBlob(function(blob) {
-                            if (blob) downloadBlob(blob, 'diagram.png', 'image/png');
-                            URL.revokeObjectURL(url);
-                        });
+                        var dataUrl = canvas.toDataURL('image/png');
+                        var a = document.createElement('a');
+                        a.href = dataUrl;
+                        a.download = 'diagram.png';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
                     };
                     img.onerror = function() { URL.revokeObjectURL(url); };
                     img.src = url;
