@@ -4939,6 +4939,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (!header) return;
             var actions = header.querySelector('span:last-child');
             if (!actions) return;
+            block._floatHeader = header;
 
             // Контейнер диаграммы
             var chart = document.createElement('div');
@@ -5047,7 +5048,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
         function _collectFloatingHeaders() {
             _floatingHeaders = [];
-            var blocks = document.querySelectorAll('.msg-code-block');
+            var blocks = document.querySelectorAll('.msg-code-block, .mermaid-block');
             for (var i = 0; i < blocks.length; i++) {
                 if (blocks[i]._floatHeader) _floatingHeaders.push(blocks[i]);
             }
