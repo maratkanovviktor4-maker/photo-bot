@@ -4961,17 +4961,24 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
             // Сразу рендерим диаграмму и показываем её
             async function renderChart() {
+                // Скрываем оба блока до завершения рендера
+                var sourcePre = pre;
+                var chartDiv = chart;
+                sourcePre.style.display = 'none';
+                chartDiv.style.display = 'none';
+                chartDiv.style.minHeight = '60px';
                 try {
                     var id = 'mermaid_' + Date.now();
                     var result = await mermaid.render(id, code);
-                    chart.innerHTML = result.svg;
-                    chart.style.display = 'block';
-                    pre.style.display = 'none';
+                    chartDiv.innerHTML = result.svg;
+                    chartDiv.style.minHeight = '';
+                    chartDiv.style.display = 'block';
                     btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M8 18v-8M12 18v-5M16 18v-3"/></svg> Код';
                 } catch(e) {
                     console.error('Mermaid error:', e);
-                    chart.style.display = 'none';
-                    pre.style.display = 'block';
+                    chartDiv.style.display = 'none';
+                    sourcePre.style.display = 'block';
+                    chartDiv.style.minHeight = '';
                 }
             }
             renderChart();
