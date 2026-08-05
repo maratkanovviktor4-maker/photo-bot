@@ -12,6 +12,39 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
+        .mermaid-segmented {
+            display: inline-flex;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 2px;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1;
+        }
+        .mermaid-seg-btn {
+            padding: 4px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #aaa;
+            transition: all 0.15s;
+            user-select: none;
+        }
+        .mermaid-seg-btn.selected {
+            background: rgba(0,203,245,0.2);
+            color: #00CBF5;
+            box-shadow: 0 0 4px rgba(0,0,0,0.02), 0 6px 10px rgba(0,0,0,0.04);
+        }
+        body.light .mermaid-segmented {
+            background: rgba(0,0,0,0.05);
+            border-color: rgba(0,0,0,0.08);
+        }
+        body.light .mermaid-seg-btn { color: #555; }
+        body.light .mermaid-seg-btn.selected {
+            background: #ffffff;
+            color: #111111;
+            box-shadow: 0 0 4px rgba(0,0,0,0.02), 0 6px 10px rgba(0,0,0,0.04);
+        }        
         .reasoning-block blockquote {
             border-left: none !important;
             padding: 2px 12px !important;
@@ -4941,41 +4974,29 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (!actions) return;
             block._floatHeader = header;
 
-            // Контейнер диаграммы
             var chart = document.createElement('div');
             chart.className = 'mermaid-chart';
             chart.style.display = 'none';
             pre.parentNode.insertBefore(chart, pre.nextSibling);
 
-            // Кнопка переключения
-            // View switcher: диаграмма / код
-            var btnChart = _makeActionBtn('Показать диаграмму', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M8 18v-8M12 18v-5M16 18v-3"/></svg>', function() { showChart(); });
-            var btnCode = _makeActionBtn('Показать код', '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>', function() { showCode(); });
+            // Сегментированный переключатель
+            var seg = document.createElement('div');
+            seg.className = 'mermaid-segmented';
+            seg.innerHTML = '<div class="mermaid-seg-btn mermaid-seg-diagram selected">Диаграмма</div><div class="mermaid-seg-btn mermaid-seg-code">Код</div>';
+            actions.insertBefore(seg, actions.firstChild);
 
-            actions.insertBefore(btnChart, actions.firstChild);
-            actions.insertBefore(btnCode, actions.firstChild);
+            var diagramBtn = seg.querySelector('.mermaid-seg-diagram');
+            var codeBtn = seg.querySelector('.mermaid-seg-code');
 
-            function setActive(btn, active) {
-                if (active) {
-                    btn.style.background = 'rgba(0,203,245,0.15)';
-                    btn.style.color = '#00CBF5';
-                } else {
-                    btn.style.background = 'transparent';
-                    btn.style.color = '#aaa';
-                }
-            }
-
-            function showChart() {
+            function showDiagram() {
+                diagramBtn.classList.add('selected');
+                codeBtn.classList.remove('selected');
                 if (chart.innerHTML === '') {
                     try {
                         mermaid.render('mermaid_' + Date.now(), code).then(function(result) {
                             chart.innerHTML = result.svg;
                             chart.style.display = 'block';
                             pre.style.display = 'none';
-                            setActive(btnChart, true);
-                            setActive(btnCode, false);
-                            btnChart.title = 'Показать код';
-                            btnCode.title = 'Показать диаграмму';
                         });
                     } catch(e) {
                         console.error('Mermaid error:', e);
@@ -4983,24 +5004,21 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 } else {
                     chart.style.display = 'block';
                     pre.style.display = 'none';
-                    setActive(btnChart, true);
-                    setActive(btnCode, false);
-                    btnChart.title = 'Показать код';
-                    btnCode.title = 'Показать диаграмму';
                 }
             }
 
             function showCode() {
+                diagramBtn.classList.remove('selected');
+                codeBtn.classList.add('selected');
                 chart.style.display = 'none';
                 pre.style.display = 'block';
-                setActive(btnChart, false);
-                setActive(btnCode, true);
-                btnChart.title = 'Показать диаграмму';
-                btnCode.title = 'Показать код';
             }
 
-            // Начальное состояние — показан код
-            showCode();
+            diagramBtn.addEventListener('click', showDiagram);
+            codeBtn.addEventListener('click', showCode);
+
+            // По умолчанию показываем диаграмму
+            showDiagram();
         }
         function _makeActionBtn(title, innerHTML, clickHandler) {
             var btn = document.createElement('button');
