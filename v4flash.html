@@ -5017,7 +5017,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var code = codeEl ? codeEl.textContent : '';
                 if (!code) return;
                 mermaid.render('mermaid_' + Date.now(), code).then(function(result) {
-                    var svgStr = result.svg;
+                    var temp = document.createElement('div');
+                    temp.innerHTML = result.svg;
+                    fixMermaidSvgOverflow(temp);
+                    var svgStr = temp.innerHTML;
                     var img = new Image();
                     var url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
                     img.onload = function() {
