@@ -4734,7 +4734,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 if (part.type === 'code') {
                     var lang = part.lang || '';
                     if (lang === 'mermaid') {
-                        result += '<div class="msg-code-block mermaid-block"><pre class="mermaid-source" style="display:none;"><code class="language-mermaid">' + escapeHtml(part.content) + '</code></pre></div>';
+                        result += '<div class="msg-code-block mermaid-block"><pre class="mermaid-source"><code class="language-mermaid">' + escapeHtml(part.content) + '</code></pre></div>';
                     } else {
                         result += '<div class="msg-code-block"><pre><code class="' + (lang ? 'language-' + escapeHtml(lang) : '') + '">' + escapeHtml(part.content) + '</code></pre></div>';
                     }
@@ -4950,6 +4950,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (!header) return;
             var actions = header.querySelector('span:last-child');
             if (!actions) return;
+            block._floatHeader = header;
 
             // Контейнер диаграммы
             var chart = document.createElement('div');
@@ -5058,7 +5059,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
         function _collectFloatingHeaders() {
             _floatingHeaders = [];
-            var blocks = document.querySelectorAll('.msg-code-block');
+            var blocks = document.querySelectorAll('.msg-code-block, .mermaid-block');
             for (var i = 0; i < blocks.length; i++) {
                 if (blocks[i]._floatHeader) _floatingHeaders.push(blocks[i]);
             }
