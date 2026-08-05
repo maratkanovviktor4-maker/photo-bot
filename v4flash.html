@@ -5073,7 +5073,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
                 var blockRect = block.getBoundingClientRect();
                 var headerHeight = header.offsetHeight || 34;
-                var preEl = block.querySelector('pre');
+                var chartEl = block.querySelector('.mermaid-chart');
+                var useChart = chartEl && chartEl.style.display !== 'none';
+                var preEl = useChart ? chartEl : block.querySelector('pre');
                 var codeTop = preEl ? preEl.getBoundingClientRect().top : blockRect.top;
                 var codeBottom = preEl ? preEl.getBoundingClientRect().bottom : blockRect.bottom;
                 var touchingBar = codeTop < tbBottom && codeBottom > tbBottom;
