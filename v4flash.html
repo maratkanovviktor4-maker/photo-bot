@@ -5017,36 +5017,32 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
             function downloadPng() {
                 popup.remove();
-                var code = pre ? pre.textContent : '';
-                if (!code) return;
-                try {
-                    mermaid.render('mermaid_png_' + Date.now(), code).then(function(result) {
-                        var tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = result.svg;
-                        var svgEl = tempDiv.querySelector('svg');
-                        if (!svgEl) return;
-                        var svgStr = new XMLSerializer().serializeToString(svgEl);
-                        var img = new Image();
-                        var svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-                        var url = URL.createObjectURL(svgBlob);
-                        img.onload = function() {
-                            var canvas = document.createElement('canvas');
-                            var width = svgEl.viewBox.baseVal.width || 800;
-                            var height = svgEl.viewBox.baseVal.height || 600;
-                            canvas.width = width;
-                            canvas.height = height;
-                            var ctx = canvas.getContext('2d');
-                            ctx.fillStyle = '#ffffff';
-                            ctx.fillRect(0, 0, width, height);
-                            ctx.drawImage(img, 0, 0, width, height);
-                            canvas.toBlob(function(blob) {
-                                if (blob) downloadBlob(blob, 'diagram.png', 'image/png');
-                                URL.revokeObjectURL(url);
-                            });
-                        };
-                        img.src = url;
+                var svgEl = chart ? chart.querySelector('svg') : null;
+                if (!svgEl) {
+                    renderAndThen(downloadPng);
+                    return;
+                }
+                var svgStr = new XMLSerializer().serializeToString(svgEl);
+                var img = new Image();
+                var svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+                var url = URL.createObjectURL(svgBlob);
+                img.onload = function() {
+                    var canvas = document.createElement('canvas');
+                    var rect = svgEl.getBoundingClientRect();
+                    var width = rect.width || svgEl.viewBox.baseVal.width || 800;
+                    var height = rect.height || svgEl.viewBox.baseVal.height || 600;
+                    canvas.width = width;
+                    canvas.height = height;
+                    var ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob(function(blob) {
+                        if (blob) downloadBlob(blob, 'diagram.png', 'image/png');
+                        URL.revokeObjectURL(url);
                     });
-                } catch(e) { console.error('Mermaid render error:', e); }
+                };
+                img.src = url;
             }
 
             function downloadCode() {
