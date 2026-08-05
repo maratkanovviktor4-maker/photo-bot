@@ -12,7 +12,8 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
-        .mermaid-fullscreen-overlay svg { display: block; max-width: 90vw; max-height: 90vh; width: auto; height: auto; }
+        .mermaid-fullscreen-overlay svg { max-width: 90vw; max-height: 90vh; width: auto; height: auto; }     
+        .mermaid-fullscreen-overlay svg { max-width: 100%; max-height: 100%; width: auto; height: auto; }
         .mermaid-fullscreen-container svg { display: block; }        
         .mermaid-segmented {
             display: inline-flex;
@@ -5109,17 +5110,15 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
             function showOverlay(svgEl) {
                 if (!svgEl) return;
-                var svgHtml = svgEl.outerHTML;
                 var overlay = document.createElement('div');
-                overlay.className = 'mermaid-fullscreen-overlay';
-                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99998;display:flex;align-items:center;justify-content:center;cursor:zoom-in;overflow:hidden;';
+                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99998;display:flex;align-items:center;justify-content:center;cursor:zoom-in;';
                 if (document.body.classList.contains('light')) {
                     overlay.style.background = 'rgba(255,255,255,0.92)';
                 }
 
                 var container = document.createElement('div');
-                container.style.cssText = 'width:90vw;height:90vh;display:flex;align-items:center;justify-content:center;overflow:hidden;';
-                container.innerHTML = svgHtml;
+                container.style.cssText = 'max-width:90%;max-height:90%;overflow:auto;text-align:center;';
+                container.appendChild(svgEl.cloneNode(true));
 
                 var closeBtn = document.createElement('button');
                 closeBtn.innerHTML = '✕';
@@ -5136,64 +5135,26 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 document.body.appendChild(overlay);
 
                 var scale = 1;
-                var isMax = false;
-                var isDragging = false;
-                var startX = 0, startY = 0, moveX = 0, moveY = 0;
-
-                function applyTransform() {
-                    container.style.transform = 'scale(' + scale + ') translate(' + moveX + 'px, ' + moveY + 'px)';
-                }
-
-                function toggleMax() {
-                    if (isDragging) return;
-                    isMax = !isMax;
-                    if (isMax) {
-                        container.style.width = 'auto';
-                        container.style.height = 'auto';
-                        container.style.maxWidth = 'none';
-                        container.style.maxHeight = 'none';
-                    } else {
-                        container.style.width = '90vw';
-                        container.style.height = '90vh';
-                    }
-                    scale = 1;
-                    moveX = 0;
-                    moveY = 0;
-                    applyTransform();
-                }
-
-                container.style.cursor = 'zoom-in';
+                function update() { container.style.transform = 'scale(' + scale + ')'; }
 
                 overlay.addEventListener('wheel', function(e) {
                     e.preventDefault();
-                    scale = Math.min(10, Math.max(0.1, scale * (e.deltaY < 0 ? 1.2 : 0.8)));
-                    applyTransform();
+                    scale = Math.max(0.2, Math.min(5, scale + (e.deltaY < 0 ? 0.2 : -0.2)));
+                    update();
                 }, { passive: false });
 
-                overlay.addEventListener('mousedown', function(e) {
-                    if (e.target !== container && e.target !== container.firstChild) return;
-                    if (!isMax && scale <= 1) return;
-                    isDragging = true;
-                    startX = e.clientX - moveX;
-                    startY = e.clientY - moveY;
-                });
-
-                overlay.addEventListener('mousemove', function(e) {
-                    if (isDragging) {
-                        moveX = e.clientX - startX;
-                        moveY = e.clientY - startY;
-                        applyTransform();
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) {
+                        scale = Math.min(5, scale + 0.2);
+                        update();
                     }
                 });
 
-                overlay.addEventListener('mouseup', function(e) {
-                    if (isDragging) { isDragging = false; return; }
-                    if (e.target === container || e.target === container.firstChild) {
-                        toggleMax();
-                    }
+                overlay.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    scale = Math.max(0.2, scale - 0.2);
+                    update();
                 });
-
-                overlay.addEventListener('mouseleave', function() { isDragging = false; });
             }
 
             if (svg) {
