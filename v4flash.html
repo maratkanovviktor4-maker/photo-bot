@@ -5011,11 +5011,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             function downloadPng() {
                 popup.remove();
                 getSvgString().then(function(svgStr) {
+                    // Убираем foreignObject и image, которые вызывают taint
+                    svgStr = svgStr.replace(/<foreignObject[\s\S]*?<\/foreignObject>/g, '');
+                    svgStr = svgStr.replace(/<image[\s\S]*?\/>/g, '');
+
                     var img = new Image();
-                    var svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-                    var url = URL.createObjectURL(svgBlob);
+                    var url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
                     img.onload = function() {
-                        // Определяем размеры из SVG
                         var width = 800;
                         var height = 600;
                         var vBox = svgStr.match(/viewBox="([^"]+)"/);
