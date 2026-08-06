@@ -5025,9 +5025,17 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
             function downloadSvg() {
                 popup.remove();
-                getSvgString().then(function(svgStr) {
+                var code = codeEl ? codeEl.textContent : '';
+                if (!code) return;
+                mermaid.parse(code).then(function() {
+                    return mermaid.render('mermaid_' + Date.now(), code);
+                }).then(function(result) {
+                    var svgStr = result.svg;
                     downloadBlob('<?xml version="1.0" encoding="UTF-8"?>\n' + svgStr, 'diagram.svg', 'image/svg+xml');
-                }).catch(function(e){ console.error(e); });
+                }).catch(function(e) {
+                    console.error(e);
+                    alert('Ошибка рендера диаграммы. Проверьте синтаксис Mermaid.');
+                });
             }
 
             function downloadPng() {
