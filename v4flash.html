@@ -5285,22 +5285,19 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 diagramBtn.classList.add('selected');
                 codeBtn.classList.remove('selected');
                 if (chart.innerHTML === '') {
-                    // Показываем спиннер во время рендера
-                    chart.innerHTML = '<div style="padding:20px;text-align:center;color:#888;">⏳ Загрузка диаграммы...</div>';
-                    chart.style.display = 'block';
-                    pre.style.display = 'none';
-                    // Рендерим напрямую — render сам проверяет синтаксис
-                    mermaid.render('mermaid_' + Date.now(), code).then(function(result) {
+                    // Сначала проверяем синтаксис
+                    mermaid.parse(code).then(function() {
+                        return mermaid.render('mermaid_' + Date.now(), code);
+                    }).then(function(result) {
                         chart.innerHTML = result.svg;
                         fixMermaidSvgOverflow(chart);
+                        chart.style.display = 'block';
+                        pre.style.display = 'none';
                     }).catch(function(err) {
                         console.error('Mermaid error:', err);
-                        // Удаляем артефакты, которые мог создать Mermaid
-                        document.querySelectorAll('[id^="d"][id$="-svg"], [id^="d"][id$="-container"], [id^="d"][id$="-text"], [id^="d"][id$="-error"]').forEach(function(el) { el.remove(); });
-                        // Показываем ошибку только если спиннер ещё на месте (рендер не удался)
-                        if (chart.querySelector('.mermaid-spinner') || chart.innerHTML.indexOf('Загрузка диаграммы') !== -1) {
-                            chart.innerHTML = '<div style="color:#e74c3c;font-size:12px;padding:8px;border:1px solid rgba(231,76,60,0.3);border-radius:6px;">Ошибка рендера диаграммы. Проверьте синтаксис Mermaid.</div>';
-                        }
+                        chart.innerHTML = '<div style="color:#e74c3c;font-size:12px;padding:8px;border:1px solid rgba(231,76,60,0.3);border-radius:6px;">Ошибка рендера диаграммы. Проверьте синтаксис Mermaid.</div>';
+                        chart.style.display = 'block';
+                        pre.style.display = 'none';
                     });
                 } else {
                     chart.style.display = 'block';
@@ -5343,8 +5340,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
             diagramBtn.addEventListener('click', showDiagram);
             codeBtn.addEventListener('click', showCode);
-            // По умолчанию показываем диаграмму
-            showDiagram();           
+           
         }
         function _makeActionBtn(title, innerHTML, clickHandler) {
             var btn = document.createElement('button');
