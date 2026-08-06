@@ -4698,7 +4698,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (lastIndex < text.length) {
                 var remaining = text.substring(lastIndex);
                 var openCode = remaining.match(new RegExp('^([\\s\\S]*?)' + B + B + B + '(\\w*)\\r?\\n([\\s\\S]*)'));
-                if (openCode) {
+                if (openCode && openCode[2] !== 'mermaid') {
                     if (openCode[1]) parts.push({type: 'text', content: openCode[1]});
                     parts.push({type: 'code', lang: openCode[2], content: openCode[3]});
                 } else { parts.push({type: 'text', content: remaining}); }
