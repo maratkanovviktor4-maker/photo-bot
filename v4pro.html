@@ -5034,7 +5034,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 popup.remove();
                 var code = codeEl ? codeEl.textContent : '';
                 if (!code) return;
-                mermaid.render('mermaid_' + Date.now(), code).then(function(result) {
+                mermaid.parse(code).then(function() {
+                    return mermaid.render('mermaid_' + Date.now(), code);
+                }).then(function(result) {
                     var temp = document.createElement('div');
                     temp.innerHTML = result.svg;
                     fixMermaidSvgOverflow(temp);
@@ -5068,7 +5070,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     };
                     img.onerror = function() { URL.revokeObjectURL(url); };
                     img.src = url;
-                }).catch(function(e){ console.error(e); });
+                }).catch(function(e) {
+                    console.error(e);
+                    alert('Ошибка рендера диаграммы. Проверьте синтаксис Mermaid.');
+                });
             }
 
             function downloadCode() {
@@ -5225,13 +5230,18 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
             var codeEl = block.querySelector('.mermaid-source code');
             if (!codeEl) return;
-            mermaid.render('mermaid_fs_' + Date.now(), codeEl.textContent).then(function(result) {
+            mermaid.parse(codeEl.textContent).then(function() {
+                return mermaid.render('mermaid_fs_' + Date.now(), codeEl.textContent);
+            }).then(function(result) {
                 var temp = document.createElement('div');
                 temp.innerHTML = result.svg;
                 fixMermaidSvgOverflow(temp);
                 var tempSvg = temp.querySelector('svg');
                 if (tempSvg) showOverlay(tempSvg);
-            }).catch(function(e) { console.error('Mermaid fullscreen render error:', e); });
+            }).catch(function(e) {
+                console.error('Mermaid fullscreen render error:', e);
+                alert('Ошибка рендера диаграммы. Проверьте синтаксис Mermaid.');
+            });
         }
         function fixMermaidSvgOverflow(container) {
             var svg = container.querySelector('svg');
