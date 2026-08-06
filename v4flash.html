@@ -5285,19 +5285,19 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 diagramBtn.classList.add('selected');
                 codeBtn.classList.remove('selected');
                 if (chart.innerHTML === '') {
-                    // Сначала проверяем синтаксис
+                    // Показываем спиннер во время рендера
+                    chart.innerHTML = '<div style="padding:20px;text-align:center;color:#888;">⏳ Загрузка диаграммы...</div>';
+                    chart.style.display = 'block';
+                    pre.style.display = 'none';
+                    // Сначала проверяем синтаксис, потом рендерим
                     mermaid.parse(code).then(function() {
                         return mermaid.render('mermaid_' + Date.now(), code);
                     }).then(function(result) {
                         chart.innerHTML = result.svg;
                         fixMermaidSvgOverflow(chart);
-                        chart.style.display = 'block';
-                        pre.style.display = 'none';
                     }).catch(function(err) {
                         console.error('Mermaid error:', err);
                         chart.innerHTML = '<div style="color:#e74c3c;font-size:12px;padding:8px;border:1px solid rgba(231,76,60,0.3);border-radius:6px;">Ошибка рендера диаграммы. Проверьте синтаксис Mermaid.</div>';
-                        chart.style.display = 'block';
-                        pre.style.display = 'none';
                     });
                 } else {
                     chart.style.display = 'block';
