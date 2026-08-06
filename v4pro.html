@@ -5275,16 +5275,20 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 diagramBtn.classList.add('selected');
                 codeBtn.classList.remove('selected');
                 if (chart.innerHTML === '') {
-                    try {
-                        mermaid.render('mermaid_' + Date.now(), code).then(function(result) {
-                            chart.innerHTML = result.svg;
-                            fixMermaidSvgOverflow(chart);
-                            chart.style.display = 'block';
-                            pre.style.display = 'none';
-                        });
-                    } catch(e) {
-                        console.error('Mermaid error:', e);
-                    }
+                    // Сначала проверяем синтаксис
+                    mermaid.parse(code).then(function() {
+                        return mermaid.render('mermaid_' + Date.now(), code);
+                    }).then(function(result) {
+                        chart.innerHTML = result.svg;
+                        fixMermaidSvgOverflow(chart);
+                        chart.style.display = 'block';
+                        pre.style.display = 'none';
+                    }).catch(function(err) {
+                        console.error('Mermaid error:', err);
+                        chart.innerHTML = '<div style="color:#e74c3c;font-size:12px;padding:8px;border:1px solid rgba(231,76,60,0.3);border-radius:6px;">Ошибка рендера диаграммы. Проверьте синтаксис Mermaid.</div>';
+                        chart.style.display = 'block';
+                        pre.style.display = 'none';
+                    });
                 } else {
                     chart.style.display = 'block';
                     pre.style.display = 'none';
