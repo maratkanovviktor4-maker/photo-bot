@@ -5054,8 +5054,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     var isLight = document.body.classList.contains('light');
                     var bgColor = isLight ? '#ffffff' : '#151517';
                     var svgStr = result.svg;
-                    svgStr = svgStr.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"');
-                    svgStr = svgStr.replace('<svg', '<svg><rect width="100%" height="100%" fill="' + bgColor + '"/>');
+                    svgStr = svgStr.replace(/<svg[^>]*>/, function(match) {
+                        return match + '<rect width="100%" height="100%" fill="' + bgColor + '"/>';
+                    });
                     downloadBlob('<?xml version="1.0" encoding="UTF-8"?>\n' + svgStr, 'diagram.svg', 'image/svg+xml');
                 }).catch(function(e) {
                     console.error(e);
