@@ -1405,7 +1405,13 @@
             updateOpenEditorStyles();
             updateMermaidTheme();
             document.querySelectorAll('.mermaid-block').forEach(function(block) {
-                if (block._showDiagram) block._showDiagram();
+                var chart = block.querySelector('.mermaid-chart');
+                if (chart) {
+                    if (chart.style.display !== 'none') {
+                        chart.innerHTML = '';
+                        if (block._showDiagram) block._showDiagram();
+                    }
+                }
             });                        
         }
         function changeHighlight() {
