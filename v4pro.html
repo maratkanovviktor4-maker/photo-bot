@@ -592,7 +592,11 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
     <script>
-        mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose', htmlLabels: false, flowchart: { htmlLabels: false }, sequence: { htmlLabels: false }, gantt: { htmlLabels: false } });
+        function updateMermaidTheme() {
+            var theme = document.body.classList.contains('light') ? 'default' : 'dark';
+            mermaid.initialize({ startOnLoad: false, theme: theme, securityLevel: 'loose', htmlLabels: false, flowchart: { htmlLabels: false }, sequence: { htmlLabels: false }, gantt: { htmlLabels: false } });
+        }
+        updateMermaidTheme();
     </script>
     <script src="config.js"></script>
 </head>
@@ -1411,6 +1415,7 @@
             _floatingHeaders = [];
             updateFloatingButtons();
             updateOpenEditorStyles();
+            updateMermaidTheme();
         }
         function changeHighlight() {
             var theme = document.getElementById('highlightSelect').value;
@@ -5033,6 +5038,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 popup.remove();
                 var code = codeEl ? codeEl.textContent : '';
                 if (!code) return;
+                updateMermaidTheme();
                 mermaid.parse(code).then(function() {
                     return mermaid.render('mermaid_' + Date.now(), code);
                 }).then(function(result) {
@@ -5048,6 +5054,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 popup.remove();
                 var code = codeEl ? codeEl.textContent : '';
                 if (!code) return;
+                updateMermaidTheme();
                 mermaid.parse(code).then(function() {
                     return mermaid.render('mermaid_' + Date.now(), code);
                 }).then(function(result) {
@@ -5244,6 +5251,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
             var codeEl = block.querySelector('.mermaid-source code');
             if (!codeEl) return;
+            updateMermaidTheme();
             mermaid.parse(codeEl.textContent).then(function() {
                 return mermaid.render('mermaid_fs_' + Date.now(), codeEl.textContent);
             }).then(function(result) {
@@ -5299,7 +5307,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 diagramBtn.classList.add('selected');
                 codeBtn.classList.remove('selected');
                 if (chart.innerHTML === '') {
-                    // Сначала проверяем синтаксис
+                    updateMermaidTheme();
                     mermaid.parse(code).then(function() {
                         return mermaid.render('mermaid_' + Date.now(), code);
                     }).then(function(result) {
