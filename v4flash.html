@@ -12,8 +12,10 @@
         body.light .hljs, body.light .message-content pre code.hljs { background: #f8f8f8; }
     </style>
     <style>
-        .mermaid-chart svg { display: block; width: 100%; height: auto; margin-bottom: 20px; }
-        .mermaid-fullscreen-container svg { display: block; width: 100%; height: auto; margin-bottom: 20px; }
+        .mermaid-chart svg { display: block; margin-bottom: 20px; }
+        .mermaid-chart { display: flex; justify-content: center; align-items: flex-start; background: #ffffff; border-radius: 8px; padding: 10px; overflow-x: auto; }
+        .mermaid-chart svg { width: 100%; height: auto; max-width: 100%; }
+        .mermaid-fullscreen-container svg { display: block; margin-bottom: 20px; width: 100%; height: auto; max-width: 100%; }
         .mermaid-fullscreen-container { display: inline-block; background: #ffffff; border-radius: 8px; padding: 16px; }
         .mermaid-fullscreen-overlay svg { max-width: 90vw; max-height: 90vh; width: auto; height: auto; }        
         .mermaid-segmented {
@@ -588,7 +590,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
     <script>
-        mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose', htmlLabels: false, flowchart: { htmlLabels: false }, sequence: { htmlLabels: false }, gantt: { htmlLabels: false } });
+        mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose', htmlLabels: false, flowchart: { htmlLabels: false, useMaxWidth: true }, sequence: { htmlLabels: false, useMaxWidth: true }, gantt: { htmlLabels: false, useMaxWidth: true }, useMaxWidth: true });
     </script>
     <script src="config.js"></script>
 </head>
@@ -5295,6 +5297,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }).then(function(result) {
                         chart.innerHTML = result.svg;
                         fixMermaidSvgOverflow(chart);
+                        var svgEl = chart.querySelector('svg');
+                        if (svgEl) { svgEl.style.width = '100%'; svgEl.style.height = 'auto'; }
                         chart.style.display = 'block';
                         pre.style.display = 'none';
                     }).catch(function(err) {
