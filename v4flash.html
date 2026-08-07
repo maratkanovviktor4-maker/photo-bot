@@ -1404,6 +1404,9 @@
             updateFloatingButtons();
             updateOpenEditorStyles();
             updateMermaidTheme();
+            document.querySelectorAll('.mermaid-block').forEach(function(block) {
+                if (block._showDiagram) block._showDiagram();
+            });                        
         }
         function changeHighlight() {
             var theme = document.getElementById('highlightSelect').value;
@@ -5294,6 +5297,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var codeBtn = seg.querySelector('.mermaid-seg-code');
 
             function showDiagram() {
+                block._showDiagram = showDiagram;            
                 diagramBtn.classList.add('selected');
                 codeBtn.classList.remove('selected');
                 if (chart.innerHTML === '') {
