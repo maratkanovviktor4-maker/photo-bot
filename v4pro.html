@@ -5051,7 +5051,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 mermaid.parse(code).then(function() {
                     return mermaid.render('mermaid_' + Date.now(), code);
                 }).then(function(result) {
+                    var isLight = document.body.classList.contains('light');
+                    var bgColor = isLight ? '#ffffff' : '#151517';
                     var svgStr = result.svg;
+                    svgStr = svgStr.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"');
+                    svgStr = svgStr.replace('<svg', '<svg><rect width="100%" height="100%" fill="' + bgColor + '"/>');
                     downloadBlob('<?xml version="1.0" encoding="UTF-8"?>\n' + svgStr, 'diagram.svg', 'image/svg+xml');
                 }).catch(function(e) {
                     console.error(e);
@@ -5086,7 +5090,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         canvas.width = width;
                         canvas.height = height;
                         var ctx = canvas.getContext('2d');
-                        ctx.fillStyle = '#ffffff';
+                        var isLight = document.body.classList.contains('light');
+                        ctx.fillStyle = isLight ? '#ffffff' : '#151517';
                         ctx.fillRect(0, 0, width, height);
                         ctx.drawImage(img, 0, 0, width, height);
                         var dataUrl = canvas.toDataURL('image/png');
@@ -5174,7 +5179,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
 
                 var container = document.createElement('div');
-                container.style.cssText = 'max-width:90%;max-height:90%;overflow:auto;text-align:center;transform-origin:center;transition:transform 0.1s ease;cursor:grab;user-select:none;background:#ffffff;padding:16px;border-radius:8px;';
+                var isLight = document.body.classList.contains('light');
+                container.style.cssText = 'max-width:90%;max-height:90%;overflow:auto;text-align:center;transform-origin:center;transition:transform 0.1s ease;cursor:grab;user-select:none;background:' + (isLight ? '#ffffff' : '#151517') + ';padding:16px;border-radius:8px;';
                 container.appendChild(svgEl.cloneNode(true));
 
                 var closeBtn = document.createElement('button');
