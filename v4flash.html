@@ -2480,6 +2480,18 @@
             msgDiv.insertBefore(wrapper, actionsDiv);
             textarea.style.height = 'auto';
             textarea.style.height = Math.min(textarea.scrollHeight, 300) + 'px';                       
+            // Прокручиваем к редактору
+            var main = document.querySelector('.main');
+            if (main) {
+                var topBar = document.querySelector('.top-bar');
+                var offset = topBar ? topBar.offsetHeight + 10 : 10;
+                var targetTop = wrapper.parentElement.getBoundingClientRect().top;
+                var mainTop = main.getBoundingClientRect().top;
+                var prevBehavior = main.style.scrollBehavior;
+                main.style.scrollBehavior = 'auto';
+                main.scrollTop = targetTop - mainTop + main.scrollTop - offset;
+                main.style.scrollBehavior = prevBehavior;
+            }
             setTimeout(function() { textarea.focus(); }, 50);
         }
 
