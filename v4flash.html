@@ -5232,21 +5232,24 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     container.style.cursor = 'grabbing';
                 });
 
-                document.addEventListener('mousemove', function onMove(e) {
+                var moveHandler = function(e) {
                     if (!dragging) return;
                     tx = e.clientX - startX;
                     ty = e.clientY - startY;
                     applyTransform();
-                });
+                };
 
-                document.addEventListener('mouseup', function onUp() {
+                var upHandler = function() {
                     if (dragging) {
                         dragging = false;
                         container.style.cursor = 'grab';
                     }
-                    document.removeEventListener('mousemove', onMove);
-                    document.removeEventListener('mouseup', onUp);
-                });
+                    document.removeEventListener('mousemove', moveHandler);
+                    document.removeEventListener('mouseup', upHandler);
+                };
+
+                document.addEventListener('mousemove', moveHandler);
+                document.addEventListener('mouseup', upHandler);
             }
 
             if (svg) {
