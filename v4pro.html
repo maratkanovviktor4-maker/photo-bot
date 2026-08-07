@@ -6578,13 +6578,16 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (block.classList.contains('collapsed') && !wasCollapsed && isSticky) {
                 var msgEl = block.closest('[data-msg-index]');
                 if (msgEl) {
-                    var targetEl = header;
+                    var targetEl = block;
                     var main = document.querySelector('.main');
                     var topBar = document.querySelector('.top-bar');
                     var offset = topBar ? topBar.offsetHeight : 0;
                     var targetRect = targetEl.getBoundingClientRect();
                     var mainRect = main.getBoundingClientRect();
+                    var prevBehavior = main.style.scrollBehavior;
+                    main.style.scrollBehavior = 'auto';
                     main.scrollTop = targetRect.top - mainRect.top + main.scrollTop - offset;
+                    main.style.scrollBehavior = prevBehavior;
                 }
             }
 
