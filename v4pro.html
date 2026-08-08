@@ -4841,9 +4841,23 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 } else {
                     var text2 = escapeHtml(part.content);
+                    // Временно заменяем LaTeX-блоки на плейсхолдеры, чтобы цитаты не ломали формулы
+                    var latexBlocks = [];
+                    text2 = text2.replace(/\$\$([\s\S]*?)\$\$/g, function(match, inner) {
+                        latexBlocks.push(match);
+                        return '%%LATEX_' + (latexBlocks.length - 1) + '%%';
+                    });
+                    text2 = text2.replace(/\$([^$]+)\$/g, function(match, inner) {
+                        latexBlocks.push(match);
+                        return '%%LATEX_' + (latexBlocks.length - 1) + '%%';
+                    });
                     for (var r = 0; r < _inlineRules.length; r++) {
                         text2 = text2.replace(_inlineRules[r][0], _inlineRules[r][1]);
                     }
+                    // Возвращаем LaTeX-блоки обратно
+                    text2 = text2.replace(/%%LATEX_(\d+)%%/g, function(match, idx) {
+                        return latexBlocks[parseInt(idx)];
+                    });
                     result += text2;
                 }
             }
