@@ -4841,9 +4841,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         latexBlocks.push(match);
                         return '%%LATEX_' + (latexBlocks.length - 1) + '%%';
                     });
-                    // Временно заменяем HTML-блоки на плейсхолдеры
+                    // Временно заменяем HTML-блоки (после escapeHtml они становятся &lt;...&gt;)
                     var htmlTags = [];
-                    text2 = text2.replace(/<[^>]+>/g, function(match) {
+                    text2 = text2.replace(/&lt;[^&]*&gt;/g, function(match) {
                         htmlTags.push(match);
                         return '%%HTML_' + (htmlTags.length - 1) + '%%';
                     });
