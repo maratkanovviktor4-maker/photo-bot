@@ -4851,9 +4851,19 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         latexBlocks.push(match);
                         return '%%LATEX_' + (latexBlocks.length - 1) + '%%';
                     });
+                    // Временно заменяем HTML-блоки (после escapeHtml они становятся &lt;...&gt;)
+                    var htmlTags = [];
+                    text2 = text2.replace(/&lt;[^&]*&gt;/g, function(match) {
+                        htmlTags.push(match);
+                        return '%%HTML_' + (htmlTags.length - 1) + '%%';
+                    });
                     for (var r = 0; r < _inlineRules.length; r++) {
                         text2 = text2.replace(_inlineRules[r][0], _inlineRules[r][1]);
                     }
+                    // Возвращаем HTML-блоки обратно
+                    text2 = text2.replace(/%%HTML_(\d+)%%/g, function(match, idx) {
+                        return htmlTags[parseInt(idx)];
+                    });
                     // Возвращаем LaTeX-блоки обратно
                     text2 = text2.replace(/%%LATEX_(\d+)%%/g, function(match, idx) {
                         return latexBlocks[parseInt(idx)];
