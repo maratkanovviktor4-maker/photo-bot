@@ -2865,7 +2865,16 @@
             selectionMode = !selectionMode;
             selectedMsgIndices = {};
             if (selectionMode) {
+                var chatArea = document.getElementById('chatArea');
+                chatArea.style.position = 'relative';
                 var rows = document.querySelectorAll('.message-row[data-msg-index]');
+                rows.forEach(function(row) {
+                    var index = row.getAttribute('data-msg-index');
+                    var checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'selection-checkbox';
+                    checkbox.dataset.index = index;
+                    checkbox.style.cssText = 'position:absolute;left:-35px;top:' + (row.offsetTop + row.offsetHeight / 2 - 9) + 'px;width:18px;height:18px;cursor:pointer;accent-color:#                var rows = document.querySelectorAll('.message-row[data-msg-index]');
                 rows.forEach(function(row) {
                     var index = row.getAttribute('data-msg-index');
                     var checkbox = document.createElement('input');
@@ -2885,6 +2894,18 @@
                     row.style.position = 'relative';
                     row.style.paddingLeft = '30px';
                     row.appendChild(checkbox);
+                });;';
+                    checkbox.addEventListener('change', function() {
+                        var idx = parseInt(this.dataset.index);
+                        if (this.checked) {
+                            selectedMsgIndices[idx] = true;
+                        } else {
+                            delete selectedMsgIndices[idx];
+                        }
+                        updateDeleteSelectedBtn();
+                    });
+                    row.style.paddingLeft = '30px';
+                    chatArea.appendChild(checkbox);
                 });
                 var topBar = document.querySelector('.top-bar');
                 topBar.classList.remove('collapsed');
