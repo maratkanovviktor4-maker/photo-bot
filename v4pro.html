@@ -2860,6 +2860,7 @@
         }
         var selectionMode = false;
         var selectedMsgIndices = {};
+        var lastSelectionIndex = null;
 
         function toggleSelectionMode() {
             selectionMode = !selectionMode;
@@ -2875,12 +2876,34 @@
                     checkbox.className = 'selection-checkbox';
                     checkbox.dataset.index = index;
                     checkbox.style.cssText = 'position:absolute;left:-35px;top:' + (row.offsetTop + row.offsetHeight / 2 - 9) + 'px;width:18px;height:18px;cursor:pointer;accent-color:#F59E0B;';
-                    checkbox.addEventListener('change', function() {
+                    checkbox.addEventListener('click', function(e) {
                         var idx = parseInt(this.dataset.index);
-                        if (this.checked) {
-                            selectedMsgIndices[idx] = true;
+                        if (e.shiftKey && lastSelectionIndex !== null) {
+                            var checkboxEls = Array.prototype.slice.call(document.querySelectorAll('.selection-checkbox'));
+                            var lastPos = -1, currPos = -1;
+                            for (var i = 0; i < checkboxEls.length; i++) {
+                                var ci = parseInt(checkboxEls[i].dataset.index);
+                                if (ci === lastSelectionIndex) lastPos = i;
+                                if (ci === idx) currPos = i;
+                            }
+                            if (lastPos !== -1 && currPos !== -1) {
+                                var start = Math.min(lastPos, currPos);
+                                var end = Math.max(lastPos, currPos);
+                                for (var j = start; j <= end; j++) {
+                                    var cb = checkboxEls[j];
+                                    cb.checked = true;
+                                    selectedMsgIndices[parseInt(cb.dataset.index)] = true;
+                                }
+                            }
+                            lastSelectionIndex = idx;
                         } else {
-                            delete selectedMsgIndices[idx];
+                            if (this.checked) {
+                                selectedMsgIndices[idx] = true;
+                                lastSelectionIndex = idx;
+                            } else {
+                                delete selectedMsgIndices[idx];
+                                if (lastSelectionIndex === idx) lastSelectionIndex = null;
+                            }
                         }
                         updateDeleteSelectedBtn();
                     });
@@ -2922,6 +2945,7 @@
                 document.querySelectorAll('.message-row[data-msg-index]').forEach(function(row) {
                     row.style.position = '';
                     row.style.paddingLeft = '';
+                    lastSelectionIndex = null;                    
                 });
                 requestAnimationFrame(function() {
                     var startTime = performance.now();
