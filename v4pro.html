@@ -6701,16 +6701,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             setTimeout(function() { updateFloatingButtons(); }, 50);
         });
         window.addEventListener('resize', function() {
-            clearTimeout(window._resizeTimer);
-            window._resizeTimer = setTimeout(function() {
-                var isPreview = document.getElementById('previewPanel') && document.getElementById('previewPanel').classList.contains('active');
-                var isDevTools = window.outerWidth - window.innerWidth > 100;
-                if (isPreview || isDevTools) {
-                    document.getElementById('navContainer').style.display = 'none';
-                } else {
-                    document.getElementById('navContainer').style.display = '';
-                }
-            }, 200);
+            var isPreview = document.getElementById('previewPanel') && document.getElementById('previewPanel').classList.contains('active');
+            document.getElementById('navContainer').style.display = isPreview ? 'none' : '';
         });        
     </script>
     <div id="selfPlayModal" class="modal-overlay">
