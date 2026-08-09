@@ -4793,7 +4793,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 } else { parts.push({type: 'text', content: remaining}); }
             }
             var _inlineRules = [
-                [/`([^`]+)`/g, '<code>$1</code>'],
+                [/`([^`]+)`/g, function(match, content) {
+                    if (!content.trim()) return match;
+                    return '<code>' + content + '</code>';
+                }],
                 [/\*\*(.+?)\*\*/g, '<strong>$1</strong>'],
                 [/\*(.+?)\*/g, '<em>$1</em>'],
                 [/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>'],
