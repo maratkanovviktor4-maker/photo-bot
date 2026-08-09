@@ -5860,6 +5860,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 main.addEventListener('transitionend', function() { cancelAnimationFrame(rafId); updateFloatingButtons(); }, { once: true });
             }
             iframe.srcdoc = code;
+            document.getElementById('navContainer').style.display = 'none';
         }
 
         function closePreview() {
@@ -5875,6 +5876,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 rafId = requestAnimationFrame(tick);
                 main.addEventListener('transitionend', function() { cancelAnimationFrame(rafId); updateFloatingButtons(); }, { once: true });
             }
+            document.getElementById('navContainer').style.display = '';
         }
 
         window.addEventListener('load', function() { 
@@ -6698,6 +6700,18 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
             setTimeout(function() { updateFloatingButtons(); }, 50);
         });
+        window.addEventListener('resize', function() {
+            clearTimeout(window._resizeTimer);
+            window._resizeTimer = setTimeout(function() {
+                var isPreview = document.getElementById('previewPanel') && document.getElementById('previewPanel').classList.contains('active');
+                var isDevTools = window.outerWidth - window.innerWidth > 100;
+                if (isPreview || isDevTools) {
+                    document.getElementById('navContainer').style.display = 'none';
+                } else {
+                    document.getElementById('navContainer').style.display = '';
+                }
+            }, 200);
+        });        
     </script>
     <div id="selfPlayModal" class="modal-overlay">
         <div class="modal-box" style="max-width:600px;">
