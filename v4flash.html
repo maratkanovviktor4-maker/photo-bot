@@ -6689,6 +6689,16 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
             setTimeout(function() { updateFloatingButtons(); }, 50);
         });
+        var _prevWindowWidth = window.innerWidth;
+        window.addEventListener('resize', function() {
+            var diff = Math.abs(window.innerWidth - _prevWindowWidth);
+            if (diff > 40) {
+                document.getElementById('navContainer').style.display = 'none';
+            } else {
+                document.getElementById('navContainer').style.display = '';
+            }
+            _prevWindowWidth = window.innerWidth;
+        });        
     </script>
     <div id="selfPlayModal" class="modal-overlay">
         <div class="modal-box" style="max-width:600px;">
