@@ -3624,25 +3624,7 @@
             if (!pendingFile) { if (inline) inline.innerHTML = ''; updateSendBtn(); return; }
             var ext = pendingFile.name.split('.').pop().toLowerCase();
             var mimeOk = pendingFile.mime && (pendingFile.mime.startsWith('image/') || pendingFile.mime.startsWith('text/') || pendingFile.mime === 'application/pdf' || pendingFile.mime.includes('zip') || pendingFile.mime.includes('word') || pendingFile.mime.includes('excel') || pendingFile.mime.includes('powerpoint'));
-            var isSvg = file.type === 'image/svg+xml' || ext === 'svg';
-            var fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk || isSvg;
-            if (isSvg) {
-                fileOk = true;
-                var reader = new FileReader();
-                reader.onload = function(ev) {
-                    var base64 = ev.target.result.split(',')[1];
-                    try {
-                        var text = atob(base64);
-                        pendingFile = { name: file.name, mime: 'image/svg+xml', data: base64, textContent: text };
-                        updateFileList();
-                    } catch(e) {
-                        pendingFile = null;
-                    }
-                };
-                reader.readAsDataURL(file);
-                document.getElementById('fileInput').value = '';
-                return;
-            }
+            var fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
             var icon = fileOk ? '📎' : '⚠️';
             var color = fileOk ? '#00CBF5' : '#e74c3c';
             var sizeInfo = '';
@@ -3959,7 +3941,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         setupPaste();
         var input = document.getElementById('userInput');
         var btn = document.getElementById('sendBtn');
-        var SUPPORTED_EXTENSIONS = { txt:1, json:1, csv:1, xml:1, html:1, htm:1, md:1, py:1, js:1, java:1, kt:1, cpp:1, c:1, h:1, css:1, gradle:1, properties:1, pro:1, yml:1, yaml:1, log:1, cfg:1, ini:1, conf:1, pdf:1, docx:1, xlsx:1, pptx:1, zip:1, jpg:1, jpeg:1, png:1, gif:1, webp:1, bmp:1, svg:1 };
+        var SUPPORTED_EXTENSIONS = { txt:1, json:1, csv:1, xml:1, html:1, htm:1, md:1, py:1, js:1, java:1, kt:1, cpp:1, c:1, h:1, css:1, gradle:1, properties:1, pro:1, yml:1, yaml:1, log:1, cfg:1, ini:1, conf:1, pdf:1, docx:1, xlsx:1, pptx:1, zip:1, jpg:1, jpeg:1, png:1, gif:1, webp:1, bmp:1 };
         function updateSendBtn() {
             var hasText = input.value.trim().length > 0;
             var hasFile = pendingFile !== null;
