@@ -1373,6 +1373,8 @@
             if (newPrompt) {
                 saveCustomPersonality();
                 updatePersonalityPrompt('custom');
+                var btn = document.getElementById('personalityBtn');
+                if (btn) btn.innerHTML = (ICON_MAP['custom'] || '🎭') + ' Агент';
                 document.getElementById('customPersonalityModal').classList.remove('active');
                 document.getElementById('editCustomBtn').style.display = 'inline-flex';
             }
@@ -1380,15 +1382,6 @@
         function changePersonality() {
             var val = document.getElementById('personalitySelect').value;
             if (val === 'custom') {
-                currentPersonality = 'custom';
-                localStorage.setItem('photobot_personality', 'custom');
-                document.getElementById('personalitySelect').value = 'custom';
-                document.getElementById('editCustomBtn').style.display = 'inline-flex';
-                updatePersonalityPrompt('custom');
-                var currentChat = chats.find(function(c) { return c.id === currentChatId; });
-                if (currentChat) {
-                    currentChat._personality = 'custom';
-                }
                 const personalityBtnC = document.getElementById('personalityBtn');
                 if (personalityBtnC) {
                     personalityBtnC.innerHTML = ICON_MAP.custom + ' Агент';
@@ -1411,8 +1404,10 @@
                 const p = personalities[val];
                 if (val === 'custom') {
                     personalityBtn.innerHTML = ICON_MAP.custom + ' Агент';
+
                 } else if (p) {
                     personalityBtn.innerHTML = ICON_MAP[p.icon] + ' ' + p.name;
+
                 }
             }
 
