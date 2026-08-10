@@ -3743,7 +3743,43 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             reader.readAsDataURL(file);
             document.getElementById('fileInput').value = '';
         }
-
+        function openPaymentModal() {
+            document.getElementById('paymentModal').classList.add('active');
+        }
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+        }
+        var selectedPaymentAmount = null;
+        document.querySelectorAll('.payment-amount-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                selectedPaymentAmount = parseInt(this.dataset.amount);
+                document.getElementById('paymentCustomAmount').value = '';
+                document.querySelectorAll('.payment-amount-btn').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+        document.getElementById('paymentCustomAmount').addEventListener('input', function() {
+            if (this.value) {
+                selectedPaymentAmount = parseInt(this.value);
+                document.querySelectorAll('.payment-amount-btn').forEach(b => b.classList.remove('selected'));
+            }
+        });
+        async function startPayment() {
+            if (!selectedPaymentAmount || selectedPaymentAmount <= 0) { alert('Выберите сумму'); return; }
+            var resp = await fetch(SERVER_URL + '/create_payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-API-Token': '' },
+                var paymentDescription = (document.title.indexOf('Pro') !== -1) ? 'V4 Pro' : 'V4 Flash';
+                body: JSON.stringify({ user_id: currentUserId, amount_rub: selectedPaymentAmount, description: paymentDescription })
+            });
+            var data = await resp.json();
+            if (data.success) {
+                window.open(data.payment_url, '_blank');
+                closePaymentModal();
+            } else {
+                alert(data.error || 'Ошибка');
+            }
+        }
 
 
         function setupDragDrop() {
@@ -6707,43 +6743,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             document.getElementById('navContainer').style.display = isPreview ? 'none' : '';
         });
 
-        function openPaymentModal() {
-            document.getElementById('paymentModal').classList.add('active');
-        }
-        function closePaymentModal() {
-            document.getElementById('paymentModal').classList.remove('active');
-        }
-        var selectedPaymentAmount = null;
-        document.querySelectorAll('.payment-amount-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                selectedPaymentAmount = parseInt(this.dataset.amount);
-                document.getElementById('paymentCustomAmount').value = '';
-                document.querySelectorAll('.payment-amount-btn').forEach(b => b.classList.remove('selected'));
-                this.classList.add('selected');
-            });
-        });
-        document.getElementById('paymentCustomAmount').addEventListener('input', function() {
-            if (this.value) {
-                selectedPaymentAmount = parseInt(this.value);
-                document.querySelectorAll('.payment-amount-btn').forEach(b => b.classList.remove('selected'));
-            }
-        });
-        async function startPayment() {
-            if (!selectedPaymentAmount || selectedPaymentAmount <= 0) { alert('Выберите сумму'); return; }
-            var resp = await fetch(SERVER_URL + '/create_payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-API-Token': '' },
-                var paymentDescription = (document.title.indexOf('Pro') !== -1) ? 'V4 Pro' : 'V4 Flash';
-                body: JSON.stringify({ user_id: currentUserId, amount_rub: selectedPaymentAmount, description: paymentDescription })
-            });
-            var data = await resp.json();
-            if (data.success) {
-                window.open(data.payment_url, '_blank');
-                closePaymentModal();
-            } else {
-                alert(data.error || 'Ошибка');
-            }
-        }
+
 
     </script>
     <div id="selfPlayModal" class="modal-overlay">
