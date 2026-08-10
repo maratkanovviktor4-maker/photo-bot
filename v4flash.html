@@ -1073,6 +1073,18 @@
         let currentChatId = null;
         let currentBranchId = 'main';
         let sessionToken = '';
+        var urlParams = new URLSearchParams(window.location.search);
+        var shareToken = urlParams.get('token');
+        if (shareToken) {
+            fetch(SERVER_URL + '/import_shared_chat?token=' + shareToken + '&session_token=' + sessionToken)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        loadChatsFromServer();
+                        openChat(data.chat_id);
+                    }
+                });
+        }        
         let currentUserId = null;
         let isSending = false;
         let currentMode = localStorage.getItem('photobot_mode') || 'chat';
