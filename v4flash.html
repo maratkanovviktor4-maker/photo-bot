@@ -6711,20 +6711,22 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var isPreview = document.getElementById('previewPanel') && document.getElementById('previewPanel').classList.contains('active');
             document.getElementById('navContainer').style.display = isPreview ? 'none' : '';
         });
-        var selectedPaymentAmount = null;
-        document.querySelectorAll('.payment-amount-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                selectedPaymentAmount = parseInt(this.dataset.amount);
-                document.getElementById('paymentCustomAmount').value = '';
-                document.querySelectorAll('.payment-amount-btn').forEach(b => b.classList.remove('selected'));
-                this.classList.add('selected');
+        document.addEventListener('DOMContentLoaded', function() {
+            var selectedPaymentAmount = null;
+            document.querySelectorAll('.payment-amount-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    selectedPaymentAmount = parseInt(this.dataset.amount);
+                    document.getElementById('paymentCustomAmount').value = '';
+                    document.querySelectorAll('.payment-amount-btn').forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
             });
-        });
-        document.getElementById('paymentCustomAmount').addEventListener('input', function() {
-            if (this.value) {
-                selectedPaymentAmount = parseInt(this.value);
-                document.querySelectorAll('.payment-amount-btn').forEach(b => b.classList.remove('selected'));
-            }
+            document.getElementById('paymentCustomAmount').addEventListener('input', function() {
+                if (this.value) {
+                    selectedPaymentAmount = parseInt(this.value);
+                    document.querySelectorAll('.payment-amount-btn').forEach(b => b.classList.remove('selected'));
+                }
+            });
         });
         async function startPayment() {
             if (!selectedPaymentAmount || selectedPaymentAmount <= 0) { alert('Выберите сумму'); return; }
