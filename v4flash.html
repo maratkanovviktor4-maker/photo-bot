@@ -1553,8 +1553,9 @@
                     .then(r => r.json())
                     .then(data => {
                         if (data.success) {
-                            loadChatsFromServer();
-                            openChat(data.chat_id);
+                            loadChatsFromServer().then(function() {
+                                openChat(data.chat_id);
+                            });
                         }
                     });
             }            
