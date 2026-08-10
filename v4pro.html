@@ -977,6 +977,12 @@
             var btn = document.getElementById('topBarToggle');
             btn.innerHTML = bar.classList.contains('collapsed') ? '›' : '‹';
         }
+        function openPaymentModal() {
+            document.getElementById('paymentModal').classList.add('active');
+        }
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+        }        
         function changeVoice() {
             const val = document.getElementById('voiceSelect').value;
             localStorage.setItem('photobot_voice', val);
@@ -1692,7 +1698,8 @@
                 if (resp.ok) {
                     const data = await resp.json();
                     document.getElementById('balanceDisplay').innerHTML = `${data.pro.toFixed(1)} <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-bottom:2px;"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>`;
-
+                    document.getElementById('balanceDisplay').onclick = openPaymentModal;
+                    document.getElementById('balanceDisplay').style.cursor = 'pointer';
                 }
             } catch(e) { console.error(e); }
         }
@@ -6713,7 +6720,42 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         window.addEventListener('resize', function() {
             var isPreview = document.getElementById('previewPanel') && document.getElementById('previewPanel').classList.contains('active');
             document.getElementById('navContainer').style.display = isPreview ? 'none' : '';
-        });        
+        });
+        
+        var selectedPaymentAmount = null;
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.payment-amount-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    selectedPaymentAmount = parseInt(this.dataset.amount);
+                    document.getElementById('paymentCustomAmount').value = '';
+                    document.querySelectorAll('.payment-amount-btn').forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+            document.getElementById('paymentCustomAmount').addEventListener('input', function() {
+                if (this.value) {
+                    selectedPaymentAmount = parseInt(this.value);
+                    document.querySelectorAll('.payment-amount-btn').forEach(b => b.classList.remove('selected'));
+                }
+            });
+        });
+        async function startPayment() {
+            if (!selectedPaymentAmount || selectedPaymentAmount <= 0) { alert('Выберите сумму'); return; }
+            var paymentDescription = (document.title.indexOf('Pro') !== -1) ? 'V4 Pro' : 'V4 Flash';
+            var resp = await fetch(SERVER_URL + '/create_payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                body: JSON.stringify({ user_id: currentUserId, amount_rub: selectedPaymentAmount, description: paymentDescription })
+            });
+            var data = await resp.json();
+            if (data.success) {
+                window.open(data.payment_url, '_blank');
+                closePaymentModal();
+            } else {
+                alert(data.error || 'Ошибка');
+            }
+        }
+
     </script>
     <div id="selfPlayModal" class="modal-overlay">
         <div class="modal-box" style="max-width:600px;">
@@ -6741,6 +6783,24 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             <div class="modal-actions" style="gap:12px;">
                 <button class="modal-btn-secondary" onclick="closeSelfPlayModal()" style="flex:1;padding:12px;">Отмена</button>
                 <button id="selfPlayConfirmBtn" class="modal-btn-primary" onclick="confirmSelfPlay()" style="flex:1;padding:12px;" disabled>Запустить</button>
+            </div>
+        </div>
+    </div>
+    <div id="paymentModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;">💰</div>
+            <div class="modal-title">Пополнение баланса</div>
+            <div class="modal-message">Выберите сумму для пополнения</div>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;">
+                <button class="payment-amount-btn" data-amount="300">300 ₽</button>
+                <button class="payment-amount-btn" data-amount="400">400 ₽</button>
+                <button class="payment-amount-btn" data-amount="500">500 ₽</button>
+                <button class="payment-amount-btn" data-amount="1000">1000 ₽</button>
+            </div>
+            <input type="number" id="paymentCustomAmount" placeholder="Своя сумма (₽)" style="width:100%;padding:10px;margin-bottom:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(34,34,34,0.6);color:#fff;font-size:14px;font-family:'Inter',sans-serif;">
+            <div class="modal-actions">
+                <button class="modal-btn-secondary" onclick="closePaymentModal()">Отмена</button>
+                <button class="modal-btn-primary" onclick="startPayment()">Оплатить</button>
             </div>
         </div>
     </div>
