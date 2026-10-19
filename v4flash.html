@@ -4642,7 +4642,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 if (!contentType.includes('text/event-stream')) {
                     const err = await resp.json().catch(() => ({}));
                     let errorMessage = err.error || 'Неизвестная ошибка сервера.';
-                    if (err.error_type === 'bad_request') {
+                    if (err.error_type === 'context_too_long') {
+                        errorMessage = 'Контекст переполнен. Начните новый чат или удалите старые сообщения.';
+                    } else if (err.error_type === 'bad_request') {
                         errorMessage = 'Неверный формат запроса, попробуйте другой файл.';
                     } else if (err.error_type === 'rate_limited') {
                         errorMessage = 'Слишком много запросов. Причина: Вы отправляете запросы слишком быстро.';
