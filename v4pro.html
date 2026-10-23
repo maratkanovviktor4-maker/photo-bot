@@ -2554,7 +2554,7 @@
                 var resp = await fetch(SERVER_URL + '/create_branch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: currentMode, chat_id: currentChatId, source_msg_id: msg.msg_id, branch_name: '', prompt: msg.role === 'user' ? (msg.content || '') : '' })
+                    body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: currentMode, chat_id: currentChatId, source_msg_id: msg.msg_id, branch_name: '', prompt: msg.role === 'user' ? (msg.content || '') : '', web_search: webSearchEnabled })
                 });
 
                 if (!resp.ok) {
@@ -2765,7 +2765,7 @@
                     var resp = await fetch(SERVER_URL + '/regenerate_user', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                        body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText }),
+                        body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText, web_search: webSearchEnabled }),
                         signal: abortController.signal
                     });
                     if (!resp.ok) {
@@ -3199,7 +3199,7 @@
                 var resp = await fetch(SERVER_URL + '/regenerate_assistant', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, style: style }),
+                    body: JSON.stringify({ user_id: currentUserId, model: 'pro', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, style: style, web_search: webSearchEnabled }),
                     signal: abortController.signal
                 });
                 if (!resp.ok) {
