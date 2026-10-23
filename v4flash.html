@@ -3153,7 +3153,6 @@
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
             chat.messages.push(assistantMsg);
             var newMsgIndex = chat.messages.length - 1;
-            assistantMsg._msgIndex = newMsgIndex;
             var streamId = 'regen_stream_' + newMsgIndex;
             activeStreamId = streamId;
             renderMessages();
@@ -3261,18 +3260,9 @@
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
-                var _savedSourcesR = assistantMsg._sources;
                 await updateBranchesFromServer();
                 if (chat.allBranches && chat.allBranches[currentBranchId]) {
                     chat.messages = chat.allBranches[currentBranchId].messages || [];
-                }
-                if (_savedSourcesR && _savedSourcesR.length) {
-                    for (var _siR = chat.messages.length - 1; _siR >= 0; _siR--) {
-                        if (chat.messages[_siR] && chat.messages[_siR].role === 'assistant') {
-                            chat.messages[_siR]._sources = _savedSourcesR;
-                            break;
-                        }
-                    }
                 }
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
@@ -3662,7 +3652,7 @@
                 }
                 sourcesHtml = '<div class="message-sources" onclick="openSourcesPanel(' + index + ')" style="margin-top:8px;cursor:pointer;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:4px;">🔗 Источники (' + msg._sources.length + ') — нажмите, чтобы открыть панель</div>' + sItems + '</div>';
             }
-            return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + sourcesHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
+            return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div>' + sourcesHtml + '<div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
         }
         async function deleteMessage(index) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
@@ -5039,18 +5029,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     });
                 }
                 contentDiv.innerHTML = contentHtml;
-                if (msg._sources && msg._sources.length) {
-                    var _sHtml = '<div class="message-sources" onclick="openSourcesPanel(' + (msg._msgIndex !== undefined ? msg._msgIndex : 0) + ')" style="margin-top:8px;cursor:pointer;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:4px;">🔗 Источники (' + msg._sources.length + ') — нажмите, чтобы открыть панель</div>';
-                    for (var _si2 = 0; _si2 < msg._sources.length; _si2++) {
-                        var _s2 = msg._sources[_si2];
-                        var _dom2 = (_s2.url || '').replace(/^https?:\/\//, '').split('/')[0];
-                        var _ic2 = _s2.site_icon ? '<img src="' + escapeHtml(_s2.site_icon) + '" style="width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:4px;" onerror="this.style.display=\'none\'">' : '';
-                        _sHtml += '<a href="' + escapeHtml(_s2.url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;gap:4px;color:#00CBF5;text-decoration:none;font-size:12px;padding:3px 8px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.2);border-radius:10px;margin:2px 4px 2px 0;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;">' + _ic2 + '[' + _s2.n + '] ' + escapeHtml(_s2.title || _dom2) + '</a>';
-                    }
-                    _sHtml += '</div>';
-                    contentDiv.insertAdjacentHTML('beforeend', _sHtml);
-                }
-                renderMathInChat(contentDiv);              
+                renderMathInChat(contentDiv);                
                 var reasoningBlock = el.querySelector('.reasoning-block');
                 if (reasoningBlock && contentHtml.trim()) {
                     reasoningBlock.classList.remove('streaming');
@@ -5151,7 +5130,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
             chat.messages.push(assistantMsg);
             const msgIndex = chat.messages.length - 1;
-            assistantMsg._msgIndex = msgIndex;
             const streamId = 'stream_' + msgIndex;
             activeStreamId = streamId;
             document.getElementById('navContainer').style.display = '';
@@ -5309,7 +5287,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
                     chat.messages[chat.messages.length - 2].msg_id = finalMeta.user_msg_id;
                 }
-                var _savedSources = assistantMsg._sources;
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                 autoNameChat(chat);
@@ -5322,14 +5299,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 sendBtnArrow();
                 pendingFile = null;
                 updateFileList();
-                if (_savedSources && _savedSources.length) {
-                    for (var _si = chat.messages.length - 1; _si >= 0; _si--) {
-                        if (chat.messages[_si] && chat.messages[_si].role === 'assistant') {
-                            chat.messages[_si]._sources = _savedSources;
-                            break;
-                        }
-                    }
-                }
                 renderMessages();
                 buildNavContainer();
                 playSound('reply');
