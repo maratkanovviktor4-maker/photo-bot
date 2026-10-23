@@ -3627,7 +3627,8 @@
             var contentHtml = (msg.role === 'user') ? escapeHtml(contentToShow) : formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
                 contentHtml = contentHtml.replace(/<a href="([^"]+)" target="_blank">([^<]+)<\/a>/g, function(m, url, text) {
-                    var src = msg._sources.find(function(s) { return s.url === url; });
+                    var cleanUrl = url.replace(/&amp;/g, '&');
+                    var src = msg._sources.find(function(s) { return s.url === cleanUrl || s.url === url; });
                     if (!src) return m;
                     var snippet = escapeHtml(src.snippet || '');
                     var title = escapeHtml(src.title || text);
@@ -5030,7 +5031,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 }
                 if (msg._sources && msg._sources.length) {
                     contentHtml = contentHtml.replace(/<a href="([^"]+)" target="_blank">([^<]+)<\/a>/g, function(m, url, text) {
-                        var src = msg._sources.find(function(s) { return s.url === url; });
+                        var cleanUrl = url.replace(/&amp;/g, '&');
+                        var src = msg._sources.find(function(s) { return s.url === cleanUrl || s.url === url; });
                         if (!src) return m;
                         var snippet = escapeHtml(src.snippet || '');
                         var title = escapeHtml(src.title || text);
