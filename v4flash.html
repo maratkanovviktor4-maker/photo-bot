@@ -3651,6 +3651,10 @@
             if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
                 contentHtml = '<div class="typing-dots"><span></span><span></span><span></span></div>';
             }
+            var deployHtml = '';
+            if (msg.role === 'assistant' && !msg._streaming) {
+                deployHtml = '<div style="margin-top:8px;"><button onclick="openDeployModal(' + index + ')" style="padding:6px 14px;background:linear-gradient(90deg,#00CBF5,#14E9FC);border:2px solid transparent;color:#201F28;border-radius:16px;cursor:pointer;font-family:Inter,sans-serif;font-size:12px;font-weight:600;">Деплой</button></div>';
+            }            
             var sourcesHtml = '';
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
                 var sItems = '';
@@ -3664,7 +3668,7 @@
                 }
                 sourcesHtml = '<div class="message-sources" onclick="openSourcesPanel(' + index + ');event.preventDefault();event.stopPropagation();" style="margin-top:8px;cursor:pointer;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:4px;">🔗 Источники (' + msg._sources.length + ') — нажмите, чтобы открыть панель</div>' + sItems + '</div>';
             }
-            return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
+            return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div>' + deployHtml + '<div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
         }
         async function deleteMessage(index) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
@@ -6382,7 +6386,109 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (activeStrip) activeStrip.classList.add('active');
         }
 
+        function parseEditPairs(content) {
+            var edits = [];
+            if (!content) return edits;
+            var tpl = String.fromCharCode(96, 96, 96);
+            var oldRe = new RegExp("(?:^|\\n)\\s*(?:\\*\\*)?(Найди|Было|Удали|Старый код)(?:\\*\\*)?\\s*:?\\s*\\n\\s*" + tpl + "\\w*\\r?\\n([\\s\\S]*?)" + tpl, "gi");
+            var newRe = new RegExp("(?:^|\\n)\\s*(?:\\*\\*)?(Замени на|Стало|Вставь|Новый код)(?:\\*\\*)?\\s*:?\\s*\\n\\s*" + tpl + "\\w*\\r?\\n([\\s\\S]*?)" + tpl, "gi");
+            var olds = [];
+            var news = [];
+            var m;
+            while ((m = oldRe.exec(content)) !== null) olds.push({ code: m[2], pos: m.index });
+            while ((m = newRe.exec(content)) !== null) news.push({ code: m[2], pos: m.index });
+            for (var i = 0; i < Math.min(olds.length, news.length); i++) {
+                edits.push({
+                    old: olds[i].code.replace(/\r?\n$/, ''),
+                    new: news[i].code.replace(/\r?\n$/, '')
+                });
+            }
+            return edits;
+        }
+        var _deployMsgIndex = -1;
+        var _deployEdits = [];
+        var _deployFileContent = null;
+        var _deployFileName = '';
 
+        function openDeployModal(msgIndex) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[msgIndex];
+            if (!msg) return;
+            _deployMsgIndex = msgIndex;
+            _deployEdits = parseEditPairs(msg.content || '');
+            _deployFileContent = null;
+            _deployFileName = '';
+            if (_deployEdits.length === 0) {
+                showAlertModal('Нечего деплоить', 'В сообщении не найдено пар «Найди:» / «Замени на:».', '⚠️');
+                return;
+            }
+            document.getElementById('deployFileName').style.display = 'none';
+            document.getElementById('deployConfirmBtn').disabled = true;
+            document.getElementById('deployModal').classList.add('active');
+        }
+
+        function closeDeployModal() {
+            document.getElementById('deployModal').classList.remove('active');
+            _deployMsgIndex = -1;
+            _deployEdits = [];
+            _deployFileContent = null;
+            _deployFileName = '';
+        }
+
+        (function initDeploy() {
+            var input = document.getElementById('deployFileInput');
+            if (!input) return;
+            input.addEventListener('change', function(e) {
+                var file = e.target.files[0];
+                if (!file) return;
+                var reader = new FileReader();
+                reader.onload = function(ev) {
+                    _deployFileContent = ev.target.result;
+                    _deployFileName = file.name;
+                    document.getElementById('deployFileName').style.display = 'block';
+                    document.getElementById('deployFileName').textContent = '📄 ' + file.name;
+                    document.getElementById('deployConfirmBtn').disabled = false;
+                };
+                reader.readAsText(file, 'utf-8');
+            });
+            document.getElementById('deployModal').addEventListener('click', function(e) { if (e.target === this) closeDeployModal(); });
+        })();
+
+        async function confirmDeploy() {
+            if (!_deployFileContent || !_deployEdits.length) return;
+            var btn = document.getElementById('deployConfirmBtn');
+            btn.disabled = true;
+            btn.textContent = '...';
+
+            var payload = {
+                user_id: currentUserId,
+                file_name: _deployFileName,
+                file_content: _deployFileContent,
+                edits: _deployEdits.map(function(e) { return { old: e.old, new: e.new }; })
+            };
+            closeDeployModal();
+            btn.disabled = false;
+            btn.textContent = 'Применить';
+
+            try {
+                var resp = await fetch(SERVER_URL + '/apply_edit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify(payload)
+                });
+                var data = await resp.json();
+                if (data.success) {
+                    window.location.href = SERVER_URL + data.file_url;
+                } else if (data.error_url) {
+                    window.location.href = SERVER_URL + data.error_url;
+                } else {
+                    showAlertModal('Не удалось', 'Ошибка: ' + (data.error || 'unknown'), '❌');
+                }
+            } catch (e) {
+                showAlertModal('Не удалось', 'Ошибка соединения', '❌');
+            }
+        }        
 
         function openHtmlPreview(code) {
             var panel = document.getElementById('previewPanel');
@@ -7459,6 +7565,21 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             </div>
         </div>
     </div>
+    <div id="deployModal" class="modal-overlay">
+        <div class="modal-box" style="max-width:460px;">
+            <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;">
+                <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+            </div>
+            <div class="modal-title" style="margin-bottom:16px;">Деплой</div>
+            <input type="file" id="deployFileInput" style="display:none;">
+            <button onclick="document.getElementById('deployFileInput').click()" style="width:100%;padding:14px;border-radius:12px;border:2px dashed rgba(255,255,255,0.15);background:transparent;color:#aaa;font-size:13px;font-family:Inter,sans-serif;cursor:pointer;">Выберите файл</button>
+            <div id="deployFileName" style="font-size:12px;color:#00CBF5;margin-top:8px;font-family:Inter,sans-serif;display:none;"></div>
+            <div class="modal-actions" style="gap:12px;margin-top:16px;">
+                <button class="modal-btn-secondary" onclick="closeDeployModal()" style="flex:1;padding:12px;">Отмена</button>
+                <button id="deployConfirmBtn" class="modal-btn-primary" onclick="confirmDeploy()" style="flex:1;padding:12px;" disabled>Применить</button>
+            </div>
+        </div>
+    </div>    
     <div id="paymentModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z"/></svg></div>
