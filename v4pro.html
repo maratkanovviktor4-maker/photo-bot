@@ -2136,7 +2136,11 @@
                         if (Array.isArray(branchData)) msgIds = branchData;
                         var msgs = [];
                         for (var j = 0; j < msgIds.length; j++) {
-                            if (data.messages[msgIds[j]]) msgs.push(data.messages[msgIds[j]]);
+                            if (data.messages[msgIds[j]]) {
+                                var _m = data.messages[msgIds[j]];
+                                if (_m._sources) _m._sources = _m._sources;
+                                msgs.push(_m);
+                            }
                         }
                         var bidName = branchData.name || (chat.allBranches && chat.allBranches[bid] ? chat.allBranches[bid].name : 'Ветка');
                         branches[bid] = { name: bidName, messages: msgs, msg_ids: msgIds, source_role: branchData.source_role || 'user' };
@@ -3701,6 +3705,18 @@
             }
             var contentHtml = (msg.role === 'user') ? escapeHtml(contentToShow) : formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
+                contentHtml = contentHtml.replace(/<a href="([^"]+)" target="_blank">([^<]+)<\/a>/g, function(m, url, text) {
+                    var cleanUrl = url.replace(/&amp;/g, '&');
+                    var src = msg._sources.find(function(s) { return s.url === cleanUrl || s.url === url; });
+                    if (!src) return m;
+                    var snippet = escapeHtml(src.snippet || '');
+                    var title = escapeHtml(src.title || text);
+                    var domain = escapeHtml((src.url || '').replace(/^https?:\/\//, '').split('/')[0]);
+                    var icon = escapeHtml(src.site_icon || '');
+                    return '<a href="' + url + '" target="_blank" rel="noopener" class="src-link" data-snippet="' + snippet + '" data-title="' + title + '" data-domain="' + domain + '" data-icon="' + icon + '">' + text + '</a>';
+                });
+            }
+            if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
                 contentHtml = contentHtml.replace(/\[(\d+)\]/g, function(m, n) {
                     var src = msg._sources.find(function(s) { return String(s.n) === String(n); });
                     if (!src || !src.url) return m;
@@ -5030,6 +5046,18 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     contentDiv.className = 'msg-content-inner';
                     el.appendChild(contentDiv);
                 }
+                if (msg._sources && msg._sources.length) {
+                    contentHtml = contentHtml.replace(/<a href="([^"]+)" target="_blank">([^<]+)<\/a>/g, function(m, url, text) {
+                        var cleanUrl = url.replace(/&amp;/g, '&');
+                        var src = msg._sources.find(function(s) { return s.url === cleanUrl || s.url === url; });
+                        if (!src) return m;
+                        var snippet = escapeHtml(src.snippet || '');
+                        var title = escapeHtml(src.title || text);
+                        var domain = escapeHtml((src.url || '').replace(/^https?:\/\//, '').split('/')[0]);
+                        var icon = escapeHtml(src.site_icon || '');
+                        return '<a href="' + url + '" target="_blank" rel="noopener" class="src-link" data-snippet="' + snippet + '" data-title="' + title + '" data-domain="' + domain + '" data-icon="' + icon + '">' + text + '</a>';
+                    });
+                }
                 contentDiv.innerHTML = contentHtml;
                 renderMathInChat(contentDiv);                
                 var reasoningBlock = el.querySelector('.reasoning-block');
@@ -5253,6 +5281,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                             if (parsed.sources && Array.isArray(parsed.sources)) {
                                 assistantMsg._sources = parsed.sources;
                             }
+                            if (parsed.sources && Array.isArray(parsed.sources)) {
+                                assistantMsg._sources = parsed.sources;
+                            }
                             if (parsed.assistant_msg_id) {
                                 finalMeta = parsed;
                             } else {
@@ -5468,11 +5499,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     result += text2;
                 }
             }
-            result = result.replace(/<a href="([^"]+)" target="_blank">[^<]+<\/a>/g, function(match, url) {
-                var domain = url.replace(/https?:\/\//, '').split('/')[0];
-                var display = domain.replace(/^www\./, '');
-                return '<a href="' + url + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:#888;vertical-align:middle;line-height:1.2;transition:filter 0.2s;" onmouseover="this.querySelector(\'img\').style.filter=\'none\';this.style.filter=\'brightness(1.3)\';" onmouseout="this.querySelector(\'img\').style.filter=\'grayscale(100%)\';this.style.filter=\'brightness(1)\';"><img src="https://www.google.com/s2/favicons?domain=' + domain + '&sz=16" style="width:14px;height:14px;border-radius:2px;vertical-align:middle;filter:grayscale(100%);" onerror="this.style.display=\'none\'" alt="">' + display + '</a>';
-            });
             return result;
         }
 
@@ -6436,6 +6462,104 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             document.getElementById('navContainer').style.display = 'none';
         }
 
+        (function initSourcePopup() {
+            var popup = null;
+            var hideTimer = null;
+            var currentLink = null;
+
+            function isMobile() {
+                return window.matchMedia('(hover: none)').matches || window.innerWidth < 768;
+            }
+
+            function showPopup(link) {
+                if (isMobile()) return;
+                var snippet = link.getAttribute('data-snippet') || '';
+                var title = link.getAttribute('data-title') || '';
+                var domain = link.getAttribute('data-domain') || '';
+                var icon = link.getAttribute('data-icon') || '';
+                if (!snippet && !title) return;
+
+                if (popup) popup.remove();
+                popup = document.createElement('div');
+                popup.className = 'src-popup';
+                var isLight = document.body.classList.contains('light');
+                popup.style.cssText = 'position:fixed;z-index:100000;max-width:340px;min-width:220px;background:' + (isLight ? '#ffffff' : '#2c2c2e') + ';border:1px solid ' + (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)') + ';border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);font-family:Inter,sans-serif;opacity:0;transform:translateY(-4px);transition:opacity 0.15s,transform 0.15s;cursor:pointer;';
+
+                var iconHtml = icon
+                    ? '<img src="' + icon + '" style="width:16px;height:16px;border-radius:3px;vertical-align:middle;margin-right:6px;flex-shrink:0;" onerror="this.style.display=\'none\'">'
+                    : '';
+                var titleColor = isLight ? '#111' : '#e0e0e0';
+                var subColor = isLight ? '#666' : '#888';
+                var snippetColor = isLight ? '#333' : '#cfd3d6';
+
+                popup.innerHTML =
+                    '<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">' +
+                        iconHtml +
+                        '<div style="font-size:13px;font-weight:600;color:' + titleColor + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">' + title + '</div>' +
+                    '</div>' +
+                    '<div style="font-size:11px;color:' + subColor + ';margin-bottom:6px;">' + domain + '</div>' +
+                    (snippet ? '<div style="font-size:12px;color:' + snippetColor + ';line-height:1.4;max-height:120px;overflow:hidden;">' + snippet + '</div>' : '');
+
+                document.body.appendChild(popup);
+
+                var rect = link.getBoundingClientRect();
+                var popupRect = popup.getBoundingClientRect();
+                var left = rect.left;
+                var top = rect.bottom + 6;
+                if (left + popupRect.width > window.innerWidth - 8) {
+                    left = window.innerWidth - popupRect.width - 8;
+                }
+                if (left < 8) left = 8;
+                if (top + popupRect.height > window.innerHeight - 8) {
+                    top = rect.top - popupRect.height - 6;
+                }
+                popup.style.left = left + 'px';
+                popup.style.top = top + 'px';
+
+                requestAnimationFrame(function() {
+                    popup.style.opacity = '1';
+                    popup.style.transform = 'translateY(0)';
+                });
+
+                popup.addEventListener('mouseenter', function() {
+                    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+                });
+                popup.addEventListener('mouseleave', function() {
+                    scheduleHide();
+                });
+                popup.addEventListener('click', function() {
+                    window.open(link.href, '_blank', 'noopener');
+                });
+            }
+
+            function scheduleHide() {
+                if (hideTimer) clearTimeout(hideTimer);
+                hideTimer = setTimeout(function() {
+                    if (popup) {
+                        popup.style.opacity = '0';
+                        popup.style.transform = 'translateY(-4px)';
+                        setTimeout(function() { if (popup) { popup.remove(); popup = null; } }, 150);
+                    }
+                }, 200);
+            }
+
+            document.addEventListener('mouseover', function(e) {
+                var link = e.target.closest('.src-link');
+                if (!link) return;
+                if (currentLink === link) return;
+                currentLink = link;
+                if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+                showPopup(link);
+            });
+
+            document.addEventListener('mouseout', function(e) {
+                var link = e.target.closest('.src-link');
+                if (!link) return;
+                if (e.relatedTarget && (link.contains(e.relatedTarget) || (popup && popup.contains(e.relatedTarget)))) return;
+                currentLink = null;
+                scheduleHide();
+            });
+        })();
         function closePreview() {
             var panel = document.getElementById('previewPanel');
             var handle = document.getElementById('resizeHandle');
