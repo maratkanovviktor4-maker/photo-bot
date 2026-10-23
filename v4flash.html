@@ -3260,9 +3260,16 @@
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
+                var _savedSourcesR = assistantMsg._sources;
                 await updateBranchesFromServer();
                 if (chat.allBranches && chat.allBranches[currentBranchId]) {
                     chat.messages = chat.allBranches[currentBranchId].messages || [];
+                }
+                if (_savedSourcesR && _savedSourcesR.length) {
+                    var _lastIdxR = chat.messages.length - 1;
+                    if (chat.messages[_lastIdxR] && chat.messages[_lastIdxR].role === 'assistant') {
+                        chat.messages[_lastIdxR]._sources = _savedSourcesR;
+                    }
                 }
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
@@ -5287,6 +5294,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
                     chat.messages[chat.messages.length - 2].msg_id = finalMeta.user_msg_id;
                 }
+                var _savedSources = assistantMsg._sources;
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                 autoNameChat(chat);
@@ -5299,6 +5307,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 sendBtnArrow();
                 pendingFile = null;
                 updateFileList();
+                if (_savedSources && _savedSources.length) {
+                    var _lastIdx = chat.messages.length - 1;
+                    if (chat.messages[_lastIdx] && chat.messages[_lastIdx].role === 'assistant') {
+                        chat.messages[_lastIdx]._sources = _savedSources;
+                    }
+                }
                 renderMessages();
                 buildNavContainer();
                 playSound('reply');
