@@ -2123,7 +2123,11 @@
                         if (Array.isArray(branchData)) msgIds = branchData;
                         var msgs = [];
                         for (var j = 0; j < msgIds.length; j++) {
-                            if (data.messages[msgIds[j]]) msgs.push(data.messages[msgIds[j]]);
+                            if (data.messages[msgIds[j]]) {
+                                var _m = data.messages[msgIds[j]];
+                                if (_m._sources) _m._sources = _m._sources;
+                                msgs.push(_m);
+                            }
                         }
                         var bidName = branchData.name || (chat.allBranches && chat.allBranches[bid] ? chat.allBranches[bid].name : 'Ветка');
                         branches[bid] = { name: bidName, messages: msgs, msg_ids: msgIds, source_role: branchData.source_role || 'user' };
