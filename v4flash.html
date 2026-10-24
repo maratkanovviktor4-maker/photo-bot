@@ -6436,10 +6436,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             _deployFileName = '';
         }
 
-        (function initDeploy() {
-            var input = document.getElementById('deployFileInput');
-            if (!input) return;
-            input.addEventListener('change', function(e) {
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.id === 'deployFileInput') {
                 var file = e.target.files[0];
                 if (!file) return;
                 var reader = new FileReader();
@@ -6451,9 +6449,11 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     document.getElementById('deployConfirmBtn').disabled = false;
                 };
                 reader.readAsText(file, 'utf-8');
-            });
-            document.getElementById('deployModal').addEventListener('click', function(e) { if (e.target === this) closeDeployModal(); });
-        })();
+            }
+        });
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'deployModal') closeDeployModal();
+        });
 
         async function confirmDeploy() {
             if (!_deployFileContent || !_deployEdits.length) return;
