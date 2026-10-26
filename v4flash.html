@@ -2734,6 +2734,18 @@
             if (!msg || msg.role !== 'user') return;
             if (!newText) return;
             if (isFluxUserMessage(msg)) {
+                var _toDeleteU = chat.messages.slice(msgIndex);
+                for (var _di2 = 0; _di2 < _toDeleteU.length; _di2++) {
+                    if (_toDeleteU[_di2].msg_id) {
+                        try {
+                            await fetch(SERVER_URL + '/delete_message', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId, msg_id: _toDeleteU[_di2].msg_id })
+                            });
+                        } catch (e) {}
+                    }
+                }
                 chat.messages = chat.messages.slice(0, msgIndex);
                 renderMessages();
                 await runFluxGeneration(newText);
@@ -3189,6 +3201,18 @@
             if (isFluxUserMessage(_prevUser)) {
                 var _fluxPrompt = extractFluxPrompt(_prevUser);
                 var _newIdx = chat.messages.indexOf(_prevUser);
+                var _toDelete = chat.messages.slice(_newIdx);
+                for (var _di = 0; _di < _toDelete.length; _di++) {
+                    if (_toDelete[_di].msg_id) {
+                        try {
+                            await fetch(SERVER_URL + '/delete_message', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId, msg_id: _toDelete[_di].msg_id })
+                            });
+                        } catch (e) {}
+                    }
+                }
                 chat.messages = chat.messages.slice(0, _newIdx);
                 renderMessages();
                 await runFluxGeneration(_fluxPrompt);
