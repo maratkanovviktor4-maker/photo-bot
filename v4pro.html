@@ -5013,7 +5013,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             area.appendChild(userRow);
             document.querySelector('.chat-wrapper').classList.add('has-messages');
             document.querySelector('.chat-wrapper').classList.remove('empty-state-active');
-            chat.messages.push({ role: 'user', content: '🎨 ' + trimmedPrompt });
             chat.lastMessageTime = Date.now();
             renderChatList();
             scrollToBottom();
@@ -5088,10 +5087,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 if (inputField) inputField.placeholder = 'Введите сообщение...';
                 // Убираем визуальный «🎨 промт» из чата — теперь его добавит sendMessage
                 if (userRow && userRow.parentNode) userRow.parentNode.removeChild(userRow);
-                // Убираем дублирующее сообщение из chat.messages
-                if (chat.messages.length && chat.messages[chat.messages.length - 1].content === '🎨 ' + trimmedPrompt) {
-                    chat.messages.pop();
-                }
                 await sendMessage();
                 if (savedFlux) {
                     fluxModeEnabled = true;
