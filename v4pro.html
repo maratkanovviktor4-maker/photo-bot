@@ -6686,6 +6686,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (!msg || !msg._sources || !msg._sources.length) return;
 
             var panel = document.getElementById('previewPanel');
+            if (panel && panel.classList.contains('active')) {
+                var pt = panel.querySelector('.preview-title');
+                if (pt && pt.textContent.indexOf('Источники') === 0) {
+                    closePreview();
+                    return;
+                }
+            }
             var iframe = document.getElementById('previewIframe');
             var handle = document.getElementById('resizeHandle');
             if (!panel) {
