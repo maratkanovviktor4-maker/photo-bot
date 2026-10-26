@@ -2531,8 +2531,47 @@
             if (!msg) return;
             if (isFluxUserMessage(msg)) {
                 var _fluxPrompt = extractFluxPrompt(msg);
-                chat.messages = chat.messages.slice(0, msgIndex);
-                renderMessages();
+                isSending = true;
+                if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
+                sendBtnStop();
+                try {
+                    var _cbResp = await fetch(SERVER_URL + '/create_branch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: currentMode, chat_id: currentChatId, source_msg_id: msg.msg_id, branch_name: '', prompt: '', web_search: false })
+                    });
+                    if (!_cbResp.ok) {
+                        var _errD = await _cbResp.json().catch(() => ({}));
+                        showAlertModal('Ошибка', _errD.error || 'Не удалось создать ветку', '❌');
+                        isSending = false;
+                        sendBtnArrow();
+                        return;
+                    }
+                    var _cbData = await _cbResp.json();
+                    if (!_cbData.success || !_cbData.branch_id) {
+                        showAlertModal('Ошибка', 'Не удалось создать ветку', '❌');
+                        isSending = false;
+                        sendBtnArrow();
+                        return;
+                    }
+                    currentBranchId = _cbData.branch_id;
+                    chat.activeBranch = _cbData.branch_id;
+                    await updateBranchesFromServer();
+                    if (chat.allBranches && chat.allBranches[currentBranchId]) {
+                        chat.messages = chat.allBranches[currentBranchId].messages || [];
+                    }
+                    renderMessages();
+                    renderChatList();
+                    renderBranchesPanel();
+                } catch (_cbErr) {
+                    console.error('flux branch create error:', _cbErr);
+                    showAlertModal('Ошибка', 'Не удалось создать ветку', '❌');
+                    isSending = false;
+                    sendBtnArrow();
+                    return;
+                }
+                isSending = false;
+                sendBtnArrow();
                 await runFluxGeneration(_fluxPrompt);
                 return;
             }
