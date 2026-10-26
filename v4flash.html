@@ -3589,6 +3589,7 @@
         }        
         function buildMessageHtml(index, msg) {
             if (!msg) return '';
+            if (msg.role === 'user' && msg._hidden) return '';
             if (msg.role === 'system') {
                 return '<div class="message-row system" data-msg-index="' + index + '"><div style="width:100%;"><div class="message-content" style="background:rgba(255,165,0,0.08);border-left:3px solid #FFA500;border-radius:6px;padding:8px 14px;font-size:13px;font-style:italic;color:#cc8844;">' + escapeHtml(msg.content) + '</div></div></div>';
             }
@@ -5123,7 +5124,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 var fb = document.getElementById('fluxBtn');
                 if (fb) fb.classList.remove('active');
                 if (inputField) inputField.placeholder = 'Введите сообщение...';
-                await sendMessage();
+                await sendMessage(true);
                 if (savedFlux) {
                     fluxModeEnabled = true;
                     if (fb) fb.classList.add('active');
@@ -5369,7 +5370,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             }, 16);
         }
 
-        async function sendMessage() {
+        async function sendMessage(hidden) {
             if (selectionMode) toggleSelectionMode();
 
             if (isSending) return;
@@ -5399,15 +5400,17 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 displayText = text ? text + '\n\n📎 ' + pendingFile.name : '📎 ' + pendingFile.name;
             }
 
-            chat.messages.push({ role: 'user', content: displayText });
+            chat.messages.push({ role: 'user', content: displayText, _hidden: !!hidden });
             playSound('send');
             var area = document.getElementById('chatArea');
             var emptyState = area.querySelector('.empty-state');
             if (emptyState) emptyState.remove();
-            var userRow = document.createElement('div');
-            userRow.className = 'message-row user';
-            userRow.innerHTML = '<div><div class="message-content">' + escapeHtml(displayText) + '</div></div>';
-            area.appendChild(userRow);
+            if (!hidden) {
+                var userRow = document.createElement('div');
+                userRow.className = 'message-row user';
+                userRow.innerHTML = '<div><div class="message-content">' + escapeHtml(displayText) + '</div></div>';
+                area.appendChild(userRow);
+            }
             document.querySelector('.chat-wrapper').classList.add('has-messages');
             document.querySelector('.chat-wrapper').classList.remove('empty-state-active');
             chat.lastMessageTime = Date.now();
