@@ -3663,7 +3663,16 @@
                         : '';
                     sItems += '<a href="' + escapeHtml(s.url) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#00CBF5;text-decoration:none;font-size:12px;padding:3px 8px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.2);border-radius:10px;margin:2px 4px 2px 0;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;">' + iconHtml + '[' + s.n + '] ' + escapeHtml(s.title || domain) + '</a>';
                 }
-                sourcesHtml = '<div class="message-sources" onclick="openSourcesPanel(' + index + ');event.preventDefault();event.stopPropagation();" style="margin-top:8px;cursor:pointer;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:4px;">🔗 Источники (' + msg._sources.length + ') — нажмите, чтобы открыть панель</div>' + sItems + '</div>';
+                var faviconsHtml = '';
+                for (var fi = 0; fi < msg._sources.length; fi++) {
+                    var fs = msg._sources[fi];
+                    var fdomain = (fs.url || '').replace(/^https?:\/\//, '').split('/')[0];
+                    var ficon = fs.site_icon
+                        ? '<img src="' + escapeHtml(fs.site_icon) + '" style="width:16px;height:16px;border-radius:3px;display:block;" onerror="this.style.display=\'none\'">'
+                        : '<span style="width:16px;height:16px;border-radius:3px;background:rgba(0,203,245,0.2);color:#00CBF5;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;">' + escapeHtml((fdomain[0] || '?').toUpperCase()) + '</span>';
+                    faviconsHtml += '<div title="' + escapeHtml(fs.title || fdomain) + '" style="width:22px;height:22px;border-radius:5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + ficon + '</div>';
+                }
+                sourcesHtml = '<div class="message-sources" onclick="openSourcesPanel(' + index + ');event.preventDefault();event.stopPropagation();" style="margin-top:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:4px 8px 4px 4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;"><div style="display:flex;gap:3px;">' + faviconsHtml + '</div><span style="font-size:11px;color:#888;font-family:Inter,sans-serif;">' + msg._sources.length + ' источн.</span></div>';
             }
             return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
         }
@@ -6652,6 +6661,44 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 scheduleHide();
             });
         })();
+        function openSourcesPanel(index) {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) return;
+            var msg = chat.messages[index];
+            if (!msg || !msg._sources || !msg._sources.length) return;
+            var panel = document.getElementById('sourcesPanel');
+            if (panel) panel.remove();
+            panel = document.createElement('div');
+            panel.id = 'sourcesPanel';
+            panel.style.cssText = 'position:fixed;top:0;right:0;width:420px;max-width:90vw;height:100vh;background:#1b1b1c;border-left:1px solid rgba(255,255,255,0.08);z-index:99999;display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,0.5);';
+            if (document.body.classList.contains('light')) {
+                panel.style.background = '#ffffff';
+                panel.style.borderLeft = '1px solid rgba(0,0,0,0.1)';
+            }
+            var header = document.createElement('div');
+            header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;';
+            if (document.body.classList.contains('light')) header.style.borderBottom = '1px solid rgba(0,0,0,0.1)';
+            header.innerHTML = '<span style="font-size:14px;font-weight:600;font-family:Inter,sans-serif;">Источники (' + msg._sources.length + ')</span><button onclick="document.getElementById(\'sourcesPanel\').remove()" style="background:transparent;border:none;color:#888;cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">✕</button>';
+            panel.appendChild(header);
+            var list = document.createElement('div');
+            list.style.cssText = 'flex:1;overflow-y:auto;padding:12px;';
+            var html = '';
+            for (var i = 0; i < msg._sources.length; i++) {
+                var s = msg._sources[i];
+                var domain = (s.url || '').replace(/^https?:\/\//, '').split('/')[0];
+                var iconHtml = s.site_icon
+                    ? '<img src="' + escapeHtml(s.site_icon) + '" style="width:16px;height:16px;border-radius:3px;flex-shrink:0;" onerror="this.style.display=\'none\'">'
+                    : '<span style="width:16px;height:16px;border-radius:3px;background:rgba(0,203,245,0.2);color:#00CBF5;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + escapeHtml((domain[0] || '?').toUpperCase()) + '</span>';
+                html += '<a href="' + escapeHtml(s.url) + '" target="_blank" rel="noopener" style="display:block;padding:10px 12px;margin-bottom:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;color:inherit;transition:background 0.15s;" onmouseover="this.style.background=\'rgba(0,203,245,0.08)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.03)\'">' +
+                    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' + iconHtml + '<span style="font-size:11px;color:#888;font-family:Inter,sans-serif;">[' + s.n + '] ' + escapeHtml(domain) + '</span></div>' +
+                    '<div style="font-size:13px;font-weight:600;color:#e0e0e0;font-family:Inter,sans-serif;margin-bottom:4px;line-height:1.3;">' + escapeHtml(s.title || domain) + '</div>' +
+                    (s.snippet ? '<div style="font-size:12px;color:#aaa;font-family:Inter,sans-serif;line-height:1.4;">' + escapeHtml(s.snippet) + '</div>' : '') +
+                    '</a>';
+            }
+            list.innerHTML = html;
+            panel.appendChild(list);
+            document.body.appendChild(panel);
+        }
         function closePreview() {
             var panel = document.getElementById('previewPanel');
             var handle = document.getElementById('resizeHandle');
