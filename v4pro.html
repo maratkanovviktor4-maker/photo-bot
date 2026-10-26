@@ -2743,6 +2743,24 @@
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'user') return;
             if (!newText) return;
+            if (isFluxUserMessage(msg)) {
+                var _toDeleteU = chat.messages.slice(msgIndex);
+                for (var _di2 = 0; _di2 < _toDeleteU.length; _di2++) {
+                    if (_toDeleteU[_di2].msg_id) {
+                        try {
+                            await fetch(SERVER_URL + '/delete_message', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId, msg_id: _toDeleteU[_di2].msg_id })
+                            });
+                        } catch (e) {}
+                    }
+                }
+                chat.messages = chat.messages.slice(0, msgIndex);
+                renderMessages();
+                await runFluxGeneration(newText);
+                return;
+            }
             (async function() {
                 isSending = true;
                 if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
@@ -3188,6 +3206,30 @@
             if (!chat) return;
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'assistant') return;
+            var _prevUser = null;
+            for (var _pi = msgIndex - 1; _pi >= 0; _pi--) {
+                if (chat.messages[_pi].role === 'user') { _prevUser = chat.messages[_pi]; break; }
+            }
+            if (isFluxUserMessage(_prevUser)) {
+                var _fluxPrompt = extractFluxPrompt(_prevUser);
+                var _newIdx = chat.messages.indexOf(_prevUser);
+                var _toDelete = chat.messages.slice(_newIdx);
+                for (var _di = 0; _di < _toDelete.length; _di++) {
+                    if (_toDelete[_di].msg_id) {
+                        try {
+                            await fetch(SERVER_URL + '/delete_message', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId, msg_id: _toDelete[_di].msg_id })
+                            });
+                        } catch (e) {}
+                    }
+                }
+                chat.messages = chat.messages.slice(0, _newIdx);
+                renderMessages();
+                await runFluxGeneration(_fluxPrompt);
+                return;
+            }
             style = style || '';
             isSending = true;
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
@@ -4998,7 +5040,16 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             }
         }
 
-        async function runFluxGeneration(prompt) {
+        function isFluxUserMessage(msg) {
+            return msg && msg.role === 'user' && msg.content && msg.content.indexOf('\n\n--- Flux 2 (сгенерировано) ---') !== -1;
+        }
+
+        function extractFluxPrompt(msg) {
+            if (!isFluxUserMessage(msg)) return null;
+            return msg.content.split('\n\n--- Flux 2 (сгенерировано) ---')[0].replace(/^🎨\s*/, '').trim();
+        }
+
+        async function runFluxGeneration(prompt, branchContext) {
             if (!prompt || !prompt.trim()) return;
             var trimmedPrompt = prompt.trim();
 
@@ -5007,13 +5058,17 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var area = document.getElementById('chatArea');
             var emptyState = area.querySelector('.empty-state');
             if (emptyState) emptyState.remove();
-            var userRow = document.createElement('div');
-            userRow.className = 'message-row user';
-            userRow.innerHTML = '<div><div class="message-content">🎨 ' + escapeHtml(trimmedPrompt) + '</div></div>';
-            area.appendChild(userRow);
-            document.querySelector('.chat-wrapper').classList.add('has-messages');
-            document.querySelector('.chat-wrapper').classList.remove('empty-state-active');
-            chat.messages.push({ role: 'user', content: '🎨 ' + trimmedPrompt });
+            if (branchContext && branchContext.skipUserBubble) {
+                // режим регенерации — user-bubble уже есть в чате
+            } else {
+                var userRow = document.createElement('div');
+                userRow.className = 'message-row user';
+                userRow.innerHTML = '<div><div class="message-content">🎨 ' + escapeHtml(trimmedPrompt) + '</div></div>';
+                area.appendChild(userRow);
+                document.querySelector('.chat-wrapper').classList.add('has-messages');
+                document.querySelector('.chat-wrapper').classList.remove('empty-state-active');
+                chat.messages.push({ role: 'user', content: '🎨 ' + trimmedPrompt });
+            }
             chat.lastMessageTime = Date.now();
             renderChatList();
             scrollToBottom();
