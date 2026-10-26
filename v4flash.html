@@ -4609,13 +4609,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function updateSendBtn() {
             var hasText = input.value.trim().length > 0;
             var hasFile = pendingFile !== null;
+            var isUploading = hasFile && pendingFile.mime && pendingFile.mime.indexOf('image/') === 0 && !pendingFile.file_id;
             var fileOk = true;
             if (hasFile) {
                 var ext = pendingFile.name.split('.').pop().toLowerCase();
                 var mimeOk = pendingFile.mime && (pendingFile.mime.indexOf('image/') === 0 || pendingFile.mime.indexOf('text/') === 0 || pendingFile.mime === 'application/pdf' || pendingFile.mime.indexOf('zip') !== -1 || pendingFile.mime.indexOf('word') !== -1 || pendingFile.mime.indexOf('excel') !== -1 || pendingFile.mime.indexOf('powerpoint') !== -1);
                 fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
             }
-            btn.disabled = !((hasText || hasFile) && fileOk);
+            btn.disabled = !((hasText || hasFile) && fileOk) || isUploading;
         }
         input.addEventListener('input', function() { updateLengthExcess(); });
         updateSendBtn();
