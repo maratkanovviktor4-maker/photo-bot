@@ -3721,7 +3721,11 @@
                 contentHtml = contentHtml.replace(/\[(\d+)\]/g, function(m, n) {
                     var src = msg._sources.find(function(s) { return String(s.n) === String(n); });
                     if (!src || !src.url) return m;
-                    return '<a href="' + escapeHtml(src.url) + '" target="_blank" rel="noopener" title="' + escapeHtml(src.title || '') + '" style="color:#00CBF5;text-decoration:none;font-weight:600;">[' + n + ']</a>';
+                    var snippet = escapeHtml(src.snippet || '');
+                    var tt = escapeHtml(src.title || '');
+                    var dom = escapeHtml((src.url || '').replace(/^https?:\/\//, '').split('/')[0]);
+                    var ic = escapeHtml(src.site_icon || '');
+                    return '<a href="' + escapeHtml(src.url) + '" target="_blank" rel="noopener" class="src-link" data-snippet="' + snippet + '" data-title="' + tt + '" data-domain="' + dom + '" data-icon="' + ic + '" style="color:#00CBF5;text-decoration:none;font-weight:600;">[' + n + ']</a>';
                 });
             }
             if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
@@ -5057,6 +5061,17 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         var domain = escapeHtml((src.url || '').replace(/^https?:\/\//, '').split('/')[0]);
                         var icon = escapeHtml(src.site_icon || '');
                         return '<a href="' + url + '" target="_blank" rel="noopener" class="src-link" data-snippet="' + snippet + '" data-title="' + title + '" data-domain="' + domain + '" data-icon="' + icon + '">' + text + '</a>';
+                    });
+                }
+                if (msg._sources && msg._sources.length) {
+                    contentHtml = contentHtml.replace(/\[(\d+)\]/g, function(m, n) {
+                        var src = msg._sources.find(function(s) { return String(s.n) === String(n); });
+                        if (!src || !src.url) return m;
+                        var snippet = escapeHtml(src.snippet || '');
+                        var tt = escapeHtml(src.title || '');
+                        var dom = escapeHtml((src.url || '').replace(/^https?:\/\//, '').split('/')[0]);
+                        var ic = escapeHtml(src.site_icon || '');
+                        return '<a href="' + escapeHtml(src.url) + '" target="_blank" rel="noopener" class="src-link" data-snippet="' + snippet + '" data-title="' + tt + '" data-domain="' + dom + '" data-icon="' + ic + '" style="color:#00CBF5;text-decoration:none;font-weight:600;">[' + n + ']</a>';
                     });
                 }
                 contentDiv.innerHTML = contentHtml;
