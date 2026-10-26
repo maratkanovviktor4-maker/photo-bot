@@ -3650,7 +3650,12 @@
                     var tt = escapeHtml(src.title || '');
                     var dom = escapeHtml((src.url || '').replace(/^https?:\/\//, '').split('/')[0]);
                     var ic = escapeHtml(src.site_icon || '');
-                    return '<a href="' + escapeHtml(src.url) + '" target="_blank" rel="noopener" class="src-link" data-snippet="' + snippet + '" data-title="' + tt + '" data-domain="' + dom + '" data-icon="' + ic + '" style="color:#aaa;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);font-size:11px;line-height:1;vertical-align:middle;margin:0 2px;transition:background 0.15s;" onmouseover="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.04)\'">' + n + '</a>';м
+                    var _isLightTag = document.body.classList.contains('light');
+                    var _tagBg = _isLightTag ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)';
+                    var _tagBgHover = _isLightTag ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
+                    var _tagBorder = _isLightTag ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+                    var _tagColor = _isLightTag ? '#555' : '#aaa';
+                    return '<a href="' + escapeHtml(src.url) + '" target="_blank" rel="noopener" class="src-link" data-snippet="' + snippet + '" data-title="' + tt + '" data-domain="' + dom + '" data-icon="' + ic + '" style="color:' + _tagColor + ';text-decoration:none;font-weight:600;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:' + _tagBg + ';border:1px solid ' + _tagBorder + ';font-size:11px;line-height:1;vertical-align:middle;margin:0 2px;transition:background 0.15s;" onmouseover="this.style.background=\'' + _tagBgHover + '\'" onmouseout="this.style.background=\'' + _tagBg + '\'">' + n + '</a>';м
                 });
             }
             if (msg.role === 'assistant' && msg._streaming && !contentToShow && !hasReasoning) {
@@ -3658,7 +3663,12 @@
             }           
             var sourcesHtml = '';
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
-                contentHtml += '<div style="margin-top:12px;"><button onclick="openSourcesPanel(' + index + ')" onmouseover="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.04)\'" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#aaa;padding:6px 14px;border-radius:16px;font-family:Inter,sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.2s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg> Источники (' + msg._sources.length + ')</button></div>';
+                var _isLightSrc = document.body.classList.contains('light');
+                var _srcBtnBg = _isLightSrc ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)';
+                var _srcBtnBgHover = _isLightSrc ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
+                var _srcBtnBorder = _isLightSrc ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+                var _srcBtnColor = _isLightSrc ? '#555' : '#aaa';
+                contentHtml += '<div style="margin-top:12px;"><button onclick="openSourcesPanel(' + index + ')" onmouseover="this.style.background=\'' + _srcBtnBgHover + '\'" onmouseout="this.style.background=\'' + _srcBtnBg + '\'" style="background:' + _srcBtnBg + ';border:1px solid ' + _srcBtnBorder + ';color:' + _srcBtnColor + ';padding:6px 14px;border-radius:16px;font-family:Inter,sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.2s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg> Источники (' + msg._sources.length + ')</button></div>';
                 var sItems = '';
                 for (var si = 0; si < msg._sources.length; si++) {
                     var s = msg._sources[si];
@@ -5059,7 +5069,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         var tt = escapeHtml(src.title || '');
                         var dom = escapeHtml((src.url || '').replace(/^https?:\/\//, '').split('/')[0]);
                         var ic = escapeHtml(src.site_icon || '');
-                        return '<a href="' + escapeHtml(src.url) + '" target="_blank" rel="noopener" class="src-link" data-snippet="' + snippet + '" data-title="' + tt + '" data-domain="' + dom + '" data-icon="' + ic + '" style="color:#aaa;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);font-size:11px;line-height:1;vertical-align:middle;margin:0 2px;transition:background 0.15s;" onmouseover="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.04)\'">' + n + '</a>';м
+                        var _isLightTag = document.body.classList.contains('light');
+                    var _tagBg = _isLightTag ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)';
+                    var _tagBgHover = _isLightTag ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
+                    var _tagBorder = _isLightTag ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+                    var _tagColor = _isLightTag ? '#555' : '#aaa';
+                    return '<a href="' + escapeHtml(src.url) + '" target="_blank" rel="noopener" class="src-link" data-snippet="' + snippet + '" data-title="' + tt + '" data-domain="' + dom + '" data-icon="' + ic + '" style="color:' + _tagColor + ';text-decoration:none;font-weight:600;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:' + _tagBg + ';border:1px solid ' + _tagBorder + ';font-size:11px;line-height:1;vertical-align:middle;margin:0 2px;transition:background 0.15s;" onmouseover="this.style.background=\'' + _tagBgHover + '\'" onmouseout="this.style.background=\'' + _tagBg + '\'">' + n + '</a>';м
                     });
                 }
                 contentDiv.innerHTML = contentHtml;
