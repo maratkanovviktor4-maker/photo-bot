@@ -5042,7 +5042,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         async function runFluxGeneration(prompt) {
             if (!prompt || !prompt.trim()) return;
             var trimmedPrompt = prompt.trim();
-            var withImage = !!(pendingFile && pendingFile.data);
 
             var _fluxChatId = currentChatId;
             var _fluxBranchId = currentBranchId;
@@ -5076,20 +5075,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             scrollToBottom();
 
             try {
-                var form = new FormData();
+                var form = new URLSearchParams();
                 form.append('user_id', currentUserId);
+                form.append('mode', 'text2img');
                 form.append('caption', trimmedPrompt);
                 form.append('width', '1024');
                 form.append('height', '1024');
-                if (withImage) {
-                    form.append('mode', 'svoboda_male');
-                    var bin = atob(pendingFile.data);
-                    var bytes = new Uint8Array(bin.length);
-                    for (var bi = 0; bi < bin.length; bi++) bytes[bi] = bin.charCodeAt(bi);
-                    form.append('image', new Blob([bytes], { type: pendingFile.mime || 'image/jpeg' }), pendingFile.name || 'ref.jpg');
-                } else {
-                    form.append('mode', 'text2img');
-                }
                 var enqResp = await fetch(SERVER_URL + '/enqueue', {
                     method: 'POST',
                     headers: { 'X-Session-Token': sessionToken },
@@ -5109,8 +5100,6 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     return;
                 }
                 var jobId = enqData.job_id;
-                pendingFile = null;
-                updateFileList();
 
                 var result = null;
                 for (var i = 0; i < 150; i++) {
