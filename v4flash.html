@@ -3669,7 +3669,21 @@
                 var _srcBtnBgHover = _isLightSrc ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
                 var _srcBtnBorder = _isLightSrc ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
                 var _srcBtnColor = _isLightSrc ? '#555' : '#aaa';
-                contentHtml += '<div style="margin-top:12px;"><button onclick="openSourcesPanel(' + index + ')" onmouseover="this.style.background=\'' + _srcBtnBgHover + '\'" onmouseout="this.style.background=\'' + _srcBtnBg + '\'" style="background:' + _srcBtnBg + ';border:1px solid ' + _srcBtnBorder + ';color:' + _srcBtnColor + ';padding:6px 14px;border-radius:16px;font-family:Inter,sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.2s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg> Источники (' + msg._sources.length + ')</button></div>';
+                var _faviconsHtml = '';
+                var _favicons = [];
+                for (var _fi = 0; _fi < msg._sources.length && _favicons.length < 3; _fi++) {
+                    if (msg._sources[_fi].site_icon) _favicons.push(msg._sources[_fi].site_icon);
+                }
+                if (_favicons.length) {
+                    _faviconsHtml = '<span style="display:inline-flex;align-items:center;">';
+                    for (var _fj = 0; _fj < _favicons.length; _fj++) {
+                        _faviconsHtml += '<img src="' + escapeHtml(_favicons[_fj]) + '" style="width:16px;height:16px;border-radius:4px;object-fit:cover;background:' + (_isLightSrc ? '#fff' : '#2c2c2e') + ';border:1px solid ' + _srcBtnBorder + ';margin-left:' + (_fj === 0 ? '0' : '-6px') + ';position:relative;z-index:' + (10 - _fj) + ';" onerror="this.style.display=\'none\'">';
+                    }
+                    _faviconsHtml += '</span>';
+                } else {
+                    _faviconsHtml = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg>';
+                }
+                contentHtml += '<div style="margin-top:12px;"><button onclick="openSourcesPanel(' + index + ')" onmouseover="this.style.background=\'' + _srcBtnBgHover + '\'" onmouseout="this.style.background=\'' + _srcBtnBg + '\'" style="background:' + _srcBtnBg + ';border:1px solid ' + _srcBtnBorder + ';color:' + _srcBtnColor + ';padding:6px 14px;border-radius:16px;font-family:Inter,sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.2s;">' + _faviconsHtml + ' Источники (' + msg._sources.length + ')</button></div>';
                 var sItems = '';
                 for (var si = 0; si < msg._sources.length; si++) {
                     var s = msg._sources[si];
