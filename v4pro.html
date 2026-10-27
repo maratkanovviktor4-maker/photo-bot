@@ -4325,6 +4325,7 @@
         function updateFileList() {
             const inline = document.getElementById('fileNameInline');
             if (!pendingFile) { if (inline) inline.innerHTML = ''; updateSendBtn(); return; }
+            var isImageFile = pendingFile.mime && pendingFile.mime.startsWith('image/');
             var ext = pendingFile.name.split('.').pop().toLowerCase();
             var mimeOk = pendingFile.mime && (pendingFile.mime.startsWith('image/') || pendingFile.mime.startsWith('text/') || pendingFile.mime === 'application/pdf' || pendingFile.mime.includes('zip') || pendingFile.mime.includes('word') || pendingFile.mime.includes('excel') || pendingFile.mime.includes('powerpoint'));
             var fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
@@ -4335,7 +4336,7 @@
             var previewFullHtml = '';
             var previewOverTextarea = '';
             if (pendingFile && pendingFile.mime && pendingFile.mime.startsWith('image/')) {
-                previewOverTextarea = '<img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;display:block;margin-bottom:6px;" onclick="toggleFullPreview(this)">';
+                previewOverTextarea = '<div style="position:relative;display:inline-block;"><img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;display:block;" onclick="toggleFullPreview(this)"><button onclick="event.stopPropagation();pendingFile=null;updateFileList();updateLengthExcess();" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);color:#fff;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:background 0.15s;" onmouseenter="this.style.background=\'rgba(231,76,60,0.9)\'" onmouseleave="this.style.background=\'rgba(0,0,0,0.7)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></div>';
             }
             var previewBox = document.getElementById('inputPreviewBox');
             if (previewBox) {
@@ -4362,7 +4363,13 @@
                 }
                 sizeInfo += ')';
             }
-            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;flex-shrink:1;min-width:0;max-width:100%;overflow:hidden;">' + previewHtml + '<span style="color:' + color + ';flex-shrink:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;">' + icon + ' ' + escapeHtml(pendingFile.name) + sizeInfo + '</span> <button onclick="pendingFile=null;updateFileList();updateLengthExcess();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:2px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:18px;min-height:18px;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+            if (inline) {
+                if (isImageFile) {
+                    inline.innerHTML = '';
+                } else {
+                    inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;flex-shrink:1;min-width:0;max-width:100%;overflow:hidden;">' + previewHtml + '<span style="color:' + color + ';flex-shrink:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;">' + icon + ' ' + escapeHtml(pendingFile.name) + sizeInfo + '</span> <button onclick="pendingFile=null;updateFileList();updateLengthExcess();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:2px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:18px;min-height:18px;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+                }
+            }
             updateSendBtn();
             updateLengthExcess();
 
