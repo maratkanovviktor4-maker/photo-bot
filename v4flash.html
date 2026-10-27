@@ -3649,9 +3649,21 @@
                 }
             }
             var contentHtml = (msg.role === 'user') ? _userHtml : formatMessage(contentToShow);
-            if (msg.role === 'user' && msg.image_b64) {
-                var _imgMime = msg.image_mime || 'image/jpeg';
-                contentHtml = '<div style="margin:6px 0 8px 0;"><img src="data:' + _imgMime + ';base64,' + msg.image_b64 + '" style="max-width:280px;max-height:280px;border-radius:12px;display:block;cursor:pointer;" onclick="toggleFullPreview(this)"></div>' + contentHtml;
+            if (msg.role === 'user' && (msg.image_b64 || (msg.extra_b64s && msg.extra_b64s.length))) {
+                var _allImgs = '';
+                if (msg.image_b64) {
+                    var _imgMime = msg.image_mime || 'image/jpeg';
+                    _allImgs += '<img src="data:' + _imgMime + ';base64,' + msg.image_b64 + '" style="max-width:280px;max-height:280px;border-radius:12px;display:block;cursor:pointer;margin-bottom:6px;" onclick="toggleFullPreview(this)">';
+                }
+                if (msg.extra_b64s && msg.extra_b64s.length) {
+                    for (var _ei = 0; _ei < msg.extra_b64s.length; _ei++) {
+                        var _eb = msg.extra_b64s[_ei];
+                        var _em = _eb[1] || 'image/jpeg';
+                        var _ed = _eb[0];
+                        _allImgs += '<img src="data:' + _em + ';base64,' + _ed + '" style="max-width:280px;max-height:280px;border-radius:12px;display:block;cursor:pointer;margin-bottom:6px;" onclick="toggleFullPreview(this)">';
+                    }
+                }
+                contentHtml = '<div style="margin:6px 0 8px 0;">' + _allImgs + '</div>' + contentHtml;
             }
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
                 contentHtml = contentHtml.replace(/<a href="([^"]+)" target="_blank">([^<]+)<\/a>/g, function(m, url, text) {
