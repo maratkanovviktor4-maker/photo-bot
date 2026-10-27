@@ -305,6 +305,7 @@
         @keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
         .thinking-dots { display: inline; }
         .file-list { width: 100%; display: flex; flex-wrap: wrap; gap: 4px; padding: 0; border-radius: 16px; overflow: hidden; }
+        .file-list:empty { display: none; }
         .file-tag { display: inline-flex; align-items: center; background: rgba(0,203,245,0.15); border: 1px solid rgba(0,203,245,0.3); border-radius: 6px; padding: 3px 8px; font-size: 12px; color: #00CBF5; gap: 6px; }
         body.light .file-tag { background: rgba(0,203,245,0.1); color: #5f3f00; }
         .file-tag button { background: transparent; border: none; color: #e74c3c; cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
@@ -4317,10 +4318,21 @@
             var sizeInfo = '';
             var previewHtml = '';
             var previewFullHtml = '';
+            var previewOverTextarea = '';
             if (pendingFile && pendingFile.mime && pendingFile.mime.startsWith('image/')) {
-                previewHtml = '<img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:60px;max-height:60px;width:60px;height:60px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;cursor:pointer;flex-shrink:0;" onclick="toggleFullPreview(this)">';
-                previewFullHtml = '<div id="fullPreviewOverlay" onclick="this.remove()" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:pointer;"><img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:12px;"></div>';
+                previewOverTextarea = '<img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:200px;max-height:120px;border-radius:8px;object-fit:contain;cursor:pointer;display:block;" onclick="toggleFullPreview(this)">';
             }
+            var flist = document.getElementById('fileList');
+            if (flist) {
+                if (previewOverTextarea) {
+                    flist.innerHTML = '<div style="padding:8px 12px 0 12px;">' + previewOverTextarea + '</div>';
+                    flist.style.display = 'block';
+                } else {
+                    flist.innerHTML = '';
+                    flist.style.display = 'none';
+                }
+            }
+            previewHtml = '';
 
             if (pendingFile.data) {
                 var bytes = Math.round(pendingFile.data.length * 3 / 4);
