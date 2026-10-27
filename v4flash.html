@@ -3655,9 +3655,10 @@
                     var _imgMime = msg.image_mime || 'image/jpeg';
                     _allImgs += '<img src="data:' + _imgMime + ';base64,' + msg.image_b64 + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;display:block;cursor:pointer;margin-bottom:6px;" onclick="toggleFullPreview(this)">';
                 }
-                if (msg.extra_b64s && msg.extra_b64s.length) {
-                    for (var _ei = 0; _ei < msg.extra_b64s.length; _ei++) {
-                        var _eb = msg.extra_b64s[_ei];
+                var _displayArr = msg.display_b64s || msg.extra_b64s || [];
+                if (_displayArr && _displayArr.length) {
+                    for (var _ei = 0; _ei < _displayArr.length; _ei++) {
+                        var _eb = _displayArr[_ei];
                         var _em = _eb[1] || 'image/jpeg';
                         var _ed = _eb[0];
                         _allImgs += '<img src="data:' + _em + ';base64,' + _ed + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;display:block;cursor:pointer;margin-bottom:6px;" onclick="toggleFullPreview(this)">';
