@@ -1557,7 +1557,7 @@
         let currentMode = localStorage.getItem('photobot_mode') || 'chat';
         let webSearchEnabled = localStorage.getItem('photobot_web_search') === 'true';
         let typingInterval = null;
-        let pendingFile = null;
+        let pendingFiles = [];
         let activeStreamId = null;
 
         // ===== BG PICKER =====
@@ -4269,13 +4269,13 @@
         function updateLengthExcess() {
             var text = document.getElementById('userInput').value;
             var fileLength = 0;
-            if (pendingFile && pendingFile.data) {
-                if (pendingFile.mime && pendingFile.mime.startsWith('image/')) {
-                    fileLength = 0;
-                } else {
+            for (var _li = 0; _li < pendingFiles.length; _li++) {
+                var _lf = pendingFiles[_li];
+                if (_lf && _lf.data) {
+                    if (_lf.mime && _lf.mime.startsWith('image/')) continue;
                     try {
-                        var decoded = atob(pendingFile.data);
-                        fileLength = decoded.length;
+                        var decoded = atob(_lf.data);
+                        fileLength += decoded.length;
                     } catch(e) {}
                 }
             }
@@ -4311,13 +4311,14 @@
 
         function updateFileList() {
             const inline = document.getElementById('fileNameInline');
-            if (!pendingFile) {
+            if (!pendingFiles.length) {
                 if (inline) inline.innerHTML = '';
                 var _pb = document.getElementById('inputPreviewBox');
                 if (_pb) { _pb.innerHTML = ''; _pb.style.display = 'none'; }
                 updateSendBtn();
                 return;
             }
+            var pendingFile = pendingFiles[0];
             var isImageFile = pendingFile.mime && pendingFile.mime.startsWith('image/');
             var ext = pendingFile.name.split('.').pop().toLowerCase();
             var mimeOk = pendingFile.mime && (pendingFile.mime.startsWith('image/') || pendingFile.mime.startsWith('text/') || pendingFile.mime === 'application/pdf' || pendingFile.mime.includes('zip') || pendingFile.mime.includes('word') || pendingFile.mime.includes('excel') || pendingFile.mime.includes('powerpoint'));
@@ -4405,7 +4406,29 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 if (_abortCheck) { _abortCheck = false; return; }
                 const base64 = ev.target.result.split(',')[1];
 
-                pendingFile = { name: file.name, mime: file.type, data: base64 };
+                if (fluxModeEnabled) {
+                    pendingFiles = [{ name: file.name, mime: file.type, data: base64 }];
+                } else if (pendingFiles.length >= 10) {
+                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Максимум 10 вложений</span>';
+                    return;
+                } else {
+                    var _hasAnyImage = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
+                    var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0); });
+                    var _isNewImage = file.type && file.type.indexOf('image/') === 0;
+                    if (_isNewImage && _hasAnyNonImage) {
+                        if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
+                        return;
+                    }
+                    if (!_isNewImage && _hasAnyImage) {
+                        if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
+                        return;
+                    }
+                    if (!_isNewImage && _hasAnyNonImage) {
+                        if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Только один файл (кроме картинок)</span>';
+                        return;
+                    }
+                    pendingFiles.push({ name: file.name, mime: file.type, data: base64 });
+                }
                 
                 // Отправляем на валидацию
                 try {
@@ -4443,8 +4466,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                                     body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type })
                                 });
                                 var upData = await upResp.json();
-                                if (upData.success && upData.file_id) {
-                                    pendingFile.file_id = upData.file_id;
+                                if (upData.success && upData.file_id && pendingFiles.length) {
+                                    pendingFiles[pendingFiles.length - 1].file_id = upData.file_id;
                                 }
                             } catch (upErr) {
                                 console.warn('upload_file failed, fallback to base64', upErr);
@@ -4527,7 +4550,29 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         if (_abortCheck) { _abortCheck = false; return; }
                         var base64 = ev.target.result.split(',')[1];
 
-                        pendingFile = { name: file.name, mime: file.type, data: base64 };
+                        if (fluxModeEnabled) {
+                            pendingFiles = [{ name: file.name, mime: file.type, data: base64 }];
+                        } else if (pendingFiles.length >= 10) {
+                            if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Максимум 10 вложений</span>';
+                            return;
+                        } else {
+                            var _hasAnyImage = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
+                            var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0); });
+                            var _isNewImage = file.type && file.type.indexOf('image/') === 0;
+                            if (_isNewImage && _hasAnyNonImage) {
+                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
+                                return;
+                            }
+                            if (!_isNewImage && _hasAnyImage) {
+                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
+                                return;
+                            }
+                            if (!_isNewImage && _hasAnyNonImage) {
+                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Только один файл (кроме картинок)</span>';
+                                return;
+                            }
+                            pendingFiles.push({ name: file.name, mime: file.type, data: base64 });
+                        }
                         
                         // Отправляем на валидацию
                         try {
@@ -4569,8 +4614,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                                             body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type })
                                         });
                                         var upData = await upResp.json();
-                                        if (upData.success && upData.file_id) {
-                                            pendingFile.file_id = upData.file_id;
+                                        if (upData.success && upData.file_id && pendingFiles.length) {
+                                            pendingFiles[pendingFiles.length - 1].file_id = upData.file_id;
                                         }
                                     } catch (upErr) {
                                         console.warn('upload_file failed, fallback to base64', upErr);
@@ -4634,7 +4679,19 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                             if (_abortCheck) { _abortCheck = false; return; }
                             var base64 = ev.target.result.split(',')[1];
 
-                            pendingFile = { name: 'screenshot.png', mime: blob.type, data: base64 };
+                            if (fluxModeEnabled) {
+                                pendingFiles = [{ name: 'screenshot.png', mime: blob.type, data: base64 }];
+                            } else if (pendingFiles.length >= 10) {
+                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Максимум 10 вложений</span>';
+                                return;
+                            } else {
+                                var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0); });
+                                if (_hasAnyNonImage) {
+                                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
+                                    return;
+                                }
+                                pendingFiles.push({ name: 'screenshot.png', mime: blob.type, data: base64 });
+                            }
                             
                             try {
                                 _abortController = new AbortController();
@@ -4672,8 +4729,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                                                 body: JSON.stringify({ file_data: base64, file_name: 'screenshot.png', file_mime: blob.type })
                                             });
                                             var upData = await upResp.json();
-                                            if (upData.success && upData.file_id) {
-                                                pendingFile.file_id = upData.file_id;
+                                            if (upData.success && upData.file_id && pendingFiles.length) {
+                                                pendingFiles[pendingFiles.length - 1].file_id = upData.file_id;
                                             }
                                         } catch (upErr) {
                                             console.warn('upload_file failed, fallback to base64', upErr);
@@ -4706,13 +4763,15 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         var SUPPORTED_EXTENSIONS = { txt:1, json:1, csv:1, xml:1, html:1, htm:1, md:1, py:1, js:1, java:1, kt:1, cpp:1, c:1, h:1, css:1, gradle:1, properties:1, pro:1, yml:1, yaml:1, log:1, cfg:1, ini:1, conf:1, pdf:1, docx:1, xlsx:1, pptx:1, zip:1, jpg:1, jpeg:1, png:1, gif:1, webp:1, bmp:1, svg:1 };
         function updateSendBtn() {
             var hasText = input.value.trim().length > 0;
-            var hasFile = pendingFile !== null;
-            var isUploading = hasFile && pendingFile.mime && pendingFile.mime.indexOf('image/') === 0 && !pendingFile.file_id;
+            var hasFile = pendingFiles.length > 0;
+            var isUploading = false;
             var fileOk = true;
-            if (hasFile) {
-                var ext = pendingFile.name.split('.').pop().toLowerCase();
-                var mimeOk = pendingFile.mime && (pendingFile.mime.indexOf('image/') === 0 || pendingFile.mime.indexOf('text/') === 0 || pendingFile.mime === 'application/pdf' || pendingFile.mime.indexOf('zip') !== -1 || pendingFile.mime.indexOf('word') !== -1 || pendingFile.mime.indexOf('excel') !== -1 || pendingFile.mime.indexOf('powerpoint') !== -1);
-                fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
+            for (var _pi = 0; _pi < pendingFiles.length; _pi++) {
+                var _pf = pendingFiles[_pi];
+                if (_pf.mime && _pf.mime.indexOf('image/') === 0 && !_pf.file_id) isUploading = true;
+                var ext = _pf.name.split('.').pop().toLowerCase();
+                var mimeOk = _pf.mime && (_pf.mime.indexOf('image/') === 0 || _pf.mime.indexOf('text/') === 0 || _pf.mime === 'application/pdf' || _pf.mime.indexOf('zip') !== -1 || _pf.mime.indexOf('word') !== -1 || _pf.mime.indexOf('excel') !== -1 || _pf.mime.indexOf('powerpoint') !== -1);
+                if (!(SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk)) fileOk = false;
             }
             btn.disabled = !((hasText || hasFile) && fileOk) || isUploading;
         }
@@ -5066,6 +5125,16 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (fluxModeEnabled) {
                 if (btn) btn.classList.add('active');
                 if (inputEl) inputEl.placeholder = 'Опишите изображение для Flux 2...';
+                if (pendingFiles.length > 1) {
+                    var _firstImage = pendingFiles.filter(function(f) { return f.mime && f.mime.indexOf('image/') === 0; })[0];
+                    pendingFiles = _firstImage ? [_firstImage] : [];
+                    updateFileList();
+                    updateLengthExcess();
+                } else if (pendingFiles.length === 1 && !(pendingFiles[0].mime && pendingFiles[0].mime.indexOf('image/') === 0)) {
+                    pendingFiles = [];
+                    updateFileList();
+                    updateLengthExcess();
+                }
             } else {
                 if (btn) btn.classList.remove('active');
                 if (inputEl) inputEl.placeholder = 'Введите сообщение...';
@@ -5265,9 +5334,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 _abortController = null;
             }
             _fileReader = null;
-            pendingFile = null;           
+            pendingFiles = [];
             var inline = document.getElementById('fileNameInline');
             if (inline) inline.innerHTML = '';
+            updateFileList();
             updateLengthExcess(); 
         }
 
@@ -5458,8 +5528,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             const _stillHere = function() { return currentChatId === _sendChatId; };
             
             let displayText = text;
-            if (pendingFile) {
-                displayText = text ? text + '\n\n📎 ' + pendingFile.name : '📎 ' + pendingFile.name;
+            if (pendingFiles.length) {
+                var _fileNames = pendingFiles.map(function(f) { return f.name; }).join(', ');
+                displayText = text ? text + '\n\n📎 ' + _fileNames : '📎 ' + _fileNames;
             }
 
             chat.messages.push({ role: 'user', content: displayText });
@@ -5527,18 +5598,15 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         branch_id: _targetBranchId,
                         personality: currentPersonality,
                         web_search: webSearchEnabled,
-                        file_data: pendingFile ? pendingFile.data : '',
-                        file_name: pendingFile ? pendingFile.name : '',
-                        file_mime: pendingFile ? pendingFile.mime : '',
-                        file_id: pendingFile && pendingFile.file_id ? pendingFile.file_id : '',
+                        files: pendingFiles.map(function(f) { return { data: f.data || '', name: f.name || '', mime: f.mime || '', file_id: f.file_id || '' }; }),
                         flux: fluxModeEnabled
                     }),
                     signal: abortController.signal
                 });
                 // Прерываем проверку файла, если она идёт
                 cancelFileCheck();
-                // Очищаем сразу после отправки запроса
-                pendingFile = null;
+                // Очищаем файлы сразу после отправки запроса
+                pendingFiles = [];
                 updateFileList();
 
                 if (resp.status === 406) {
@@ -5681,7 +5749,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 isSending = false;
                 activeStreamId = null;
                 sendBtnArrow();
-                pendingFile = null;
+                pendingFiles = [];
                 updateFileList();
                 playSound('reply');
                 // Автоозвучка
