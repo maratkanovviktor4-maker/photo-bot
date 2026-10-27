@@ -4339,7 +4339,19 @@
                     for (var _pv = 0; _pv < pendingFiles.length; _pv++) {
                         var _pf = pendingFiles[_pv];
                         if (!(_pf.mime && _pf.mime.indexOf('image/') === 0)) continue;
-                        _previewsHtml += '<div style="position:relative;flex-shrink:0;"><img src="data:' + _pf.mime + ';base64,' + _pf.data + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;display:block;" onclick="toggleFullPreview(this)"><button onclick="event.stopPropagation();removeFileAt(' + _pv + ');" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);color:#fff;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:background 0.15s;" onmouseenter="this.style.background=\'rgba(231,76,60,0.9)\'" onmouseleave="this.style.background=\'rgba(0,0,0,0.7)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></div>';
+                        var _isUp = (_pf._status === 'uploading');
+                        var _isErr = (_pf._status === 'error');
+                        var _imgOpacity = _isUp ? '0.4' : (_isErr ? '0.6' : '1');
+                        var _imgFilter = _isUp ? 'grayscale(40%)' : (_isErr ? 'sepia(80%)' : 'none');
+                        var _spinnerHtml = '';
+                        if (_isUp) {
+                            _spinnerHtml = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.8s linear infinite;pointer-events:none;"></div>';
+                        }
+                        var _errHtml = '';
+                        if (_isErr) {
+                            _errHtml = '<div style="position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,0.7);color:#e74c3c;font-size:9px;padding:1px 4px;border-radius:3px;font-family:Inter,sans-serif;">ошибка</div>';
+                        }
+                        _previewsHtml += '<div style="position:relative;flex-shrink:0;"><img src="data:' + _pf.mime + ';base64,' + _pf.data + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;display:block;opacity:' + _imgOpacity + ';filter:' + _imgFilter + ';transition:opacity 0.2s,filter 0.2s;" onclick="toggleFullPreview(this)">' + _spinnerHtml + _errHtml + '<button onclick="event.stopPropagation();removeFileAt(' + _pv + ');" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);color:#fff;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:background 0.15s;" onmouseenter="this.style.background=\'rgba(231,76,60,0.9)\'" onmouseleave="this.style.background=\'rgba(0,0,0,0.7)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></div>';
                     }
                     _previewsHtml += '</div>';
                     _previewBox.innerHTML = _previewsHtml;
@@ -4350,16 +4362,7 @@
                 }
             }
             if (_hasImages) {
-                if (inline) {
-                    var _uploadingCount = pendingFiles.filter(function(f) { return f._status === 'uploading'; }).length;
-                    var _errorCount = pendingFiles.filter(function(f) { return f._status === 'error'; }).length;
-                    var _totalImg = pendingFiles.length;
-                    var _okCount = pendingFiles.filter(function(f) { return f._status === 'ok' || (!f._status && f.file_id); }).length;
-                    var _statusText = '';
-                    if (_uploadingCount > 0) _statusText += '<span style="color:#00CBF5;display:inline-flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> ' + _okCount + '/' + _totalImg + ' загружено</span>';
-                    else if (_errorCount > 0) _statusText += '<span style="color:#e74c3c;">⚠️ ' + _errorCount + ' с ошибкой</span>';
-                    inline.innerHTML = _statusText;
-                }
+                if (inline) inline.innerHTML = '';
                 updateSendBtn();
                 updateLengthExcess();
                 return;
