@@ -5433,6 +5433,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             }
             const abortController = new AbortController();
             assistantMsg._abortController = abortController;
+            var _fluxTimeoutId = null;
+            if (fluxModeEnabled) {
+                _fluxTimeoutId = setTimeout(function() {
+                    try { abortController.abort(); } catch(e) {}
+                }, 350000);
+            }
 
             try {
                 const resp = await fetch(`${SERVER_URL}/chat`, {
@@ -5571,6 +5577,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     }
                 }
 
+                if (typeof _fluxTimeoutId !== 'undefined' && _fluxTimeoutId) {
+                    clearTimeout(_fluxTimeoutId);
+                    _fluxTimeoutId = null;
+                }
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
