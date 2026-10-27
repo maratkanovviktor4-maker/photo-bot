@@ -5102,47 +5102,35 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     showAlertModal('Лимит генераций', 'Требуется подписка или пакет генераций Flux', '⚠️');
                     return;
                 }
-                var enqData = await enqResp.json().catch(function() { return {}; });
+                var enqData = await enqResp.json();
                 if (!enqData.success || !enqData.job_id) {
                     assistantRow.remove();
                     chat.messages.pop();
-                    showAlertModal('Ошибка', 'Не удалось запустить генерацию. Проверьте, запущен ли ComfyUI.', '❌');
+                    showAlertModal('Ошибка', 'Не удалось запустить генерацию', '❌');
                     return;
                 }
                 var jobId = enqData.job_id;
 
                 var result = null;
-                var _consecutiveErrors = 0;
                 for (var i = 0; i < 150; i++) {
                     await new Promise(function(res) { setTimeout(res, 2000); });
-                    try {
-                        var pdResp = await fetch(SERVER_URL + '/pending?user_id=' + currentUserId + '&session_token=' + sessionToken);
-                        if (!pdResp.ok) {
-                            _consecutiveErrors++;
-                            if (_consecutiveErrors >= 5) break;
-                            continue;
-                        }
-                        _consecutiveErrors = 0;
-                        var pdData = await pdResp.json();
-                        if (pdData.results && pdData.results.length) {
-                            for (var k = 0; k < pdData.results.length; k++) {
-                                if (pdData.results[k].job_id === jobId) {
-                                    result = pdData.results[k];
-                                    break;
-                                }
+                    var pdResp = await fetch(SERVER_URL + '/pending?user_id=' + currentUserId + '&session_token=' + sessionToken);
+                    var pdData = await pdResp.json();
+                    if (pdData.results && pdData.results.length) {
+                        for (var k = 0; k < pdData.results.length; k++) {
+                            if (pdData.results[k].job_id === jobId) {
+                                result = pdData.results[k];
+                                break;
                             }
-                            if (result) break;
                         }
-                    } catch (pdErr) {
-                        _consecutiveErrors++;
-                        if (_consecutiveErrors >= 5) break;
+                        if (result) break;
                     }
                 }
 
                 if (!result) {
                     assistantRow.remove();
                     chat.messages.pop();
-                    showAlertModal('Генерация не завершилась', 'ComfyUI не ответил за 5 минут. Проверьте, запущен ли ComfyUI, и попробуйте снова.', '⏱');
+                    showAlertModal('Таймаут', 'Генерация не завершилась. Попробуйте позже.', '⏱');
                     return;
                 }
 
