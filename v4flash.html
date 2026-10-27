@@ -4318,6 +4318,30 @@
                 updateSendBtn();
                 return;
             }
+            var _hasImages = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
+            var _previewBox = document.getElementById('inputPreviewBox');
+            if (_previewBox) {
+                if (_hasImages) {
+                    var _previewsHtml = '<div style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px 0;">';
+                    for (var _pv = 0; _pv < pendingFiles.length; _pv++) {
+                        var _pf = pendingFiles[_pv];
+                        if (!(_pf.mime && _pf.mime.indexOf('image/') === 0)) continue;
+                        _previewsHtml += '<div style="position:relative;flex-shrink:0;"><img src="data:' + _pf.mime + ';base64,' + _pf.data + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;display:block;" onclick="toggleFullPreview(this)"><button onclick="event.stopPropagation();removeFileAt(' + _pv + ');" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);color:#fff;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:background 0.15s;" onmouseenter="this.style.background=\'rgba(231,76,60,0.9)\'" onmouseleave="this.style.background=\'rgba(0,0,0,0.7)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></div>';
+                    }
+                    _previewsHtml += '</div>';
+                    _previewBox.innerHTML = _previewsHtml;
+                    _previewBox.style.display = 'block';
+                } else {
+                    _previewBox.innerHTML = '';
+                    _previewBox.style.display = 'none';
+                }
+            }
+            if (_hasImages) {
+                if (inline) inline.innerHTML = '';
+                updateSendBtn();
+                updateLengthExcess();
+                return;
+            }
             var pendingFile = pendingFiles[0];
             var isImageFile = pendingFile.mime && pendingFile.mime.startsWith('image/');
             var ext = pendingFile.name.split('.').pop().toLowerCase();
@@ -4761,6 +4785,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         var input = document.getElementById('userInput');
         var btn = document.getElementById('sendBtn');
         var SUPPORTED_EXTENSIONS = { txt:1, json:1, csv:1, xml:1, html:1, htm:1, md:1, py:1, js:1, java:1, kt:1, cpp:1, c:1, h:1, css:1, gradle:1, properties:1, pro:1, yml:1, yaml:1, log:1, cfg:1, ini:1, conf:1, pdf:1, docx:1, xlsx:1, pptx:1, zip:1, jpg:1, jpeg:1, png:1, gif:1, webp:1, bmp:1, svg:1 };
+        function removeFileAt(idx) {
+            if (idx < 0 || idx >= pendingFiles.length) return;
+            pendingFiles.splice(idx, 1);
+            updateFileList();
+            updateLengthExcess();
+            updateSendBtn();
+        }
+
         function updateSendBtn() {
             var hasText = input.value.trim().length > 0;
             var hasFile = pendingFiles.length > 0;
