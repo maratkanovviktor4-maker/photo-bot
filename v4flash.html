@@ -3649,6 +3649,15 @@
                 }
             }
             var contentHtml = (msg.role === 'user') ? _userHtml : formatMessage(contentToShow);
+            if (msg.role === 'assistant' && msg._flux_meta && msg._flux_meta.status === 'success' && msg._flux_meta.job_id) {
+                var _fluxImgFile = 'web_' + currentUserId + '_' + msg._flux_meta.job_id + '.jpg';
+                var _fluxImgUrl = SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(_fluxImgFile) + '&session_token=' + sessionToken;
+                if (msg._flux_meta.downloaded) {
+                    contentHtml = '<div style="margin:6px 0 8px 0;padding:10px 14px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.2);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали это изображение.</div>' + contentHtml;
+                } else {
+                    contentHtml = '<div style="margin:6px 0 10px 0;"><img src="' + _fluxImgUrl + '" style="max-width:280px;max-height:280px;border-radius:12px;display:block;cursor:pointer;object-fit:contain;background:rgba(0,0,0,0.1);" onclick="toggleFullPreview(this)" onerror="this.style.display=\'none\'"></div>' + contentHtml;
+                }
+            }
             if (msg.role === 'user' && (msg.image_b64 || (msg.extra_b64s && msg.extra_b64s.length))) {
                 var _allImgs = '';
                 if (msg.image_b64) {
@@ -4069,6 +4078,20 @@
 
 
 
+        function _markFluxDownloadedLocally(filename) {
+            var _m = String(filename).match(/^web_(\d+)_(app_[^.]+)\.jpg$/);
+            if (!_m) return;
+            var _jobId = _m[2];
+            var _chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!_chat) return;
+            for (var _i = 0; _i < _chat.messages.length; _i++) {
+                var _msg = _chat.messages[_i];
+                if (_msg.role === 'assistant' && _msg._flux_meta && _msg._flux_meta.job_id === _jobId) {
+                    _msg._flux_meta.downloaded = true;
+                }
+            }
+        }
+
         async function grabReadyImage() {
             try {
                 var histResp = await fetch(SERVER_URL + '/history?user_id=' + currentUserId + '&session_token=' + sessionToken);
@@ -4097,6 +4120,12 @@
                     a.download = fname;
                     a.click();
                     URL.revokeObjectURL(url);
+                    await fetch(SERVER_URL + '/mark_image_downloaded', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, filename: fname })
+                    });
+                    _markFluxDownloadedLocally(fname);
                     await fetch(SERVER_URL + '/delete_history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(fname) + '&session_token=' + sessionToken, { method: 'DELETE' });
                 } else {
                     var zip = new JSZip();
@@ -4116,9 +4145,16 @@
                     za.click();
                     URL.revokeObjectURL(zipUrl);
                     for (var j = 0; j < files.length; j++) {
+                        await fetch(SERVER_URL + '/mark_image_downloaded', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                            body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, filename: files[j] })
+                        });
+                        _markFluxDownloadedLocally(files[j]);
                         await fetch(SERVER_URL + '/delete_history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(files[j]) + '&session_token=' + sessionToken, { method: 'DELETE' });
                     }
                 }
+                if (currentChatId) renderMessages();
             } catch (e) {
                 console.error('grabReadyImage error:', e);
                 showAlertModal('Ошибка', 'Не удалось скачать изображение', '❌');
