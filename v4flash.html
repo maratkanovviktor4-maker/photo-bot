@@ -4385,12 +4385,18 @@
         }
 
         async function handleFileSelect(e) {
+            const file = e.target.files[0];
+            document.getElementById('fileInput').value = '';
+            if (!file) return;
+            if (_isUploading) {
+                var _inlineW = document.getElementById('fileNameInline');
+                if (_inlineW) _inlineW.innerHTML = '<span style="color:#e74c3c;">⚠️ Дождитесь окончания предыдущей загрузки</span>';
+                return;
+            }
+            _isUploading = true;
             if (_abortController) { _abortController.abort(); _abortController = null; }
             _fileReader = null;
             _abortCheck = false;
-            const file = e.target.files[0];
-
-            if (!file) return;
             
             // Показываем спиннер
             var inline = document.getElementById('fileNameInline');
@@ -4482,7 +4488,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                                 });
                                 var upData = await upResp.json();
                                 if (upData.success && upData.file_id && pendingFiles.length) {
-                                    pendingFiles[pendingFiles.length - 1].file_id = upData.file_id;
+                                    var _curName = file.name, _curLen = base64.length;
+                                    for (var _pi2 = 0; _pi2 < pendingFiles.length; _pi2++) {
+                                        if (pendingFiles[_pi2].name === _curName && pendingFiles[_pi2].data.length === _curLen && !pendingFiles[_pi2].file_id) {
+                                            pendingFiles[_pi2].file_id = upData.file_id;
+                                            break;
+                                        }
+                                    }
                                 }
                             } catch (upErr) {
                                 console.warn('upload_file failed, fallback to base64', upErr);
@@ -4493,15 +4505,15 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 } catch (e) {
                     if (e.name === 'AbortError') {
                         _abortController = null;
+                        _isUploading = false;
                         return;
                     }
-                    if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-                    pendingFile = null;
+                    if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFiles=[];updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                 }
-
+                _isUploading = false;
             };
+            reader.onerror = function() { _isUploading = false; };
             reader.readAsDataURL(file);
-            document.getElementById('fileInput').value = '';
         }
 
 
@@ -4779,6 +4791,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function removeFileAt(idx) {
             if (idx < 0 || idx >= pendingFiles.length) return;
             pendingFiles.splice(idx, 1);
+            var _stillUploading = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0 && !f.file_id; });
+            if (!_stillUploading) _isUploading = false;
             updateFileList();
             updateLengthExcess();
             updateSendBtn();
@@ -4787,7 +4801,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function updateSendBtn() {
             var hasText = input.value.trim().length > 0;
             var hasFile = pendingFiles.length > 0;
-            var isUploading = false;
+            if (!hasFile) _isUploading = false;
+            var isUploading = _isUploading;
             var fileOk = true;
             for (var _pi = 0; _pi < pendingFiles.length; _pi++) {
                 var _pf = pendingFiles[_pi];
@@ -5347,6 +5362,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         var _fileReader = null;
         var _abortCheck = false;
         var _abortController = null;
+        var _isUploading = false;
 
 
 
