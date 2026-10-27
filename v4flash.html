@@ -1203,7 +1203,7 @@
                     <div class="file-list" id="fileList"></div>
                     <div class="input-row-wrapper">
                         <div class="input-row" style="flex-direction:column;align-items:stretch;">
-                            <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
+                            <input type="file" id="fileInput" style="display:none;" multiple onchange="handleFileSelect(event)">
                             <div id="inputPreviewBox" style="display:none;"></div>
                             <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();var btn=document.getElementById('sendBtn');if(btn.disabled)return;if(isSending){stopTyping();}else{sendMessage();}}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,300)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,300)+'px';this._init=true;}"></textarea>
                         </div>
@@ -4350,7 +4350,16 @@
                 }
             }
             if (_hasImages) {
-                if (inline) inline.innerHTML = '';
+                if (inline) {
+                    var _uploadingCount = pendingFiles.filter(function(f) { return f._status === 'uploading'; }).length;
+                    var _errorCount = pendingFiles.filter(function(f) { return f._status === 'error'; }).length;
+                    var _totalImg = pendingFiles.length;
+                    var _okCount = pendingFiles.filter(function(f) { return f._status === 'ok' || (!f._status && f.file_id); }).length;
+                    var _statusText = '';
+                    if (_uploadingCount > 0) _statusText += '<span style="color:#00CBF5;display:inline-flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> ' + _okCount + '/' + _totalImg + ' загружено</span>';
+                    else if (_errorCount > 0) _statusText += '<span style="color:#e74c3c;">⚠️ ' + _errorCount + ' с ошибкой</span>';
+                    inline.innerHTML = _statusText;
+                }
                 updateSendBtn();
                 updateLengthExcess();
                 return;
@@ -4384,136 +4393,145 @@
 
         }
 
+                var _fileQueue = [];
+        var _isProcessing = false;
+
         async function handleFileSelect(e) {
-            const file = e.target.files[0];
+            const selected = Array.from(e.target.files || []);
             document.getElementById('fileInput').value = '';
-            if (!file) return;
-            if (_isUploading) {
-                var _inlineW = document.getElementById('fileNameInline');
-                if (_inlineW) _inlineW.innerHTML = '<span style="color:#e74c3c;">⚠️ Дождитесь окончания предыдущей загрузки</span>';
-                return;
+            if (!selected.length) return;
+            for (var _si = 0; _si < selected.length; _si++) {
+                _fileQueue.push(selected[_si]);
             }
-            _isUploading = true;
+            if (!_isProcessing) processFileQueue();
+        }
+
+        async function processFileQueue() {
+            if (_isProcessing) return;
+            _isProcessing = true;
+            while (_fileQueue.length) {
+                var file = _fileQueue.shift();
+                try {
+                    await processSingleFile(file);
+                } catch (e) {
+                    console.warn('processSingleFile failed', e);
+                }
+            }
+            _isProcessing = false;
+            updateFileList();
+        }
+
+        async function processSingleFile(file) {
             if (_abortController) { _abortController.abort(); _abortController = null; }
             _fileReader = null;
             _abortCheck = false;
-            
-            // Показываем спиннер
             var inline = document.getElementById('fileNameInline');
-if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
 
-            // Проверка формата
             var ext = file.name.split('.').pop().toLowerCase();
             var mimeOk = file.type && (file.type.startsWith('image/') || file.type.startsWith('text/') || file.type === 'application/pdf' || file.type.includes('zip') || file.type.includes('word') || file.type.includes('excel') || file.type.includes('powerpoint'));
             var fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
             if (!fileOk) {
-                if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Неподдерживаемый формат</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-                document.getElementById('fileInput').value = '';
+                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + escapeHtml(file.name) + ': неподдерживаемый формат</span>';
                 return;
             }
-            
-            // Проверка размера файла
+
             const MAX_FILE_SIZE = 50 * 1024 * 1024;
             if (file.size > MAX_FILE_SIZE) {
-                if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Файл слишком большой (макс. 50 МБ)</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-                document.getElementById('fileInput').value = '';
+                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + escapeHtml(file.name) + ': слишком большой (макс. 50 МБ)</span>';
                 return;
             }
-            
-            const reader = new FileReader();
-            _fileReader = reader;
 
-            reader.onload = async function(ev) {
-                if (_abortCheck) { _abortCheck = false; return; }
-                const base64 = ev.target.result.split(',')[1];
+            if (pendingFiles.length >= 10) {
+                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Максимум 10 вложений</span>';
+                return;
+            }
 
-                if (fluxModeEnabled) {
-                    pendingFiles = [{ name: file.name, mime: file.type, data: base64 }];
-                } else if (pendingFiles.length >= 10) {
-                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Максимум 10 вложений</span>';
+            var _isNewImage = file.type && file.type.indexOf('image/') === 0;
+            var _hasAnyImage = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
+            var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0); });
+
+            if (fluxModeEnabled && _isNewImage) {
+                // заменяем всё на одну картинку
+                pendingFiles = [];
+            } else {
+                if (_isNewImage && _hasAnyNonImage) {
+                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
                     return;
-                } else {
-                    var _hasAnyImage = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
-                    var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0); });
-                    var _isNewImage = file.type && file.type.indexOf('image/') === 0;
-                    if (_isNewImage && _hasAnyNonImage) {
-                        if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
-                        return;
-                    }
-                    if (!_isNewImage && _hasAnyImage) {
-                        if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
-                        return;
-                    }
-                    if (!_isNewImage && _hasAnyNonImage) {
-                        if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Только один файл (кроме картинок)</span>';
-                        return;
-                    }
-                    pendingFiles.push({ name: file.name, mime: file.type, data: base64 });
                 }
-                
-                // Отправляем на валидацию
+                if (!_isNewImage && _hasAnyImage) {
+                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
+                    return;
+                }
+                if (!_isNewImage && _hasAnyNonImage) {
+                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Только один файл (кроме картинок)</span>';
+                    return;
+                }
+            }
+
+            var base64 = await new Promise(function(resolve, reject) {
+                var rdr = new FileReader();
+                _fileReader = rdr;
+                rdr.onload = function(ev) { resolve(ev.target.result.split(',')[1]); };
+                rdr.onerror = function() { reject(new Error('read error')); };
+                rdr.readAsDataURL(file);
+            });
+            if (_abortCheck) { _abortCheck = false; return; }
+
+            // Отправляем на валидацию
+            try {
+                _abortController = new AbortController();
+                var resp = await fetch(SERVER_URL + '/validate_file', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type }),
+                    signal: _abortController.signal
+                });
+                _abortController = null;
+                var result = await resp.json();
+                if (!result.valid) {
+                    var errorText = 'Ошибка проверки файла';
+                    if (result.error === 'max_weight') errorText = 'Превышен максимальный вес (' + (result.size_mb || '?') + ' МБ)';
+                    else if (result.error === 'max_text') errorText = 'Превышена макс. длина текста';
+                    else if (result.error === 'max_text_zip') errorText = 'Превышена макс. длина текста в архиве';
+                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + escapeHtml(file.name) + ': ' + errorText + '</span>';
+                    return;
+                }
+            } catch (e) {
+                if (e.name === 'AbortError') { _abortController = null; return; }
+                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Ошибка проверки ' + escapeHtml(file.name) + '</span>';
+                return;
+            }
+
+            var newItem = { name: file.name, mime: file.type, data: base64 };
+            if (_isNewImage) {
+                newItem._status = 'uploading';
+            } else {
+                newItem._status = 'ok';
+            }
+            pendingFiles.push(newItem);
+            updateFileList();
+
+            if (_isNewImage) {
                 try {
-                    _abortController = new AbortController();
-                    var resp = await fetch(SERVER_URL + '/validate_file', {
+                    var upResp = await fetch(SERVER_URL + '/upload_file', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                        body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type }),
-                        signal: _abortController.signal
+                        body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type })
                     });
-                    _abortController = null;
-                    var result = await resp.json();
-
-                    
-                    if (!result.valid) {
-                        var errorText = '';
-                        if (result.error === 'max_weight') {
-                            errorText = 'Превышен максимальный вес (' + (result.size_mb || '?') + ' МБ)';
-                        } else if (result.error === 'max_text') {
-                            errorText = 'Превышена максимальная длина текста (' + (result.length || '?') + ' символов)';
-                        } else if (result.error === 'max_text_zip') {
-                            errorText = 'Превышена максимальная длина текста в архиве (' + (result.length || '?') + ' символов)';
-                        } else {
-                            errorText = 'Ошибка проверки файла';
-                        }
-                        if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ ' + errorText + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-                        pendingFile = null;
+                    var upData = await upResp.json();
+                    if (upData.success && upData.file_id) {
+                        newItem.file_id = upData.file_id;
+                        newItem._status = 'ok';
                     } else {
-                        if (file.type && file.type.startsWith('image/') && file.type !== 'image/svg+xml') {
-                            try {
-                                if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Загрузка в облако...</span></span>';
-                                var upResp = await fetch(SERVER_URL + '/upload_file', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                    body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type })
-                                });
-                                var upData = await upResp.json();
-                                if (upData.success && upData.file_id && pendingFiles.length) {
-                                    var _curName = file.name, _curLen = base64.length;
-                                    for (var _pi2 = 0; _pi2 < pendingFiles.length; _pi2++) {
-                                        if (pendingFiles[_pi2].name === _curName && pendingFiles[_pi2].data.length === _curLen && !pendingFiles[_pi2].file_id) {
-                                            pendingFiles[_pi2].file_id = upData.file_id;
-                                            break;
-                                        }
-                                    }
-                                }
-                            } catch (upErr) {
-                                console.warn('upload_file failed, fallback to base64', upErr);
-                            }
-                        }
-                        updateFileList();
+                        newItem._status = 'error';
                     }
-                } catch (e) {
-                    if (e.name === 'AbortError') {
-                        _abortController = null;
-                        _isUploading = false;
-                        return;
-                    }
-                    if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFiles=[];updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+                } catch (upErr) {
+                    console.warn('upload_file failed', upErr);
+                    newItem._status = 'error';
                 }
-                _isUploading = false;
-            };
-            reader.onerror = function() { _isUploading = false; };
-            reader.readAsDataURL(file);
+                updateFileList();
+                updateSendBtn();
+            }
         }
 
 
@@ -4531,137 +4549,22 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             for (var i = 0; i < dragEvents.length; i++) {
                 inputArea.addEventListener(dragEvents[i], preventDefaults);
             }
-
             var showEvents = ['dragenter', 'dragover'];
             for (var j = 0; j < showEvents.length; j++) {
                 inputArea.addEventListener(showEvents[j], showDrop);
             }
-
             var hideEvents = ['dragleave', 'drop'];
             for (var k = 0; k < hideEvents.length; k++) {
                 inputArea.addEventListener(hideEvents[k], hideDrop);
             }
 
-            inputArea.addEventListener('drop', async function(e) {
-                if (_abortController) { _abortController.abort(); _abortController = null; }
-                _fileReader = null;
-                _abortCheck = false;
+            inputArea.addEventListener('drop', function(e) {
                 var files = e.dataTransfer.files;
-
-                if (files.length > 0) {
-                    var file = files[0];
-                    // Показываем спиннер
-                    var inline = document.getElementById('fileNameInline');
-if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-
-                    // Проверка формата
-                    var ext = file.name.split('.').pop().toLowerCase();
-                    var mimeOk = file.type && (file.type.startsWith('image/') || file.type.startsWith('text/') || file.type === 'application/pdf' || file.type.includes('zip') || file.type.includes('word') || file.type.includes('excel') || file.type.includes('powerpoint'));
-                    var fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
-                    if (!fileOk) {
-                        if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Неподдерживаемый формат</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-                        return;
-                    }
-                   
-                    // Проверка размера файла
-                    const MAX_FILE_SIZE = 50 * 1024 * 1024;
-                    if (file.size > MAX_FILE_SIZE) {
-                        if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Файл слишком большой (макс. 50 МБ)</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-                        return;
-                    }
-                    
-                    var reader = new FileReader();
-                    _fileReader = reader;
-
-                    reader.onload = async function(ev) {
-                        if (_abortCheck) { _abortCheck = false; return; }
-                        var base64 = ev.target.result.split(',')[1];
-
-                        if (fluxModeEnabled) {
-                            pendingFiles = [{ name: file.name, mime: file.type, data: base64 }];
-                        } else if (pendingFiles.length >= 10) {
-                            if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Максимум 10 вложений</span>';
-                            return;
-                        } else {
-                            var _hasAnyImage = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
-                            var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0); });
-                            var _isNewImage = file.type && file.type.indexOf('image/') === 0;
-                            if (_isNewImage && _hasAnyNonImage) {
-                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
-                                return;
-                            }
-                            if (!_isNewImage && _hasAnyImage) {
-                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
-                                return;
-                            }
-                            if (!_isNewImage && _hasAnyNonImage) {
-                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Только один файл (кроме картинок)</span>';
-                                return;
-                            }
-                            pendingFiles.push({ name: file.name, mime: file.type, data: base64 });
-                        }
-                        
-                        // Отправляем на валидацию
-                        try {
-                            _abortController = new AbortController();
-                            var resp = await fetch(SERVER_URL + '/validate_file', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type }),
-                                signal: _abortController.signal
-                            });
-                            _abortController = null;
-                            var result = await resp.json();
-
-                            
-                            if (!result.valid) {
-                                var errorText = '';
-                                if (result.error === 'max_weight') {
-                                    errorText = 'Превышен максимальный вес (' + (result.size_mb || '?') + ' МБ)';
-                                } else if (result.error === 'max_text') {
-                                    errorText = 'Превышена максимальная длина текста (' + (result.length || '?') + ' символов)';
-                                } else if (result.error === 'max_text_zip') {
-                                    errorText = 'Превышена максимальная длина текста в архиве (' + (result.length || '?') + ' символов)';
-                                } else if (result.error === 'unsupported_format') {
-                                    errorText = 'Неподдерживаемый формат файла';
-                                } else {
-                                    errorText = 'Ошибка проверки файла';
-                                }
-
-                                if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ ' + errorText + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-
-                                pendingFile = null;
-                            } else {
-                                if (file.type && file.type.startsWith('image/') && file.type !== 'image/svg+xml') {
-                                    try {
-                                        if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Загрузка в облако...</span></span>';
-                                        var upResp = await fetch(SERVER_URL + '/upload_file', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                            body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type })
-                                        });
-                                        var upData = await upResp.json();
-                                        if (upData.success && upData.file_id && pendingFiles.length) {
-                                            pendingFiles[pendingFiles.length - 1].file_id = upData.file_id;
-                                        }
-                                    } catch (upErr) {
-                                        console.warn('upload_file failed, fallback to base64', upErr);
-                                    }
-                                }
-                                updateFileList();
-                            }
-                        } catch (e) {
-                            if (e.name === 'AbortError') {
-                                _abortController = null;
-                                return;
-                            }
-                            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-                            pendingFile = null;
-                        }
-
-                    };
-                    reader.readAsDataURL(file);
+                if (!files || !files.length) return;
+                for (var _di = 0; _di < files.length; _di++) {
+                    _fileQueue.push(files[_di]);
                 }
+                if (!_isProcessing) processFileQueue();
             });
         }
 
@@ -4669,130 +4572,30 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             var userInput = document.getElementById('userInput');
             if (!userInput) return;
             userInput.addEventListener('paste', function(e) {
-                if (_abortController) { _abortController.abort(); _abortController = null; }
-                _fileReader = null;
-                _abortCheck = false;
                 var items = e.clipboardData.items;
-
+                var _had = false;
                 for (var i = 0; i < items.length; i++) {
                     if (items[i].type.indexOf('image') !== -1) {
-                        e.preventDefault();
                         var blob = items[i].getAsFile();
-                        
-                        // Показываем спиннер
-                        var inline = document.getElementById('fileNameInline');
-if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-
-                        // Проверка формата
-                        var ext = blob.name.split('.').pop().toLowerCase();
-                        var mimeOk = blob.type && (blob.type.startsWith('image/') || blob.type.startsWith('text/') || blob.type === 'application/pdf' || blob.type.includes('zip') || blob.type.includes('word') || blob.type.includes('excel') || blob.type.includes('powerpoint'));
-                        var fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
-
-                        if (!fileOk) {
-                            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Неподдерживаемый формат</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-                            return;
-                        }                       
-                        // Проверка размера
-                        const MAX_FILE_SIZE = 50 * 1024 * 1024;
-                        if (blob.size > MAX_FILE_SIZE) {
-                            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Файл слишком большой (макс. 50 МБ)</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-                            return;
-                        }
-                        
-                        var reader = new FileReader();
-                        _fileReader = reader;
-
-                        reader.onload = async function(ev) {
-                            if (_abortCheck) { _abortCheck = false; return; }
-                            var base64 = ev.target.result.split(',')[1];
-
-                            if (fluxModeEnabled) {
-                                pendingFiles = [{ name: 'screenshot.png', mime: blob.type, data: base64 }];
-                            } else if (pendingFiles.length >= 10) {
-                                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Максимум 10 вложений</span>';
-                                return;
-                            } else {
-                                var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0); });
-                                if (_hasAnyNonImage) {
-                                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
-                                    return;
-                                }
-                                pendingFiles.push({ name: 'screenshot.png', mime: blob.type, data: base64 });
-                            }
-                            
-                            try {
-                                _abortController = new AbortController();
-                                var resp = await fetch(SERVER_URL + '/validate_file', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                    body: JSON.stringify({ file_data: base64, file_name: 'screenshot.png', file_mime: blob.type }),
-                                    signal: _abortController.signal
-                                });
-                                _abortController = null;
-                                var result = await resp.json();
-
-                                
-                                if (!result.valid) {
-                                    var errorText = '';
-                                    if (result.error === 'max_weight') {
-                                        errorText = 'Превышен максимальный вес (' + (result.size_mb || '?') + ' МБ)';
-                                    } else if (result.error === 'max_text') {
-                                        errorText = 'Превышена максимальная длина текста (' + (result.length || '?') + ' символов)';
-                                    } else if (result.error === 'unsupported_format') {
-                                        errorText = 'Неподдерживаемый формат файла';
-                                    } else {
-                                        errorText = 'Ошибка проверки файла';
-                                    }
-
-                                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + errorText + '</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>';
-                                    pendingFile = null;
-                                } else {
-                                    if (blob.type && blob.type.startsWith('image/') && blob.type !== 'image/svg+xml') {
-                                        try {
-                                            if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Загрузка в облако...</span></span>';
-                                            var upResp = await fetch(SERVER_URL + '/upload_file', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                                body: JSON.stringify({ file_data: base64, file_name: 'screenshot.png', file_mime: blob.type })
-                                            });
-                                            var upData = await upResp.json();
-                                            if (upData.success && upData.file_id && pendingFiles.length) {
-                                                pendingFiles[pendingFiles.length - 1].file_id = upData.file_id;
-                                            }
-                                        } catch (upErr) {
-                                            console.warn('upload_file failed, fallback to base64', upErr);
-                                        }
-                                    }
-                                    updateFileList();
-                                }
-                            } catch (e) {
-                                if (e.name === 'AbortError') {
-                                    _abortController = null;
-                                    return;
-                                }
-                                if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки</span> <button onclick="pendingFile=null;updateFileList();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-                                pendingFile = null;
-                            }
-                        };
-
-                        reader.readAsDataURL(blob);
-                        break;
+                        if (!blob) continue;
+                        e.preventDefault();
+                        _fileQueue.push(new File([blob], 'screenshot.png', { type: blob.type || 'image/png' }));
+                        _had = true;
                     }
                 }
+                if (_had && !_isProcessing) processFileQueue();
             });
         }
-
 
         setupDragDrop();
         setupPaste();
         var input = document.getElementById('userInput');
         var btn = document.getElementById('sendBtn');
         var SUPPORTED_EXTENSIONS = { txt:1, json:1, csv:1, xml:1, html:1, htm:1, md:1, py:1, js:1, java:1, kt:1, cpp:1, c:1, h:1, css:1, gradle:1, properties:1, pro:1, yml:1, yaml:1, log:1, cfg:1, ini:1, conf:1, pdf:1, docx:1, xlsx:1, pptx:1, zip:1, jpg:1, jpeg:1, png:1, gif:1, webp:1, bmp:1, svg:1 };
+
         function removeFileAt(idx) {
             if (idx < 0 || idx >= pendingFiles.length) return;
             pendingFiles.splice(idx, 1);
-            var _stillUploading = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0 && !f.file_id; });
-            if (!_stillUploading) _isUploading = false;
             updateFileList();
             updateLengthExcess();
             updateSendBtn();
@@ -4801,17 +4604,19 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
         function updateSendBtn() {
             var hasText = input.value.trim().length > 0;
             var hasFile = pendingFiles.length > 0;
-            if (!hasFile) _isUploading = false;
-            var isUploading = _isUploading;
+            var isUploading = false;
+            var hasError = false;
             var fileOk = true;
             for (var _pi = 0; _pi < pendingFiles.length; _pi++) {
                 var _pf = pendingFiles[_pi];
-                if (_pf.mime && _pf.mime.indexOf('image/') === 0 && !_pf.file_id) isUploading = true;
+                if (_pf._status === 'uploading') isUploading = true;
+                if (_pf._status === 'error') hasError = true;
+                if (_pf.mime && _pf.mime.indexOf('image/') === 0 && !_pf.file_id && !_pf._status) isUploading = true;
                 var ext = _pf.name.split('.').pop().toLowerCase();
                 var mimeOk = _pf.mime && (_pf.mime.indexOf('image/') === 0 || _pf.mime.indexOf('text/') === 0 || _pf.mime === 'application/pdf' || _pf.mime.indexOf('zip') !== -1 || _pf.mime.indexOf('word') !== -1 || _pf.mime.indexOf('excel') !== -1 || _pf.mime.indexOf('powerpoint') !== -1);
                 if (!(SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk)) fileOk = false;
             }
-            btn.disabled = !((hasText || hasFile) && fileOk) || isUploading;
+            btn.disabled = !((hasText || hasFile) && fileOk) || isUploading || hasError;
         }
         input.addEventListener('input', function() { updateLengthExcess(); });
         updateSendBtn();
