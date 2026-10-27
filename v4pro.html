@@ -4324,7 +4324,13 @@
 
         function updateFileList() {
             const inline = document.getElementById('fileNameInline');
-            if (!pendingFile) { if (inline) inline.innerHTML = ''; updateSendBtn(); return; }
+            if (!pendingFile) {
+                if (inline) inline.innerHTML = '';
+                var _pb = document.getElementById('inputPreviewBox');
+                if (_pb) { _pb.innerHTML = ''; _pb.style.display = 'none'; }
+                updateSendBtn();
+                return;
+            }
             var isImageFile = pendingFile.mime && pendingFile.mime.startsWith('image/');
             var ext = pendingFile.name.split('.').pop().toLowerCase();
             var mimeOk = pendingFile.mime && (pendingFile.mime.startsWith('image/') || pendingFile.mime.startsWith('text/') || pendingFile.mime === 'application/pdf' || pendingFile.mime.includes('zip') || pendingFile.mime.includes('word') || pendingFile.mime.includes('excel') || pendingFile.mime.includes('powerpoint'));
