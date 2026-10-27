@@ -4345,7 +4345,7 @@
                         var _imgFilter = _isUp ? 'grayscale(40%)' : (_isErr ? 'sepia(80%)' : 'none');
                         var _spinnerHtml = '';
                         if (_isUp) {
-                            _spinnerHtml = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.8s linear infinite;pointer-events:none;"></div>';
+                            _spinnerHtml = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;"><div style="width:22px;height:22px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.8s linear infinite;"></div></div>';
                         }
                         var _errHtml = '';
                         if (_isErr) {
@@ -4412,16 +4412,125 @@
         async function processFileQueue() {
             if (_isProcessing) return;
             _isProcessing = true;
+            var _toUpload = [];
+            // Фаза 1: все файлы проходят базовую проверку и попадают в pendingFiles со статусом uploading
             while (_fileQueue.length) {
                 var file = _fileQueue.shift();
                 try {
-                    await processSingleFile(file);
+                    var _added = await stageFile(file);
+                    if (_added) _toUpload.push(_added);
                 } catch (e) {
-                    console.warn('processSingleFile failed', e);
+                    console.warn('stageFile failed', e);
                 }
+            }
+            updateFileList();
+            // Фаза 2: последовательная загрузка в облако
+            for (var _ui = 0; _ui < _toUpload.length; _ui++) {
+                await uploadStagedFile(_toUpload[_ui]);
+                updateFileList();
+                updateSendBtn();
             }
             _isProcessing = false;
             updateFileList();
+        }
+
+        async function stageFile(file) {
+            var inline = document.getElementById('fileNameInline');
+            var ext = file.name.split('.').pop().toLowerCase();
+            var mimeOk = file.type && (file.type.startsWith('image/') || file.type.startsWith('text/') || file.type === 'application/pdf' || file.type.includes('zip') || file.type.includes('word') || file.type.includes('excel') || file.type.includes('powerpoint'));
+            var fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
+            if (!fileOk) {
+                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + escapeHtml(file.name) + ': неподдерживаемый формат</span>';
+                return null;
+            }
+            const MAX_FILE_SIZE = 50 * 1024 * 1024;
+            if (file.size > MAX_FILE_SIZE) {
+                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + escapeHtml(file.name) + ': слишком большой (макс. 50 МБ)</span>';
+                return null;
+            }
+            if (pendingFiles.length >= 10) {
+                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Максимум 10 вложений</span>';
+                return null;
+            }
+            var _isNewImage = file.type && file.type.indexOf('image/') === 0;
+            var _hasAnyImage = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
+            var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0); });
+            if (fluxModeEnabled && _isNewImage) {
+                pendingFiles = [];
+            } else {
+                if (_isNewImage && _hasAnyNonImage) {
+                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
+                    return null;
+                }
+                if (!_isNewImage && _hasAnyImage) {
+                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Нельзя смешивать картинки и другие файлы</span>';
+                    return null;
+                }
+                if (!_isNewImage && _hasAnyNonImage) {
+                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Только один файл (кроме картинок)</span>';
+                    return null;
+                }
+            }
+
+            var base64 = await new Promise(function(resolve, reject) {
+                var rdr = new FileReader();
+                rdr.onload = function(ev) { resolve(ev.target.result.split(',')[1]); };
+                rdr.onerror = function() { reject(new Error('read error')); };
+                rdr.readAsDataURL(file);
+            });
+
+            var newItem = { name: file.name, mime: file.type, data: base64 };
+            if (_isNewImage) {
+                newItem._status = 'uploading';
+            } else {
+                newItem._status = 'ok';
+            }
+            pendingFiles.push(newItem);
+
+            if (!_isNewImage) {
+                // Валидация для не-картинок сразу
+                try {
+                    var resp = await fetch(SERVER_URL + '/validate_file', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({ file_data: base64, file_name: file.name, file_mime: file.type })
+                    });
+                    var result = await resp.json();
+                    if (!result.valid) {
+                        var errorText = 'Ошибка проверки файла';
+                        if (result.error === 'max_weight') errorText = 'Превышен макс. вес';
+                        else if (result.error === 'max_text') errorText = 'Превышена макс. длина текста';
+                        if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + escapeHtml(file.name) + ': ' + errorText + '</span>';
+                        pendingFiles = pendingFiles.filter(function(f) { return f !== newItem; });
+                        return null;
+                    }
+                } catch (e) {
+                    pendingFiles = pendingFiles.filter(function(f) { return f !== newItem; });
+                    return null;
+                }
+                return null; // не-картинки не грузим в облако
+            }
+            return newItem;
+        }
+
+        async function uploadStagedFile(item) {
+            if (!item || !item.data) return;
+            try {
+                var upResp = await fetch(SERVER_URL + '/upload_file', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ file_data: item.data, file_name: item.name, file_mime: item.mime })
+                });
+                var upData = await upResp.json();
+                if (upData.success && upData.file_id) {
+                    item.file_id = upData.file_id;
+                    item._status = 'ok';
+                } else {
+                    item._status = 'error';
+                }
+            } catch (e) {
+                item._status = 'error';
+            }
         }
 
         async function processSingleFile(file) {
