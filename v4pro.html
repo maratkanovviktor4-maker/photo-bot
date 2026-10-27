@@ -5363,17 +5363,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (isSending) return;
             const input = document.getElementById('userInput');
             const text = input.value.trim();
-            if (fluxModeEnabled && text && !overrideChatId) {
-                input.value = '';
-                input.style.height = 'auto';
-                input._init = false;
-                var _savedFileForFlux = pendingFile;
-                pendingFile = null;
-                updateSendBtn();
-                updateFileList();
-                await runFluxGeneration(text, _savedFileForFlux);
-                return;
-            }
+
             if (!text && !pendingFile) return;
             if (!currentUserId) { showAlertModal('Ошибка', 'Авторизуйтесь на главной странице', '❌'); return; }
             var _targetChatId = overrideChatId || currentChatId;
@@ -5459,7 +5449,8 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         web_search: webSearchEnabled,
                         file_data: pendingFile ? pendingFile.data : '',
                         file_name: pendingFile ? pendingFile.name : '',
-                        file_mime: pendingFile ? pendingFile.mime : ''
+                        file_mime: pendingFile ? pendingFile.mime : '',
+                        flux: fluxModeEnabled
                     }),
                     signal: abortController.signal
                 });
@@ -5586,6 +5577,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 if (finalMeta) {
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
                     chat.messages[chat.messages.length - 2].msg_id = finalMeta.user_msg_id;
+                }
+                if (fluxModeEnabled) {
+                    fluxModeEnabled = false;
+                    var _fb = document.getElementById('fluxBtn');
+                    if (_fb) _fb.classList.remove('active');
+                    var _inp = document.getElementById('userInput');
+                    if (_inp) _inp.placeholder = 'Введите сообщение...';
                 }
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
