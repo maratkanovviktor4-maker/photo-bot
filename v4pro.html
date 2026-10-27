@@ -310,6 +310,7 @@
         @keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
         .thinking-dots { display: inline; }
         .file-list { width: 100%; display: flex; flex-wrap: wrap; gap: 4px; padding: 0; border-radius: 16px; overflow: hidden; }
+        .file-list:empty { display: none; }
         .file-tag { display: inline-flex; align-items: center; background: rgba(0,203,245,0.15); border: 1px solid rgba(0,203,245,0.3); border-radius: 6px; padding: 3px 8px; font-size: 12px; color: #F59E0B; gap: 6px; }
         body.light .file-tag { background: rgba(0,203,245,0.1); color: #5f3f00; }
         .file-tag button { background: transparent; border: none; color: #e74c3c; cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
@@ -319,6 +320,7 @@
         body.light .input-row-wrapper { background: #ffffff; border: 1px solid rgba(0,0,0,0.15); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
         body.light .input-row-wrapper:focus-within { border-color: rgba(0,0,0,0.15); }
         .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; padding: 8px 12px 0 12px; }
+        .input-row:has(#inputPreviewBox[style*="block"]) { flex-direction: column; align-items: stretch; }
         .input-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
         .nav-container { position: fixed; right: 0; top: 50%; transform: translateY(-50%); width: 220px; max-height: 300px; overflow-y: auto; z-index: 100; padding: 8px 0; pointer-events: auto; }
         .nav-container:hover { overflow-y: auto; background: #1b1b1c; backdrop-filter: blur(10px); border: none; border-radius: 12px 0 0 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
@@ -1207,8 +1209,9 @@
                     <div id="dropZone" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none;align-items:center;justify-content:center;background:rgba(0,203,245,0.1);border:2px dashed #F59E0B;border-radius:16px;font-size:14px;color:#F59E0B;">Отпустите файл для загрузки</div>
                     <div class="file-list" id="fileList"></div>
                     <div class="input-row-wrapper">
-                        <div class="input-row">
+                        <div class="input-row" style="flex-direction:column;align-items:stretch;">
                             <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
+                            <div id="inputPreviewBox" style="display:none;"></div>
                             <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();var btn=document.getElementById('sendBtn');if(btn.disabled)return;if(isSending){stopTyping();}else{sendMessage();}}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,300)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,300)+'px';this._init=true;}"></textarea>
                         </div>
                         <div class="input-toolbar">
@@ -4330,10 +4333,21 @@
             var sizeInfo = '';
             var previewHtml = '';
             var previewFullHtml = '';
+            var previewOverTextarea = '';
             if (pendingFile && pendingFile.mime && pendingFile.mime.startsWith('image/')) {
-                previewHtml = '<img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:60px;max-height:60px;width:60px;height:60px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;cursor:pointer;flex-shrink:0;" onclick="toggleFullPreview(this)">';
-                previewFullHtml = '<div id="fullPreviewOverlay" onclick="this.remove()" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:pointer;"><img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:12px;"></div>';
+                previewOverTextarea = '<img src="data:' + pendingFile.mime + ';base64,' + pendingFile.data + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;display:block;margin-bottom:6px;" onclick="toggleFullPreview(this)">';
             }
+            var previewBox = document.getElementById('inputPreviewBox');
+            if (previewBox) {
+                if (previewOverTextarea) {
+                    previewBox.innerHTML = previewOverTextarea;
+                    previewBox.style.display = 'block';
+                } else {
+                    previewBox.innerHTML = '';
+                    previewBox.style.display = 'none';
+                }
+            }
+            previewHtml = '';
 
             if (pendingFile.data) {
                 var bytes = Math.round(pendingFile.data.length * 3 / 4);
