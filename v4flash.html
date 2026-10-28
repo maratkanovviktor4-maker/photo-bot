@@ -3664,7 +3664,7 @@
                 var _allImgs = '';
                 if (msg.image_b64) {
                     var _imgMime = msg.image_mime || 'image/jpeg';
-                    _allImgs += '<img src="data:' + _imgMime + ';base64,' + msg.image_b64 + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;display:block;cursor:pointer;margin-bottom:6px;" onclick="toggleFullPreview(this)">';
+                    _allImgs += '<img src="data:' + _imgMime + ';base64,' + msg.image_b64 + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;flex-shrink:0;" onclick="toggleFullPreview(this)">';
                 }
                 var _displayArr = msg.display_b64s || msg.extra_b64s || [];
                 if (_displayArr && _displayArr.length) {
@@ -3672,10 +3672,10 @@
                         var _eb = _displayArr[_ei];
                         var _em = _eb[1] || 'image/jpeg';
                         var _ed = _eb[0];
-                        _allImgs += '<img src="data:' + _em + ';base64,' + _ed + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;display:block;cursor:pointer;margin-bottom:6px;" onclick="toggleFullPreview(this)">';
+                        _allImgs += '<img src="data:' + _em + ';base64,' + _ed + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;flex-shrink:0;" onclick="toggleFullPreview(this)">';
                     }
                 }
-                contentHtml = '<div style="margin:6px 0 8px 0;">' + _allImgs + '</div>' + contentHtml;
+                contentHtml = '<div style="margin:6px 0 8px 0;display:flex;gap:6px;flex-wrap:wrap;">' + _allImgs + '</div>' + contentHtml;
             }
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
                 contentHtml = contentHtml.replace(/<a href="([^"]+)" target="_blank">([^<]+)<\/a>/g, function(m, url, text) {
