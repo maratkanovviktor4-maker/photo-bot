@@ -4451,8 +4451,9 @@
             var inline = document.getElementById('fileNameInline');
             if (!inline) return;
             inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + text + '</span>';
-            if (typeof _attachmentErrorTimer !== 'undefined') clearTimeout(_attachmentErrorTimer);
+            if (window._attachmentErrorTimer) clearTimeout(window._attachmentErrorTimer);
             window._attachmentErrorTimer = setTimeout(function() {
+                window._attachmentErrorTimer = null;
                 if (pendingFiles.length === 0) {
                     var el = document.getElementById('fileNameInline');
                     if (el && el.innerHTML.indexOf('⚠️') === 0) el.innerHTML = '';
