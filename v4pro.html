@@ -3725,16 +3725,16 @@
                     _userHtml = _svgFluxIcon;
                 }
             }
+            var contentHtml = (msg.role === 'user') ? _userHtml : formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._flux_meta && msg._flux_meta.status === 'success' && msg._flux_meta.job_id) {
                 var _fluxImgFile = 'web_' + currentUserId + '_' + msg._flux_meta.job_id + '.jpg';
                 var _fluxImgUrl = SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(_fluxImgFile) + '&session_token=' + sessionToken;
                 if (msg._flux_meta.downloaded) {
-                    contentToShow = '<div style="margin:6px 0 8px 0;padding:10px 14px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.2);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали это изображение.</div>' + contentToShow;
+                    contentHtml = '<div style="margin:6px 0 8px 0;padding:10px 14px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.2);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали это изображение.</div>' + contentHtml;
                 } else {
-                    contentToShow = '<div style="margin:6px 0 10px 0;"><img src="' + _fluxImgUrl + '" style="max-width:280px;max-height:280px;border-radius:12px;display:block;cursor:pointer;object-fit:contain;background:rgba(0,0,0,0.1);" onclick="toggleFullPreview(this)" onerror="this.style.display=\'none\'"></div>' + contentToShow;
+                    contentHtml = '<div style="margin:6px 0 10px 0;"><img src="' + _fluxImgUrl + '" style="max-width:280px;max-height:280px;border-radius:12px;display:block;cursor:pointer;object-fit:contain;background:rgba(0,0,0,0.1);" onclick="toggleFullPreview(this)" onerror="this.style.display=\'none\'"></div>' + contentHtml;
                 }
             }
-            var contentHtml = (msg.role === 'user') ? _userHtml : formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
                 contentHtml = contentHtml.replace(/<a href="([^"]+)" target="_blank">([^<]+)<\/a>/g, function(m, url, text) {
                     var cleanUrl = url.replace(/&amp;/g, '&');
