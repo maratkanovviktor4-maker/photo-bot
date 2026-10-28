@@ -4363,7 +4363,7 @@
         function updateFileList() {
             const inline = document.getElementById('fileNameInline');
             if (!pendingFiles.length) {
-                if (inline) inline.innerHTML = '';
+                if (inline && !window._attachmentErrorTimer) inline.innerHTML = '';
                 var _pb = document.getElementById('inputPreviewBox');
                 if (_pb) { _pb.innerHTML = ''; _pb.style.display = 'none'; }
                 updateSendBtn();
@@ -4447,6 +4447,19 @@
             if (!_isProcessing) processFileQueue();
         }
 
+        function _showAttachmentError(text) {
+            var inline = document.getElementById('fileNameInline');
+            if (!inline) return;
+            inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + text + '</span>';
+            if (typeof _attachmentErrorTimer !== 'undefined') clearTimeout(_attachmentErrorTimer);
+            window._attachmentErrorTimer = setTimeout(function() {
+                if (pendingFiles.length === 0) {
+                    var el = document.getElementById('fileNameInline');
+                    if (el && el.innerHTML.indexOf('⚠️') === 0) el.innerHTML = '';
+                }
+            }, 5000);
+        }
+
         async function processFileQueue() {
             if (_isProcessing) return;
             _isProcessing = true;
@@ -4478,12 +4491,12 @@
             var mimeOk = file.type && (file.type.startsWith('image/') || file.type.startsWith('text/') || file.type === 'application/pdf' || file.type.includes('zip') || file.type.includes('word') || file.type.includes('excel') || file.type.includes('powerpoint'));
             var fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
             if (!fileOk) {
-                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + escapeHtml(file.name) + ': неподдерживаемый формат</span>';
+                _showAttachmentError(escapeHtml(file.name) + ': неподдерживаемый формат');
                 return null;
             }
             const MAX_FILE_SIZE = 50 * 1024 * 1024;
             if (file.size > MAX_FILE_SIZE) {
-                if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + escapeHtml(file.name) + ': слишком большой (макс. 50 МБ)</span>';
+                _showAttachmentError(escapeHtml(file.name) + ': слишком большой (макс. 50 МБ)');
                 return null;
             }
             if (pendingFiles.length >= 10) {
