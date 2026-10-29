@@ -3737,7 +3737,8 @@
                         _allImgs += '<img src="data:' + _em + ';base64,' + _ed + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;flex-shrink:0;" onclick="toggleFullPreview(this)">';
                     }
                 }
-                contentHtml = '<div style="margin:6px 0 8px 0;display:flex;gap:6px;flex-wrap:wrap;">' + _allImgs + '</div>' + contentHtml;
+                var _userImgsBlock = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;justify-content:flex-end;">' + _allImgs + '</div>';
+                return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div>' + _userImgsBlock + '</div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
             }
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
                 contentHtml = contentHtml.replace(/<a href="([^"]+)" target="_blank">([^<]+)<\/a>/g, function(m, url, text) {
