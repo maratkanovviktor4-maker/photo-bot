@@ -5455,6 +5455,12 @@
             _streamTimers[id] = setTimeout(function() {
                 _streamTimers[id] = null;
                 
+                if (msg._fluxPlaceholder) {
+                    msg._fluxPlaceholder = false;
+                    var _fpl = el.querySelector('.flux-loading-text');
+                    if (_fpl) _fpl.remove();
+                }
+                
                 var reasoningText = msg._reasoningBuffer || '';
                 var contentHtml = formatMessage(msg.content || '');
                 
@@ -5754,6 +5760,7 @@
                             // Первый контент — активируем кнопку с квадратом
                             if ((parsed.content || parsed.reasoning) && !streamStarted) {
                                 streamStarted = true;
+                                assistantMsg._fluxPlaceholder = false;
                                 sendBtnRef.disabled = false;
                                 sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
                                 sendBtnRef.onclick = function() { stopTyping(); };
