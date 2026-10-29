@@ -5383,7 +5383,13 @@
             recognition.onresult = function(event) {
                 var interim = '';
                 for (var i = 0; i < event.results.length; i++) {
-                    interim += event.results[i][0].transcript + ' ';
+                    if (event.results[i].isFinal) {
+                        interim += event.results[i][0].transcript + ' ';
+                    }
+                }
+                var lastIdx = event.results.length - 1;
+                if (lastIdx >= 0 && !event.results[lastIdx].isFinal) {
+                    interim += event.results[lastIdx][0].transcript;
                 }
                 if (interim.trim()) {
                     _voiceBuffer = interim.trim();
