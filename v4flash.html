@@ -4573,7 +4573,6 @@
             if (_isProcessing) return;
             _isProcessing = true;
             var _toUpload = [];
-            // Фаза 1: все файлы проходят базовую проверку и попадают в pendingFiles со статусом uploading
             while (_fileQueue.length) {
                 var file = _fileQueue.shift();
                 try {
@@ -4584,14 +4583,53 @@
                 }
             }
             updateFileList();
-            // Фаза 2: последовательная загрузка в облако
-            for (var _ui = 0; _ui < _toUpload.length; _ui++) {
-                await uploadStagedFile(_toUpload[_ui]);
+            if (!fluxModeEnabled) {
+                for (var _ui = 0; _ui < _toUpload.length; _ui++) {
+                    await uploadStagedFile(_toUpload[_ui]);
+                    updateFileList();
+                    updateSendBtn();
+                }
+            } else {
+                for (var _ui2 = 0; _ui2 < _toUpload.length; _ui2++) {
+                    _toUpload[_ui2]._status = 'ok';
+                }
                 updateFileList();
                 updateSendBtn();
             }
             _isProcessing = false;
             updateFileList();
+        }
+
+        async function _resizeForFlux(base64, mime) {
+            return new Promise(function(resolve, reject) {
+                var img = new Image();
+                img.onload = function() {
+                    var TARGET_W = 832, TARGET_H = 1152;
+                    var targetRatio = TARGET_W / TARGET_H;
+                    var w = img.naturalWidth, h = img.naturalHeight;
+                    var cropW, cropH, offsetX, offsetY;
+                    if (w / h > targetRatio) {
+                        cropH = h;
+                        cropW = Math.round(h * targetRatio);
+                        offsetX = Math.round((w - cropW) / 2);
+                        offsetY = 0;
+                    } else {
+                        cropW = w;
+                        cropH = Math.round(w / targetRatio);
+                        offsetX = 0;
+                        offsetY = Math.round((h - cropH) / 2);
+                    }
+                    var canvas = document.createElement('canvas');
+                    canvas.width = TARGET_W;
+                    canvas.height = TARGET_H;
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, offsetX, offsetY, cropW, cropH, 0, 0, TARGET_W, TARGET_H);
+                    var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+                    resolve(dataUrl.split(',')[1]);
+                };
+                img.onerror = function() { reject(new Error('img load error')); };
+                img.src = 'data:' + mime + ';base64,' + base64;
+            });
         }
 
         async function stageFile(file) {
@@ -4639,7 +4677,15 @@
                 rdr.readAsDataURL(file);
             });
 
-            var newItem = { name: file.name, mime: file.type, data: base64 };
+            if (fluxModeEnabled && file.type && file.type.indexOf('image/') === 0) {
+                try {
+                    base64 = await _resizeForFlux(base64, file.type);
+                } catch (e) {
+                    console.warn('flux resize failed, using original', e);
+                }
+            }
+
+            var newItem = { name: file.name, mime: fluxModeEnabled ? (file.type || 'image/jpeg') : file.type, data: base64 };
             if (_isNewImage) {
                 newItem._status = 'uploading';
             } else {
