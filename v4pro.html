@@ -5712,6 +5712,19 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                                     }
                                     if (!_inner.querySelector('img')) {
                                         _inner.insertAdjacentHTML('afterbegin', _fluxImgHtml);
+                                        var _imgEl = _inner.querySelector('img');
+                                        if (_imgEl) {
+                                            _imgEl.addEventListener('load', function() {
+                                                if (autoScroll) {
+                                                    var _main = document.querySelector('.main');
+                                                    if (_main) {
+                                                        _main.style.scrollBehavior = 'auto';
+                                                        _main.scrollTop = _main.scrollHeight;
+                                                        _main.style.scrollBehavior = 'smooth';
+                                                    }
+                                                }
+                                            }, { once: true });
+                                        }
                                     }
                                 }
                             }
