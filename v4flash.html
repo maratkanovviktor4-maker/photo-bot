@@ -5381,17 +5381,10 @@
             _voiceBuffer = '';
             if (_voiceSilenceTimer) { clearTimeout(_voiceSilenceTimer); _voiceSilenceTimer = null; }
             recognition.onresult = function(event) {
-                var interim = '';
-                for (var i = 0; i < event.results.length; i++) {
-                    if (event.results[i].isFinal) {
-                        interim += event.results[i][0].transcript + ' ';
-                    }
-                }
                 var lastIdx = event.results.length - 1;
-                if (lastIdx >= 0 && !event.results[lastIdx].isFinal) {
-                    interim += event.results[lastIdx][0].transcript;
-                }
-                if (interim.trim()) {
+                if (lastIdx < 0) return;
+                var interim = event.results[lastIdx][0].transcript;
+                if (interim && interim.trim()) {
                     _voiceBuffer = interim.trim();
                 }
                 if (_voiceSilenceTimer) clearTimeout(_voiceSilenceTimer);
