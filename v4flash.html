@@ -5398,7 +5398,12 @@
                 _finishVoiceInput(true);
             };
             recognition.onend = function() {
-                if (voiceInputActive) _finishVoiceInput();
+                if (!voiceInputActive) return;
+                if (_voiceSilenceTimer) return;
+                _voiceSilenceTimer = setTimeout(function() {
+                    _voiceSilenceTimer = null;
+                    _finishVoiceInput();
+                }, 2000);
             };
             recognition.start();
             voiceInputActive = true;
