@@ -5361,6 +5361,9 @@
         var recognition = null;
 
 
+        var _voiceBuffer = '';
+        var _voiceSilenceTimer = null;
+
         function toggleVoiceInput() {
             if (voiceInputActive) {
                 stopVoiceInput();
@@ -5373,25 +5376,52 @@
             var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
             recognition.lang = 'ru-RU';
-            recognition.interimResults = false;
-            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.continuous = true;
+            _voiceBuffer = '';
+            if (_voiceSilenceTimer) { clearTimeout(_voiceSilenceTimer); _voiceSilenceTimer = null; }
             recognition.onresult = function(event) {
-                var text = event.results[0][0].transcript;
-                var input = document.getElementById('userInput');
-                input.value = text;
-                input.dispatchEvent(new Event('input'));
-                stopVoiceInput();
-                sendMessage();
+                var interim = '';
+                for (var i = event.resultIndex; i < event.results.length; i++) {
+                    interim += event.results[i][0].transcript;
+                }
+                if (interim.trim()) {
+                    _voiceBuffer = interim.trim();
+                }
+                if (_voiceSilenceTimer) clearTimeout(_voiceSilenceTimer);
+                _voiceSilenceTimer = setTimeout(function() {
+                    _voiceSilenceTimer = null;
+                    _finishVoiceInput();
+                }, 2000);
             };
             recognition.onerror = function() {
-                stopVoiceInput();
+                _finishVoiceInput(true);
             };
             recognition.onend = function() {
-                stopVoiceInput();
+                if (voiceInputActive) _finishVoiceInput();
             };
             recognition.start();
             voiceInputActive = true;
             document.getElementById('micBtn').style.color = '#e74c3c';
+        }
+
+        function _finishVoiceInput(isError) {
+            if (_voiceSilenceTimer) { clearTimeout(_voiceSilenceTimer); _voiceSilenceTimer = null; }
+            var _captured = (_voiceBuffer || '').trim();
+            _voiceBuffer = '';
+            voiceInputActive = false;
+            if (recognition) {
+                try { recognition.onend = null; recognition.onerror = null; recognition.stop(); } catch(e) {}
+                recognition = null;
+            }
+            var micBtn = document.getElementById('micBtn');
+            if (micBtn) micBtn.style.color = '#888';
+            if (_captured && !isError) {
+                var input = document.getElementById('userInput');
+                input.value = _captured;
+                input.dispatchEvent(new Event('input'));
+                sendMessage();
+            }
         }
         var _fileReader = null;
         var _abortCheck = false;
