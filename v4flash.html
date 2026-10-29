@@ -3737,7 +3737,7 @@
                         _allImgs += '<img src="data:' + _em + ';base64,' + _ed + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;flex-shrink:0;" onclick="toggleFullPreview(this)">';
                     }
                 }
-                var _userImgsBlock = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;justify-content:flex-end;">' + _allImgs + '</div>';
+                var _userImgsBlock = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;justify-content:flex-end;min-height:80px;">' + _allImgs + '</div>';
                 return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div>' + _userImgsBlock + '</div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
             }
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
@@ -5625,6 +5625,7 @@
                 area.appendChild(userRow);
                 document.querySelector('.chat-wrapper').classList.add('has-messages');
                 document.querySelector('.chat-wrapper').classList.remove('empty-state-active');
+                requestAnimationFrame(function() { scrollToBottom(); });
             }
             chat.lastMessageTime = Date.now();
             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
