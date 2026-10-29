@@ -5381,9 +5381,23 @@
             _voiceBuffer = '';
             if (_voiceSilenceTimer) { clearTimeout(_voiceSilenceTimer); _voiceSilenceTimer = null; }
             recognition.onresult = function(event) {
-                var lastIdx = event.results.length - 1;
-                if (lastIdx < 0) return;
-                var interim = event.results[lastIdx][0].transcript;
+                var _isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                var interim = '';
+                if (_isMobile) {
+                    var lastIdx = event.results.length - 1;
+                    if (lastIdx < 0) return;
+                    interim = event.results[lastIdx][0].transcript;
+                } else {
+                    for (var i = 0; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) {
+                            interim += event.results[i][0].transcript + ' ';
+                        }
+                    }
+                    var _lastIdx = event.results.length - 1;
+                    if (_lastIdx >= 0 && !event.results[_lastIdx].isFinal) {
+                        interim += event.results[_lastIdx][0].transcript;
+                    }
+                }
                 if (interim && interim.trim()) {
                     _voiceBuffer = interim.trim();
                 }
