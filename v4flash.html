@@ -5773,7 +5773,7 @@
                                 assistantMsg._flux_meta = { status: 'success', job_id: parsed.flux_job_id, downloaded: false };
                                 var _fluxImgFile = 'web_' + currentUserId + '_' + parsed.flux_job_id + '.jpg';
                                 var _fluxImgUrl = SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(_fluxImgFile) + '&session_token=' + sessionToken;
-                                var _fluxImgHtml = '<div style="margin:6px 0 10px 0;"><img src="' + _fluxImgUrl + '" style="max-width:280px;max-height:280px;border-radius:12px;display:block;cursor:pointer;object-fit:contain;background:rgba(0,0,0,0.1);" onclick="toggleFullPreview(this)" onerror="this.style.display=\'none\'"></div>';
+                                var _fluxImgHtml = '<div class="flux-img-appear" style="margin:6px 0 10px 0;opacity:0;transition:opacity 0.4s ease;"><img src="' + _fluxImgUrl + '" style="max-width:280px;max-height:280px;border-radius:12px;display:block;cursor:pointer;object-fit:contain;background:rgba(0,0,0,0.1);" onclick="toggleFullPreview(this)" onerror="this.style.display=\'none\'"></div>';
                                 var _msgEl = document.getElementById('stream-' + msgIndex);
                                 if (_msgEl) {
                                     var _inner = _msgEl.querySelector('.msg-content-inner');
@@ -5784,9 +5784,15 @@
                                     }
                                     if (!_inner.querySelector('img')) {
                                         _inner.insertAdjacentHTML('afterbegin', _fluxImgHtml);
+                                        var _wrap = _inner.querySelector('.flux-img-appear');
                                         var _imgEl = _inner.querySelector('img');
                                         if (_imgEl) {
                                             _imgEl.addEventListener('load', function() {
+                                                if (_wrap) {
+                                                    requestAnimationFrame(function() {
+                                                        _wrap.style.opacity = '1';
+                                                    });
+                                                }
                                                 if (autoScroll) {
                                                     var _main = document.querySelector('.main');
                                                     if (_main) {
