@@ -5374,20 +5374,26 @@
             recognition = new SpeechRecognition();
             recognition.lang = 'ru-RU';
             recognition.interimResults = false;
-            recognition.continuous = false;
+            recognition.continuous = true;
+            var _voiceFinalText = '';
+            var _voiceSendTimer = null;
             recognition.onresult = function(event) {
                 var text = event.results[0][0].transcript;
+                _voiceFinalText = text;
                 var input = document.getElementById('userInput');
                 input.value = text;
                 input.dispatchEvent(new Event('input'));
-                stopVoiceInput();
-                sendMessage();
+                if (_voiceSendTimer) clearTimeout(_voiceSendTimer);
+                _voiceSendTimer = setTimeout(function() {
+                    stopVoiceInput();
+                    if (_voiceFinalText && _voiceFinalText.trim()) sendMessage();
+                }, 3000);
             };
             recognition.onerror = function() {
                 stopVoiceInput();
             };
             recognition.onend = function() {
-                stopVoiceInput();
+                if (!_voiceSendTimer) stopVoiceInput();
             };
             recognition.start();
             voiceInputActive = true;
