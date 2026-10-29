@@ -2286,6 +2286,18 @@
 
         function newChat() {
             if (selectionMode) toggleSelectionMode();
+            if (window.innerWidth <= 768) {
+                var _sb = document.querySelector('.sidebar');
+                if (_sb && !_sb.classList.contains('collapsed')) {
+                    _sb.classList.add('collapsed');
+                    document.body.classList.add('collapsed-sidebar');
+                    var _st = document.getElementById('sidebarToggle');
+                    if (_st) {
+                        _st.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+                        _st.title = 'Развернуть панель';
+                    }
+                }
+            }
             currentChatId = null;
             currentBranchId = 'main';
             document.title = _defaultTitle;
@@ -2304,6 +2316,19 @@
 
         function openChat(id) {
             if (selectionMode) toggleSelectionMode();
+
+            if (window.innerWidth <= 768) {
+                var _sb = document.querySelector('.sidebar');
+                if (_sb && !_sb.classList.contains('collapsed')) {
+                    _sb.classList.add('collapsed');
+                    document.body.classList.add('collapsed-sidebar');
+                    var _st = document.getElementById('sidebarToggle');
+                    if (_st) {
+                        _st.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+                        _st.title = 'Развернуть панель';
+                    }
+                }
+            }
 
             showLoading();
             closePreview();
