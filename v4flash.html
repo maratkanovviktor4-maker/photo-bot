@@ -5363,6 +5363,7 @@
 
         var _voiceBuffer = '';
         var _voiceSilenceTimer = null;
+        var _voiceLastResultTime = 0;
 
         function toggleVoiceInput() {
             if (voiceInputActive) {
@@ -5400,6 +5401,7 @@
                 }
                 if (interim && interim.trim()) {
                     _voiceBuffer = interim.trim();
+                    _voiceLastResultTime = Date.now();
                 }
                 if (_voiceSilenceTimer) clearTimeout(_voiceSilenceTimer);
                 _voiceSilenceTimer = setTimeout(function() {
@@ -5412,11 +5414,15 @@
             };
             recognition.onend = function() {
                 if (!voiceInputActive) return;
-                if (_voiceSilenceTimer) return;
+                if (_voiceSilenceTimer) {
+                    clearTimeout(_voiceSilenceTimer);
+                }
+                var _elapsed = Date.now() - (_voiceLastResultTime || 0);
+                var _remaining = Math.max(0, 2000 - _elapsed);
                 _voiceSilenceTimer = setTimeout(function() {
                     _voiceSilenceTimer = null;
                     _finishVoiceInput();
-                }, 2000);
+                }, _remaining);
             };
             recognition.start();
             voiceInputActive = true;
