@@ -3788,6 +3788,11 @@
                 }
             }
             var contentHtml = (msg.role === 'user') ? _userHtml : formatMessage(contentToShow);
+            if (msg.role === 'user' && msg.image_b64) {
+                var _imgMime = msg.image_mime || 'image/jpeg';
+                var _userImgsBlock = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;justify-content:flex-end;"><img src="data:' + _imgMime + ';base64,' + msg.image_b64 + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;flex-shrink:0;" onclick="toggleFullPreview(this)"></div>';
+                return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div>' + _userImgsBlock + '</div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
+            }
             if (msg.role === 'assistant' && msg._flux_meta && msg._flux_meta.status === 'success' && msg._flux_meta.job_id) {
                 var _fluxImgFile = 'web_' + currentUserId + '_' + msg._flux_meta.job_id + '.jpg';
                 var _fluxImgUrl = SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(_fluxImgFile) + '&session_token=' + sessionToken;
