@@ -5769,8 +5769,23 @@
                             if (parsed.sources && Array.isArray(parsed.sources)) {
                                 assistantMsg._sources = parsed.sources;
                             }
-                            if (parsed.sources && Array.isArray(parsed.sources)) {
-                                assistantMsg._sources = parsed.sources;
+                            if (parsed.flux_job_id) {
+                                assistantMsg._flux_meta = { status: 'success', job_id: parsed.flux_job_id, downloaded: false };
+                                var _fluxImgFile = 'web_' + currentUserId + '_' + parsed.flux_job_id + '.jpg';
+                                var _fluxImgUrl = SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(_fluxImgFile) + '&session_token=' + sessionToken;
+                                var _fluxImgHtml = '<div style="margin:6px 0 10px 0;"><img src="' + _fluxImgUrl + '" style="max-width:280px;max-height:280px;border-radius:12px;display:block;cursor:pointer;object-fit:contain;background:rgba(0,0,0,0.1);" onclick="toggleFullPreview(this)" onerror="this.style.display=\'none\'"></div>';
+                                var _msgEl = document.getElementById('stream-' + msgIndex);
+                                if (_msgEl) {
+                                    var _inner = _msgEl.querySelector('.msg-content-inner');
+                                    if (!_inner) {
+                                        _inner = document.createElement('div');
+                                        _inner.className = 'msg-content-inner';
+                                        _msgEl.appendChild(_inner);
+                                    }
+                                    if (!_inner.querySelector('img')) {
+                                        _inner.insertAdjacentHTML('afterbegin', _fluxImgHtml);
+                                    }
+                                }
                             }
                             if (parsed.assistant_msg_id) {
                                 finalMeta = parsed;
