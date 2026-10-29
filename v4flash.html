@@ -241,7 +241,6 @@
         body.light .scroll-bottom-btn { background: #fff; color: #201F28; border: 1px solid rgba(0,0,0,0.15); }
         body.light .scroll-bottom-btn:hover { background: #e0e0e0; }
         .chat-area .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #555; }
-        .chat-area .empty-state .empty-title { font-size: 18px; font-weight: 600; line-height: 1.4; color: inherit; }
         body.light .chat-area .empty-state { color: #999; }
         .message-row { display: flex; gap: 12px; align-items: flex-start; max-width: 100%; }
         .message-row.user { align-self: flex-end; flex-direction: row-reverse; max-width: 75%; }
@@ -754,18 +753,9 @@
             gap: 14px;
         }
 
-        .chat-area .empty-state { gap: 12px; padding: 12px; text-align: center; }
-        .chat-area .empty-state .logo-lg { height: 40px; opacity: 1; }
-        .chat-area .empty-state .empty-title { font-size: 16px; font-weight: 600; line-height: 1.4; }
-
         /* --- СООБЩЕНИЯ --- */
         .message-row.user {
             max-width: 88% !important;
-        }
-        .message-row.user .wrapper {
-            width: 100% !important;
-            max-width: 100% !important;
-            box-sizing: border-box;
         }
         .message-row.assistant {
             max-width: 100% !important;
@@ -1245,9 +1235,13 @@
         </div>
         <div class="chat-wrapper">
             <div class="chat-area" id="chatArea">
-                <div class="empty-state">
-                    <img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek" onerror="this.style.display='none'">
-                    <div class="empty-title">Задайте любой вопрос<br>или прикрепите файл</div>
+                <div class="empty-state" style="display:flex;flex-direction:row;align-items:center;gap:12px;justify-content:center;">
+                    <img src="deepseek_logo.png" class="logo-lg" alt="V4 Flash" onerror="this.style.display='none'" style="height:32px;opacity:1;">
+                    <div style="display:flex;flex-direction:row;align-items:center;gap:8px;">
+                        <span style="font-size:16px;font-weight:700;color:inherit;">V4 Flash</span>
+                        <span style="font-size:16px;font-weight:700;color:inherit;">·</span>
+                        <span style="font-size:16px;font-weight:700;color:inherit;">Задайте любой вопрос или прикрепите файл</span>
+                    </div>
                 </div>
             </div>
             <div class="bottom-container">
@@ -2276,7 +2270,7 @@
             _floatingHeaders = [];
             renderChatList();
             var area = document.getElementById('chatArea');
-            area.innerHTML = '<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek" onerror="this.style.display=\'none\'"><div class="empty-title">Задайте любой вопрос<br>или прикрепите файл</div></div>';
+            area.innerHTML = '<div class="empty-state" style="display:flex;flex-direction:row;align-items:center;gap:12px;justify-content:center;"><img src="deepseek_logo.png" class="logo-lg" alt="V4 Flash" onerror="this.style.display=\'none\'" style="height:32px;opacity:1;"><div style="display:flex;flex-direction:row;align-items:center;gap:8px;"><span style="font-size:16px;font-weight:700;color:inherit;">V4 Flash</span><span style="font-size:16px;font-weight:700;color:inherit;">·</span><span style="font-size:16px;font-weight:700;color:inherit;">Задайте любой вопрос или прикрепите файл</span></div></div>';
             document.getElementById('branchesPanel').style.display = 'none';
             document.getElementById('navContainer').style.display = 'none';
             document.getElementById('branchIndicatorTop').style.display = 'none';
@@ -2996,7 +2990,7 @@
             var btnColor = isLight ? '#555' : '#a0a0b0';
             
             var wrapper = document.createElement('div');
-            wrapper.style.cssText = 'width:100%;max-width:581px;flex-shrink:0;background:' + bgColor + ';border:2px solid ' + borderColor + ';border-radius:16px;overflow:hidden;box-sizing:border-box;';
+            wrapper.style.cssText = 'width:581px;flex-shrink:0;background:' + bgColor + ';border:2px solid ' + borderColor + ';border-radius:16px;overflow:hidden;';
             wrapper.classList.add('wrapper');
             var textarea = document.createElement('textarea');
             textarea.value = originalContent;
@@ -3892,7 +3886,7 @@
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
             if (!chat || chat.messages.length === 0) {
-                area.innerHTML = '<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek" onerror="this.style.display=\'none\'"><div class="empty-title">Задайте любой вопрос<br>или прикрепите файл</div></div>';
+                area.innerHTML = '<div class="empty-state" style="display:flex;flex-direction:row;align-items:center;gap:12px;justify-content:center;"><img src="deepseek_logo.png" class="logo-lg" alt="V4 Flash" onerror="this.style.display=\'none\'" style="height:32px;opacity:1;"><div style="display:flex;flex-direction:row;align-items:center;gap:8px;"><span style="font-size:16px;font-weight:700;color:inherit;">V4 Flash</span><span style="font-size:16px;font-weight:700;color:inherit;">·</span><span style="font-size:16px;font-weight:700;color:inherit;">Задайте любой вопрос или прикрепите файл</span></div></div>';
                 hljs.highlightAll();
                 setupFloatingCopyButtons();
                 updateFloatingButtons();
@@ -3940,7 +3934,7 @@
             const chat = chats.find(c => c.id === currentChatId);
             const area = document.getElementById('chatArea');
             if (!chat || chat.messages.length === 0) {
-                area.innerHTML = '<div class="empty-state"><img src="deepseek_logo.png" class="logo-lg" alt="DeepSeek" onerror="this.style.display=\'none\'"><div class="empty-title">Задайте любой вопрос<br>или прикрепите файл</div></div>';
+                area.innerHTML = '<div class="empty-state" style="display:flex;flex-direction:row;align-items:center;gap:12px;justify-content:center;"><img src="deepseek_logo.png" class="logo-lg" alt="V4 Flash" onerror="this.style.display=\'none\'" style="height:32px;opacity:1;"><div style="display:flex;flex-direction:row;align-items:center;gap:8px;"><span style="font-size:16px;font-weight:700;color:inherit;">V4 Flash</span><span style="font-size:16px;font-weight:700;color:inherit;">·</span><span style="font-size:16px;font-weight:700;color:inherit;">Задайте любой вопрос или прикрепите файл</span></div></div>';
                 _floatingHeaders = [];
                 renderedCount = 0;
                 hljs.highlightAll();
