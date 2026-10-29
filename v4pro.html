@@ -2123,6 +2123,8 @@
             window.location.href = 'index.html';
         }
 
+        var _defaultTitle = 'PhotoBot — DeepSeek V4 Pro';
+
         async function loadChatsFromServer() {
             showLoading();
             try {
@@ -2277,6 +2279,7 @@
 
             currentChatId = null;
             currentBranchId = 'main';
+            document.title = _defaultTitle;
             localStorage.removeItem('photobot_active_chat');
             _floatingHeaders = [];
             renderChatList();
@@ -2299,6 +2302,7 @@
             localStorage.setItem('photobot_active_chat', id);
             var chat = chats.find(function(c) { return c.id === id; });
             if (chat) {
+                document.title = chat.title || _defaultTitle;
                 var pers = chat._personality || 'default';
                 currentPersonality = pers;
                 localStorage.setItem('photobot_personality', pers);
@@ -2370,6 +2374,7 @@
             showRenameModal('Переименовать чат', chat ? chat.title : '', function(newName) {
                 if (newName && chat) {
                     chat.title = newName;
+                    if (currentChatId === id) document.title = newName;
                     renderChatList();
                     try {
                         fetch(SERVER_URL + '/rename_chat', {
@@ -4373,6 +4378,7 @@
             if (lastAssistant && !lastAssistant.interrupted && (chat.title.startsWith('Чат ') || chat.title === 'Новый чат')) {
                 chat.title = lastAssistant.content.replace(/[#*`>\n]/g, ' ').split(' ').slice(0, 6).join(' ') || 'Новый чат';
                 if (chat.title.length > 40) chat.title = chat.title.substring(0, 40) + '...';
+                if (currentChatId === chat.id) document.title = chat.title;
                 renderChatList();
             }
         }
