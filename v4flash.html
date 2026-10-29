@@ -4677,15 +4677,17 @@
                 rdr.readAsDataURL(file);
             });
 
+            var _wasResized = false;
             if (fluxModeEnabled && file.type && file.type.indexOf('image/') === 0) {
                 try {
                     base64 = await _resizeForFlux(base64, file.type);
+                    _wasResized = true;
                 } catch (e) {
                     console.warn('flux resize failed, using original', e);
                 }
             }
 
-            var newItem = { name: file.name, mime: fluxModeEnabled ? (file.type || 'image/jpeg') : file.type, data: base64 };
+            var newItem = { name: file.name, mime: fluxModeEnabled ? (file.type || 'image/jpeg') : file.type, data: base64, _fluxResized: _wasResized };
             if (_isNewImage) {
                 newItem._status = 'uploading';
             } else {
@@ -5300,6 +5302,16 @@
                     pendingFiles = [];
                     updateFileList();
                     updateLengthExcess();
+                }
+                if (pendingFiles.length === 1 && pendingFiles[0].mime && pendingFiles[0].mime.indexOf('image/') === 0 && !pendingFiles[0]._fluxResized) {
+                    var _pf0 = pendingFiles[0];
+                    _resizeForFlux(_pf0.data, _pf0.mime).then(function(newB64) {
+                        _pf0.data = newB64;
+                        _pf0._fluxResized = true;
+                        updateFileList();
+                    }).catch(function(e) {
+                        console.warn('flux resize on toggle failed', e);
+                    });
                 }
             } else {
                 if (btn) btn.classList.remove('active');
