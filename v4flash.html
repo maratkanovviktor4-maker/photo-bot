@@ -6201,7 +6201,7 @@
                     if (!content.trim()) return match;
                     return '<code>' + content + '</code>';
                 }],
-                [/\*\*(.+?)\*\*/g, '<strong>$1</strong>'],
+                [/\*\*([^\n]+?)\*\*/g, '<strong>$1</strong>'],
                 [/\*(.+?)\*/g, '<em>$1</em>'],
                 [/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>'],
                 [/^### (.+)$/gm, '<h3>$1</h3>'],
@@ -6210,19 +6210,19 @@
                 [/^# (.+)$/gm, '<h1>$1</h1>'],
                 [/^---$/gm, '<hr>'],
                 [/&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>'],
-                [/^(\s*)([-*])\s(\[x\])\s(.+)$/gm, function(match, indent, bullet, check, text) {
+                [/^([ \t]*)([-*])\s(\[x\])\s(.+)$/gm, function(match, indent, bullet, check, text) {
                     var margin = indent ? Math.floor(indent.length / 2) * 16 : 0;
                     return '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;margin-left:' + margin + 'px;"><input type="checkbox" checked disabled><span>' + text + '</span></div>';
                 }],
-                [/^(\s*)([-*])\s(\[ \])\s(.+)$/gm, function(match, indent, bullet, check, text) {
+                [/^([ \t]*)([-*])\s(\[ \])\s(.+)$/gm, function(match, indent, bullet, check, text) {
                     var margin = indent ? Math.floor(indent.length / 2) * 16 : 0;
                     return '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;margin-left:' + margin + 'px;"><input type="checkbox" disabled><span>' + text + '</span></div>';
                 }],
-                [/^(\s*)([-*])\s(.+)$/gm, function(match, indent, bullet, text) {
+                [/^([ \t]*)([-*])\s(.+)$/gm, function(match, indent, bullet, text) {
                     var margin = indent ? Math.floor(indent.length / 2) * 16 : 0;
                     return '<div style="display:flex;margin:2px 0;margin-left:' + margin + 'px;"><span style="flex-shrink:0;width:16px;">•</span><span style="flex:1;min-width:0;">' + text + '</span></div>';
                 }],
-                [/^(\s*)(\d+)\.\s(.+)$/gm, function(match, indent, num, text) {
+                [/^([ \t]*)(\d+)\.\s(.+)$/gm, function(match, indent, num, text) {
                     var margin = indent ? Math.floor(indent.length / 2) * 16 : 0;
                     return '<div style="display:flex;margin:2px 0;margin-left:' + margin + 'px;"><span style="flex-shrink:0;min-width:20px;">' + num + '.</span><span style="flex:1;min-width:0;">' + text + '</span></div>';
                 }],
@@ -6250,7 +6250,7 @@
                 }],
                 [/^[\s]*[-][\s][\[x\]](.+)$/gm, '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;"><input type="checkbox" checked disabled><span>$1</span></div>'],
                 [/^[\s]*[-][\s][\[ \]](.+)$/gm, '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;"><input type="checkbox" disabled><span>$1</span></div>'],
-                [/^(\s{2,})([-*]\s.+)$/gm, function(match, indent, item) {
+                [/^([ \t]{2,})([-*]\s.+)$/gm, function(match, indent, item) {
                     var depth = Math.floor(indent.length / 2);
                     var margin = depth * 16;
                     return '<div style="margin-left:' + margin + 'px;">' + item + '</div>';
