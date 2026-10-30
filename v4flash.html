@@ -4363,12 +4363,16 @@
             var _m = String(filename).match(/^web_(\d+)_(app_[^.]+)\.jpg$/);
             if (!_m) return;
             var _jobId = _m[2];
-            var _chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!_chat) return;
-            for (var _i = 0; _i < _chat.messages.length; _i++) {
-                var _msg = _chat.messages[_i];
-                if (_msg.role === 'assistant' && _msg._flux_meta && _msg._flux_meta.job_id === _jobId) {
-                    _msg._flux_meta.downloaded = true;
+            // Проходим по ВСЕМ чатам, а не только по текущему — картинка могла быть
+            // сгенерирована в другом чате (например, на pro-странице).
+            for (var _ci = 0; _ci < chats.length; _ci++) {
+                var _chat = chats[_ci];
+                if (!_chat || !_chat.messages) continue;
+                for (var _i = 0; _i < _chat.messages.length; _i++) {
+                    var _msg = _chat.messages[_i];
+                    if (_msg.role === 'assistant' && _msg._flux_meta && _msg._flux_meta.job_id === _jobId) {
+                        _msg._flux_meta.downloaded = true;
+                    }
                 }
             }
         }
