@@ -5627,7 +5627,16 @@
                 if (chat.messages.length && chat.messages[chat.messages.length - 1].content === '🎨 ' + trimmedPrompt) {
                     chat.messages.pop();
                 }
-                await sendMessage(_fluxChatId, _fluxBranchId);
+                var _previewForSend = null;
+                if (withImage && _fluxPendingFile && _fluxPendingFile.data) {
+                    _previewForSend = {
+                        data: _fluxPendingFile.data,
+                        mime: _fluxPendingFile.mime || 'image/jpeg',
+                        name: _fluxPendingFile.name || 'reference.jpg',
+                        file_id: _fluxPendingFile.file_id || ''
+                    };
+                }
+                await sendMessage(_fluxChatId, _fluxBranchId, _previewForSend);
                 if (savedFlux) {
                     fluxModeEnabled = true;
                     if (fb) fb.classList.add('active');
@@ -5935,14 +5944,14 @@
             }, 16);
         }
 
-        async function sendMessage(overrideChatId, overrideBranchId) {
+        async function sendMessage(overrideChatId, overrideBranchId, previewFile) {
             if (selectionMode) toggleSelectionMode();
 
             if (isSending) return;
             const input = document.getElementById('userInput');
             const text = input.value.trim();
 
-            if (!text && !pendingFiles.length) return;
+            if (!text && !pendingFiles.length && !previewFile) return;
             if (!currentUserId) { showAlertModal('Ошибка', 'Авторизуйтесь на главной странице', '❌'); return; }
             var _targetChatId = overrideChatId || currentChatId;
             var _targetBranchId = overrideBranchId || currentBranchId;
@@ -5987,7 +5996,20 @@
                 }
                 if (_others.length) _sendDisplayB64s = _others;
             }
+            // Если пришёл явный previewFile (например, исходник Flux img2img) и своей картинки нет — берём его
+            if (!_sendImageB64 && previewFile && previewFile.data) {
+                _sendImageB64 = previewFile.data;
+                _sendImageMime = previewFile.mime || 'image/jpeg';
+            }
             var _sendFilesSnapshot = pendingFiles.slice();
+            if (previewFile && previewFile.file_id) {
+                _sendFilesSnapshot = _sendFilesSnapshot.concat([{
+                    data: previewFile.data || '',
+                    name: previewFile.name || 'reference.jpg',
+                    mime: previewFile.mime || 'image/jpeg',
+                    file_id: previewFile.file_id
+                }]);
+            }
 
             chat.messages.push({
                 role: 'user',
