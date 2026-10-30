@@ -258,6 +258,14 @@
         .chat-area .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #555; }
         body.light .chat-area .empty-state { color: #999; }
         .message-row { display: flex; gap: 12px; align-items: flex-start; max-width: 100%; }
+        @keyframes msgHighlightPulse {
+            0% { background-color: transparent; }
+            15% { background-color: rgba(0,203,245,0.22); }
+            40% { background-color: rgba(0,203,245,0.10); }
+            70% { background-color: rgba(0,203,245,0.20); }
+            100% { background-color: transparent; }
+        }
+        .message-row.msg-highlight { border-radius: 12px; animation: msgHighlightPulse 2.2s ease-out 1; }
         .message-row.user { align-self: flex-end; flex-direction: row-reverse; max-width: 75%; }
         .message-row.assistant { align-self: flex-start; }
         .message-content { padding: 10px 14px; border-radius: 12px; font-size: 15px !important; line-height: 1.5; white-space: pre-wrap; word-break: break-word; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important; max-width: 100%; overflow-x: hidden; }
@@ -2644,6 +2652,7 @@
                 var target = document.querySelector('.message-row[data-msg-index="' + msgIndex + '"]');
                 if (target) {
                     scrollToMsg(msgIndex);
+                    highlightMsgRow(target);
                     return;
                 }
                 if (_attempts < _maxAttempts) {
@@ -2651,6 +2660,17 @@
                 }
             }
             setTimeout(tryScroll, 100);
+        }
+
+        function highlightMsgRow(rowEl) {
+            if (!rowEl) return;
+            rowEl.classList.remove('msg-highlight');
+            // reflow, чтобы анимация перезапускалась
+            void rowEl.offsetWidth;
+            rowEl.classList.add('msg-highlight');
+            setTimeout(function() {
+                rowEl.classList.remove('msg-highlight');
+            }, 2400);
         }
 
         function toggleSidebar() {
