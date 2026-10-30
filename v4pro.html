@@ -156,6 +156,10 @@
         .new-chat { width: 100%; padding: 10px; background: linear-gradient(90deg, #F59E0B, #FBBF24); color: #201F28; border: 2px solid transparent; border-radius: 24px; font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 600; margin-top: 24px; margin-bottom: 12px; transition: 0.3s ease; box-shadow: 0 4px 16px rgba(245,158,11,0.3); }
         .new-chat:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,158,11,0.4); }
         .chat-list { flex: 1; overflow-y: auto; }
+        .sidebar-icon-btn { background: transparent; border: none; color: #888; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: background 0.15s, color 0.15s; }
+        .sidebar-icon-btn:hover { background: rgba(255,255,255,0.08); color: #e0e0e0; }
+        body.light .sidebar-icon-btn { color: #555; }
+        body.light .sidebar-icon-btn:hover { background: rgba(0,0,0,0.08); color: #111; }
         .chat-search { width: 100%; padding: 5px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #e0e0e0; font-size: 12px; font-family: 'Inter', sans-serif; outline: none; margin-bottom: 8px; height: 28px; }
         body.light .chat-search { background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.1); color: #111; }
         .chat-search::placeholder { color: #666; }
@@ -163,7 +167,8 @@
         .chat-search:focus { border-color: #F59E0B; }
         .search-row { margin-bottom: 8px; }
         .search-row .chat-search { width: calc(100% - 36px); margin-bottom: 0; }
-        .sidebar-toggle { position: fixed; top: 64px; left: 222px; width: 32px; height: 32px; background: transparent; backdrop-filter: none; border: none; border-radius: 50%; color: #888; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: left 0.3s ease, background 0.15s, color 0.15s; }
+        .sidebar-toggle { position: fixed; top: 64px; left: 12px; width: 32px; height: 32px; background: transparent; backdrop-filter: none; border: none; border-radius: 50%; color: #888; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 60; transition: background 0.15s, color 0.15s; }
+        body.collapsed-sidebar .sidebar-toggle { display: flex; }
         .collapsed-sidebar .sidebar-toggle { left: 8px; }
         .collapsed-sidebar .main { margin-left: -260px; }
         body.light .sidebar-toggle { background: transparent; border: none; color: #555; }
@@ -1140,6 +1145,32 @@
         .modal-title { font-size: 15px; }
         .modal-message { font-size: 12px; }
         }
+        .chat-search-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 100000; display: none; align-items: flex-start; justify-content: center; padding: 80px 16px 0; backdrop-filter: blur(2px); }
+        .chat-search-overlay.active { display: flex; }
+        .chat-search-modal { width: 100%; max-width: 600px; background: #2c2c2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; max-height: calc(100vh - 120px); }
+        body.light .chat-search-modal { background: #ffffff; border: 1px solid rgba(0,0,0,0.1); }
+        .chat-search-input-row { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        body.light .chat-search-input-row { border-bottom-color: rgba(0,0,0,0.08); }
+        .chat-search-input-row svg { color: #888; flex-shrink: 0; }
+        .chat-search-input { flex: 1; background: transparent; border: none; outline: none; color: #e0e0e0; font-family: 'Inter', sans-serif; font-size: 15px; }
+        body.light .chat-search-input { color: #111; }
+        .chat-search-input::placeholder { color: #666; }
+        .chat-search-close { background: transparent; border: none; color: #888; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s, color 0.15s; }
+        .chat-search-close:hover { background: rgba(255,255,255,0.08); color: #e0e0e0; }
+        body.light .chat-search-close:hover { background: rgba(0,0,0,0.08); color: #111; }
+        .chat-search-results { flex: 1; overflow-y: auto; padding: 8px; }
+        .chat-search-result { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; cursor: pointer; transition: background 0.15s; margin-bottom: 2px; }
+        .chat-search-result:hover { background: rgba(255,255,255,0.06); }
+        body.light .chat-search-result:hover { background: rgba(0,0,0,0.04); }
+        .chat-search-result-avatar { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; color: #888; flex-shrink: 0; }
+        body.light .chat-search-result-avatar { background: rgba(0,0,0,0.06); }
+        .chat-search-result-body { flex: 1; min-width: 0; }
+        .chat-search-result-title { font-size: 14px; font-weight: 600; color: #e0e0e0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+        body.light .chat-search-result-title { color: #111; }
+        .chat-search-result-snippet { font-size: 12px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-search-result-snippet mark { background: rgba(0,203,245,0.25); color: #00CBF5; padding: 0 2px; border-radius: 3px; }
+        body.light .chat-search-result-snippet mark { background: rgba(0,203,245,0.2); color: #007a99; }
+        .chat-search-empty { text-align: center; padding: 40px 20px; color: #888; font-size: 14px; }
         .message-content a {
             color: #00CBF5;
             text-decoration: none;
@@ -1193,12 +1224,19 @@
         <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="21" x2="9" y2="3"/></svg>
     </button>
     <div class="sidebar">
-        <div class="logo-row">
-            <img src="deepseek_logo.png" alt="DeepSeek Pro" onerror="this.style.display='none'">
-            <span class="logo-text"><span style="color:#F59E0B;">V4 Pro</span></span>
-        </div>
-        <div class="search-row">
-            <input class="chat-search" id="chatSearch" placeholder="Поиск чата..." oninput="filterChats()">
+        <div class="logo-row" style="justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
+                <img src="deepseek_logo.png" alt="DeepSeek Pro" onerror="this.style.display='none'" style="height:24px;">
+                <span class="logo-text" style="font-size:13px;margin-top:0;"><span style="color:#00CBF5;">V4 Flash</span></span>
+            </div>
+            <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
+                <button class="sidebar-icon-btn" onclick="openChatSearch()" title="Поиск в содержимом чата">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+                </button>
+                <button class="sidebar-icon-btn" onclick="toggleSidebar()" title="Свернуть панель" id="sidebarToggleInline">
+                    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="21" x2="9" y2="3"/></svg>
+                </button>
+            </div>
         </div>
         <button class="new-chat" onclick="newChat()"><svg fill="currentColor" viewBox="0 0 24 24" width="16" height="16" style="vertical-align:middle;margin-right:6px;"><path d="M12,2A10,10,0,0,0,2,12a9.89,9.89,0,0,0,2.26,6.33l-2,2a1,1,0,0,0-.21,1.09A1,1,0,0,0,3,22h9A10,10,0,0,0,12,2Zm0,18H5.41l.93-.93a1,1,0,0,0,0-1.41A8,8,0,1,1,12,20Zm3-9H13V9a1,1,0,0,0-2,0v2H9a1,1,0,0,0,0,2h2v2a1,1,0,0,0,2,0V13h2a1,1,0,0,0,0-2Z"/></svg> Новый чат</button>
         <div class="chat-list" id="chatList"></div>
@@ -2498,6 +2536,60 @@
             list.innerHTML = html;
         }
 
+        function openChatSearch() {
+            document.getElementById('chatSearchOverlay').classList.add('active');
+            var _inp = document.getElementById('chatSearchInput');
+            _inp.value = '';
+            document.getElementById('chatSearchResults').innerHTML = '';
+            setTimeout(function() { _inp.focus(); }, 50);
+        }
+        function closeChatSearch() {
+            document.getElementById('chatSearchOverlay').classList.remove('active');
+        }
+        function runChatSearch() {
+            var q = document.getElementById('chatSearchInput').value.trim().toLowerCase();
+            var resEl = document.getElementById('chatSearchResults');
+            if (!q) {
+                resEl.innerHTML = '';
+                return;
+            }
+            var results = [];
+            for (var ci = 0; ci < chats.length; ci++) {
+                var c = chats[ci];
+                if (!c.messages) continue;
+                for (var mi = 0; mi < c.messages.length; mi++) {
+                    var m = c.messages[mi];
+                    if (!m.content) continue;
+                    var _low = String(m.content).toLowerCase();
+                    var _pos = _low.indexOf(q);
+                    if (_pos === -1) continue;
+                    var _start = Math.max(0, _pos - 40);
+                    var _end = Math.min(m.content.length, _pos + q.length + 60);
+                    var _snippet = (_start > 0 ? '…' : '') + m.content.substring(_start, _end) + (_end < m.content.length ? '…' : '');
+                    results.push({ chat: c, msgIndex: mi, snippet: _snippet, pos: _pos });
+                    break;
+                }
+            }
+            if (!results.length) {
+                resEl.innerHTML = '<div class="chat-search-empty">Ничего не найдено</div>';
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < results.length; i++) {
+                var r = results[i];
+                var _snippetHtml = escapeHtml(r.snippet);
+                var _reg = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+                _snippetHtml = _snippetHtml.replace(_reg, '<mark>$1</mark>');
+                html += '<div class="chat-search-result" onclick="closeChatSearch();openChat(\'' + r.chat.id + '\');">' +
+                    '<div class="chat-search-result-avatar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>' +
+                    '<div class="chat-search-result-body">' +
+                        '<div class="chat-search-result-title">' + escapeHtml(r.chat.title) + '</div>' +
+                        '<div class="chat-search-result-snippet">' + _snippetHtml + '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+            resEl.innerHTML = html;
+        }
         function filterChats() {
             var query = document.getElementById('chatSearch').value.toLowerCase();
             var items = document.querySelectorAll('.chat-item');
@@ -2520,6 +2612,10 @@
                 toggle.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="21" x2="9" y2="3"/></svg>';
                 toggle.title = 'Свернуть панель';
                 localStorage.setItem('photobot_sidebar', 'expanded');
+            }
+            var _inlineT = document.getElementById('sidebarToggleInline');
+            if (_inlineT) {
+                _inlineT.title = sidebar.classList.contains('collapsed') ? 'Развернуть панель' : 'Свернуть панель';
             }
             var mainEl = document.querySelector('.main');
             var startTime = performance.now();
@@ -8348,6 +8444,18 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             </div>
         </div>
     </div>    
+    <div id="chatSearchOverlay" class="chat-search-overlay" onclick="if(event.target===this)closeChatSearch()">
+        <div class="chat-search-modal">
+            <div class="chat-search-input-row">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+                <input class="chat-search-input" id="chatSearchInput" placeholder="Поиск в содержимом чата..." oninput="runChatSearch()">
+                <button class="chat-search-close" onclick="closeChatSearch()" title="Закрыть">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="chat-search-results" id="chatSearchResults"></div>
+        </div>
+    </div>
     <div id="paymentModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-icon" style="background:rgba(245,158,11,0.15);color:#F59E0B;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z"/></svg></div>
