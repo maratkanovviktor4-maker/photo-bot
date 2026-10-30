@@ -4536,6 +4536,38 @@
 
         }
 
+        async function _resizeForFluxPro(base64, mime) {
+            return new Promise(function(resolve, reject) {
+                var img = new Image();
+                img.onload = function() {
+                    var TARGET_W = 832, TARGET_H = 1152;
+                    var targetRatio = TARGET_W / TARGET_H;
+                    var w = img.naturalWidth, h = img.naturalHeight;
+                    var cropW, cropH, offsetX, offsetY;
+                    if (w / h > targetRatio) {
+                        cropH = h;
+                        cropW = Math.round(h * targetRatio);
+                        offsetX = Math.round((w - cropW) / 2);
+                        offsetY = 0;
+                    } else {
+                        cropW = w;
+                        cropH = Math.round(w / targetRatio);
+                        offsetX = 0;
+                        offsetY = Math.round((h - cropH) / 2);
+                    }
+                    var canvas = document.createElement('canvas');
+                    canvas.width = TARGET_W;
+                    canvas.height = TARGET_H;
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, offsetX, offsetY, cropW, cropH, 0, 0, TARGET_W, TARGET_H);
+                    var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+                    resolve(dataUrl.split(',')[1]);
+                };
+                img.onerror = function() { reject(new Error('img load error')); };
+                img.src = 'data:' + mime + ';base64,' + base64;
+            });
+        }
+
         async function handleFileSelect(e) {
             if (_abortController) { _abortController.abort(); _abortController = null; }
             _fileReader = null;
@@ -4571,7 +4603,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
 
             reader.onload = async function(ev) {
                 if (_abortCheck) { _abortCheck = false; return; }
-                const base64 = ev.target.result.split(',')[1];
+                let base64 = ev.target.result.split(',')[1];
+                if (fluxModeEnabled && file.type && file.type.indexOf('image/') === 0) {
+                    try {
+                        base64 = await _resizeForFluxPro(base64, file.type);
+                    } catch (e) {
+                        console.warn('flux resize failed', e);
+                    }
+                }
 
                 pendingFile = { name: file.name, mime: file.type, data: base64 };
                 
@@ -4678,6 +4717,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     reader.onload = async function(ev) {
                         if (_abortCheck) { _abortCheck = false; return; }
                         var base64 = ev.target.result.split(',')[1];
+                        if (fluxModeEnabled && file.type && file.type.indexOf('image/') === 0) {
+                            try {
+                                base64 = await _resizeForFluxPro(base64, file.type);
+                            } catch (e) {
+                                console.warn('flux resize failed', e);
+                            }
+                        }
 
                         pendingFile = { name: file.name, mime: file.type, data: base64 };
                         
@@ -4769,6 +4815,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         reader.onload = async function(ev) {
                             if (_abortCheck) { _abortCheck = false; return; }
                             var base64 = ev.target.result.split(',')[1];
+                            if (fluxModeEnabled && blob.type && blob.type.indexOf('image/') === 0) {
+                                try {
+                                    base64 = await _resizeForFluxPro(base64, blob.type);
+                                } catch (e) {
+                                    console.warn('flux resize failed', e);
+                                }
+                            }
 
                             pendingFile = { name: 'screenshot.png', mime: blob.type, data: base64 };
                             
@@ -5188,6 +5241,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             if (fluxModeEnabled) {
                 if (btn) btn.classList.add('active');
                 if (inputEl) inputEl.placeholder = 'Опишите изображение для Flux 2...';
+                if (pendingFile && pendingFile.mime && pendingFile.mime.indexOf('image/') === 0 && pendingFile.data) {
+                    _resizeForFluxPro(pendingFile.data, pendingFile.mime).then(function(newB64) {
+                        pendingFile.data = newB64;
+                        updateFileList();
+                    }).catch(function(e) { console.warn('resize on toggle failed', e); });
+                }
             } else {
                 if (btn) btn.classList.remove('active');
                 if (inputEl) inputEl.placeholder = 'Введите сообщение...';
