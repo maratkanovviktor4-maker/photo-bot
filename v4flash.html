@@ -6279,12 +6279,13 @@
                     // Временно заменяем LaTeX-блоки на плейсхолдеры, чтобы цитаты не ломали формулы
                     var latexBlocks = [];
                     text2 = text2.replace(/\$\$([\s\S]*?)\$\$/g, function(match, inner) {
-                        latexBlocks.push(match);
+                        latexBlocks.push('\\[' + inner + '\\]');
                         return '%%LATEX_' + (latexBlocks.length - 1) + '%%';
                     });
                     text2 = text2.replace(/\$([^$\n]{1,200}?)\$/g, function(match, inner) {
-                        if (!/[\\^_{}]/.test(inner)) return match;
-                        latexBlocks.push(match);
+                        if (!/[\\^_{}=]/.test(inner)) return match;
+                        if (/[а-яА-ЯёЁ]/.test(inner)) return match;
+                        latexBlocks.push('\\(' + inner + '\\)');
                         return '%%LATEX_' + (latexBlocks.length - 1) + '%%';
                     });
                     // Временно заменяем HTML-блоки (после escapeHtml они становятся &lt;...&gt;)
@@ -7719,7 +7720,9 @@
             renderMathInElement(container, {
                 delimiters: [
                     {left: '\\(', right: '\\)', display: false},
-                    {left: '\\[', right: '\\]', display: true}
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
                 ],
                 throwOnError: false
             });
