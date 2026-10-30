@@ -2396,7 +2396,7 @@
             document.querySelector('.chat-wrapper').classList.remove('has-messages');
         }
 
-        function openChat(id) {
+        function openChat(id, skipScrollToBottom) {
             if (selectionMode) toggleSelectionMode();
 
             if (window.innerWidth <= 768) {
@@ -2447,7 +2447,12 @@
                 renderChatList();
                 renderBranchesPanel();
                 fullRender();
-                scrollToBottom();
+                if (!skipScrollToBottom) {
+                    scrollToBottom();
+                } else {
+                    var btn = document.getElementById('scrollBottomBtn');
+                    if (btn) btn.style.display = 'none';
+                }
                 updateBranchIndicator();
                 updateContextBattery();
                 hideLoading();
@@ -2631,7 +2636,7 @@
         }
 
         function openChatAndScrollToMsg(chatId, msgIndex) {
-            openChat(chatId);
+            openChat(chatId, true);
             var _attempts = 0;
             var _maxAttempts = 30;
             function tryScroll() {
