@@ -2409,7 +2409,7 @@
             document.querySelector('.chat-wrapper').classList.remove('has-messages');
         }
 
-        function openChat(id) {
+        function openChat(id, skipScrollToBottom) {
             if (selectionMode) toggleSelectionMode();
 
             if (window.innerWidth <= 768) {
@@ -2460,7 +2460,12 @@
                 renderChatList();
                 renderBranchesPanel();
                 fullRender();
-                scrollToBottom();
+                if (!skipScrollToBottom) {
+                    scrollToBottom();
+                } else {
+                    var btn = document.getElementById('scrollBottomBtn');
+                    if (btn) btn.style.display = 'none';
+                }
                 updateBranchIndicator();
                 updateContextBattery();
                 hideLoading();
@@ -2624,7 +2629,7 @@
                 var _snippetHtml = escapeHtml(r.snippet);
                 var _reg = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
                 _snippetHtml = _snippetHtml.replace(_reg, '<mark>$1</mark>');
-                html += '<div class="chat-search-result" onclick="closeChatSearch();openChat(\'' + r.chat.id + '\');">' +
+                html += '<div class="chat-search-result" onclick="closeChatSearch();openChatAndScrollToMsg(\'' + r.chat.id + '\', ' + r.msgIndex + ');">' +
                     '<div class="chat-search-result-avatar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>' +
                     '<div class="chat-search-result-body">' +
                         '<div class="chat-search-result-title">' + escapeHtml(r.chat.title) + '</div>' +
@@ -2641,6 +2646,24 @@
                 var name = items[i].querySelector('.chat-name').textContent.toLowerCase();
                 items[i].style.display = name.indexOf(query) !== -1 ? 'flex' : 'none';
             }
+        }
+
+        function openChatAndScrollToMsg(chatId, msgIndex) {
+            openChat(chatId, true);
+            var _attempts = 0;
+            var _maxAttempts = 30;
+            function tryScroll() {
+                _attempts++;
+                var target = document.querySelector('.message-row[data-msg-index="' + msgIndex + '"]');
+                if (target) {
+                    scrollToMsg(msgIndex);
+                    return;
+                }
+                if (_attempts < _maxAttempts) {
+                    setTimeout(tryScroll, 100);
+                }
+            }
+            setTimeout(tryScroll, 100);
         }
 
         function toggleSidebar() {
