@@ -5084,6 +5084,14 @@
 
         function removeFileAt(idx) {
             if (idx < 0 || idx >= pendingFiles.length) return;
+            var _removed = pendingFiles[idx];
+            if (_removed && _removed.file_id) {
+                fetch(SERVER_URL + '/delete_files', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ file_ids: [_removed.file_id] })
+                }).catch(function(e) { console.warn('delete_files failed', e); });
+            }
             pendingFiles.splice(idx, 1);
             updateFileList();
             updateLengthExcess();
@@ -5956,20 +5964,57 @@
                 displayText = text ? text + '\n\n📎 ' + _fileNames : '📎 ' + _fileNames;
             }
 
-            chat.messages.push({ role: 'user', content: displayText });
+            // Снимок вложений ДО очистки — чтобы сразу нарисовать их в user-сообщении
+            var _sendImageB64 = null;
+            var _sendImageMime = null;
+            var _sendDisplayB64s = null;
+            var _sendFirstImg = null;
+            for (var _sfi = 0; _sfi < pendingFiles.length; _sfi++) {
+                var _sf = pendingFiles[_sfi];
+                if (_sf && _sf.mime && _sf.mime.indexOf('image/') === 0) {
+                    if (!_sendFirstImg) _sendFirstImg = _sf;
+                }
+            }
+            if (_sendFirstImg) {
+                _sendImageB64 = _sendFirstImg.data || null;
+                _sendImageMime = _sendFirstImg.mime || 'image/jpeg';
+                var _others = [];
+                for (var _soi = 0; _soi < pendingFiles.length; _soi++) {
+                    var _so = pendingFiles[_soi];
+                    if (_so && _so !== _sendFirstImg && _so.mime && _so.mime.indexOf('image/') === 0) {
+                        _others.push([_so.data, _so.mime || 'image/jpeg']);
+                    }
+                }
+                if (_others.length) _sendDisplayB64s = _others;
+            }
+            var _sendFilesSnapshot = pendingFiles.slice();
+
+            chat.messages.push({
+                role: 'user',
+                content: displayText,
+                image_b64: _sendImageB64,
+                image_mime: _sendImageMime,
+                extra_b64s: _sendDisplayB64s,
+                display_b64s: _sendDisplayB64s
+            });
+            var _pushedUserMsgIndex = chat.messages.length - 1;
             playSound('send');
             var _isActiveChat = (_targetChatId === currentChatId);
             if (_isActiveChat) {
                 var area = document.getElementById('chatArea');
                 var emptyState = area.querySelector('.empty-state');
                 if (emptyState) emptyState.remove();
-                var userRow = document.createElement('div');
-                userRow.className = 'message-row user';
-                userRow.innerHTML = '<div><div class="message-content">' + escapeHtml(displayText) + '</div></div>';
-                area.appendChild(userRow);
+                var tempHtml = buildMessageHtml(_pushedUserMsgIndex, chat.messages[_pushedUserMsgIndex]);
+                var tempWrap = document.createElement('div');
+                tempWrap.innerHTML = tempHtml;
+                area.appendChild(tempWrap.firstElementChild);
                 document.querySelector('.chat-wrapper').classList.add('has-messages');
                 document.querySelector('.chat-wrapper').classList.remove('empty-state-active');
             }
+            // Мгновенно убираем превью из поля ввода
+            pendingFiles = [];
+            updateFileList();
+            updateSendBtn();
             chat.lastMessageTime = Date.now();
             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             renderChatList();
@@ -6022,16 +6067,13 @@
                         branch_id: _targetBranchId,
                         personality: currentPersonality,
                         web_search: webSearchEnabled,
-                        files: pendingFiles.map(function(f) { return { data: f.data || '', name: f.name || '', mime: f.mime || '', file_id: f.file_id || '' }; }),
+                        files: _sendFilesSnapshot.map(function(f) { return { data: f.data || '', name: f.name || '', mime: f.mime || '', file_id: f.file_id || '' }; }),
                         flux: fluxModeEnabled
                     }),
                     signal: abortController.signal
                 });
                 // Прерываем проверку файла, если она идёт
                 cancelFileCheck();
-                // Очищаем файлы сразу после отправки запроса
-                pendingFiles = [];
-                updateFileList();
 
                 if (resp.status === 406) {
                     var errData = await resp.json().catch(() => ({}));
