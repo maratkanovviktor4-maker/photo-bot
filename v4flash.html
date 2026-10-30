@@ -5459,10 +5459,30 @@
                 if (inputEl) inputEl.placeholder = 'Опишите изображение для Flux 2...';
                 if (pendingFiles.length > 1) {
                     var _firstImage = pendingFiles.filter(function(f) { return f.mime && f.mime.indexOf('image/') === 0; })[0];
+                    var _idsToDelete = pendingFiles
+                        .filter(function(f) { return f !== _firstImage && f.file_id; })
+                        .map(function(f) { return f.file_id; });
+                    if (_idsToDelete.length) {
+                        fetch(SERVER_URL + '/delete_files', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                            body: JSON.stringify({ file_ids: _idsToDelete })
+                        }).catch(function(e) { console.warn('delete_files failed', e); });
+                    }
                     pendingFiles = _firstImage ? [_firstImage] : [];
                     updateFileList();
                     updateLengthExcess();
                 } else if (pendingFiles.length === 1 && !(pendingFiles[0].mime && pendingFiles[0].mime.indexOf('image/') === 0)) {
+                    var _idsToDelete2 = pendingFiles
+                        .filter(function(f) { return f.file_id; })
+                        .map(function(f) { return f.file_id; });
+                    if (_idsToDelete2.length) {
+                        fetch(SERVER_URL + '/delete_files', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                            body: JSON.stringify({ file_ids: _idsToDelete2 })
+                        }).catch(function(e) { console.warn('delete_files failed', e); });
+                    }
                     pendingFiles = [];
                     updateFileList();
                     updateLengthExcess();
