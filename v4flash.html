@@ -5548,9 +5548,28 @@
 
             var assistantRow = document.createElement('div');
             assistantRow.className = 'message-row assistant';
-            assistantRow.innerHTML = '<div><div class="message-content"><div class="typing-dots"><span></span><span></span><span></span></div> Генерация через Flux 2...</div></div>';
+            assistantRow.innerHTML = '<div><div class="message-content" id="flux-progress-line"><span class="flux-loading-text">В очереди</span></div></div>';
             area.appendChild(assistantRow);
             scrollToBottom();
+
+            var _fluxProgressTimer = setInterval(function() {
+                fetch(SERVER_URL + '/flux_progress_current?user_id=' + encodeURIComponent(currentUserId) + '&session_token=' + encodeURIComponent(sessionToken))
+                    .then(function(r) { return r.json(); })
+                    .then(function(p) {
+                        var lineEl = document.getElementById('flux-progress-line');
+                        if (!lineEl) return;
+                        if (p && p.status === 'running') {
+                            if (p.total > 0) {
+                                lineEl.innerHTML = '<span class="flux-loading-text">Генерация: шаг ' + p.step + ' / ' + p.total + '</span>';
+                            } else {
+                                lineEl.innerHTML = '<span class="flux-loading-text">Генерирую</span>';
+                            }
+                        } else if (p && p.status === 'queued') {
+                            lineEl.innerHTML = '<span class="flux-loading-text">В очереди</span>';
+                        }
+                    })
+                    .catch(function() {});
+            }, 1000);
 
             try {
                 var form = new FormData();
@@ -5651,6 +5670,10 @@
                 assistantRow.remove();
                 chat.messages.pop();
                 showAlertModal('Ошибка', 'Генерация не удалась', '❌');
+            } finally {
+                if (typeof _fluxProgressTimer !== 'undefined' && _fluxProgressTimer) {
+                    clearInterval(_fluxProgressTimer);
+                }
             }
         }
 
