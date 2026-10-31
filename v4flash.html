@@ -6100,6 +6100,11 @@
                 setupFloatingCopyButtonsForMsg(el);
                 updateFloatingButtons();
                 
+                // Если стрим только начался — принудительно возвращаем автоскролл
+                if (!msg._scrollKickDone) {
+                    msg._scrollKickDone = true;
+                    autoScroll = true;
+                }
                 if (autoScroll) {
                     var main = document.querySelector('.main');
                     if (main) {
