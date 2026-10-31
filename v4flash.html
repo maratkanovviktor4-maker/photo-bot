@@ -5899,6 +5899,26 @@
         var _voiceSilenceTimer = null;
         var _voiceLastResultTime = 0;
 
+        function playMicBeep() {
+            try {
+                var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = 880;
+                gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.12);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.13);
+                osc.onended = function() {
+                    try { ctx.close(); } catch(e) {}
+                };
+            } catch(e) {}
+        }
+
         function toggleVoiceInput() {
             if (voiceInputActive) {
                 stopVoiceInput();
@@ -5961,6 +5981,7 @@
             recognition.start();
             voiceInputActive = true;
             document.getElementById('micBtn').style.color = '#e74c3c';
+            playMicBeep();
         }
 
         function _finishVoiceInput(isError) {
