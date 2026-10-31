@@ -2974,9 +2974,9 @@
                     if (autoSpeakEnabled && chat.messages.length > 0) {
                         var lastMsg = chat.messages[chat.messages.length - 1];
                         if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.interrupted) {
-                            speakMessage(chat.messages.length - 1);
+                            speakMessage(chat.messages.length - 1, true);
                         }
-                    }
+                    }                    
                     updateContextBattery();
                     isSending = false;
                     activeStreamId = null;
@@ -3168,7 +3168,7 @@
                     if (autoSpeakEnabled && chat.messages.length > 0) {
                         var lastMsg = chat.messages[chat.messages.length - 1];
                         if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.interrupted) {
-                            speakMessage(chat.messages.length - 1);
+                            speakMessage(chat.messages.length - 1, true);
                         }
                     }
                     isSending = false;
@@ -3602,7 +3602,7 @@
                 if (autoSpeakEnabled && chat.messages.length > 0) {
                     var lastMsg = chat.messages[chat.messages.length - 1];
                     if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.interrupted) {
-                        speakMessage(chat.messages.length - 1);
+                        speakMessage(chat.messages.length - 1, true);
                     }
                 }
                 isSending = false;
@@ -4368,6 +4368,7 @@
         var _currentAudio = null;
         var _currentAudioBtn = null;
         var _currentAudioOriginalHTML = null;
+        var _speakAutoMode = false;
 
         function _stopSpeak() {
             if (_currentAudio) {
@@ -4384,15 +4385,31 @@
                 _currentAudioBtn = null;
                 _currentAudioOriginalHTML = null;
             }
+            // Голосовой диалог: если была автоголосовая озвучка — включаем микрофон через 1 сек
+            if (_speakAutoMode) {
+                _speakAutoMode = false;
+                if (_voiceDialogResumeTimer) clearTimeout(_voiceDialogResumeTimer);
+                _voiceDialogResumeTimer = setTimeout(function() {
+                    _voiceDialogResumeTimer = null;
+                    if (!voiceInputActive && !recognition) {
+                        toggleVoiceInput();
+                    }
+                }, 1000);
+            }
         }
 
-        function speakMessage(index) {
+        var _voiceDialogResumeTimer = null;
+
+        function speakMessage(index, isAuto) {
             // Если уже что-то играет — сначала останавливаем
             if (_currentAudio) {
                 var wasSameBtn = _currentAudioBtn && _currentAudioBtn.getAttribute('data-speak-idx') === String(index);
                 _stopSpeak();
                 if (wasSameBtn) return; // повторный клик по той же кнопке = остановка
             }
+            // Запоминаем, была ли это автоголосовая озвучка (для возобновления микрофона)
+            if (_voiceDialogResumeTimer) { clearTimeout(_voiceDialogResumeTimer); _voiceDialogResumeTimer = null; }
+            _speakAutoMode = !!isAuto;
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             var msg = chat.messages[index];
@@ -4414,6 +4431,10 @@
                 'nigora': 'uz-UZ'
             };
             var lang = langMap[voice] || 'ru-RU';
+            // Если включён голосовой диалог (микрофон + автоозвучка), ставим микрофон на паузу
+            if (isAuto && voiceInputActive) {
+                stopVoiceInput();
+            }
             var btn = document.querySelector('.message-row[data-msg-index="' + index + '"] .message-actions button[onclick*="speakMessage"]');
             if (btn) {
                 btn.style.color = '#e74c3c';
@@ -6331,7 +6352,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 if (autoSpeakEnabled && chat.messages.length > 0) {
                     var lastMsg = chat.messages[chat.messages.length - 1];
                     if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.interrupted) {
-                        speakMessage(chat.messages.length - 1);
+                        speakMessage(chat.messages.length - 1, true);
                     }
                 }                
             } catch (e) {
