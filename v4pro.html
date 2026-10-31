@@ -3788,16 +3788,42 @@
         async function deleteSelectedMessages() {
             var indices = Object.keys(selectedMsgIndices).map(function(k) { return parseInt(k); }).sort(function(a, b) { return b - a; });
             if (indices.length === 0) return;
+            var totalCount = indices.length;
             
-            showConfirmModal('Удаление сообщений', 'Удалить выбранные сообщения (' + indices.length + ')?', ICON_WARNING, 'Удалить', 'Отмена', 'modal-btn-danger', async function() {
+            showConfirmModal('Удаление сообщений', 'Удалить выбранные сообщения (' + totalCount + ')?', ICON_WARNING, 'Удалить', 'Отмена', 'modal-btn-danger', async function() {
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (!chat) return;
-                
+
+                var delBtn = document.getElementById('deleteSelectedBtn');
+                if (delBtn) {
+                    delBtn.disabled = true;
+                    delBtn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(231,76,60,0.4);border-top-color:#e74c3c;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px;"></div> Удаляю 0/' + totalCount;
+                    delBtn.style.cursor = 'not-allowed';
+                    delBtn.style.opacity = '0.85';
+                }
+                var cancelBtn = document.getElementById('cancelSelectionBtn');
+                if (cancelBtn) {
+                    cancelBtn.disabled = true;
+                    cancelBtn.style.opacity = '0.5';
+                    cancelBtn.style.cursor = 'not-allowed';
+                }
+                var delIcon = document.getElementById('deleteProgressIcon');
+                if (!delIcon) {
+                    delIcon = document.createElement('div');
+                    delIcon.id = 'deleteProgressIcon';
+                    delIcon.innerHTML = '<div style="position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#2c2c2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 16px;font-family:Inter,sans-serif;font-size:13px;color:#e74c3c;z-index:100000;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>';
+                    document.body.appendChild(delIcon);
+                }
+                delIcon.style.display = 'flex';
+                delIcon.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(231,76,60,0.3);border-top-color:#e74c3c;border-radius:50%;animation:spin 0.8s linear infinite;"></div><span id="deleteProgressText">Удаление 0/' + totalCount + '</span>';
+
+                var done = 0;
+                var failed = 0;
                 for (var i = 0; i < indices.length; i++) {
                     var msg = chat.messages[indices[i]];
                     if (!msg) continue;
                     try {
-                        await fetch(SERVER_URL + '/delete_message', {
+                        var resp = await fetch(SERVER_URL + '/delete_message', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
                             body: JSON.stringify({
@@ -3808,7 +3834,8 @@
                                 msg_id: msg.msg_id
                             })
                         });
-                    } catch(e) {}
+                        if (!resp.ok) failed++;
+                    } catch(e) { failed++; }
                     chat.messages.splice(indices[i], 1);
                     if (chat.allBranches && chat.allBranches[currentBranchId] && msg.msg_id) {
                         var ids = chat.allBranches[currentBranchId].msg_ids || [];
@@ -3816,11 +3843,23 @@
                         if (pos !== -1) ids.splice(pos, 1);
                         chat.allBranches[currentBranchId].msg_ids = ids;
                     }
+                    done++;
+                    if (delBtn) {
+                        delBtn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(231,76,60,0.4);border-top-color:#e74c3c;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px;"></div> Удаляю ' + done + '/' + totalCount;
+                    }
+                    var dt = document.getElementById('deleteProgressText');
+                    if (dt) dt.textContent = 'Удаление ' + done + '/' + totalCount;
                 }
-                
-                toggleSelectionMode();
-                
+
+                delIcon.style.display = 'none';
+                if (delBtn) {
+                    delBtn.disabled = false;
+                    delBtn.style.opacity = '';
+                    delBtn.style.cursor = '';
+                }
+
                 if (chat.messages.length === 0) {
+                    toggleSelectionMode();
                     renderMessages();
                     renderBranchesPanel();
                     if (currentBranchId !== 'main') {
@@ -3839,12 +3878,35 @@
                         renderMessages();
                         renderBranchesPanel();
                     }
+                    if (failed > 0) {
+                        showAlertModal('Удалено с ошибками', 'Не удалось удалить ' + failed + ' сообщений.', '\u26A0\uFE0F');
+                    }
                     return;
                 }
-                
+
                 renderMessages();
                 renderBranchesPanel();
-                updateBranchesFromServer();
+
+                updateBranchesFromServer().then(function() {
+                    renderMessages();
+                    renderBranchesPanel();
+                });
+
+                toggleSelectionMode();
+
+                if (failed > 0) {
+                    showAlertModal('Удалено с ошибками', 'Не удалось удалить ' + failed + ' сообщений.', '\u26A0\uFE0F');
+                } else {
+                    var toast = document.createElement('div');
+                    toast.innerHTML = '\u2705 Удалено ' + totalCount + ' ' + (totalCount === 1 ? 'сообщение' : 'сообщений');
+                    toast.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#27ae60;color:#fff;padding:10px 18px;border-radius:10px;font-family:Inter,sans-serif;font-size:13px;font-weight:500;z-index:100000;box-shadow:0 8px 24px rgba(39,174,96,0.4);animation:modalFadeIn 0.2s ease;';
+                    document.body.appendChild(toast);
+                    setTimeout(function() {
+                        toast.style.opacity = '0';
+                        toast.style.transition = 'opacity 0.3s ease';
+                        setTimeout(function() { toast.remove(); }, 300);
+                    }, 1800);
+                }
             });
         }        
         function showMessageMenu(event, index) {
