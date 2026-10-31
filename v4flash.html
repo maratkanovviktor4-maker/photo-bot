@@ -6330,6 +6330,8 @@
                                 assistantMsg._sources = parsed.sources;
                             }
                             if (parsed.flux_job_id) {
+                                console.log('[FLUX] starting progress for:', parsed.flux_job_id);
+                                startFluxProgress(parsed.flux_job_id);
                                 assistantMsg._flux_meta = { status: 'success', job_id: parsed.flux_job_id, downloaded: false };
                                 var _fluxImgFile = 'web_' + currentUserId + '_' + parsed.flux_job_id + '.jpg';
                                 var _fluxImgUrl = SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(_fluxImgFile) + '&session_token=' + sessionToken;
@@ -6386,6 +6388,9 @@
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
+                if (assistantMsg._flux_meta && assistantMsg._flux_meta.job_id) {
+                    stopFluxProgress(true);
+                }
                 if (finalMeta) {
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
                     chat.messages[chat.messages.length - 2].msg_id = finalMeta.user_msg_id;
