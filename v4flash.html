@@ -6236,6 +6236,14 @@
                 scrollToBottom();
                 renderMessages();
             }
+            if (flux_enabled) {
+                var _fluxMode = 'text2img';
+                for (var _fmi = 0; _fmi < pendingFiles.length; _fmi++) {
+                    var _fmf = pendingFiles[_fmi];
+                    if (_fmf && _fmf.mime && _fmf.mime.indexOf('image/') === 0) { _fluxMode = 'svoboda_male'; break; }
+                }
+                startFluxPolling(currentUserId, _targetChatId, _fluxMode);
+            }
             const abortController = new AbortController();
             assistantMsg._abortController = abortController;
 
@@ -6403,6 +6411,7 @@
 
                 assistantMsg.finished = true;
                 assistantMsg._streaming = false;
+                stopFluxPolling();
                 assistantMsg.content = assistantMsg._fullBuffer || assistantMsg.content;
                 if (finalMeta) {
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
