@@ -5526,7 +5526,79 @@
         }
 
         var fluxModeEnabled = false;
+        var _fluxProgressTimer = null;
+        var _fluxProgressValue = 0;
+        var _fluxProgressJobId = null;
 
+        function showFluxProgress() {
+            var el = document.getElementById('fluxProgressBar');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'fluxProgressBar';
+                el.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#2c2c2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 18px;font-family:Inter,sans-serif;font-size:13px;color:#e0e0e0;z-index:100000;box-shadow:0 8px 24px rgba(0,0,0,0.4);min-width:280px;';
+                el.innerHTML = '<div id="fluxProgressLabel" style="margin-bottom:8px;display:flex;align-items:center;gap:8px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.8s linear infinite;"></div><span id="fluxProgressText">В очереди...</span></div><div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;"><div id="fluxProgressFill" style="height:100%;width:0%;background:linear-gradient(90deg,#00CBF5,#14E9FC);border-radius:3px;transition:width 0.4s ease;"></div></div>';
+                document.body.appendChild(el);
+            }
+            el.style.display = 'block';
+            _fluxProgressValue = 0;
+            var fill = document.getElementById('fluxProgressFill');
+            if (fill) fill.style.width = '0%';
+            var txt = document.getElementById('fluxProgressText');
+            if (txt) txt.textContent = 'В очереди...';
+        }
+
+        function startFluxProgress(jobId) {
+            _fluxProgressJobId = jobId;
+            showFluxProgress();
+            if (_fluxProgressTimer) clearInterval(_fluxProgressTimer);
+            var startedAt = Date.now();
+            var isRunning = false;
+            _fluxProgressTimer = setInterval(function() {
+                if (!_fluxProgressJobId) return;
+                fetch(SERVER_URL + '/job_status?job_id=' + encodeURIComponent(_fluxProgressJobId) + '&session_token=' + sessionToken)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.status === 'ready' || data.status === 'failed' || data.status === 'unknown') {
+                            stopFluxProgress(data.status === 'ready');
+                            return;
+                        }
+                        if (data.status === 'running' || data.status === 'pending') {
+                            var elapsed = Date.now() - startedAt;
+                            if (elapsed > 3000 && !isRunning) {
+                                isRunning = true;
+                                var txt = document.getElementById('fluxProgressText');
+                                if (txt) txt.textContent = 'Генерация...';
+                            }
+                            if (isRunning) {
+                                // Имитация: рывки в течение ~40 секунд
+                                var target = Math.min(95, _fluxProgressValue + Math.random() * 12 + 3);
+                                _fluxProgressValue = target;
+                                var fill = document.getElementById('fluxProgressFill');
+                                if (fill) fill.style.width = target + '%';
+                            }
+                        }
+                    })
+                    .catch(function() {});
+            }, 1500);
+        }
+
+        function stopFluxProgress(success) {
+            if (_fluxProgressTimer) { clearInterval(_fluxProgressTimer); _fluxProgressTimer = null; }
+            _fluxProgressJobId = null;
+            var fill = document.getElementById('fluxProgressFill');
+            var txt = document.getElementById('fluxProgressText');
+            if (success) {
+                if (fill) fill.style.width = '100%';
+                if (txt) txt.textContent = 'Готово!';
+                setTimeout(function() {
+                    var el = document.getElementById('fluxProgressBar');
+                    if (el) el.style.display = 'none';
+                }, 800);
+            } else {
+                var el = document.getElementById('fluxProgressBar');
+                if (el) el.style.display = 'none';
+            }
+        }
         function toggleFluxMode() {
             fluxModeEnabled = !fluxModeEnabled;
             var btn = document.getElementById('fluxBtn');
@@ -5651,6 +5723,7 @@
                     return;
                 }
                 var jobId = enqData.job_id;
+                startFluxProgress(jobId);
 
                 var result = null;
                 for (var i = 0; i < 150; i++) {
@@ -5669,12 +5742,14 @@
                 }
 
                 if (!result) {
+                    stopFluxProgress(false);
                     assistantRow.remove();
                     chat.messages.pop();
                     showAlertModal('Таймаут', 'Генерация не завершилась. Попробуйте позже.', '⏱');
                     return;
                 }
 
+                stopFluxProgress(true);
                 assistantRow.remove();
 
                 // Формируем объединённое сообщение: «🎨 промт» + служебный блок для модели
