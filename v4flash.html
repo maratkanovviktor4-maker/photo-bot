@@ -4386,19 +4386,16 @@
                 _currentAudioBtn = null;
                 _currentAudioOriginalHTML = null;
             }
-            // Голосовой диалог: если была автоголосовая озвучка и микрофон был активен — возобновляем через 1 сек
+            // Голосовой диалог: если была автоголосовая озвучка — включаем микрофон через 1 сек
             if (_speakAutoMode) {
                 _speakAutoMode = false;
-                if (voiceInputActive) {
-                    if (_voiceDialogResumeTimer) clearTimeout(_voiceDialogResumeTimer);
-                    _voiceDialogResumeTimer = setTimeout(function() {
-                        _voiceDialogResumeTimer = null;
-                        if (voiceInputActive && !recognition) {
-                            // Уже был вызван stopVoiceInput (при старте озвучки) — перезапустим
-                            toggleVoiceInput();
-                        }
-                    }, 1000);
-                }
+                if (_voiceDialogResumeTimer) clearTimeout(_voiceDialogResumeTimer);
+                _voiceDialogResumeTimer = setTimeout(function() {
+                    _voiceDialogResumeTimer = null;
+                    if (!voiceInputActive && !recognition) {
+                        toggleVoiceInput();
+                    }
+                }, 1000);
             }
         }
 
