@@ -5570,18 +5570,24 @@
             var targetSec = (mode === 'svoboda_male') ? 35 : 9;
             var capPercent = 95 + Math.random() * 4; // 95-99%
             var elapsed = 0;
-            var interval = 300;
+            var interval = 250;
             fill.style.width = '0%';
             _fluxProgressTimer = setInterval(function() {
                 elapsed += interval / 1000;
                 var ratio = elapsed / targetSec;
                 if (ratio > 1) ratio = 1;
-                // случайные рывки
-                var randStep = 0.5 + Math.random() * 1.5;
                 var current = parseFloat(fill.style.width) || 0;
-                var maxAllowed = ratio * capPercent;
-                var next = Math.min(capPercent, current + randStep);
-                if (next > maxAllowed) next = maxAllowed;
+                // целевое значение исходя из времени — линейно до capPercent к targetSec
+                var targetNow = ratio * capPercent;
+                // случайный рывок: в среднем догоняем, но с разбросом
+                var baseStep = (capPercent / (targetSec * (1000 / interval)));
+                var step = baseStep * (0.5 + Math.random()); // 0.5x – 1.5x
+                var next = current + step;
+                // не улетаем вперёд больше чем на 8% от целевого — плавность
+                if (next > targetNow + 8) next = targetNow + 8 * Math.random();
+                if (next > capPercent) next = capPercent;
+                // если отстаём от targetNow — подтягиваем
+                if (next < targetNow * 0.85) next = targetNow * 0.85;
                 fill.style.width = next.toFixed(1) + '%';
             }, interval);
         }
