@@ -124,6 +124,11 @@
         .chat-wrapper.has-messages { justify-content: flex-start; }
         .flux-loading-text { color: #888; font-style: italic; font-family: 'Inter', sans-serif; font-size: 14px; }
         .flux-loading-text::after { content: ''; animation: dots 1.5s infinite; }
+        .flux-loading-wrap { display: inline-flex; flex-direction: column; gap: 8px; min-width: 200px; max-width: 280px; }
+        .flux-status-label { color: #888; font-style: italic; font-family: 'Inter', sans-serif; font-size: 14px; }
+        .flux-progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+        body.light .flux-progress-bar { background: rgba(0,0,0,0.1); }
+        .flux-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #00CBF5, #14E9FC); border-radius: 2px; transition: width 0.3s ease; }
         @keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
         .typing-dots { display: inline-flex; gap: 4px; padding: 4px 0; }
         .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: #666; animation: dotPulse 1.2s infinite; }
@@ -5526,6 +5531,87 @@
         }
 
         var fluxModeEnabled = false;
+        var _fluxPollTimer = null;
+        var _fluxProgressTimer = null;
+
+        function stopFluxPolling() {
+            if (_fluxPollTimer) { clearInterval(_fluxPollTimer); _fluxPollTimer = null; }
+            if (_fluxProgressTimer) { clearInterval(_fluxProgressTimer); _fluxProgressTimer = null; }
+        }
+
+        function _fluxPlaceholderEl() {
+            var el = document.querySelector('.flux-loading-wrap');
+            return el;
+        }
+
+        function _setFluxStatus(status) {
+            var wrap = _fluxPlaceholderEl();
+            if (!wrap) return;
+            var labelEl = wrap.querySelector('.flux-status-label');
+            if (labelEl) {
+                if (status === 'queued') labelEl.textContent = 'В очереди...';
+                else if (status === 'running') labelEl.textContent = 'Генерация...';
+                else if (status === 'done') labelEl.textContent = 'Готово';
+            }
+            var barWrap = wrap.querySelector('.flux-progress-bar');
+            if (barWrap) {
+                if (status === 'running') barWrap.style.display = 'block';
+                else barWrap.style.display = 'none';
+            }
+        }
+
+        function _startFluxProgress(mode) {
+            if (_fluxProgressTimer) { clearInterval(_fluxProgressTimer); _fluxProgressTimer = null; }
+            var wrap = _fluxPlaceholderEl();
+            if (!wrap) return;
+            var fill = wrap.querySelector('.flux-progress-fill');
+            if (!fill) return;
+            // время генерации под режим: img2img 35с, text2img 9с
+            var targetSec = (mode === 'svoboda_male') ? 35 : 9;
+            var capPercent = 95 + Math.random() * 4; // 95-99%
+            var elapsed = 0;
+            var interval = 300;
+            fill.style.width = '0%';
+            _fluxProgressTimer = setInterval(function() {
+                elapsed += interval / 1000;
+                var ratio = elapsed / targetSec;
+                if (ratio > 1) ratio = 1;
+                // случайные рывки
+                var randStep = 0.5 + Math.random() * 1.5;
+                var current = parseFloat(fill.style.width) || 0;
+                var maxAllowed = ratio * capPercent;
+                var next = Math.min(capPercent, current + randStep);
+                if (next > maxAllowed) next = maxAllowed;
+                fill.style.width = next.toFixed(1) + '%';
+            }, interval);
+        }
+
+        function startFluxPolling(userId, chatId, mode) {
+            stopFluxPolling();
+            // Плейсхолдер уже стоит фронтом — переключаем по статусу
+            var attempts = 0;
+            var maxAttempts = 200; // 200 * 1500мс = 5 минут максимум
+            _fluxPollTimer = setInterval(function() {
+                attempts++;
+                if (attempts > maxAttempts) { stopFluxPolling(); return; }
+                fetch(SERVER_URL + '/flux_status?user_id=' + encodeURIComponent(userId) + '&chat_id=' + encodeURIComponent(chatId) + '&session_token=' + encodeURIComponent(sessionToken))
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (!data || !data.status) return;
+                        if (data.status === 'queued') {
+                            _setFluxStatus('queued');
+                            if (_fluxProgressTimer) { clearInterval(_fluxProgressTimer); _fluxProgressTimer = null; }
+                        } else if (data.status === 'running') {
+                            _setFluxStatus('running');
+                            if (!_fluxProgressTimer) _startFluxProgress(data.mode || mode || 'text2img');
+                        } else if (data.status === 'done' || data.status === 'unknown') {
+                            _setFluxStatus('done');
+                            stopFluxPolling();
+                        }
+                    })
+                    .catch(function() {});
+            }, 1500);
+        }
 
         function toggleFluxMode() {
             fluxModeEnabled = !fluxModeEnabled;
@@ -5705,7 +5791,10 @@
                         file_id: _fluxPendingFile.file_id || ''
                     };
                 }
+                // Запускаем опрос статуса flux (queued → running → done)
+                startFluxPolling(currentUserId, _fluxChatId, withImage ? 'svoboda_male' : 'text2img');
                 await sendMessage(_fluxChatId, _fluxBranchId, _previewForSend);
+                stopFluxPolling();
                 if (savedFlux) {
                     fluxModeEnabled = true;
                     if (fb) fb.classList.add('active');
@@ -5985,6 +6074,9 @@
                 // Удаляем три точки, если они были
                 var dots = el.querySelector('.typing-dots');
                 if (dots) dots.remove();
+                var _fluxWrap = el.querySelector('.flux-loading-wrap');
+                if (_fluxWrap) _fluxWrap.remove();
+                stopFluxPolling();
                 
                 if (prevHeight > 0) {
                     parentEl.style.minHeight = prevHeight + 'px';
@@ -6136,7 +6228,9 @@
                 document.getElementById('branchIndicatorTop').style.display = '';
                 var assistantRow = document.createElement('div');
                 assistantRow.className = 'message-row assistant';
-                var _fluxPlaceholder = fluxModeEnabled ? '<span class="flux-loading-text">Генерирую изображение</span>' : '<div class="typing-dots"><span></span><span></span><span></span></div>';
+                var _fluxPlaceholder = fluxModeEnabled
+                    ? '<div class="flux-loading-wrap"><div class="flux-status-label">В очереди...</div><div class="flux-progress-bar"><div class="flux-progress-fill"></div></div></div>'
+                    : '<div class="typing-dots"><span></span><span></span><span></span></div>';
                 assistantRow.innerHTML = '<div><div class="message-content" id="stream-' + msgIndex + '">' + _fluxPlaceholder + '</div></div>';
                 area.appendChild(assistantRow);
                 scrollToBottom();
