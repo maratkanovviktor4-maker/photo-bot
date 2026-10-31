@@ -6235,6 +6235,9 @@
                 area.appendChild(assistantRow);
                 scrollToBottom();
                 renderMessages();
+                if (fluxModeEnabled) {
+                    startFluxPolling(currentUserId, _targetChatId, pendingFiles.length && pendingFiles[0].mime && pendingFiles[0].mime.indexOf('image/') === 0 ? 'svoboda_male' : 'text2img');
+                }
             }
             const abortController = new AbortController();
             assistantMsg._abortController = abortController;
@@ -6428,6 +6431,7 @@
                 updateBalance();
                 isSending = false;
                 activeStreamId = null;
+                stopFluxPolling();
                 sendBtnArrow();
                 pendingFiles = [];
                 updateFileList();
