@@ -3701,7 +3701,10 @@
                     checkbox.type = 'checkbox';
                     checkbox.className = 'selection-checkbox';
                     checkbox.dataset.index = index;
-                    checkbox.style.cssText = 'position:absolute;left:-35px;top:' + (row.offsetTop + row.offsetHeight / 2 - 9) + 'px;width:18px;height:18px;cursor:pointer;accent-color:#F59E0B;';
+                    var _isMobileSel = window.innerWidth <= 768;
+                    var _cbLeft = _isMobileSel ? '4px' : '-35px';
+                    var _cbSize = _isMobileSel ? '22px' : '18px';
+                    checkbox.style.cssText = 'position:absolute;left:' + _cbLeft + ';top:' + (row.offsetTop + row.offsetHeight / 2 - 9) + 'px;width:' + _cbSize + ';height:' + _cbSize + ';cursor:pointer;accent-color:#F59E0B;z-index:5;';
                     checkbox.addEventListener('click', function(e) {
                         var idx = parseInt(this.dataset.index);
                         if (e.shiftKey && lastSelectionIndex !== null) {
@@ -3733,7 +3736,7 @@
                         }
                         updateDeleteSelectedBtn();
                     });
-                    row.style.paddingLeft = '30px';
+                    row.style.paddingLeft = window.innerWidth <= 768 ? '32px' : '30px';
                     chatArea.appendChild(checkbox);
                 });
                 var topBar = document.querySelector('.top-bar');
