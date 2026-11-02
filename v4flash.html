@@ -334,9 +334,7 @@
         body.light .attach-btn { background: transparent; border: none; }
         body.light .attach-btn:hover { background: rgba(0,0,0,0.06); }
         .attach-btn:hover { color: #14E9FC; background: rgba(255,255,255,0.1); }
-        .file-name-inline { font-size: 12px; color: #00CBF5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto; margin-right: 0; max-width: 180px; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 1; min-width: 0; }
-        .file-name-inline > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-        .file-name-inline > button { flex-shrink: 0; }
+        .file-name-inline { font-size: 12px; color: #00CBF5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto; margin-right: 0; }
         .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
         body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
         .thinking-dots::after { content: ''; animation: dots 1.5s infinite; }
@@ -1026,24 +1024,26 @@
         /* --- MODE-BTN: всё в один ряд --- */
         #reasonerToggle {
             font-size: 10px !important;
-            padding: 4px 8px !important;
-            height: 30px;
+            padding: 2px 4px !important;
+            height: 26px;
             flex: 0 0 auto;
             white-space: nowrap;
-            gap: 4px !important;
+            min-width: 0;
+            gap: 2px !important;
             order: 0;
         }
-        #reasonerToggle svg { width: 12px; height: 12px; flex-shrink: 0; }
+        #reasonerToggle svg { width: 10px; height: 10px; flex-shrink: 0; }
         #webSearchToggle {
             font-size: 10px !important;
-            padding: 4px 8px !important;
-            height: 30px;
+            padding: 2px 4px !important;
+            height: 26px;
             flex: 0 0 auto;
             white-space: nowrap;
-            gap: 4px !important;
+            min-width: 0;
+            gap: 2px !important;
             order: 0;
         }
-        #webSearchToggle svg { width: 12px; height: 12px; flex-shrink: 0; }
+        #webSearchToggle svg { width: 10px; height: 10px; flex-shrink: 0; }
         .input-toolbar .attach-btn:first-of-type { margin-left: auto; }
         #reasonerToggle { font-size: 0 !important; }
         #webSearchToggle { font-size: 0 !important; }
@@ -1066,15 +1066,18 @@
 
         /* file-name-inline и lengthExcess — на новой строке */
         .file-name-inline {
-            order: 2;
-            max-width: 80px;
-            min-width: 40px;
-            font-size: 10px;
-            margin: 0 4px;
+            order: -1;
+            flex-basis: 100%;
+            max-width: 100%;
+            font-size: 11px;
+            margin: 0 0 4px 0;
+            padding: 0 4px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            flex-shrink: 1;
+            flex-shrink: 0;
+            min-width: 0;
+            color: #00CBF5;
         }
 
         #lengthExcess {
@@ -5095,7 +5098,7 @@
         function _showAttachmentError(text) {
             var inline = document.getElementById('fileNameInline');
             if (!inline) return;
-            inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;max-width:100%;min-width:0;"><span style="color:#e74c3c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex-shrink:1;">⚠️ ' + text + '</span><button onclick="event.stopPropagation();this.parentElement.parentElement.innerHTML=\'\';" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;flex-shrink:0;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
+            inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ ' + text + '</span> <button onclick="event.stopPropagation();this.parentElement.parentElement.innerHTML=\'\';" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
         }
 
         async function processFileQueue() {
@@ -5237,7 +5240,7 @@
                         var errorText = 'Ошибка проверки файла';
                         if (result.error === 'max_weight') errorText = 'Превышен макс. вес';
                         else if (result.error === 'max_text') errorText = 'Превышена макс. длина текста';
-                        _showAttachmentError(escapeHtml(file.name) + ': ' + errorText);
+                        if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + escapeHtml(file.name) + ': ' + errorText + '</span>';
                         pendingFiles = pendingFiles.filter(function(f) { return f !== newItem; });
                         return null;
                     }
