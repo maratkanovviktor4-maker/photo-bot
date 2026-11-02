@@ -248,6 +248,10 @@
             color: #F59E0B !important;
             background: rgba(245,158,11,0.15) !important;
         }
+        #aceBtn.active {
+            color: #F59E0B !important;
+            background: rgba(245,158,11,0.15) !important;
+        }
         .attach-btn.active:hover {
             color: #e74c3c !important;
             background: rgba(255,255,255,0.1) !important;
@@ -1381,7 +1385,12 @@
                             <div id="audioParamsRow" style="display:none;flex-wrap:wrap;gap:6px;padding:4px 0 6px 0;"></div>
                             <div id="audioSubParamsRow" style="display:none;flex-wrap:wrap;gap:6px;padding:0 0 6px 0;"></div>
                             <div id="audioDurationRow" style="display:none;flex-wrap:wrap;gap:6px;padding:0 0 6px 0;"></div>
+                            <div id="aceParamsRow" style="display:none;flex-wrap:wrap;gap:6px;padding:4px 0 6px 0;"></div>
+                            <div id="aceSubParamsRow" style="display:none;flex-wrap:wrap;gap:6px;padding:0 0 6px 0;"></div>
+                            <div id="aceBpmRow" style="display:none;flex-wrap:wrap;gap:6px;padding:0 0 6px 0;"></div>
+                            <div id="aceDurationRow" style="display:none;flex-wrap:wrap;gap:6px;padding:0 0 6px 0;"></div>
                             <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();var btn=document.getElementById('sendBtn');if(btn.disabled)return;if(isSending){stopTyping();}else{sendMessage();}}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,300)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,300)+'px';this._init=true;}"></textarea>
+                            <textarea id="aceLyricsInput" placeholder="Текст песни (обязательно)..." rows="3" style="display:none;padding:0;border-radius:0;border:none;border-top:1px solid rgba(255,255,255,0.08);background:transparent;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;font-size:15px;outline:none;resize:none;min-height:60px;max-height:300px;overflow-y:auto;width:100%;box-sizing:border-box;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,300)+'px';" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();var btn=document.getElementById('sendBtn');if(btn.disabled)return;if(isSending){stopTyping();}else{sendMessage();}}"></textarea>
                         </div>
                         <div class="input-toolbar">
                             <button class="mode-btn" id="reasonerToggle" onclick="toggleReasoner()" style="font-size:12px;padding:6px 14px;display:inline-flex;align-items:center;gap:6px;"><svg fill="currentColor" viewBox="-3 -3 24 24" preserveAspectRatio="xMinYMin" width="18" height="18" style="vertical-align:middle;"><path d="M.694 17.306c-1.91-1.912.258-7.18 4.845-11.767S15.394-1.217 17.306.694c1.91 1.912-.258 7.18-4.845 11.767S2.606 19.217.694 17.306zM2.08 15.92c.815.816 5.102-.95 8.997-4.845 3.895-3.895 5.66-8.182 4.845-8.997-.815-.816-5.102.95-8.997 4.845-3.895 3.895-5.66 8.182-4.845 8.997zm3.46-3.46C.952 7.874-1.217 2.606.694.694c1.912-1.91 7.18.258 11.767 4.845s6.756 9.855 4.845 11.767c-1.912 1.91-7.18-.258-11.767-4.845zm1.385-1.385c3.895 3.895 8.182 5.66 8.997 4.845.816-.815-.95-5.102-4.845-8.997-3.895-3.895-8.182-5.66-8.997-4.845-.816.815.95 5.102 4.845 8.997zM9 11a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg> Глубокое мышление</button>
@@ -1404,6 +1413,9 @@
                             </button>
                             <button id="audioBtn" class="attach-btn" onclick="toggleAudioMode()" title="Генерация аудио (Stable Audio 3)" style="color:#888;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                            </button>
+                            <button id="aceBtn" class="attach-btn" onclick="toggleAceMode()" title="Генерация песни (Ace Step 1.5)" style="color:#888;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4"/></svg>
                             </button>
                             <button id="sendBtn" onclick="sendMessage()" title="Отправить"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
                         </div>
@@ -4038,6 +4050,13 @@
                 var _audioLabel = 'Stable Audio 3' + (msg._audio_meta.mode ? ' · ' + msg._audio_meta.mode : '') + (msg._audio_meta.duration ? ' · ' + msg._audio_meta.duration + 'с' : '');
                 contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:6px;">🎵 ' + _audioLabel + '</div><audio controls preload="metadata" src="' + _audioUrl + '" style="width:100%;max-width:360px;display:block;"></audio></div>' + contentHtml;
             }
+            if (msg.role === 'assistant' && msg._ace_meta && msg._ace_meta.status === 'success' && msg._ace_meta.file && msg._ace_meta.downloaded) {
+                contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали этот трек.</div>' + contentHtml;
+            } else if (msg.role === 'assistant' && msg._ace_meta && msg._ace_meta.status === 'success' && msg._ace_meta.file) {
+                var _aceUrl = SERVER_URL + '/get_ace_audio_file?job_id=' + encodeURIComponent(msg._ace_meta.file) + '&session_token=' + sessionToken;
+                var _aceLabel = 'Ace Step 1.5' + (msg._ace_meta.key ? ' · ' + msg._ace_meta.key : '') + (msg._ace_meta.bpm ? ' · ' + msg._ace_meta.bpm + ' BPM' : '') + (msg._ace_meta.duration ? ' · ' + msg._ace_meta.duration + 'с' : '');
+                contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:6px;">🎤 ' + _aceLabel + '</div><audio controls preload="metadata" src="' + _aceUrl + '" style="width:100%;max-width:360px;display:block;"></audio></div>' + contentHtml;
+            }
             if (msg.role === 'user' && (msg.image_b64 || (msg.extra_b64s && msg.extra_b64s.length))) {
                 var _allImgs = '';
                 if (msg.image_b64) {
@@ -4572,7 +4591,13 @@
                     var audioData = await audioResp.json();
                     audioFiles = (audioData.results || []).map(function(j) { return { type: 'audio', name: j.job_id }; });
                 }
-                var all = imgFiles.concat(audioFiles);
+                var aceResp = await fetch(SERVER_URL + '/ace_audio_history?user_id=' + currentUserId + '&session_token=' + sessionToken);
+                var aceFiles = [];
+                if (aceResp.ok) {
+                    var aceData = await aceResp.json();
+                    aceFiles = (aceData.results || []).map(function(j) { return { type: 'ace', name: j.job_id }; });
+                }
+                var all = imgFiles.concat(audioFiles).concat(aceFiles);
                 if (!all.length) {
                     showAlertModal('Нет готовых генераций', 'Сначала сгенерируйте изображение или аудио.', '📭');
                     return;
@@ -4581,9 +4606,10 @@
                 // 2. Качаем
                 if (all.length === 1) {
                     var f = all[0];
-                    var url = f.type === 'image'
-                        ? SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken
-                        : SERVER_URL + '/get_audio_file?job_id=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken;
+                    var url;
+                    if (f.type === 'image') url = SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken;
+                    else if (f.type === 'ace') url = SERVER_URL + '/get_ace_audio_file?job_id=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken;
+                    else url = SERVER_URL + '/get_audio_file?job_id=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken;
                     var fr = await fetch(url);
                     if (!fr.ok) { showAlertModal('Ошибка', 'Не удалось скачать файл', '❌'); return; }
                     var blob = await fr.blob();
@@ -4597,9 +4623,10 @@
                     var zip = new JSZip();
                     for (var i = 0; i < all.length; i++) {
                         var fi = all[i];
-                        var furl = fi.type === 'image'
-                            ? SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(fi.name) + '&session_token=' + sessionToken
-                            : SERVER_URL + '/get_audio_file?job_id=' + encodeURIComponent(fi.name) + '&session_token=' + sessionToken;
+                        var furl;
+                        if (fi.type === 'image') furl = SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(fi.name) + '&session_token=' + sessionToken;
+                        else if (fi.type === 'ace') furl = SERVER_URL + '/get_ace_audio_file?job_id=' + encodeURIComponent(fi.name) + '&session_token=' + sessionToken;
+                        else furl = SERVER_URL + '/get_audio_file?job_id=' + encodeURIComponent(fi.name) + '&session_token=' + sessionToken;
                         var r = await fetch(furl);
                         if (r.ok) {
                             var b = await r.blob();
@@ -4625,10 +4652,17 @@
         }
 
         async function _finalizeDownloadedFile(f) {
-            var markUrl = f.type === 'image' ? '/mark_image_downloaded' : '/mark_audio_downloaded';
-            var delUrl = f.type === 'image'
-                ? '/delete_history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken
-                : '/delete_audio?job_id=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken;
+            var markUrl, delUrl;
+            if (f.type === 'image') {
+                markUrl = '/mark_image_downloaded';
+                delUrl = '/delete_history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken;
+            } else if (f.type === 'ace') {
+                markUrl = '/mark_ace_downloaded';
+                delUrl = '/delete_ace_audio?job_id=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken;
+            } else {
+                markUrl = '/mark_audio_downloaded';
+                delUrl = '/delete_audio?job_id=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken;
+            }
             var delMethod = 'DELETE';
             try {
                 await fetch(SERVER_URL + markUrl, {
@@ -5372,6 +5406,15 @@
         function updateSendBtn() {
             var hasText = input.value.trim().length > 0;
             var hasFile = pendingFiles.length > 0;
+            // Ace требует лирик
+            if (typeof aceModeEnabled !== 'undefined' && aceModeEnabled) {
+                var _lyr = document.getElementById('aceLyricsInput');
+                var _lyrVal = _lyr ? _lyr.value.trim() : '';
+                if (!_lyrVal) {
+                    btn.disabled = true;
+                    return;
+                }
+            }
             var isUploading = false;
             var hasError = false;
             var fileOk = true;
@@ -5816,6 +5859,105 @@
 
         var FLUX_RESOLUTIONS = ['512×512', '768×768', '832×1152', '1024×1024', '1920×1080', '2560×1440', '1080×1920', '1440×2560'];
 
+        var aceModeEnabled = false;
+        var ACE_KEYS = ['C major', 'A minor', 'D major', 'B minor', 'E minor', 'G major'];
+        var ACE_BPMS = [60, 80, 100, 120, 140, 160];
+        var ACE_DURATIONS = [30, 60, 120, 180, 240];
+
+        function _getAceState() {
+            return {
+                key: localStorage.getItem('photobot_ace_key') || 'A minor',
+                bpm: parseInt(localStorage.getItem('photobot_ace_bpm') || '120') || 120,
+                dur: parseInt(localStorage.getItem('photobot_ace_dur') || '60') || 60
+            };
+        }
+        function _saveAceState(st) {
+            if (st.key) localStorage.setItem('photobot_ace_key', st.key);
+            if (st.bpm) localStorage.setItem('photobot_ace_bpm', String(st.bpm));
+            if (st.dur) localStorage.setItem('photobot_ace_dur', String(st.dur));
+        }
+
+        function renderAceParams() {
+            var rowKey = document.getElementById('aceParamsRow');
+            var rowBpm = document.getElementById('aceBpmRow');
+            var rowDur = document.getElementById('aceDurationRow');
+            var lyricsEl = document.getElementById('aceLyricsInput');
+            if (!rowKey || !rowBpm || !rowDur || !lyricsEl) return;
+            if (!aceModeEnabled) {
+                rowKey.style.display = 'none';
+                rowBpm.style.display = 'none';
+                rowDur.style.display = 'none';
+                lyricsEl.style.display = 'none';
+                return;
+            }
+            var st = _getAceState();
+            lyricsEl.style.display = 'block';
+            rowKey.style.display = 'flex';
+            rowKey.innerHTML = ACE_KEYS.map(function(k) {
+                var active = st.key === k;
+                return '<div class="flux-param-chip' + (active ? ' selected' : '') + '" data-key="' + k + '">' + k + '</div>';
+            }).join('');
+            rowKey.querySelectorAll('.flux-param-chip').forEach(function(chip) {
+                chip.addEventListener('click', function() {
+                    _saveAceState({ key: chip.dataset.key, bpm: st.bpm, dur: st.dur });
+                    renderAceParams();
+                    updateSendBtn();
+                });
+            });
+            rowBpm.style.display = 'flex';
+            rowBpm.innerHTML = ACE_BPMS.map(function(b) {
+                var active = st.bpm === b;
+                return '<div class="flux-param-chip' + (active ? ' selected' : '') + '" data-bpm="' + b + '">' + b + ' BPM</div>';
+            }).join('');
+            rowBpm.querySelectorAll('.flux-param-chip').forEach(function(chip) {
+                chip.addEventListener('click', function() {
+                    _saveAceState({ key: st.key, bpm: parseInt(chip.dataset.bpm), dur: st.dur });
+                    renderAceParams();
+                });
+            });
+            rowDur.style.display = 'flex';
+            rowDur.innerHTML = ACE_DURATIONS.map(function(d) {
+                var active = st.dur === d;
+                return '<div class="flux-param-chip' + (active ? ' selected' : '') + '" data-dur="' + d + '">' + d + 'с</div>';
+            }).join('');
+            rowDur.querySelectorAll('.flux-param-chip').forEach(function(chip) {
+                chip.addEventListener('click', function() {
+                    _saveAceState({ key: st.key, bpm: st.bpm, dur: parseInt(chip.dataset.dur) });
+                    renderAceParams();
+                });
+            });
+            updateSendBtn();
+        }
+
+        function toggleAceMode() {
+            aceModeEnabled = !aceModeEnabled;
+            if (aceModeEnabled) {
+                if (fluxModeEnabled) {
+                    fluxModeEnabled = false;
+                    var fb = document.getElementById('fluxBtn');
+                    if (fb) fb.classList.remove('active');
+                    renderFluxParamsRow();
+                }
+                if (audioModeEnabled) {
+                    audioModeEnabled = false;
+                    var ab = document.getElementById('audioBtn');
+                    if (ab) ab.classList.remove('active');
+                    renderAudioParams();
+                }
+            }
+            var btn = document.getElementById('aceBtn');
+            var inputEl = document.getElementById('userInput');
+            if (aceModeEnabled) {
+                if (btn) btn.classList.add('active');
+                if (inputEl) inputEl.placeholder = 'Опишите трек (жанр, настроение, инструменты)...';
+            } else {
+                if (btn) btn.classList.remove('active');
+                if (inputEl) inputEl.placeholder = 'Введите сообщение...';
+            }
+            renderAceParams();
+            updateSendBtn();
+        }
+
         var audioModeEnabled = false;
         var AUDIO_CATEGORIES = [
             { key: 'Music', label: 'Music', subs: [
@@ -5950,6 +6092,12 @@
             var btn = document.getElementById('audioBtn');
             var inputEl = document.getElementById('userInput');
             if (audioModeEnabled) {
+                if (aceModeEnabled) {
+                    aceModeEnabled = false;
+                    var _acb = document.getElementById('aceBtn');
+                    if (_acb) _acb.classList.remove('active');
+                    renderAceParams();
+                }
                 if (btn) btn.classList.add('active');
                 if (inputEl) inputEl.placeholder = 'Опишите звук или музыку...';
             } else {
@@ -5957,6 +6105,7 @@
                 if (inputEl) inputEl.placeholder = 'Введите сообщение...';
             }
             renderAudioParams();
+            updateSendBtn();
         }
 
         function getFluxSelectedResolution() {
@@ -5999,6 +6148,12 @@
                     var _ab = document.getElementById('audioBtn');
                     if (_ab) _ab.classList.remove('active');
                     renderAudioParams();
+                }
+                if (aceModeEnabled) {
+                    aceModeEnabled = false;
+                    var _acb2 = document.getElementById('aceBtn');
+                    if (_acb2) _acb2.classList.remove('active');
+                    renderAceParams();
                 }
                 if (btn) btn.classList.add('active');
                 if (inputEl) inputEl.placeholder = 'Опишите изображение для Flux 2...';
@@ -6616,6 +6771,14 @@
             if (_apRow) _apRow.style.display = 'none';
             if (_aspRow) _aspRow.style.display = 'none';
             if (_adRow) _adRow.style.display = 'none';
+            var _aceRow1 = document.getElementById('aceParamsRow');
+            var _aceRow2 = document.getElementById('aceBpmRow');
+            var _aceRow3 = document.getElementById('aceDurationRow');
+            var _aceLyrics = document.getElementById('aceLyricsInput');
+            if (_aceRow1) _aceRow1.style.display = 'none';
+            if (_aceRow2) _aceRow2.style.display = 'none';
+            if (_aceRow3) _aceRow3.style.display = 'none';
+            if (_aceLyrics) _aceLyrics.style.display = 'none';
             chat.lastMessageTime = Date.now();
             chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
             renderChatList();
@@ -6678,7 +6841,12 @@
                         flux_resolution: fluxModeEnabled ? getFluxSelectedResolution() : '',
                         audio: audioModeEnabled,
                         audio_mode: audioModeEnabled ? _getAudioState().sub : '',
-                        audio_duration: audioModeEnabled ? _getAudioState().dur : 0
+                        audio_duration: audioModeEnabled ? _getAudioState().dur : 0,
+                        ace: aceModeEnabled,
+                        ace_lyrics: aceModeEnabled ? (document.getElementById('aceLyricsInput') ? document.getElementById('aceLyricsInput').value : '') : '',
+                        ace_key: aceModeEnabled ? _getAceState().key : '',
+                        ace_bpm: aceModeEnabled ? _getAceState().bpm : 0,
+                        ace_duration: aceModeEnabled ? _getAceState().dur : 0
                     }),
                     signal: abortController.signal
                 });
@@ -6776,6 +6944,10 @@
                                 assistantMsg._audio_meta = { status: 'success', file: parsed.audio_file, downloaded: false };
                                 assistantMsg.content = assistantMsg.content || '';
                             }
+                            if (parsed.ace_file) {
+                                assistantMsg._ace_meta = { status: 'success', file: parsed.ace_file, downloaded: false };
+                                assistantMsg.content = assistantMsg.content || '';
+                            }
                             if (parsed.flux_job_id) {
                                 assistantMsg._flux_meta = { status: 'success', job_id: parsed.flux_job_id, downloaded: false };
                                 var _fluxImgFile = 'web_' + currentUserId + '_' + parsed.flux_job_id + '.jpg';
@@ -6850,6 +7022,15 @@
                     if (_ab) _ab.classList.remove('active');
                     var _inp2 = document.getElementById('userInput');
                     if (_inp2) _inp2.placeholder = 'Введите сообщение...';
+                }
+                if (aceModeEnabled) {
+                    aceModeEnabled = false;
+                    var _aceb = document.getElementById('aceBtn');
+                    if (_aceb) _aceb.classList.remove('active');
+                    var _inp3 = document.getElementById('userInput');
+                    if (_inp3) _inp3.placeholder = 'Введите сообщение...';
+                    var _allyr = document.getElementById('aceLyricsInput');
+                    if (_allyr) _allyr.value = '';
                 }
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
