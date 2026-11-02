@@ -6697,6 +6697,14 @@
                 var _fileNames = pendingFiles.map(function(f) { return f.name; }).join(', ');
                 displayText = text ? text + '\n\n📎 ' + _fileNames : '📎 ' + _fileNames;
             }
+            // Ace: добавляем lyrics в displayText
+            if (aceModeEnabled) {
+                var _lyrEl = document.getElementById('aceLyricsInput');
+                var _lyrVal = _lyrEl ? _lyrEl.value.trim() : '';
+                if (_lyrVal) {
+                    displayText = (_lyrVal === text) ? _lyrVal : (text ? text + '\n\n' + _lyrVal : _lyrVal);
+                }
+            }
 
             // Снимок вложений ДО очистки — чтобы сразу нарисовать их в user-сообщении
             var _sendImageB64 = null;
