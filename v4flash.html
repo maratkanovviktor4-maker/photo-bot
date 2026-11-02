@@ -5167,11 +5167,15 @@
         async function stageFile(file) {
             var inline = document.getElementById('fileNameInline');
             var ext = file.name.split('.').pop().toLowerCase();
-            var mimeOk = file.type && (file.type.startsWith('image/') || file.type.startsWith('text/') || file.type === 'application/pdf' || file.type.includes('zip') || file.type.includes('word') || file.type.includes('excel') || file.type.includes('powerpoint'));
+            var mimeOk = file.type && (file.type.startsWith('text/') || file.type === 'application/pdf' || file.type.includes('zip') || file.type.includes('word') || file.type.includes('excel') || file.type.includes('powerpoint'));
             var fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
-            if (!fileOk) {
+            var _isImageCandidate = file.type && file.type.indexOf('image/') === 0;
+            if (!fileOk && !_isImageCandidate) {
                 _showAttachmentError('неподдерживаемый формат');
                 return null;
+            }
+            if (!_isImageCandidate && inline) {
+                inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="color:#00CBF5;display:inline-flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border:2px solid rgba(0,203,245,0.3);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.6s linear infinite;"></div> Проверка файла...</span> <button onclick="event.stopPropagation();cancelFileCheck();" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
             }
             const MAX_FILE_SIZE = 50 * 1024 * 1024;
             if (file.size > MAX_FILE_SIZE) {
@@ -5240,11 +5244,12 @@
                         var errorText = 'Ошибка проверки файла';
                         if (result.error === 'max_weight') errorText = 'Превышен макс. вес';
                         else if (result.error === 'max_text') errorText = 'Превышена макс. длина текста';
-                        if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ ' + escapeHtml(file.name) + ': ' + errorText + '</span>';
+                        if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ ' + escapeHtml(file.name) + ': ' + errorText + '</span> <button onclick="event.stopPropagation();this.parentElement.parentElement.innerHTML=\'\';" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                         pendingFiles = pendingFiles.filter(function(f) { return f !== newItem; });
                         return null;
                     }
                 } catch (e) {
+                    if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:#e74c3c;">⚠️ Ошибка проверки ' + escapeHtml(file.name) + '</span> <button onclick="event.stopPropagation();this.parentElement.parentElement.innerHTML=\'\';" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:0;display:inline-flex;align-items:center;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
                     pendingFiles = pendingFiles.filter(function(f) { return f !== newItem; });
                     return null;
                 }
