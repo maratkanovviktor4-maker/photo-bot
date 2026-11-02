@@ -5059,7 +5059,11 @@
                 } else {
                     try {
                         var decoded = atob(pendingFile.data);
-                        fileLength = decoded.length;
+                        try {
+                            var bytes = new Uint8Array(decoded.length);
+                            for (var _bi = 0; _bi < decoded.length; _bi++) bytes[_bi] = decoded.charCodeAt(_bi);
+                            fileLength = new TextDecoder('utf-8').decode(bytes).length;
+                        } catch (ue) { fileLength = decoded.length; }
                     } catch(e) {}
                 }
             }
