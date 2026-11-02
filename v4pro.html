@@ -6811,7 +6811,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 if (_aceRow1) _aceRow1.style.display = 'none';
                 if (_aceRow2) _aceRow2.style.display = 'none';
                 if (_aceRow3) _aceRow3.style.display = 'none';
-                if (_aceLyrics) _aceLyrics.style.display = 'none';
+                if (_aceLyrics) { _aceLyrics.style.display = 'none'; _aceLyrics.value = ''; }
+                var _aceBtnRef = document.getElementById('aceBtn');
+                if (_aceBtnRef) _aceBtnRef.classList.remove('active');
+                aceModeEnabled = false;
                 if (resp.status === 406) {
                     var errData = await resp.json().catch(() => ({}));
                     showAlertModal('Слишком длинный текст', errData.error || 'Суммарная длина текста превышает лимит.', '⚠️');
