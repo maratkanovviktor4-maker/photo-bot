@@ -340,6 +340,12 @@
         .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; padding: 8px 12px 0 12px; }
         .input-row:has(#inputPreviewBox[style*="block"]) { flex-direction: column; align-items: stretch; }
         .input-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+        .flux-param-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-family: 'Inter', sans-serif; font-weight: 500; cursor: pointer; user-select: none; transition: background 0.15s, color 0.15s, border-color 0.15s; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #a0a0b0; }
+        .flux-param-chip:hover { background: rgba(0,203,245,0.1); border-color: rgba(0,203,245,0.3); color: #e0e0e0; }
+        .flux-param-chip.selected { background: rgba(0,203,245,0.15); border-color: #00CBF5; color: #00CBF5; }
+        body.light .flux-param-chip { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); color: #555; }
+        body.light .flux-param-chip:hover { background: rgba(0,203,245,0.1); border-color: rgba(0,203,245,0.4); color: #111; }
+        body.light .flux-param-chip.selected { background: rgba(0,203,245,0.15); border-color: #00CBF5; color: #005f7a; }
         .nav-container { position: fixed; right: 0; top: 50%; transform: translateY(-50%); width: 220px; max-height: 300px; overflow-y: auto; z-index: 100; padding: 8px 0; pointer-events: auto; }
         .nav-container:hover { overflow-y: auto; background: #1b1b1c; backdrop-filter: blur(10px); border: none; border-radius: 12px 0 0 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
         body.light .nav-container:hover { background: rgba(255,255,255,0.9); border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
@@ -1366,6 +1372,7 @@
                         <div class="input-row" style="flex-direction:column;align-items:stretch;">
                             <input type="file" id="fileInput" style="display:none;" multiple onchange="handleFileSelect(event)">
                             <div id="inputPreviewBox" style="display:none;"></div>
+                            <div id="fluxParamsRow" style="display:none;flex-wrap:wrap;gap:6px;padding:4px 0 6px 0;"></div>
                             <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();var btn=document.getElementById('sendBtn');if(btn.disabled)return;if(isSending){stopTyping();}else{sendMessage();}}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,300)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,300)+'px';this._init=true;}"></textarea>
                         </div>
                         <div class="input-toolbar">
@@ -5688,6 +5695,35 @@
             }, 1500);
         }
 
+        var FLUX_RESOLUTIONS = ['512×512', '768×768', '832×1152', '1024×1024', '1152×832'];
+
+        function getFluxSelectedResolution() {
+            var saved = localStorage.getItem('photobot_flux_resolution') || '1024×1024';
+            if (FLUX_RESOLUTIONS.indexOf(saved) === -1) saved = '1024×1024';
+            return saved;
+        }
+
+        function renderFluxParamsRow() {
+            var row = document.getElementById('fluxParamsRow');
+            if (!row) return;
+            if (!fluxModeEnabled) {
+                row.style.display = 'none';
+                return;
+            }
+            row.style.display = 'flex';
+            var selected = getFluxSelectedResolution();
+            var ordered = [selected].concat(FLUX_RESOLUTIONS.filter(function(r){ return r !== selected; }));
+            row.innerHTML = ordered.map(function(r) {
+                return '<div class="flux-param-chip' + (r === selected ? ' selected' : '') + '" data-res="' + r + '">' + r + '</div>';
+            }).join('');
+            row.querySelectorAll('.flux-param-chip').forEach(function(chip) {
+                chip.addEventListener('click', function() {
+                    localStorage.setItem('photobot_flux_resolution', chip.dataset.res);
+                    renderFluxParamsRow();
+                });
+            });
+        }
+
         function toggleFluxMode() {
             fluxModeEnabled = !fluxModeEnabled;
             var btn = document.getElementById('fluxBtn');
@@ -5739,6 +5775,7 @@
                 if (btn) btn.classList.remove('active');
                 if (inputEl) inputEl.placeholder = 'Введите сообщение...';
             }
+            renderFluxParamsRow();
         }
 
         async function runFluxGeneration(prompt, inputFile) {
@@ -6357,7 +6394,8 @@
                         personality: currentPersonality,
                         web_search: webSearchEnabled,
                         files: _sendFilesSnapshot.map(function(f) { return { data: f.data || '', name: f.name || '', mime: f.mime || '', file_id: f.file_id || '' }; }),
-                        flux: fluxModeEnabled
+                        flux: fluxModeEnabled,
+                        flux_resolution: fluxModeEnabled ? getFluxSelectedResolution() : ''
                     }),
                     signal: abortController.signal
                 });
