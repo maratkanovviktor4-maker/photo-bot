@@ -7157,13 +7157,14 @@
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) { text = B + B + B + 'html\n' + text + '\n' + B + B + B; }
             var parts = [];
             var lastIndex = 0;
-            if (!_formatRegex) _formatRegex = new RegExp(B + B + B + '(\\w*)\\r?\\n([\\s\\S]*?)' + B + B + B, 'g');
+            if (!_formatRegex) _formatRegex = new RegExp('(?:^|\\n)(' + B + B + B + '(\\w+)\\r?\\n([\\s\\S]*?)' + B + B + B + ')', 'g');
             var regex = _formatRegex;
             regex.lastIndex = 0;
             let match;
             while ((match = regex.exec(text)) !== null) {
-                if (match.index > lastIndex) parts.push({type: 'text', content: text.substring(lastIndex, match.index)});
-                parts.push({type: 'code', lang: match[1], content: match[2]});
+                var _blockStart = match.index + (match[0].charAt(0) === '\n' ? 1 : 0);
+                if (_blockStart > lastIndex) parts.push({type: 'text', content: text.substring(lastIndex, _blockStart)});
+                parts.push({type: 'code', lang: match[2], content: match[3]});
                 lastIndex = regex.lastIndex;
             }
             if (lastIndex < text.length) {
