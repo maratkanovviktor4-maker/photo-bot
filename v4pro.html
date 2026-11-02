@@ -345,7 +345,12 @@
         .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; padding: 8px 12px 0 12px; }
         .input-row:has(#inputPreviewBox[style*="block"]) { flex-direction: column; align-items: stretch; }
         .input-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
-        .flux-param-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-family: 'Inter', sans-serif; font-weight: 500; cursor: pointer; user-select: none; transition: background 0.15s, color 0.15s, border-color 0.15s; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #a0a0b0; }
+        .flux-param-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-family: 'Inter', sans-serif; font-weight: 500; cursor: pointer; user-select: none; transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #a0a0b0; }
+        .flux-param-chip.disabled { opacity: 0.35; }
+        #audioBtn.active {
+            color: #F59E0B !important;
+            background: rgba(245,158,11,0.15) !important;
+        }
         .flux-param-chip:hover { background: rgba(0,203,245,0.1); border-color: rgba(0,203,245,0.3); color: #e0e0e0; }
         .flux-param-chip.selected { background: rgba(0,203,245,0.15); border-color: #F59E0B; color: #F59E0B; }
         body.light .flux-param-chip { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); color: #555; }
@@ -1380,6 +1385,9 @@
                             <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
                             <div id="inputPreviewBox" style="display:none;"></div>
                             <div id="fluxParamsRow" style="display:none;flex-wrap:wrap;gap:6px;padding:4px 0 6px 0;"></div>
+                            <div id="audioParamsRow" style="display:none;flex-wrap:wrap;gap:6px;padding:4px 0 6px 0;"></div>
+                            <div id="audioSubParamsRow" style="display:none;flex-wrap:wrap;gap:6px;padding:0 0 6px 0;"></div>
+                            <div id="audioDurationRow" style="display:none;flex-wrap:wrap;gap:6px;padding:0 0 6px 0;"></div>
                             <textarea id="userInput" placeholder="Введите сообщение..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();var btn=document.getElementById('sendBtn');if(btn.disabled)return;if(isSending){stopTyping();}else{sendMessage();}}" oninput="this.style.height='auto';var h=this.scrollHeight;this.style.height=Math.min(h,300)+'px';" onfocus="if(!this._init){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,300)+'px';this._init=true;}"></textarea>
                         </div>
                         <div class="input-toolbar">
@@ -1399,6 +1407,9 @@
                             </button>
                             <button id="fluxBtn" class="attach-btn" onclick="toggleFluxMode()" title="Генерация изображения (Flux 2)" style="color:#888;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"/></svg>
+                            </button>
+                            <button id="audioBtn" class="attach-btn" onclick="toggleAudioMode()" title="Генерация аудио (Stable Audio 3)" style="color:#888;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
                             </button>
                             <button id="sendBtn" onclick="sendMessage()" title="Отправить"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
                         </div>
@@ -4040,7 +4051,7 @@
                 actionsHtml += '<button class="selfplay-btn" onclick="showSelfPlayModal(' + index + ')" title="Self-Play диалог"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"/></svg></button>';
                 actionsHtml += '<button class="prompt-btn" onclick="showPromptPopup(' + index + ', this)" title="Готовые реплики"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg></button>';
                 actionsHtml += '<button onclick="speakMessage(' + index + ')" title="Озвучить это сообщение"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" /></svg></button>';
-                actionsHtml += '<button onclick="grabReadyImage()" title="Забрать готовое изображение"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>';
+                actionsHtml += '<button onclick="grabAllGenerations()" title="Скачать все готовые генерации с облака"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
                 actionsHtml += '<button onclick="showMessageMenu(event, ' + index + ')" title="Ещё"><svg fill="currentColor" viewBox="0 0 16 16" width="14" height="14"><path d="M8 2.5a1.22 1.22 0 0 1 1.25 1.17A1.21 1.21 0 0 1 8 4.84a1.21 1.21 0 0 1-1.25-1.17A1.22 1.22 0 0 1 8 2.5zm0 8.66a1.17 1.17 0 1 1-1.25 1.17A1.21 1.21 0 0 1 8 11.16zm0-4.33a1.17 1.17 0 1 1 0 2.34 1.17 1.17 0 1 1 0-2.34z"/></svg></button>';
             }
             var reasoningHtml = '';
@@ -4091,10 +4102,17 @@
                 var _fluxImgFile = 'web_' + currentUserId + '_' + msg._flux_meta.job_id + '.jpg';
                 var _fluxImgUrl = SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(_fluxImgFile) + '&session_token=' + sessionToken;
                 if (msg._flux_meta.downloaded) {
-                    contentHtml = '<div style="margin:6px 0 8px 0;padding:10px 14px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.2);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали это изображение.</div>' + contentHtml;
+                    contentHtml = '<div style="margin:6px 0 8px 0;padding:10px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали это изображение.</div>' + contentHtml;
                 } else {
                     contentHtml = '<div style="margin:6px 0 10px 0;"><img src="' + _fluxImgUrl + '" style="max-width:280px;max-height:280px;border-radius:12px;display:block;cursor:pointer;object-fit:contain;background:rgba(0,0,0,0.1);" onclick="toggleFullPreview(this)" onerror="this.style.display=\'none\'"></div>' + contentHtml;
                 }
+            }
+            if (msg.role === 'assistant' && msg._audio_meta && msg._audio_meta.status === 'success' && msg._audio_meta.file && msg._audio_meta.downloaded) {
+                contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали этот аудиотрек.</div>' + contentHtml;
+            } else if (msg.role === 'assistant' && msg._audio_meta && msg._audio_meta.status === 'success' && msg._audio_meta.file) {
+                var _audioUrl = SERVER_URL + '/get_audio_file?job_id=' + encodeURIComponent(msg._audio_meta.file) + '&session_token=' + sessionToken;
+                var _audioLabel = 'Stable Audio 3' + (msg._audio_meta.mode ? ' · ' + msg._audio_meta.mode : '') + (msg._audio_meta.duration ? ' · ' + msg._audio_meta.duration + 'с' : '');
+                contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:6px;">🎵 ' + _audioLabel + '</div><audio controls preload="metadata" src="' + _audioUrl + '" style="width:100%;max-width:360px;display:block;"></audio></div>' + contentHtml;
             }
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
                 contentHtml = contentHtml.replace(/<a href="([^"]+)" target="_blank">([^<]+)<\/a>/g, function(m, url, text) {
@@ -4521,6 +4539,104 @@
                     }
                 }
             }
+        }
+
+        function _markAudioDownloadedLocally(filename) {
+            var base = String(filename).split('/').pop();
+            for (var _ci = 0; _ci < chats.length; _ci++) {
+                var _chat = chats[_ci];
+                if (!_chat || !_chat.messages) continue;
+                for (var _i = 0; _i < _chat.messages.length; _i++) {
+                    var _msg = _chat.messages[_i];
+                    if (_msg.role === 'assistant' && _msg._audio_meta && _msg._audio_meta.file === base) {
+                        _msg._audio_meta.downloaded = true;
+                    }
+                }
+            }
+        }
+
+        async function grabAllGenerations() {
+            try {
+                var imgResp = await fetch(SERVER_URL + '/history?user_id=' + currentUserId + '&session_token=' + sessionToken);
+                var imgFiles = [];
+                if (imgResp.ok) {
+                    var imgData = await imgResp.json();
+                    imgFiles = (imgData.files || []).map(function(f) { return { type: 'image', name: f }; });
+                }
+                var audioResp = await fetch(SERVER_URL + '/audio_history?user_id=' + currentUserId + '&session_token=' + sessionToken);
+                var audioFiles = [];
+                if (audioResp.ok) {
+                    var audioData = await audioResp.json();
+                    audioFiles = (audioData.results || []).map(function(j) { return { type: 'audio', name: j.job_id }; });
+                }
+                var all = imgFiles.concat(audioFiles);
+                if (!all.length) {
+                    showAlertModal('Нет готовых генераций', 'Сначала сгенерируйте изображение или аудио.', '📭');
+                    return;
+                }
+
+                if (all.length === 1) {
+                    var f = all[0];
+                    var url = f.type === 'image'
+                        ? SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken
+                        : SERVER_URL + '/get_audio_file?job_id=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken;
+                    var fr = await fetch(url);
+                    if (!fr.ok) { showAlertModal('Ошибка', 'Не удалось скачать файл', '❌'); return; }
+                    var blob = await fr.blob();
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = f.name;
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    await _finalizeDownloadedFile(f);
+                } else {
+                    var zip = new JSZip();
+                    for (var i = 0; i < all.length; i++) {
+                        var fi = all[i];
+                        var furl = fi.type === 'image'
+                            ? SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(fi.name) + '&session_token=' + sessionToken
+                            : SERVER_URL + '/get_audio_file?job_id=' + encodeURIComponent(fi.name) + '&session_token=' + sessionToken;
+                        var r = await fetch(furl);
+                        if (r.ok) {
+                            var b = await r.blob();
+                            zip.file(fi.name, b);
+                        }
+                    }
+                    var zipBlob = await zip.generateAsync({ type: 'blob' });
+                    var za = document.createElement('a');
+                    za.href = URL.createObjectURL(zipBlob);
+                    za.download = 'generations_' + Date.now() + '.zip';
+                    za.click();
+                    URL.revokeObjectURL(za.href);
+                    for (var j = 0; j < all.length; j++) {
+                        await _finalizeDownloadedFile(all[j]);
+                    }
+                }
+
+                if (currentChatId) renderMessages();
+            } catch (e) {
+                console.error('grabAllGenerations error:', e);
+                showAlertModal('Ошибка', 'Не удалось скачать', '❌');
+            }
+        }
+
+        async function _finalizeDownloadedFile(f) {
+            var markUrl = f.type === 'image' ? '/mark_image_downloaded' : '/mark_audio_downloaded';
+            var delUrl = f.type === 'image'
+                ? '/delete_history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken
+                : '/delete_audio?job_id=' + encodeURIComponent(f.name) + '&session_token=' + sessionToken;
+            try {
+                await fetch(SERVER_URL + markUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ user_id: currentUserId, filename: f.name })
+                });
+            } catch (e) {}
+            try {
+                await fetch(SERVER_URL + delUrl, { method: 'DELETE' });
+            } catch (e) {}
+            if (f.type === 'image') _markFluxDownloadedLocally(f.name);
+            else _markAudioDownloadedLocally(f.name);
         }
 
         async function grabReadyImage() {
@@ -5657,11 +5773,152 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             }, 1500);
         }
 
+        var audioModeEnabled = false;
+        var AUDIO_CATEGORIES = [
+            { key: 'Music', label: 'Music', subs: [
+                { key: 'audio_music_energetic', label: 'energetic', durations: [120, 150, 180] },
+                { key: 'audio_music_poprock', label: 'poprock', durations: [180, 195, 210] },
+                { key: 'audio_music_cinematic', label: 'cinematic', durations: [240, 270, 300] }
+            ]},
+            { key: 'Instrument', label: 'Instrument', subs: [
+                { key: 'audio_instrument_loops', label: 'loops', durations: [6, 13, 20] },
+                { key: 'audio_instrument_stems', label: 'stems', durations: [20, 100, 180] }
+            ]},
+            { key: 'SFX', label: 'SFX', subs: [
+                { key: 'audio_sfx_short', label: 'short', durations: [1, 2, 3] },
+                { key: 'audio_sfx_medium', label: 'medium', durations: [3, 4, 6] },
+                { key: 'audio_sfx_ambience', label: 'ambience', durations: [6, 10, 15] }
+            ]},
+            { key: 'One-shot', label: 'One-shot', subs: [
+                { key: 'audio_oneshot', label: '', durations: [1, 6, 11] }
+            ]}
+        ];
+
+        function _getAudioState() {
+            return {
+                cat: localStorage.getItem('photobot_audio_cat') || '',
+                sub: localStorage.getItem('photobot_audio_sub') || '',
+                dur: parseInt(localStorage.getItem('photobot_audio_dur') || '0') || 0
+            };
+        }
+        function _saveAudioState(st) {
+            if (st.cat) localStorage.setItem('photobot_audio_cat', st.cat); else localStorage.removeItem('photobot_audio_cat');
+            if (st.sub) localStorage.setItem('photobot_audio_sub', st.sub); else localStorage.removeItem('photobot_audio_sub');
+            if (st.dur) localStorage.setItem('photobot_audio_dur', String(st.dur)); else localStorage.removeItem('photobot_audio_dur');
+        }
+        function _audioCatByKey(k) { for (var i=0;i<AUDIO_CATEGORIES.length;i++) if (AUDIO_CATEGORIES[i].key===k) return AUDIO_CATEGORIES[i]; return null; }
+        function _audioSubByKey(cat, k) { if (!cat) return null; for (var i=0;i<cat.subs.length;i++) if (cat.subs[i].key===k) return cat.subs[i]; return null; }
+
+        function renderAudioParams() {
+            var rowCat = document.getElementById('audioParamsRow');
+            var rowSub = document.getElementById('audioSubParamsRow');
+            var rowDur = document.getElementById('audioDurationRow');
+            if (!rowCat || !rowSub || !rowDur) return;
+            if (!audioModeEnabled) {
+                rowCat.style.display = 'none';
+                rowSub.style.display = 'none';
+                rowDur.style.display = 'none';
+                return;
+            }
+            var st = _getAudioState();
+            var curCat = _audioCatByKey(st.cat);
+            rowCat.style.display = 'flex';
+            rowCat.innerHTML = AUDIO_CATEGORIES.map(function(c) {
+                var active = st.cat === c.key;
+                var disabled = st.cat && !active;
+                return '<div class="flux-param-chip' + (active ? ' selected' : '') + (disabled ? ' disabled' : '') + '" data-cat="' + c.key + '">' + c.label + '</div>';
+            }).join('');
+            rowCat.querySelectorAll('.flux-param-chip').forEach(function(chip) {
+                chip.addEventListener('click', function() {
+                    var newCat = chip.dataset.cat;
+                    if (st.cat === newCat) {
+                        _saveAudioState({ cat: '', sub: '', dur: 0 });
+                    } else {
+                        _saveAudioState({ cat: newCat, sub: '', dur: 0 });
+                    }
+                    renderAudioParams();
+                });
+            });
+            if (curCat) {
+                rowSub.style.display = 'flex';
+                rowSub.innerHTML = curCat.subs.map(function(s) {
+                    var active = st.sub === s.key;
+                    var disabled = st.sub && !active;
+                    return '<div class="flux-param-chip' + (active ? ' selected' : '') + (disabled ? ' disabled' : '') + '" data-sub="' + s.key + '">' + s.label + '</div>';
+                }).join('');
+                rowSub.querySelectorAll('.flux-param-chip').forEach(function(chip) {
+                    chip.addEventListener('click', function() {
+                        var newSub = chip.dataset.sub;
+                        if (st.sub === newSub) {
+                            _saveAudioState({ cat: st.cat, sub: '', dur: 0 });
+                        } else {
+                            _saveAudioState({ cat: st.cat, sub: newSub, dur: 0 });
+                        }
+                        renderAudioParams();
+                    });
+                });
+            } else {
+                rowSub.style.display = 'none';
+                rowSub.innerHTML = '';
+            }
+            var curSub = curCat ? _audioSubByKey(curCat, st.sub) : null;
+            if (curSub) {
+                rowDur.style.display = 'flex';
+                rowDur.innerHTML = curSub.durations.map(function(d) {
+                    var active = st.dur === d;
+                    var disabled = st.dur && !active;
+                    return '<div class="flux-param-chip' + (active ? ' selected' : '') + (disabled ? ' disabled' : '') + '" data-dur="' + d + '">' + d + 'с</div>';
+                }).join('');
+                rowDur.querySelectorAll('.flux-param-chip').forEach(function(chip) {
+                    chip.addEventListener('click', function() {
+                        var d = parseInt(chip.dataset.dur);
+                        if (st.dur === d) {
+                            _saveAudioState({ cat: st.cat, sub: st.sub, dur: 0 });
+                        } else {
+                            _saveAudioState({ cat: st.cat, sub: st.sub, dur: d });
+                        }
+                        renderAudioParams();
+                    });
+                });
+            } else {
+                rowDur.style.display = 'none';
+                rowDur.innerHTML = '';
+            }
+        }
+
+        function toggleAudioMode() {
+            audioModeEnabled = !audioModeEnabled;
+            if (audioModeEnabled && fluxModeEnabled) {
+                fluxModeEnabled = false;
+                var fb = document.getElementById('fluxBtn');
+                if (fb) fb.classList.remove('active');
+                var fi = document.getElementById('userInput');
+                if (fi) fi.placeholder = 'Введите сообщение...';
+                renderFluxParamsRow();
+            }
+            var btn = document.getElementById('audioBtn');
+            var inputEl = document.getElementById('userInput');
+            if (audioModeEnabled) {
+                if (btn) btn.classList.add('active');
+                if (inputEl) inputEl.placeholder = 'Опишите звук или музыку...';
+            } else {
+                if (btn) btn.classList.remove('active');
+                if (inputEl) inputEl.placeholder = 'Введите сообщение...';
+            }
+            renderAudioParams();
+        }
+
         function toggleFluxMode() {
             fluxModeEnabled = !fluxModeEnabled;
             var btn = document.getElementById('fluxBtn');
             var inputEl = document.getElementById('userInput');
             if (fluxModeEnabled) {
+                if (audioModeEnabled) {
+                    audioModeEnabled = false;
+                    var _ab = document.getElementById('audioBtn');
+                    if (_ab) _ab.classList.remove('active');
+                    renderAudioParams();
+                }
                 if (btn) btn.classList.add('active');
                 if (inputEl) inputEl.placeholder = 'Опишите изображение для Flux 2...';
                 if (pendingFile && pendingFile.mime && pendingFile.mime.indexOf('image/') === 0 && pendingFile.data) {
@@ -6230,7 +6487,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         file_name: pendingFile ? pendingFile.name : '',
                         file_mime: pendingFile ? pendingFile.mime : '',
                         flux: fluxModeEnabled,
-                        flux_resolution: fluxModeEnabled ? getFluxSelectedResolution() : ''
+                        flux_resolution: fluxModeEnabled ? getFluxSelectedResolution() : '',
+                        audio: audioModeEnabled,
+                        audio_mode: audioModeEnabled ? _getAudioState().sub : '',
+                        audio_duration: audioModeEnabled ? _getAudioState().dur : 0
                     }),
                     signal: abortController.signal
                 });
@@ -6241,6 +6501,12 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 updateFileList();
                 var _fpRow = document.getElementById('fluxParamsRow');
                 if (_fpRow) _fpRow.style.display = 'none';
+                var _apRow = document.getElementById('audioParamsRow');
+                var _aspRow = document.getElementById('audioSubParamsRow');
+                var _adRow = document.getElementById('audioDurationRow');
+                if (_apRow) _apRow.style.display = 'none';
+                if (_aspRow) _aspRow.style.display = 'none';
+                if (_adRow) _adRow.style.display = 'none';
                 if (resp.status === 406) {
                     var errData = await resp.json().catch(() => ({}));
                     showAlertModal('Слишком длинный текст', errData.error || 'Суммарная длина текста превышает лимит.', '⚠️');
@@ -6328,6 +6594,10 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                             if (parsed.sources && Array.isArray(parsed.sources)) {
                                 assistantMsg._sources = parsed.sources;
                             }
+                            if (parsed.audio_file) {
+                                assistantMsg._audio_meta = { status: 'success', file: parsed.audio_file, downloaded: false };
+                                assistantMsg.content = assistantMsg.content || '';
+                            }
                             if (parsed.flux_job_id) {
                                 assistantMsg._flux_meta = { status: 'success', job_id: parsed.flux_job_id, downloaded: false };
                                 var _fluxImgFile = 'web_' + currentUserId + '_' + parsed.flux_job_id + '.jpg';
@@ -6399,6 +6669,13 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     if (_fb) _fb.classList.remove('active');
                     var _inp = document.getElementById('userInput');
                     if (_inp) _inp.placeholder = 'Введите сообщение...';
+                }
+                if (audioModeEnabled) {
+                    audioModeEnabled = false;
+                    var _ab = document.getElementById('audioBtn');
+                    if (_ab) _ab.classList.remove('active');
+                    var _inp2 = document.getElementById('userInput');
+                    if (_inp2) _inp2.placeholder = 'Введите сообщение...';
                 }
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
