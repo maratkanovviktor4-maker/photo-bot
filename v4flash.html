@@ -5719,7 +5719,10 @@
             row.querySelectorAll('.flux-param-chip').forEach(function(chip) {
                 chip.addEventListener('click', function() {
                     localStorage.setItem('photobot_flux_resolution', chip.dataset.res);
-                    renderFluxParamsRow();
+                    row.querySelectorAll('.flux-param-chip').forEach(function(c) {
+                        c.classList.remove('selected');
+                    });
+                    chip.classList.add('selected');
                 });
             });
         }
