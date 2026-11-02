@@ -6811,10 +6811,7 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                 if (_aceRow1) _aceRow1.style.display = 'none';
                 if (_aceRow2) _aceRow2.style.display = 'none';
                 if (_aceRow3) _aceRow3.style.display = 'none';
-                if (_aceLyrics) { _aceLyrics.style.display = 'none'; _aceLyrics.value = ''; }
-                var _aceBtnRef = document.getElementById('aceBtn');
-                if (_aceBtnRef) _aceBtnRef.classList.remove('active');
-                aceModeEnabled = false;
+                if (_aceLyrics) _aceLyrics.style.display = 'none';
                 if (resp.status === 406) {
                     var errData = await resp.json().catch(() => ({}));
                     showAlertModal('Слишком длинный текст', errData.error || 'Суммарная длина текста превышает лимит.', '⚠️');
@@ -6996,9 +6993,9 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     var _inp3 = document.getElementById('userInput');
                     if (_inp3) _inp3.placeholder = 'Введите сообщение...';
                     var _allyr = document.getElementById('aceLyricsInput');
-                    if (_allyr) _allyr.value = '';
-                    renderAceParams();
+                    if (_allyr) { _allyr.value = ''; _allyr.style.height = 'auto'; }
                 }
+                renderAceParams();
                 chat.lastMessageTime = Date.now();
                 chats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
                 autoNameChat(chat);
