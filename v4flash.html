@@ -7155,9 +7155,11 @@
         function formatMessage(text) {
             var B = _formatBacktick;
             if (/^\s*<(!DOCTYPE|html)/i.test(text)) { text = B + B + B + 'html\n' + text + '\n' + B + B + B; }
+            var _T = B + B + B;
+            text = text.replace(new RegExp('([^\\n])' + _T, 'g'), '$1&#8203;' + _T[0] + '&#8203;' + _T[1] + '&#8203;' + _T[2] + '&#8203;');
             var parts = [];
             var lastIndex = 0;
-            if (!_formatRegex) _formatRegex = new RegExp('(?:^|\\n)(' + B + B + B + '(\\w+)\\r?\\n([\\s\\S]*?)' + B + B + B + ')', 'g');
+            if (!_formatRegex) _formatRegex = new RegExp('(?:^|\\n)(' + B + B + B + '(\\w*)\\r?\\n([\\s\\S]*?)' + B + B + B + ')', 'g');
             var regex = _formatRegex;
             regex.lastIndex = 0;
             let match;
@@ -7170,7 +7172,7 @@
             if (lastIndex < text.length) {
                 var remaining = text.substring(lastIndex);
                 var openCode = remaining.match(new RegExp('^([\\s\\S]*?)' + B + B + B + '(\\w*)\\r?\\n([\\s\\S]*)'));
-                if (openCode) {
+                if (openCode && openCode[3] !== undefined && openCode[3] !== '') {
                     if (openCode[1]) parts.push({type: 'text', content: openCode[1]});
                     parts.push({type: 'code', lang: openCode[2], content: openCode[3]});
                 } else { parts.push({type: 'text', content: remaining}); }
