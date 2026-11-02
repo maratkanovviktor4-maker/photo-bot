@@ -4562,6 +4562,20 @@
             }
         }
 
+        function _markAceDownloadedLocally(filename) {
+            var base = String(filename).split('/').pop();
+            for (var _ci = 0; _ci < chats.length; _ci++) {
+                var _chat = chats[_ci];
+                if (!_chat || !_chat.messages) continue;
+                for (var _i = 0; _i < _chat.messages.length; _i++) {
+                    var _msg = _chat.messages[_i];
+                    if (_msg.role === 'assistant' && _msg._ace_meta && _msg._ace_meta.file === base) {
+                        _msg._ace_meta.downloaded = true;
+                    }
+                }
+            }
+        }
+
         function _markAudioDownloadedLocally(filename) {
             var base = String(filename).split('/').pop();
             for (var _ci = 0; _ci < chats.length; _ci++) {
@@ -4675,6 +4689,7 @@
                 await fetch(SERVER_URL + delUrl, { method: delMethod });
             } catch (e) {}
             if (f.type === 'image') _markFluxDownloadedLocally(f.name);
+            else if (f.type === 'ace') _markAceDownloadedLocally(f.name);
             else _markAudioDownloadedLocally(f.name);
         }
 
