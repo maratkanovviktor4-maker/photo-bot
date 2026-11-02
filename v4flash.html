@@ -334,10 +334,7 @@
         body.light .attach-btn { background: transparent; border: none; }
         body.light .attach-btn:hover { background: rgba(0,0,0,0.06); }
         .attach-btn:hover { color: #14E9FC; background: rgba(255,255,255,0.1); }
-        .file-name-inline { font-size: 12px; color: #00CBF5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto; margin-right: 0; }
-        .file-name-inline > span { display: inline-flex !important; align-items: center; gap: 4px; max-width: 100%; min-width: 0; }
-        .file-name-inline > span > span { flex: 1 1 auto !important; min-width: 0 !important; max-width: none !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
-        .file-name-inline > span > button { flex: 0 0 auto !important; min-width: 20px !important; min-height: 20px !important; }
+        .file-name-inline { font-size: 12px; color: #00CBF5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; padding: 6px 12px 0 12px; flex-basis: 100%; order: -1; }
         .theme-btn { padding: 6px 12px; background: rgba(34,34,34,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #aaa; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.3s ease; }
         body.light .theme-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); color: #555; }
         .thinking-dots::after { content: ''; animation: dots 1.5s infinite; }
@@ -355,7 +352,9 @@
         body.light .input-row-wrapper:focus-within { border-color: rgba(0,0,0,0.15); }
         .input-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; padding: 8px 12px 0 12px; }
         .input-row:has(#inputPreviewBox[style*="block"]) { flex-direction: column; align-items: stretch; }
-        .input-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+        .input-toolbar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; flex-wrap: nowrap; }
+        .input-toolbar .attach-btn { flex-shrink: 0; }
+        #attachBtn { margin-left: auto; }
         .flux-param-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-family: 'Inter', sans-serif; font-weight: 500; cursor: pointer; user-select: none; transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #a0a0b0; }
         .flux-param-chip.disabled { opacity: 0.35; }
 
@@ -1047,7 +1046,7 @@
             order: 0;
         }
         #webSearchToggle svg { width: 10px; height: 10px; flex-shrink: 0; }
-        .input-toolbar .attach-btn:first-of-type { margin-left: auto; }
+        #attachBtn { margin-left: 0; }
         #reasonerToggle { font-size: 0 !important; }
         #webSearchToggle { font-size: 0 !important; }
         #reasonerToggle::after {
@@ -1081,25 +1080,6 @@
             flex-shrink: 0;
             min-width: 0;
             color: #00CBF5;
-        }
-        .file-name-inline > span {
-            display: inline-flex !important;
-            align-items: center;
-            gap: 4px;
-            max-width: 100%;
-        }
-        .file-name-inline > span > span {
-            flex: 1 1 auto !important;
-            min-width: 0 !important;
-            max-width: none !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            white-space: nowrap !important;
-        }
-        .file-name-inline > span > button {
-            flex: 0 0 auto !important;
-            min-width: 20px !important;
-            min-height: 20px !important;
         }
 
         #lengthExcess {
@@ -1467,7 +1447,7 @@
                             <span class="file-name-inline" id="fileNameInline"></span>
                             <span id="lengthExcess" style="display:none; color:#e74c3c; font-size:12px; font-family:'Inter',sans-serif; cursor:pointer;" title="суммарное превышение длины текста"></span>
 
-                            <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" transform="rotate(-45 12 12)"/></svg></button>
+                            <button class="attach-btn" id="attachBtn" onclick="document.getElementById('fileInput').click()" title="Прикрепить файл"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" transform="rotate(-45 12 12)"/></svg></button>
                             <button id="autoSpeakBtn" class="attach-btn" onclick="toggleAutoSpeak()" title="Автоозвучка" style="color:#888;">
                                 <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" /></svg>
                             </button>
