@@ -241,8 +241,8 @@
         .chat-area { flex: 1 0 auto; padding: 20px 0 25px 0; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 0; }
         .scroll-bottom-btn { position: absolute; bottom: calc(100% + 16px); right: 12px; width: 36px; height: 36px; border-radius: 50%; background: #2c2c2e; color: #e0e0e0; border: 1px solid rgba(255,255,255,0.15); cursor: pointer; display: none; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10002; }
         .attach-btn.active {
-            color: #e74c3c !important;
-            background: rgba(255,255,255,0.1) !important;
+            color: #00CBF5 !important;
+            background: rgba(0,203,245,0.15) !important;
         }
         #audioBtn.active {
             color: #F59E0B !important;
@@ -4081,11 +4081,11 @@
                 contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:6px;">🎵 ' + _audioLabel + '</div><audio controls preload="metadata" src="' + _audioUrl + '" style="width:100%;max-width:360px;display:block;"></audio></div>' + contentHtml;
             }
             if (msg.role === 'assistant' && msg._ace_meta && msg._ace_meta.status === 'success' && msg._ace_meta.file && msg._ace_meta.downloaded) {
-                contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали этот трек.</div>' + contentHtml;
+                contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 14px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.25);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали этот трек.</div>' + contentHtml;
             } else if (msg.role === 'assistant' && msg._ace_meta && msg._ace_meta.status === 'success' && msg._ace_meta.file) {
                 var _aceUrl = SERVER_URL + '/get_ace_audio_file?job_id=' + encodeURIComponent(msg._ace_meta.file) + '&session_token=' + sessionToken;
                 var _aceLabel = 'Ace Step 1.5' + (msg._ace_meta.key ? ' · ' + msg._ace_meta.key : '') + (msg._ace_meta.bpm ? ' · ' + msg._ace_meta.bpm + ' BPM' : '') + (msg._ace_meta.duration ? ' · ' + msg._ace_meta.duration + 'с' : '');
-                contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:6px;">🎤 ' + _aceLabel + '</div><audio controls preload="metadata" src="' + _aceUrl + '" style="width:100%;max-width:360px;display:block;"></audio></div>' + contentHtml;
+                contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 12px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.25);border-radius:12px;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:6px;">🎤 ' + _aceLabel + '</div><audio controls preload="metadata" src="' + _aceUrl + '" style="width:100%;max-width:360px;display:block;"></audio></div>' + contentHtml;
             }
             if (msg.role === 'user' && (msg.image_b64 || (msg.extra_b64s && msg.extra_b64s.length))) {
                 var _allImgs = '';
