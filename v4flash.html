@@ -5017,14 +5017,14 @@
                 updateSendBtn();
                 return;
             }
-            var _hasImages = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0 && f.mime !== 'image/svg+xml'; });
+            var _hasImages = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
             var _previewBox = document.getElementById('inputPreviewBox');
             if (_previewBox) {
                 if (_hasImages) {
                     var _previewsHtml = '<div style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px 0;">';
-                        for (var _pv = 0; _pv < pendingFiles.length; _pv++) {
+                    for (var _pv = 0; _pv < pendingFiles.length; _pv++) {
                         var _pf = pendingFiles[_pv];
-                        if (!(_pf.mime && _pf.mime.indexOf('image/') === 0) || _pf.mime === 'image/svg+xml') continue;
+                        if (!(_pf.mime && _pf.mime.indexOf('image/') === 0)) continue;
                         var _isUp = (_pf._status === 'uploading');
                         var _isErr = (_pf._status === 'error');
                         var _imgOpacity = _isUp ? '0.4' : (_isErr ? '0.6' : '1');
@@ -5186,9 +5186,9 @@
                 if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Максимум 10 вложений</span>';
                 return null;
             }
-            var _isNewImage = file.type && file.type.indexOf('image/') === 0 && file.type !== 'image/svg+xml';
-            var _hasAnyImage = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0 && f.mime !== 'image/svg+xml'; });
-            var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0) || f.mime === 'image/svg+xml'; });
+            var _isNewImage = file.type && file.type.indexOf('image/') === 0;
+            var _hasAnyImage = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
+            var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0); });
             if (fluxModeEnabled && _isNewImage) {
                 pendingFiles = [];
             } else {
@@ -5496,7 +5496,7 @@
                 var _pf = pendingFiles[_pi];
                 if (_pf._status === 'uploading') isUploading = true;
                 if (_pf._status === 'error') hasError = true;
-                if (_pf.mime && _pf.mime.indexOf('image/') === 0 && _pf.mime !== 'image/svg+xml' && !_pf.file_id && !_pf._status) isUploading = true;
+                if (_pf.mime && _pf.mime.indexOf('image/') === 0 && !_pf.file_id && !_pf._status) isUploading = true;
                 var ext = _pf.name.split('.').pop().toLowerCase();
                 var mimeOk = _pf.mime && (_pf.mime.indexOf('image/') === 0 || _pf.mime.indexOf('text/') === 0 || _pf.mime === 'application/pdf' || _pf.mime.indexOf('zip') !== -1 || _pf.mime.indexOf('word') !== -1 || _pf.mime.indexOf('excel') !== -1 || _pf.mime.indexOf('powerpoint') !== -1);
                 if (!(SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk)) fileOk = false;
@@ -6795,7 +6795,7 @@
             var _sendFirstImg = null;
             for (var _sfi = 0; _sfi < pendingFiles.length; _sfi++) {
                 var _sf = pendingFiles[_sfi];
-                if (_sf && _sf.mime && _sf.mime.indexOf('image/') === 0 && _sf.mime !== 'image/svg+xml') {
+                if (_sf && _sf.mime && _sf.mime.indexOf('image/') === 0) {
                     if (!_sendFirstImg) _sendFirstImg = _sf;
                 }
             }
@@ -6805,7 +6805,7 @@
                 var _others = [];
                 for (var _soi = 0; _soi < pendingFiles.length; _soi++) {
                     var _so = pendingFiles[_soi];
-                    if (_so && _so !== _sendFirstImg && _so.mime && _so.mime.indexOf('image/') === 0 && _so.mime !== 'image/svg+xml') {
+                    if (_so && _so !== _sendFirstImg && _so.mime && _so.mime.indexOf('image/') === 0) {
                         _others.push([_so.data, _so.mime || 'image/jpeg']);
                     }
                 }
