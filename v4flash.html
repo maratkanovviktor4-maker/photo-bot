@@ -2782,7 +2782,12 @@
                 actionBar.style.display = 'flex';
                 var cnt = selectedChatIds.size;
                 if (cnt > 0) {
-                    actionBar.innerHTML = '<button class="chat-selection-action pin" onclick="pinSelectedChats()" title="Закрепить выбранные" style="flex:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle;"><line x1="3.47" y1="21.23" x2="10.19" y2="15.22"/><line x1="8.78" y1="13.81" x2="2.77" y2="20.53"/><path d="M13.73,18.76,5.24,10.27A5.94,5.94,0,0,1,9.48,8.52,5.42,5.42,0,0,1,11,8.73L14.5,5.26a1.49,1.49,0,0,1,2-2,1.32,1.32,0,0,1,.42.29l3.53,3.53a1.32,1.32,0,0,1,.29.42,1.49,1.49,0,0,1-2,2L15.27,13a5.42,5.42,0,0,1,.21,1.55A5.94,5.94,0,0,1,13.73,18.76Z"/></svg>Закрепить</button>' +
+                    var _allPinned = true;
+                    selectedChatIds.forEach(function(cid) { if (!pinnedChats.has(cid)) _allPinned = false; });
+                    var _pinBtnHtml = _allPinned
+                        ? '<button class="chat-selection-action pin" onclick="unpinSelectedChats()" title="Открепить выбранные" style="flex:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle;"><line x1="3.47" y1="21.23" x2="10.19" y2="15.22"/><line x1="8.78" y1="13.81" x2="2.77" y2="20.53"/><path d="M13.73,18.76,5.24,10.27A5.94,5.94,0,0,1,9.48,8.52,5.42,5.42,0,0,1,11,8.73L14.5,5.26a1.49,1.49,0,0,1,2-2,1.32,1.32,0,0,1,.42.29l3.53,3.53a1.32,1.32,0,0,1,.29.42,1.49,1.49,0,0,1-2,2L15.27,13a5.42,5.42,0,0,1,.21,1.55A5.94,5.94,0,0,1,13.73,18.76Z"/><line x1="3" y1="3" x2="21" y2="21"/></svg>Открепить</button>'
+                        : '<button class="chat-selection-action pin" onclick="pinSelectedChats()" title="Закрепить выбранные" style="flex:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle;"><line x1="3.47" y1="21.23" x2="10.19" y2="15.22"/><line x1="8.78" y1="13.81" x2="2.77" y2="20.53"/><path d="M13.73,18.76,5.24,10.27A5.94,5.94,0,0,1,9.48,8.52,5.42,5.42,0,0,1,11,8.73L14.5,5.26a1.49,1.49,0,0,1,2-2,1.32,1.32,0,0,1,.42.29l3.53,3.53a1.32,1.32,0,0,1,.29.42,1.49,1.49,0,0,1-2,2L15.27,13a5.42,5.42,0,0,1,.21,1.55A5.94,5.94,0,0,1,13.73,18.76Z"/></svg>Закрепить</button>';
+                    actionBar.innerHTML = _pinBtnHtml +
                         '<span class="chat-selection-action-divider"></span>' +
                         '<button class="chat-selection-action del" onclick="deleteSelectedChats()" title="Удалить выбранные" style="flex:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>Удалить (' + cnt + ')</button>';
                 } else {
@@ -2819,6 +2824,27 @@
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
                             body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: ids[i], pinned: true })
+                        });
+                    } catch(e) {}
+                }
+            }
+            selectedChatIds = new Set();
+            chatSelectionMode = false;
+            updateChatSelectionToolbar();
+            renderChatList();
+        }
+
+        async function unpinSelectedChats() {
+            var ids = Array.from(selectedChatIds);
+            if (!ids.length) return;
+            for (var i = 0; i < ids.length; i++) {
+                if (pinnedChats.has(ids[i])) {
+                    pinnedChats.delete(ids[i]);
+                    try {
+                        fetch(SERVER_URL + '/pin_chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                            body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: ids[i], pinned: false })
                         });
                     } catch(e) {}
                 }
