@@ -8956,47 +8956,6 @@
             return name.replace(/(\.[^./\\]+)(?:\s*\(\d+\))+$/, '$1');
         }
 
-        async function _downloadToWithBackup(url, fileName, backupDir, outputDir) {
-            var resp = await fetch(url);
-            if (!resp.ok) throw new Error('download failed');
-            var blob = await resp.blob();
-            var cleanName = _stripCopySuffix(fileName);
-
-            if (window.showSaveFilePicker) {
-                try {
-                    if (backupDir && cleanName) {
-                        try {
-                            var backupRoot = await window.showDirectoryPicker({ mode: 'readwrite' });
-                            var backupHandle = await backupRoot.getFileHandle(cleanName, { create: true });
-                            var backupWritable = await backupHandle.createWritable();
-                            await backupWritable.write(_deployFileContent);
-                            await backupWritable.close();
-                        } catch(e) {
-                            console.warn('backup save cancelled or failed', e);
-                        }
-                    }
-                    var outRoot = outputDir
-                        ? await window.showDirectoryPicker({ mode: 'readwrite' })
-                        : null;
-                    var pickerOpts = { suggestedName: cleanName, types: [{ description: 'Code', accept: { 'text/plain': ['.txt', '.py', '.js', '.html', '.css', '.json', '.md'] } }] };
-                    var handle = outRoot
-                        ? await outRoot.getFileHandle(cleanName, { create: true })
-                        : await window.showSaveFilePicker(pickerOpts);
-                    var writable = await handle.createWritable();
-                    await writable.write(blob);
-                    await writable.close();
-                    return;
-                } catch (e) {
-                    if (e && e.name === 'AbortError') return;
-                }
-            }
-
-            var a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = cleanName;
-            a.click();
-            setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
-        }
 
         async function confirmDeploy() {
             if (!_deployFileContent || !_deployEdits.length) return;
