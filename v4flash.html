@@ -7184,7 +7184,12 @@
             var _hasPdfAttach = false;
             for (var _hpi = 0; _hpi < _sendFilesSnapshot.length; _hpi++) {
                 var _hpf = _sendFilesSnapshot[_hpi];
-                if (_hpf && (_hpf.mime === 'application/pdf' || (_hpf.name || '').toLowerCase().endsWith('.pdf'))) {
+                if (!_hpf) continue;
+                var _hpm = (_hpf.mime || '').toLowerCase();
+                var _hpn = (_hpf.name || '').toLowerCase();
+                if (_hpm === 'application/pdf' || _hpn.endsWith('.pdf') ||
+                    _hpn.endsWith('.docx') || _hpn.endsWith('.xlsx') || _hpn.endsWith('.pptx') ||
+                    _hpm.indexOf('wordprocessingml') !== -1 || _hpm.indexOf('spreadsheetml') !== -1 || _hpm.indexOf('presentationml') !== -1) {
                     _hasPdfAttach = true;
                     break;
                 }
