@@ -3120,7 +3120,7 @@
                 assistantMsg._abortController = abortController;
 
                 try {
-                    var _sendBody = { user_id: currentUserId, model: 'flash', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText, web_search: webSearchEnabled };
+                    var _sendBody = { user_id: currentUserId, model: 'flash', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText, web_search: webSearchEnabled, reset_file_ids: true };
                     if (keptAttachments) {
                         _sendBody.image_b64 = keptAttachments.image_b64 || '';
                         _sendBody.image_mime = keptAttachments.image_mime || '';
@@ -3482,6 +3482,8 @@
                         _chatRef.messages[index].image_b64 = null;
                         _chatRef.messages[index].image_mime = null;
                     }
+                    _chatRef.messages[index].image_file_id = null;
+                    _chatRef.messages[index].extra_file_ids = null;
                     _chatRef.messages[index].display_b64s = _attachCopy.display_b64s.slice();
                     _chatRef.messages[index].extra_b64s = _attachCopy.display_b64s.slice();
                 }
