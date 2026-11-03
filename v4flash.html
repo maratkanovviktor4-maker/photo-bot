@@ -5132,6 +5132,25 @@
             updateFileList();
         }
 
+        async function _convertSvgToPngBase64(svgB64) {
+            return new Promise(function(resolve, reject) {
+                var img = new Image();
+                img.onload = function() {
+                    var w = img.naturalWidth || 1024;
+                    var h = img.naturalHeight || 1024;
+                    var canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    var dataUrl = canvas.toDataURL('image/png');
+                    resolve(dataUrl.split(',')[1]);
+                };
+                img.onerror = function() { reject(new Error('svg load error')); };
+                img.src = 'data:image/svg+xml;base64,' + svgB64;
+            });
+        }
+
         async function _resizeForFlux(base64, mime) {
             return new Promise(function(resolve, reject) {
                 var img = new Image();
@@ -5214,6 +5233,14 @@
             });
 
             var _wasResized = false;
+            if (file.type === 'image/svg+xml') {
+                try {
+                    base64 = await _convertSvgToPngBase64(base64);
+                    file = { name: file.name.replace(/\.svg$/i, '.png'), type: 'image/png' };
+                } catch (e) {
+                    console.warn('svg->png convert failed', e);
+                }
+            }
             if (fluxModeEnabled && file.type && file.type.indexOf('image/') === 0) {
                 try {
                     base64 = await _resizeForFlux(base64, file.type);
