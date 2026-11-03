@@ -8963,11 +8963,14 @@
             btn.disabled = true;
             btn.textContent = '...';
 
+            var _eol = _deployFileContent.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+            var _fileNorm = _deployFileContent.replace(/\r\n/g, '\n');
             var payload = {
                 user_id: currentUserId,
                 file_name: _deployFileName,
-                file_content: _deployFileContent,
-                edits: _deployEdits.map(function(e) { return { old: e.old, new: e.new }; })
+                file_content: _fileNorm,
+                edits: _deployEdits.map(function(e) { return { old: e.old, new: e.new }; }),
+                eol: _eol
             };
             closeDeployModal();
             btn.disabled = false;
@@ -8983,7 +8986,9 @@
                 if (data.success) {
                     var fileResp = await fetch(SERVER_URL + data.file_url);
                     if (!fileResp.ok) throw new Error('download failed');
-                    var newBlob = await fileResp.blob();
+                    var _newText = await fileResp.text();
+                    if (_eol === '\r\n') _newText = _newText.replace(/\n/g, '\r\n');
+                    var newBlob = new Blob([_newText], { type: 'text/html;charset=utf-8' });
                     var cleanName = _stripCopySuffix(data.filename || _deployFileName);
 
                     var outHandle = _deployHandles.output;
