@@ -3368,16 +3368,6 @@
                 row._editing = false;
                 autoScroll = true;
                 scrollToBottom();
-                var _chat = chats.find(function(c) { return c.id === currentChatId; });
-                if (_chat && _chat.messages[index]) {
-                    var _oldMeta = _chat.messages[index].files_meta;
-                    if (_oldMeta && _oldMeta.length) {
-                        var _stillHasFile = newText.indexOf('📎') !== -1;
-                        if (!_stillHasFile) {
-                            _chat.messages[index].files_meta = null;
-                        }
-                    }
-                }
                 regenerateUserMessage(index, newText);
             };
             
@@ -4114,7 +4104,7 @@
                 var _aceLabel = 'Ace Step 1.5' + (msg._ace_meta.key ? ' · ' + msg._ace_meta.key : '') + (msg._ace_meta.bpm ? ' · ' + msg._ace_meta.bpm + ' BPM' : '') + (msg._ace_meta.duration ? ' · ' + msg._ace_meta.duration + 'с' : '');
                 contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 12px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.25);border-radius:12px;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:6px;">🎤 ' + _aceLabel + '</div><audio controls preload="metadata" src="' + _aceUrl + '" style="width:100%;max-width:360px;display:block;"></audio></div>' + contentHtml;
             }
-            if (msg.role === 'user' && (msg.image_b64 || (msg.extra_b64s && msg.extra_b64s.length))) {
+            if (msg.role === 'user' && (msg.image_b64 || (msg.extra_b64s && msg.extra_b64s.length) || (msg.files_meta && msg.files_meta.length))) {
                 var _allImgs = '';
                 if (msg.image_b64) {
                     var _imgMime = msg.image_mime || 'image/jpeg';
@@ -4129,7 +4119,10 @@
                         _allImgs += '<img src="data:' + _em + ';base64,' + _ed + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;flex-shrink:0;" onclick="toggleFullPreview(this)">';
                     }
                 }
-                var _userImgsBlock = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;justify-content:flex-end;">' + _allImgs + '</div>';
+                var _userImgsBlock = '';
+                if (_allImgs) {
+                    _userImgsBlock = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;justify-content:flex-end;">' + _allImgs + '</div>';
+                }
                 return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div>' + _userImgsBlock + '</div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
             }
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
@@ -6871,10 +6864,6 @@
             const _stillHere = function() { return currentChatId === _sendChatId; };
             
             let displayText = text;
-            if (pendingFiles.length) {
-                var _fileNames = pendingFiles.map(function(f) { return f.name; }).join(', ');
-                displayText = text ? text + '\n\n📎 ' + _fileNames : '📎 ' + _fileNames;
-            }
             // Ace: добавляем lyrics в displayText
             if (aceModeEnabled) {
                 var _lyrEl = document.getElementById('aceLyricsInput');
