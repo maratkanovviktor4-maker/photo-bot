@@ -3094,8 +3094,10 @@
                 var area = document.getElementById('chatArea');
                 var userRow = area.querySelector('.message-row.user[data-msg-index="' + msgIndex + '"]');
                 if (userRow) {
+                    var _regenFilesMeta = msg.files_meta || null;
+                    var _regenHtml = renderUserContentWithFiles(escapeHtml(newText), _regenFilesMeta);
                     var temp = document.createElement('div');
-                    temp.innerHTML = '<div class="message-row user"><div><div class="message-content">' + escapeHtml(newText) + '</div></div></div>';
+                    temp.innerHTML = '<div class="message-row user"><div><div class="message-content">' + _regenHtml + '</div></div></div>';
                     userRow.parentNode.replaceChild(temp.firstElementChild, userRow);
                 }
                 playSound('send');
@@ -3365,7 +3367,17 @@
                 wrapper.remove();
                 row._editing = false;
                 autoScroll = true;
-                scrollToBottom();                
+                scrollToBottom();
+                var _chat = chats.find(function(c) { return c.id === currentChatId; });
+                if (_chat && _chat.messages[index]) {
+                    var _oldMeta = _chat.messages[index].files_meta;
+                    if (_oldMeta && _oldMeta.length) {
+                        var _stillHasFile = newText.indexOf('📎') !== -1;
+                        if (!_stillHasFile) {
+                            _chat.messages[index].files_meta = null;
+                        }
+                    }
+                }
                 regenerateUserMessage(index, newText);
             };
             
@@ -4076,6 +4088,7 @@
                 } else if (_userHtml === '🎨') {
                     _userHtml = _svgFluxIcon;
                 }
+                _userHtml = renderUserContentWithFiles(_userHtml, msg.files_meta);
             }
             var contentHtml = (msg.role === 'user') ? _userHtml : formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._flux_meta && msg._flux_meta.status === 'success' && msg._flux_meta.job_id) {
@@ -5527,6 +5540,23 @@
             conf: makeFileIcon('#576D7E', 'CONF')
         };
 
+        function renderUserFileCard(fc) {
+            var _fcIcon = FILE_ICON_MAP[fc.ext] || '📎';
+            var _fcSize = fc.size < 1024 ? fc.size + ' B' : (fc.size < 1048576 ? (fc.size / 1024).toFixed(2) + 'KB' : (fc.size / 1048576).toFixed(2) + 'MB');
+            var _fcExt = (fc.ext || '').toUpperCase();
+            return '<div style="display:inline-flex;align-items:center;gap:10px;padding:10px 14px;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:14px;margin-bottom:6px;max-width:100%;box-sizing:border-box;"><span style="flex-shrink:0;display:inline-flex;">' + _fcIcon + '</span><span style="display:flex;flex-direction:column;min-width:0;"><span style="font-size:15px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(fc.name) + '</span><span style="font-size:12px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(_fcExt) + ' ' + _fcSize + '</span></span></div>';
+        }
+
+        function renderUserContentWithFiles(escapedHtml, filesMeta) {
+            if (!filesMeta || !filesMeta.length) return escapedHtml;
+            var cards = '';
+            for (var i = 0; i < filesMeta.length; i++) {
+                cards += renderUserFileCard(filesMeta[i]);
+            }
+            var textPart = escapedHtml.replace(/(\n\n)?📎[^\n<]*/g, '').trim();
+            return cards + (textPart ? '<div style="margin-top:4px;">' + textPart + '</div>' : '');
+        }
+
         function removeFileAt(idx) {
             if (idx < 0 || idx >= pendingFiles.length) return;
             var _removed = pendingFiles[idx];
@@ -6892,13 +6922,25 @@
                 }]);
             }
 
+            var _filesMeta = [];
+            if (pendingFiles.length) {
+                for (var _fmi = 0; _fmi < pendingFiles.length; _fmi++) {
+                    var _fm = pendingFiles[_fmi];
+                    if (!_fm || !_fm.name) continue;
+                    if (_fm.mime && _fm.mime.indexOf('image/') === 0) continue;
+                    var _fmSize = 0;
+                    if (_fm.data) { try { _fmSize = Math.round(_fm.data.length * 3 / 4); } catch(e) {} }
+                    _filesMeta.push({ name: _fm.name, size: _fmSize, ext: (_fm.name.split('.').pop() || '').toLowerCase() });
+                }
+            }
             chat.messages.push({
                 role: 'user',
                 content: displayText,
                 image_b64: _sendImageB64,
                 image_mime: _sendImageMime,
                 extra_b64s: _sendDisplayB64s,
-                display_b64s: _sendDisplayB64s
+                display_b64s: _sendDisplayB64s,
+                files_meta: _filesMeta.length ? _filesMeta : null
             });
             var _pushedUserMsgIndex = chat.messages.length - 1;
             playSound('send');
