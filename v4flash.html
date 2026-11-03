@@ -5388,6 +5388,16 @@
             } else {
                 newItem._status = 'ok';
             }
+            var _isDup = false;
+            for (var _di = 0; _di < pendingFiles.length; _di++) {
+                if (pendingFiles[_di].name === newItem.name && pendingFiles[_di].data === newItem.data) {
+                    _isDup = true;
+                    break;
+                }
+            }
+            if (_isDup) {
+                return null;
+            }
             pendingFiles.push(newItem);
 
             if (!_isNewImage) {
