@@ -5156,6 +5156,25 @@
 
         }
 
+        async function _convertSvgToPngBase64Pro(svgB64) {
+            return new Promise(function(resolve, reject) {
+                var img = new Image();
+                img.onload = function() {
+                    var w = img.naturalWidth || 1024;
+                    var h = img.naturalHeight || 1024;
+                    var canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    var dataUrl = canvas.toDataURL('image/png');
+                    resolve(dataUrl.split(',')[1]);
+                };
+                img.onerror = function() { reject(new Error('svg load error')); };
+                img.src = 'data:image/svg+xml;base64,' + svgB64;
+            });
+        }
+
         async function _resizeForFluxPro(base64, mime) {
             return new Promise(function(resolve, reject) {
                 var img = new Image();
@@ -5230,6 +5249,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
             reader.onload = async function(ev) {
                 if (_abortCheck) { _abortCheck = false; return; }
                 let base64 = ev.target.result.split(',')[1];
+                if (file.type === 'image/svg+xml') {
+                    try {
+                        base64 = await _convertSvgToPngBase64Pro(base64);
+                        file = { name: file.name.replace(/\.svg$/i, '.png'), type: 'image/png' };
+                    } catch (e) {
+                        console.warn('svg->png convert failed', e);
+                    }
+                }
                 if (fluxModeEnabled && file.type && file.type.indexOf('image/') === 0) {
                     try {
                         base64 = await _resizeForFluxPro(base64, file.type);
@@ -5354,6 +5381,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                     reader.onload = async function(ev) {
                         if (_abortCheck) { _abortCheck = false; return; }
                         var base64 = ev.target.result.split(',')[1];
+                        if (file.type === 'image/svg+xml') {
+                            try {
+                                base64 = await _convertSvgToPngBase64Pro(base64);
+                                file = { name: file.name.replace(/\.svg$/i, '.png'), type: 'image/png' };
+                            } catch (e) {
+                                console.warn('svg->png convert failed', e);
+                            }
+                        }
                         if (fluxModeEnabled && file.type && file.type.indexOf('image/') === 0) {
                             try {
                                 base64 = await _resizeForFluxPro(base64, file.type);
@@ -5463,6 +5498,14 @@ if (inline) inline.innerHTML = '<span style="display:inline-flex;align-items:cen
                         reader.onload = async function(ev) {
                             if (_abortCheck) { _abortCheck = false; return; }
                             var base64 = ev.target.result.split(',')[1];
+                            if (blob.type === 'image/svg+xml') {
+                                try {
+                                    base64 = await _convertSvgToPngBase64Pro(base64);
+                                    blob = { type: 'image/png', size: blob.size };
+                                } catch (e) {
+                                    console.warn('svg->png convert failed', e);
+                                }
+                            }
                             if (fluxModeEnabled && blob.type && blob.type.indexOf('image/') === 0) {
                                 try {
                                     base64 = await _resizeForFluxPro(base64, blob.type);
