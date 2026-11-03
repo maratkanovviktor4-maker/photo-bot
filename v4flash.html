@@ -3661,10 +3661,14 @@
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
             sendBtnStop();
             var _savedFluxMeta = msg._flux_meta || null;
+            var _savedAudioMeta = msg._audio_meta || null;
+            var _savedAceMeta = msg._ace_meta || null;
             var removeFrom = msgIndex;
             while (chat.messages.length > removeFrom) { chat.messages.pop(); }
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
             if (_savedFluxMeta) assistantMsg._flux_meta = _savedFluxMeta;
+            if (_savedAudioMeta) assistantMsg._audio_meta = _savedAudioMeta;
+            if (_savedAceMeta) assistantMsg._ace_meta = _savedAceMeta;
             chat.messages.push(assistantMsg);
             var newMsgIndex = chat.messages.length - 1;
             var streamId = 'regen_stream_' + newMsgIndex;
