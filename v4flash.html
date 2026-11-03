@@ -3076,13 +3076,13 @@
 
 
 
-        async function regenerateUserMessage(msgIndex, newText) {
+        async function regenerateUserMessage(msgIndex, newText, filesChanged) {
             if (isSending) return;
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'user') return;
-            if (!newText) return;
+            if (!newText && !(msg.files_meta && msg.files_meta.length)) return;
             (async function() {
                 isSending = true;
                 if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
@@ -3116,7 +3116,7 @@
                     var resp = await fetch(SERVER_URL + '/regenerate_user', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                        body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText, web_search: webSearchEnabled }),
+                        body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText, web_search: webSearchEnabled, files_changed: !!filesChanged }),
                         signal: abortController.signal
                     });
                     if (!resp.ok) {
@@ -3288,6 +3288,27 @@
             var _wrapperWidth = _isMobileEdit ? '100%' : '581px';
             wrapper.style.cssText = 'width:' + _wrapperWidth + ';flex-shrink:0;background:' + bgColor + ';border:2px solid ' + borderColor + ';border-radius:16px;overflow:hidden;box-sizing:border-box;';
             wrapper.classList.add('wrapper');
+            var fileBox = document.createElement('div');
+            fileBox.style.cssText = 'padding:8px 12px 0 12px;';
+            var _editFilesMeta = (msg.files_meta || []).slice();
+            function renderEditFileCards() {
+                if (!_editFilesMeta.length) { fileBox.innerHTML = ''; fileBox.style.display = 'none'; return; }
+                fileBox.style.display = 'block';
+                var h = '';
+                for (var _i = 0; _i < _editFilesMeta.length; _i++) {
+                    var _fc = _editFilesMeta[_i];
+                    var _fcIcon = FILE_ICON_MAP[_fc.ext] || '📎';
+                    var _fcSize = _fc.size < 1024 ? _fc.size + ' B' : (_fc.size < 1048576 ? (_fc.size / 1024).toFixed(2) + 'KB' : (_fc.size / 1048576).toFixed(2) + 'MB');
+                    var _fcExt = (_fc.ext || '').toUpperCase();
+                    h += '<div style="position:relative;display:inline-flex;align-items:center;gap:10px;padding:10px 14px;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:14px;margin-bottom:6px;max-width:100%;box-sizing:border-box;"><span style="flex-shrink:0;display:inline-flex;">' + _fcIcon + '</span><span style="display:flex;flex-direction:column;min-width:0;"><span style="font-size:15px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:18px;">' + escapeHtml(_fc.name) + '</span><span style="font-size:12px;color:#888;white-space:nowrap;">' + escapeHtml(_fcExt) + ' ' + _fcSize + '</span></span><button onclick="event.stopPropagation();window._editRemoveFile(' + _i + ');" style="position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:#fff;border:none;color:#201F28;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;line-height:1;">✕</button></div>';
+                }
+                fileBox.innerHTML = h;
+            }
+            window._editRemoveFile = function(idx) {
+                _editFilesMeta.splice(idx, 1);
+                renderEditFileCards();
+            };
+            renderEditFileCards();
             var textarea = document.createElement('textarea');
             textarea.value = originalContent;
             textarea.select();
@@ -3361,19 +3382,24 @@
             saveBtn.onclick = function() {
                 if (saveBtn.disabled) return;
                 var newText = textarea.value.trim();
-                if (!newText) return;
+                if (!newText && !_editFilesMeta.length) return;
                 if (actionsDiv) actionsDiv.style.display = '';
                 contentDiv.style.display = '';
+                var _hadFiles = !!(msg.files_meta && msg.files_meta.length);
+                var _nowHasFiles = _editFilesMeta.length > 0;
+                msg.files_meta = _nowHasFiles ? _editFilesMeta : null;
+                var _filesChanged = _hadFiles !== _nowHasFiles;
                 wrapper.remove();
                 row._editing = false;
                 autoScroll = true;
                 scrollToBottom();
-                regenerateUserMessage(index, newText);
+                regenerateUserMessage(index, newText || '', _filesChanged);
             };
             
             toolbar.appendChild(excessLabel);
             toolbar.appendChild(cancelBtn);
             toolbar.appendChild(saveBtn);
+            wrapper.appendChild(fileBox);
             wrapper.appendChild(textarea);
             wrapper.appendChild(toolbar);
             
