@@ -5017,14 +5017,14 @@
                 updateSendBtn();
                 return;
             }
-            var _hasImages = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
+            var _hasImages = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0 && f.mime !== 'image/svg+xml'; });
             var _previewBox = document.getElementById('inputPreviewBox');
             if (_previewBox) {
                 if (_hasImages) {
                     var _previewsHtml = '<div style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px 0;">';
-                    for (var _pv = 0; _pv < pendingFiles.length; _pv++) {
+                        for (var _pv = 0; _pv < pendingFiles.length; _pv++) {
                         var _pf = pendingFiles[_pv];
-                        if (!(_pf.mime && _pf.mime.indexOf('image/') === 0)) continue;
+                        if (!(_pf.mime && _pf.mime.indexOf('image/') === 0) || _pf.mime === 'image/svg+xml') continue;
                         var _isUp = (_pf._status === 'uploading');
                         var _isErr = (_pf._status === 'error');
                         var _imgOpacity = _isUp ? '0.4' : (_isErr ? '0.6' : '1');
