@@ -5186,9 +5186,9 @@
                 if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Максимум 10 вложений</span>';
                 return null;
             }
-            var _isNewImage = file.type && file.type.indexOf('image/') === 0;
-            var _hasAnyImage = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
-            var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0); });
+            var _isNewImage = file.type && file.type.indexOf('image/') === 0 && file.type !== 'image/svg+xml';
+            var _hasAnyImage = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0 && f.mime !== 'image/svg+xml'; });
+            var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0) || f.mime === 'image/svg+xml'; });
             if (fluxModeEnabled && _isNewImage) {
                 pendingFiles = [];
             } else {
@@ -5496,7 +5496,7 @@
                 var _pf = pendingFiles[_pi];
                 if (_pf._status === 'uploading') isUploading = true;
                 if (_pf._status === 'error') hasError = true;
-                if (_pf.mime && _pf.mime.indexOf('image/') === 0 && !_pf.file_id && !_pf._status) isUploading = true;
+                if (_pf.mime && _pf.mime.indexOf('image/') === 0 && _pf.mime !== 'image/svg+xml' && !_pf.file_id && !_pf._status) isUploading = true;
                 var ext = _pf.name.split('.').pop().toLowerCase();
                 var mimeOk = _pf.mime && (_pf.mime.indexOf('image/') === 0 || _pf.mime.indexOf('text/') === 0 || _pf.mime === 'application/pdf' || _pf.mime.indexOf('zip') !== -1 || _pf.mime.indexOf('word') !== -1 || _pf.mime.indexOf('excel') !== -1 || _pf.mime.indexOf('powerpoint') !== -1);
                 if (!(SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk)) fileOk = false;
