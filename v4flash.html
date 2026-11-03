@@ -3082,7 +3082,8 @@
             if (!chat) return;
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'user') return;
-            if (!newText) return;
+            var _hasAnyAttach = keptAttachments && (keptAttachments.image_b64 || (keptAttachments.extra_b64s && keptAttachments.extra_b64s.length) || (keptAttachments.files_meta && keptAttachments.files_meta.length));
+            if (!newText && !_hasAnyAttach) return;
             if (keptAttachments) {
                 msg.files_meta = keptAttachments.files_meta || null;
                 msg.image_b64 = keptAttachments.image_b64 || null;
@@ -3104,7 +3105,22 @@
                     var _regenFilesMeta = msg.files_meta || null;
                     var _regenHtml = renderUserContentWithFiles(escapeHtml(newText), _regenFilesMeta);
                     var temp = document.createElement('div');
-                    temp.innerHTML = '<div class="message-row user"><div><div class="message-content">' + _regenHtml + '</div></div></div>';
+                    var _regenHasImg = msg.image_b64 || (msg.display_b64s && msg.display_b64s.length) || (msg.extra_b64s && msg.extra_b64s.length);
+                    var _regenImgBlock = '';
+                    if (_regenHasImg) {
+                        var _rImgs = '';
+                        if (msg.image_b64) {
+                            _rImgs += '<img src="data:' + (msg.image_mime || 'image/jpeg') + ';base64,' + msg.image_b64 + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;flex-shrink:0;" onclick="toggleFullPreview(this)">';
+                        }
+                        var _rArr = msg.display_b64s || msg.extra_b64s || [];
+                        for (var _rii = 0; _rii < _rArr.length; _rii++) {
+                            var _rB = _rArr[_rii];
+                            _rImgs += '<img src="data:' + (_rB[1] || 'image/jpeg') + ';base64,' + _rB[0] + '" style="max-width:120px;max-height:80px;border-radius:6px;object-fit:contain;cursor:pointer;flex-shrink:0;" onclick="toggleFullPreview(this)">';
+                        }
+                        _regenImgBlock = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;justify-content:flex-end;">' + _rImgs + '</div>';
+                    }
+                    var _regenContentBlock = _regenHtml.trim() ? ('<div class="message-content">' + _regenHtml + '</div>') : ('<div class="message-content" style="display:none;"></div>');
+                    temp.innerHTML = '<div class="message-row user"><div>' + _regenImgBlock + _regenContentBlock + '</div></div>';
                     userRow.parentNode.replaceChild(temp.firstElementChild, userRow);
                 }
                 playSound('send');
@@ -3287,7 +3303,25 @@
             
             var originalContent = msg.content;
             var contentDiv = row.querySelector('.message-content');
+            var _origContentDisplay = contentDiv.style.display;
             contentDiv.style.display = 'none';
+            var _imgsBlock = row.querySelector('.message-row.user > div > div:first-child') || row.querySelector('div > div > div:first-child');
+            var _imgsBlockEl = null;
+            var _rowDirectChildren = row.querySelectorAll('div > div');
+            for (var _rci = 0; _rci < _rowDirectChildren.length; _rci++) {
+                var _ch = _rowDirectChildren[_rci];
+                if (_ch.querySelector && _ch.querySelector('img') && _ch !== contentDiv) {
+                    var _hasOnlyImgs = true;
+                    var _allKids = _ch.querySelectorAll('*');
+                    for (var _ki = 0; _ki < _allKids.length; _ki++) {
+                        var _kn = _allKids[_ki].tagName;
+                        if (_kn === 'IMG' || _kn === 'DIV' || _kn === 'SPAN') continue;
+                    }
+                    _imgsBlockEl = _ch;
+                    break;
+                }
+            }
+            if (_imgsBlockEl) _imgsBlockEl.style.display = 'none';
             
             var isLight = document.body.classList.contains('light');
             var customBg = localStorage.getItem('photobot_chat_bg') || '';
@@ -3458,7 +3492,8 @@
             
             cancelBtn.onclick = function() {
                 if (actionsDiv) actionsDiv.style.display = '';
-                contentDiv.style.display = '';
+                contentDiv.style.display = _origContentDisplay;
+                if (_imgsBlockEl) _imgsBlockEl.style.display = '';
                 wrapper.remove();
                 row._editing = false;
             };
@@ -3466,7 +3501,8 @@
             saveBtn.onclick = function() {
                 if (saveBtn.disabled) return;
                 var newText = textarea.value.trim();
-                if (!newText) return;
+                var _hasAttach = (_attachCopy.image_b64 || _attachCopy.display_b64s.length || _attachCopy.files_meta.length);
+                if (!newText && !_hasAttach) return;
                 if (actionsDiv) actionsDiv.style.display = '';
                 contentDiv.style.display = '';
                 wrapper.remove();
