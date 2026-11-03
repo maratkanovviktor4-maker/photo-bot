@@ -3119,8 +3119,16 @@
                         }
                         _regenImgBlock = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;justify-content:flex-end;">' + _rImgs + '</div>';
                     }
+                    var _regenFilesBlock = '';
+                    if (msg.files_meta && msg.files_meta.length) {
+                        var _rfc = '';
+                        for (var _rfci = 0; _rfci < msg.files_meta.length; _rfci++) {
+                            _rfc += renderUserFileCard(msg.files_meta[_rfci]);
+                        }
+                        _regenFilesBlock = '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-bottom:6px;">' + _rfc + '</div>';
+                    }
                     var _regenContentBlock = _regenHtml.trim() ? ('<div class="message-content">' + _regenHtml + '</div>') : ('<div class="message-content" style="display:none;"></div>');
-                    temp.innerHTML = '<div class="message-row user"><div>' + _regenImgBlock + _regenContentBlock + '</div></div>';
+                    temp.innerHTML = '<div class="message-row user"><div>' + _regenImgBlock + _regenFilesBlock + _regenContentBlock + '</div></div>';
                     userRow.parentNode.replaceChild(temp.firstElementChild, userRow);
                 }
                 playSound('send');
@@ -4226,7 +4234,9 @@
                 } else if (_userHtml === '🎨') {
                     _userHtml = _svgFluxIcon;
                 }
-                _userHtml = renderUserContentWithFiles(_userHtml, msg.files_meta);
+                if (msg.files_meta && msg.files_meta.length) {
+                    _userHtml = _userHtml.replace(/(\n\n)?📎[^\n<]*/g, '').trim();
+                }
             }
             var contentHtml = (msg.role === 'user') ? _userHtml : formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._flux_meta && msg._flux_meta.status === 'success' && msg._flux_meta.job_id) {
@@ -4270,6 +4280,13 @@
                 var _userImgsBlock = '';
                 if (_allImgs) {
                     _userImgsBlock = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;justify-content:flex-end;">' + _allImgs + '</div>';
+                }
+                if (msg.files_meta && msg.files_meta.length) {
+                    var _filesCardsInner2 = '';
+                    for (var _foi2 = 0; _foi2 < msg.files_meta.length; _foi2++) {
+                        _filesCardsInner2 += renderUserFileCard(msg.files_meta[_foi2]);
+                    }
+                    _userImgsBlock += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-bottom:6px;">' + _filesCardsInner2 + '</div>';
                 }
                 var _hasUserText = (contentHtml && contentHtml.replace(/<[^>]+>/g, '').trim().length > 0);
                 var _userContentBlock = _hasUserText ? ('<div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div>') : ('<div class="message-content" id="stream-' + index + '" style="display:none;"></div>');
@@ -4343,9 +4360,17 @@
                 }
                 sourcesHtml = '<div class="message-sources" onclick="openSourcesPanel(' + index + ');event.preventDefault();event.stopPropagation();" style="margin-top:8px;cursor:pointer;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:4px;">🔗 Источники (' + msg._sources.length + ') — нажмите, чтобы открыть панель</div>' + sItems + '</div>';
             }
+            var _filesOuterBlock = '';
+            if (msg.role === 'user' && msg.files_meta && msg.files_meta.length) {
+                var _filesCardsInner = '';
+                for (var _foi = 0; _foi < msg.files_meta.length; _foi++) {
+                    _filesCardsInner += renderUserFileCard(msg.files_meta[_foi]);
+                }
+                _filesOuterBlock = '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-bottom:6px;">' + _filesCardsInner + '</div>';
+            }
             var _hasVisibleContent = (reasoningHtml && reasoningHtml.trim()) || (contentHtml && contentHtml.trim()) || msg._streaming;
             var _contentBlock = _hasVisibleContent ? ('<div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div>') : ('<div class="message-content" id="stream-' + index + '" style="display:none;"></div>');
-            return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div>' + _contentBlock + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
+            return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div>' + _filesOuterBlock + _contentBlock + '<div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
         }
         async function deleteMessage(index) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
