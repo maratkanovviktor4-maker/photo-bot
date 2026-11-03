@@ -5149,17 +5149,19 @@
             var fileLength = 0;
             for (var _li = 0; _li < pendingFiles.length; _li++) {
                 var _lf = pendingFiles[_li];
-                if (_lf && _lf.data) {
-                    if (_lf.mime && _lf.mime.startsWith('image/')) continue;
+                if (!_lf || !_lf.data) continue;
+                if (_lf.mime && _lf.mime.startsWith('image/')) continue;
+                // docx/xlsx/pptx/pdf/zip — лимит контролирует сервер (по распарсенному тексту)
+                var _extLc = (_lf.name.split('.').pop() || '').toLowerCase();
+                if (['docx','doc','xlsx','xls','pptx','ppt','pdf','zip'].indexOf(_extLc) !== -1) continue;
+                try {
+                    var decoded = atob(_lf.data);
                     try {
-                        var decoded = atob(_lf.data);
-                        try {
-                            var bytes = new Uint8Array(decoded.length);
-                            for (var _bi = 0; _bi < decoded.length; _bi++) bytes[_bi] = decoded.charCodeAt(_bi);
-                            fileLength += new TextDecoder('utf-8').decode(bytes).length;
-                        } catch (ue) { fileLength += decoded.length; }
-                    } catch(e) {}
-                }
+                        var bytes = new Uint8Array(decoded.length);
+                        for (var _bi = 0; _bi < decoded.length; _bi++) bytes[_bi] = decoded.charCodeAt(_bi);
+                        fileLength += new TextDecoder('utf-8').decode(bytes).length;
+                    } catch (ue) { fileLength += decoded.length; }
+                } catch(e) {}
             }
             var total = text.length + fileLength;
             var MAX_LENGTH = 700000;
