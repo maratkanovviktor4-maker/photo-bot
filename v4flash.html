@@ -4253,7 +4253,9 @@
                 if (_allImgs) {
                     _userImgsBlock = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;justify-content:flex-end;">' + _allImgs + '</div>';
                 }
-                return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div>' + _userImgsBlock + '</div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
+                var _hasUserText = (contentHtml && contentHtml.replace(/<[^>]+>/g, '').trim().length > 0);
+                var _userContentBlock = _hasUserText ? ('<div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div>') : ('<div class="message-content" id="stream-' + index + '" style="display:none;"></div>');
+                return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div>' + _userImgsBlock + '</div>' + _userContentBlock + '<div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
             }
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
                 contentHtml = contentHtml.replace(/<a href="([^"]+)" target="_blank">([^<]+)<\/a>/g, function(m, url, text) {
@@ -4323,7 +4325,9 @@
                 }
                 sourcesHtml = '<div class="message-sources" onclick="openSourcesPanel(' + index + ');event.preventDefault();event.stopPropagation();" style="margin-top:8px;cursor:pointer;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:4px;">🔗 Источники (' + msg._sources.length + ') — нажмите, чтобы открыть панель</div>' + sItems + '</div>';
             }
-            return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
+            var _hasVisibleContent = (reasoningHtml && reasoningHtml.trim()) || (contentHtml && contentHtml.trim()) || msg._streaming;
+            var _contentBlock = _hasVisibleContent ? ('<div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div>') : ('<div class="message-content" id="stream-' + index + '" style="display:none;"></div>');
+            return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div>' + _contentBlock + '</div><div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
         }
         async function deleteMessage(index) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
