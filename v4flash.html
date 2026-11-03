@@ -8809,6 +8809,95 @@
         var _deployEdits = [];
         var _deployFileContent = null;
         var _deployFileName = '';
+        var _deployHandles = { backup: null, output: null };
+
+        function _idbOpen() {
+            return new Promise(function(resolve, reject) {
+                var req = indexedDB.open('photobot_deploy', 1);
+                req.onupgradeneeded = function() {
+                    req.result.createObjectStore('handles');
+                };
+                req.onsuccess = function() { resolve(req.result); };
+                req.onerror = function() { reject(req.error); };
+            });
+        }
+        async function _idbSetHandle(key, handle) {
+            try {
+                var db = await _idbOpen();
+                await new Promise(function(resolve, reject) {
+                    var tx = db.transaction('handles', 'readwrite');
+                    tx.objectStore('handles').put(handle, key);
+                    tx.oncomplete = resolve;
+                    tx.onerror = function() { reject(tx.error); };
+                });
+            } catch(e) { console.warn('idb set failed', e); }
+        }
+        async function _idbGetHandle(key) {
+            try {
+                var db = await _idbOpen();
+                return await new Promise(function(resolve, reject) {
+                    var tx = db.transaction('handles', 'readonly');
+                    var rq = tx.objectStore('handles').get(key);
+                    rq.onsuccess = function() { resolve(rq.result || null); };
+                    rq.onerror = function() { reject(rq.error); };
+                });
+            } catch(e) { return null; }
+        }
+        async function _idbDelHandle(key) {
+            try {
+                var db = await _idbOpen();
+                await new Promise(function(resolve, reject) {
+                    var tx = db.transaction('handles', 'readwrite');
+                    tx.objectStore('handles').delete(key);
+                    tx.oncomplete = resolve;
+                    tx.onerror = function() { reject(tx.error); };
+                });
+            } catch(e) {}
+        }
+
+        async function pickDeployDir(kind) {
+            if (!window.showDirectoryPicker) {
+                showAlertModal('Не поддерживается', 'Ваш браузер не поддерживает выбор папок. Используйте Chrome или Edge.', '⚠️');
+                var _okBtnP = document.querySelector('#alertModalOverlay .modal-actions button');
+                if (_okBtnP) _okBtnP.setAttribute('data-skip-reload', '1');
+                return;
+            }
+            try {
+                var handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                var perm = await handle.queryPermission({ mode: 'readwrite' });
+                if (perm !== 'granted') {
+                    perm = await handle.requestPermission({ mode: 'readwrite' });
+                }
+                if (perm !== 'granted') return;
+                _deployHandles[kind] = handle;
+                await _idbSetHandle('deploy_' + kind, handle);
+                var inputEl = document.getElementById(kind === 'backup' ? 'deployBackupDir' : 'deployOutputDir');
+                inputEl.value = handle.name;
+                inputEl.title = handle.name;
+            } catch(e) {
+                if (e && e.name === 'AbortError') return;
+                console.warn('pick dir failed', e);
+            }
+        }
+
+        async function _restoreDeployHandles() {
+            try {
+                for (var kind of ['backup', 'output']) {
+                    var h = await _idbGetHandle('deploy_' + kind);
+                    if (!h) continue;
+                    try {
+                        var perm = await h.queryPermission({ mode: 'readwrite' });
+                        if (perm !== 'granted') continue;
+                        _deployHandles[kind] = h;
+                        var inputEl = document.getElementById(kind === 'backup' ? 'deployBackupDir' : 'deployOutputDir');
+                        if (inputEl) {
+                            inputEl.value = h.name;
+                            inputEl.title = h.name;
+                        }
+                    } catch(e) {}
+                }
+            } catch(e) {}
+        }
 
         function openDeployModal(msgIndex) {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
@@ -8826,10 +8915,11 @@
                 return;
             }
             document.getElementById('deployFileName').style.display = 'none';
-            document.getElementById('deployBackupDir').value = localStorage.getItem('photobot_deploy_backup_dir') || '';
-            document.getElementById('deployOutputDir').value = localStorage.getItem('photobot_deploy_output_dir') || '';
+            document.getElementById('deployBackupDir').value = '';
+            document.getElementById('deployOutputDir').value = '';
             document.getElementById('deployConfirmBtn').disabled = true;
             document.getElementById('deployModal').classList.add('active');
+            _restoreDeployHandles();
         }
 
         function closeDeployModal() {
@@ -8854,38 +8944,10 @@
                 };
                 reader.readAsText(file, 'utf-8');
             }
-            if (e.target && e.target.id === 'deployBackupDirInput') {
-                var f = e.target.files[0];
-                if (!f) return;
-                var rel = f.webkitRelativePath || '';
-                var top = rel.split('/')[0] || '';
-                if (top) {
-                    document.getElementById('deployBackupDir').value = top;
-                    localStorage.setItem('photobot_deploy_backup_dir', top);
-                }
-                e.target.value = '';
-            }
-            if (e.target && e.target.id === 'deployOutputDirInput') {
-                var f2 = e.target.files[0];
-                if (!f2) return;
-                var rel2 = f2.webkitRelativePath || '';
-                var top2 = rel2.split('/')[0] || '';
-                if (top2) {
-                    document.getElementById('deployOutputDir').value = top2;
-                    localStorage.setItem('photobot_deploy_output_dir', top2);
-                }
-                e.target.value = '';
-            }
+
         });
 
-        document.addEventListener('input', function(e) {
-            if (e.target && e.target.id === 'deployBackupDir') {
-                localStorage.setItem('photobot_deploy_backup_dir', e.target.value);
-            }
-            if (e.target && e.target.id === 'deployOutputDir') {
-                localStorage.setItem('photobot_deploy_output_dir', e.target.value);
-            }
-        });
+
         document.addEventListener('click', function(e) {
             if (e.target && e.target.id === 'deployModal') closeDeployModal();
         });
@@ -8942,9 +9004,6 @@
             btn.disabled = true;
             btn.textContent = '...';
 
-            var backupDir = (document.getElementById('deployBackupDir').value || '').trim();
-            var outputDir = (document.getElementById('deployOutputDir').value || '').trim();
-
             var payload = {
                 user_id: currentUserId,
                 file_name: _deployFileName,
@@ -8963,7 +9022,58 @@
                 });
                 var data = await resp.json();
                 if (data.success) {
-                    await _downloadToWithBackup(SERVER_URL + data.file_url, data.filename || _deployFileName, backupDir, outputDir);
+                    var fileResp = await fetch(SERVER_URL + data.file_url);
+                    if (!fileResp.ok) throw new Error('download failed');
+                    var newBlob = await fileResp.blob();
+                    var cleanName = _stripCopySuffix(data.filename || _deployFileName);
+
+                    var outHandle = _deployHandles.output;
+                    var bkHandle = _deployHandles.backup;
+
+                    if (outHandle) {
+                        try {
+                            var outPerm = await outHandle.queryPermission({ mode: 'readwrite' });
+                            if (outPerm !== 'granted') outPerm = await outHandle.requestPermission({ mode: 'readwrite' });
+                            if (outPerm === 'granted') {
+                                var existingFile = null;
+                                try {
+                                    var fhOld = await outHandle.getFileHandle(cleanName);
+                                    existingFile = await fhOld.getFile();
+                                } catch(e) { existingFile = null; }
+
+                                if (existingFile && bkHandle) {
+                                    try {
+                                        var bkPerm = await bkHandle.queryPermission({ mode: 'readwrite' });
+                                        if (bkPerm !== 'granted') bkPerm = await bkHandle.requestPermission({ mode: 'readwrite' });
+                                        if (bkPerm === 'granted') {
+                                            var bkFileHandle = await bkHandle.getFileHandle(cleanName, { create: true });
+                                            var bw = await bkFileHandle.createWritable();
+                                            await bw.write(existingFile);
+                                            await bw.close();
+                                        }
+                                    } catch(e) { console.warn('backup failed', e); }
+                                }
+
+                                var newFileHandle = await outHandle.getFileHandle(cleanName, { create: true });
+                                var nw = await newFileHandle.createWritable();
+                                await nw.write(newBlob);
+                                await nw.close();
+
+                                var toast = document.createElement('div');
+                                toast.textContent = '✅ Файл сохранён: ' + cleanName;
+                                toast.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#27ae60;color:#fff;padding:10px 18px;border-radius:10px;font-family:Inter,sans-serif;font-size:13px;font-weight:500;z-index:100000;box-shadow:0 8px 24px rgba(39,174,96,0.4);';
+                                document.body.appendChild(toast);
+                                setTimeout(function() { toast.remove(); }, 2500);
+                                return;
+                            }
+                        } catch(e) { console.warn('output save failed', e); }
+                    }
+
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(newBlob);
+                    a.download = cleanName;
+                    a.click();
+                    setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
                 } else if (data.error_url) {
                     var er = await fetch(SERVER_URL + data.error_url);
                     var errBlob = await er.blob();
@@ -10204,18 +10314,16 @@
             <div style="margin-top:14px;">
                 <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">ПАПКА ДЛЯ БЭКАПА</label>
                 <div style="display:flex;gap:6px;align-items:center;">
-                    <input type="text" id="deployBackupDir" placeholder="Например: D:\Projects\backup" style="flex:1;padding:10px 12px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;">
-                    <button onclick="document.getElementById('deployBackupDirInput').click()" title="Выбрать папку" style="width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
+                    <input type="text" id="deployBackupDir" readonly placeholder="Папка не выбрана" style="flex:1;padding:10px 12px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;cursor:pointer;" onclick="pickDeployDir('backup')">
+                    <button onclick="pickDeployDir('backup')" title="Выбрать папку бэкапа" style="width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
                 </div>
-                <input type="file" id="deployBackupDirInput" webkitdirectory directory multiple style="display:none;">
             </div>
             <div style="margin-top:14px;">
-                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">ПАПКА ДЛЯ СКАЧИВАНИЯ ФАЙЛА КОДА</label>
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">ПАПКА ДЛЯ ФАЙЛА КОДА</label>
                 <div style="display:flex;gap:6px;align-items:center;">
-                    <input type="text" id="deployOutputDir" placeholder="Например: D:\Projects\myapp" style="flex:1;padding:10px 12px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;">
-                    <button onclick="document.getElementById('deployOutputDirInput').click()" title="Выбрать папку" style="width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
+                    <input type="text" id="deployOutputDir" readonly placeholder="Папка не выбрана" style="flex:1;padding:10px 12px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;cursor:pointer;" onclick="pickDeployDir('output')">
+                    <button onclick="pickDeployDir('output')" title="Выбрать папку для файла" style="width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
                 </div>
-                <input type="file" id="deployOutputDirInput" webkitdirectory directory multiple style="display:none;">
             </div>
             <div style="margin-top:10px;font-size:11px;color:#666;font-family:Inter,sans-serif;line-height:1.4;">Бэкап автоматически создаётся при успешной замене (предыдущий удаляется). Файл ошибок всегда сохраняется в обычные загрузки.</div>
             <div class="modal-actions" style="gap:12px;margin-top:16px;">
