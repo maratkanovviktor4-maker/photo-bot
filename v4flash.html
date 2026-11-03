@@ -4075,6 +4075,12 @@
                     _userHtml = _svgFluxIcon + _userHtml.substring(3);
                 } else if (_userHtml === '🎨') {
                     _userHtml = _svgFluxIcon;
+                } else {
+                    _userHtml = _userHtml.replace(/📎\s*([^\s<]+)/g, function(m, fname) {
+                        var _ext = fname.split('.').pop().toLowerCase();
+                        var _ic = FILE_ICON_MAP[_ext] || '📎';
+                        return _ic + ' ' + fname;
+                    });
                 }
             }
             var contentHtml = (msg.role === 'user') ? _userHtml : formatMessage(contentToShow);
