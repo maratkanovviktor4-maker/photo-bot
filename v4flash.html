@@ -2718,10 +2718,41 @@
             if (pinned.length && regular.length) {
                 html += '<div class="chat-section-divider"></div>';
             }
-            if (!pinned.length && regular.length) {
-                html += '<div class="chat-section-header"><span class="chat-section-title">Все чаты</span>' + _selectBtnHtml + '</div>';
+            var _groups = {
+                today: { label: 'Сегодня', items: [] },
+                yesterday: { label: 'Вчера', items: [] },
+                week: { label: '7 дней', items: [] },
+                month: { label: '30 дней', items: [] },
+                older: { label: 'Старые', items: [] }
+            };
+            var _now = new Date();
+            var _startToday = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate()).getTime();
+            var _startYesterday = _startToday - 86400000;
+            var _start7 = _startToday - 6 * 86400000;
+            var _start30 = _startToday - 29 * 86400000;
+            for (var ri = 0; ri < regular.length; ri++) {
+                var _c = regular[ri];
+                var _ts = _c.lastMessageTime || 0;
+                if (_ts >= _startToday) _groups.today.items.push(_c);
+                else if (_ts >= _startYesterday) _groups.yesterday.items.push(_c);
+                else if (_ts >= _start7) _groups.week.items.push(_c);
+                else if (_ts >= _start30) _groups.month.items.push(_c);
+                else _groups.older.items.push(_c);
             }
-            for (var ri = 0; ri < regular.length; ri++) html += _rowHtml(regular[ri], chatSelectionMode);
+            var _firstGroupShown = !!pinned.length;
+            var _btnUsed = false;
+            var _order = ['today', 'yesterday', 'week', 'month', 'older'];
+            for (var _gi = 0; _gi < _order.length; _gi++) {
+                var _g = _groups[_order[_gi]];
+                if (!_g.items.length) continue;
+                if (_firstGroupShown) {
+                    html += '<div class="chat-section-divider"></div>';
+                }
+                html += '<div class="chat-section-header"><span class="chat-section-title">' + _g.label + '</span>' + (_btnUsed ? '' : _selectBtnHtml) + '</div>';
+                _btnUsed = true;
+                _firstGroupShown = true;
+                for (var _ii = 0; _ii < _g.items.length; _ii++) html += _rowHtml(_g.items[_ii], chatSelectionMode);
+            }
             list.innerHTML = html;
         }
 
