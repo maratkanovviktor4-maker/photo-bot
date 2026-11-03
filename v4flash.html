@@ -8826,6 +8826,8 @@
                 return;
             }
             document.getElementById('deployFileName').style.display = 'none';
+            document.getElementById('deployBackupDir').value = localStorage.getItem('photobot_deploy_backup_dir') || '';
+            document.getElementById('deployOutputDir').value = localStorage.getItem('photobot_deploy_output_dir') || '';
             document.getElementById('deployConfirmBtn').disabled = true;
             document.getElementById('deployModal').classList.add('active');
         }
@@ -8852,16 +8854,96 @@
                 };
                 reader.readAsText(file, 'utf-8');
             }
+            if (e.target && e.target.id === 'deployBackupDirInput') {
+                var f = e.target.files[0];
+                if (!f) return;
+                var rel = f.webkitRelativePath || '';
+                var top = rel.split('/')[0] || '';
+                if (top) {
+                    document.getElementById('deployBackupDir').value = top;
+                    localStorage.setItem('photobot_deploy_backup_dir', top);
+                }
+                e.target.value = '';
+            }
+            if (e.target && e.target.id === 'deployOutputDirInput') {
+                var f2 = e.target.files[0];
+                if (!f2) return;
+                var rel2 = f2.webkitRelativePath || '';
+                var top2 = rel2.split('/')[0] || '';
+                if (top2) {
+                    document.getElementById('deployOutputDir').value = top2;
+                    localStorage.setItem('photobot_deploy_output_dir', top2);
+                }
+                e.target.value = '';
+            }
+        });
+
+        document.addEventListener('input', function(e) {
+            if (e.target && e.target.id === 'deployBackupDir') {
+                localStorage.setItem('photobot_deploy_backup_dir', e.target.value);
+            }
+            if (e.target && e.target.id === 'deployOutputDir') {
+                localStorage.setItem('photobot_deploy_output_dir', e.target.value);
+            }
         });
         document.addEventListener('click', function(e) {
             if (e.target && e.target.id === 'deployModal') closeDeployModal();
         });
+
+        function _stripCopySuffix(name) {
+            return name.replace(/(\.[^./\\]+)(?:\s*\(\d+\))+$/, '$1');
+        }
+
+        async function _downloadToWithBackup(url, fileName, backupDir, outputDir) {
+            var resp = await fetch(url);
+            if (!resp.ok) throw new Error('download failed');
+            var blob = await resp.blob();
+            var cleanName = _stripCopySuffix(fileName);
+
+            if (window.showSaveFilePicker) {
+                try {
+                    if (backupDir && cleanName) {
+                        try {
+                            var backupRoot = await window.showDirectoryPicker({ mode: 'readwrite' });
+                            var backupHandle = await backupRoot.getFileHandle(cleanName, { create: true });
+                            var backupWritable = await backupHandle.createWritable();
+                            await backupWritable.write(_deployFileContent);
+                            await backupWritable.close();
+                        } catch(e) {
+                            console.warn('backup save cancelled or failed', e);
+                        }
+                    }
+                    var outRoot = outputDir
+                        ? await window.showDirectoryPicker({ mode: 'readwrite' })
+                        : null;
+                    var pickerOpts = { suggestedName: cleanName, types: [{ description: 'Code', accept: { 'text/plain': ['.txt', '.py', '.js', '.html', '.css', '.json', '.md'] } }] };
+                    var handle = outRoot
+                        ? await outRoot.getFileHandle(cleanName, { create: true })
+                        : await window.showSaveFilePicker(pickerOpts);
+                    var writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return;
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return;
+                }
+            }
+
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = cleanName;
+            a.click();
+            setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
+        }
 
         async function confirmDeploy() {
             if (!_deployFileContent || !_deployEdits.length) return;
             var btn = document.getElementById('deployConfirmBtn');
             btn.disabled = true;
             btn.textContent = '...';
+
+            var backupDir = (document.getElementById('deployBackupDir').value || '').trim();
+            var outputDir = (document.getElementById('deployOutputDir').value || '').trim();
 
             var payload = {
                 user_id: currentUserId,
@@ -8881,9 +8963,15 @@
                 });
                 var data = await resp.json();
                 if (data.success) {
-                    window.location.href = SERVER_URL + data.file_url;
+                    await _downloadToWithBackup(SERVER_URL + data.file_url, data.filename || _deployFileName, backupDir, outputDir);
                 } else if (data.error_url) {
-                    window.location.href = SERVER_URL + data.error_url;
+                    var er = await fetch(SERVER_URL + data.error_url);
+                    var errBlob = await er.blob();
+                    var a2 = document.createElement('a');
+                    a2.href = URL.createObjectURL(errBlob);
+                    a2.download = 'deploy_error.txt';
+                    a2.click();
+                    setTimeout(function() { URL.revokeObjectURL(a2.href); }, 1000);
                 } else {
                     showAlertModal('Не удалось', 'Ошибка: ' + (data.error || 'unknown'), '❌');
                     var _okBtn13 = document.querySelector('#alertModalOverlay .modal-actions button');
@@ -10105,7 +10193,7 @@
         </div>
     </div>
     <div id="deployModal" class="modal-overlay">
-        <div class="modal-box" style="max-width:460px;">
+        <div class="modal-box" style="max-width:520px;">
             <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;">
                 <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
             </div>
@@ -10113,6 +10201,23 @@
             <input type="file" id="deployFileInput" style="display:none;">
             <button onclick="document.getElementById('deployFileInput').click()" style="width:100%;padding:14px;border-radius:12px;border:2px dashed rgba(255,255,255,0.15);background:transparent;color:#aaa;font-size:13px;font-family:Inter,sans-serif;cursor:pointer;">Выберите файл</button>
             <div id="deployFileName" style="font-size:12px;color:#00CBF5;margin-top:8px;font-family:Inter,sans-serif;display:none;"></div>
+            <div style="margin-top:14px;">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">ПАПКА ДЛЯ БЭКАПА</label>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <input type="text" id="deployBackupDir" placeholder="Например: D:\Projects\backup" style="flex:1;padding:10px 12px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;">
+                    <button onclick="document.getElementById('deployBackupDirInput').click()" title="Выбрать папку" style="width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
+                </div>
+                <input type="file" id="deployBackupDirInput" webkitdirectory directory multiple style="display:none;">
+            </div>
+            <div style="margin-top:14px;">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">ПАПКА ДЛЯ СКАЧИВАНИЯ ФАЙЛА КОДА</label>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <input type="text" id="deployOutputDir" placeholder="Например: D:\Projects\myapp" style="flex:1;padding:10px 12px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;">
+                    <button onclick="document.getElementById('deployOutputDirInput').click()" title="Выбрать папку" style="width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
+                </div>
+                <input type="file" id="deployOutputDirInput" webkitdirectory directory multiple style="display:none;">
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:#666;font-family:Inter,sans-serif;line-height:1.4;">Бэкап автоматически создаётся при успешной замене (предыдущий удаляется). Файл ошибок всегда сохраняется в обычные загрузки.</div>
             <div class="modal-actions" style="gap:12px;margin-top:16px;">
                 <button class="modal-btn-secondary" onclick="closeDeployModal()" style="flex:1;padding:12px;">Отмена</button>
                 <button id="deployConfirmBtn" class="modal-btn-primary" onclick="confirmDeploy()" style="flex:1;padding:12px;" disabled>Применить</button>
