@@ -4224,7 +4224,7 @@
                 var delBtn = document.getElementById('deleteSelectedBtn');
                 if (delBtn) {
                     delBtn.disabled = true;
-                    delBtn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(231,76,60,0.4);border-top-color:#e74c3c;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px;"></div> Удаляю 0/' + totalCount;
+                    delBtn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(231,76,60,0.4);border-top-color:#e74c3c;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px;"></div> Удаление...';
                     delBtn.style.cursor = 'not-allowed';
                     delBtn.style.opacity = '0.85';
                 }
@@ -4244,7 +4244,7 @@
                     (_loadingEl || document.body).appendChild(delIcon);
                 }
                 delIcon.style.display = 'flex';
-                delIcon.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(231,76,60,0.3);border-top-color:#e74c3c;border-radius:50%;animation:spin 0.8s linear infinite;"></div><span id="deleteProgressText">Удаление 0/' + totalCount + '</span>';
+                delIcon.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(231,76,60,0.3);border-top-color:#e74c3c;border-radius:50%;animation:spin 0.8s linear infinite;"></div><span id="deleteProgressText">Удаление ' + totalCount + ' сообщений</span>';
 
                 var done = 0;
                 var failed = 0;
@@ -4281,8 +4281,6 @@
                     var ids = chat.allBranches[currentBranchId].msg_ids || [];
                     chat.allBranches[currentBranchId].msg_ids = ids.filter(function(x) { return _batchIds.indexOf(x) === -1; });
                 }
-                var dt = document.getElementById('deleteProgressText');
-                if (dt) dt.textContent = 'Удаление ' + done + '/' + totalCount;
 
                 delIcon.style.display = 'none';
                 hideLoading();
