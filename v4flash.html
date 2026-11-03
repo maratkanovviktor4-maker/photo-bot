@@ -3076,13 +3076,20 @@
 
 
 
-        async function regenerateUserMessage(msgIndex, newText) {
+        async function regenerateUserMessage(msgIndex, newText, keptAttachments) {
             if (isSending) return;
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'user') return;
             if (!newText) return;
+            if (keptAttachments) {
+                msg.files_meta = keptAttachments.files_meta || null;
+                msg.image_b64 = keptAttachments.image_b64 || null;
+                msg.image_mime = keptAttachments.image_mime || null;
+                msg.extra_b64s = keptAttachments.extra_b64s || null;
+                msg.display_b64s = keptAttachments.display_b64s || null;
+            }
             (async function() {
                 isSending = true;
                 if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
@@ -3113,10 +3120,18 @@
                 assistantMsg._abortController = abortController;
 
                 try {
+                    var _sendBody = { user_id: currentUserId, model: 'flash', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText, web_search: webSearchEnabled };
+                    if (keptAttachments) {
+                        _sendBody.image_b64 = keptAttachments.image_b64 || '';
+                        _sendBody.image_mime = keptAttachments.image_mime || '';
+                        _sendBody.extra_b64s = keptAttachments.extra_b64s || [];
+                        _sendBody.display_b64s = keptAttachments.display_b64s || [];
+                        _sendBody.files_meta = keptAttachments.files_meta || [];
+                    }
                     var resp = await fetch(SERVER_URL + '/regenerate_user', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                        body: JSON.stringify({ user_id: currentUserId, model: 'flash', mode: localStorage.getItem('photobot_mode') || 'chat', chat_id: currentChatId, branch_id: currentBranchId, edit_msg_id: msg.msg_id, new_prompt: newText, web_search: webSearchEnabled }),
+                        body: JSON.stringify(_sendBody),
                         signal: abortController.signal
                     });
                     if (!resp.ok) {
@@ -3288,6 +3303,109 @@
             var _wrapperWidth = _isMobileEdit ? '100%' : '581px';
             wrapper.style.cssText = 'width:' + _wrapperWidth + ';flex-shrink:0;background:' + bgColor + ';border:2px solid ' + borderColor + ';border-radius:16px;overflow:hidden;box-sizing:border-box;';
             wrapper.classList.add('wrapper');
+
+            var _attachmentsBar = document.createElement('div');
+            _attachmentsBar.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 0 14px;';
+
+            var _attachCopy = {
+                files_meta: (msg.files_meta || []).slice(),
+                image_b64: msg.image_b64 || null,
+                image_mime: msg.image_mime || null,
+                extra_b64s: (msg.extra_b64s || []).slice(),
+                extra_file_ids: (msg.extra_file_ids || []).slice(),
+                display_b64s: (msg.display_b64s || msg.extra_b64s || []).slice()
+            };
+
+            function _renderAttachments() {
+                _attachmentsBar.innerHTML = '';
+                if (_attachCopy.image_b64) {
+                    var _imgCard = document.createElement('div');
+                    _imgCard.style.cssText = 'position:relative;display:inline-flex;align-items:center;justify-content:center;padding:6px;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:12px;';
+                    _imgCard.innerHTML = '<img src="data:' + _attachCopy.image_mime + ';base64,' + _attachCopy.image_b64 + '" style="max-width:100px;max-height:70px;border-radius:6px;object-fit:contain;display:block;">';
+                    var _imgX = document.createElement('button');
+                    _imgX.innerHTML = '✕';
+                    _imgX.title = 'Удалить';
+                    _imgX.style.cssText = 'position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#e74c3c;border:none;color:#fff;cursor:pointer;font-size:11px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center;';
+                    _imgX.onclick = function(ev) {
+                        ev.stopPropagation();
+                        fetch(SERVER_URL + '/delete_msg_attachments', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                            body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, msg_id: msg.msg_id, kind: 'image_main' })
+                        }).catch(function(){});
+                        _attachCopy.image_b64 = null;
+                        msg.image_b64 = null;
+                        msg.image_mime = null;
+                        msg.image_file_id = null;
+                        _renderAttachments();
+                    };
+                    _imgCard.appendChild(_imgX);
+                    _attachmentsBar.appendChild(_imgCard);
+                }
+                for (var _ai = 0; _ai < _attachCopy.display_b64s.length; _ai++) {
+                    (function(idx) {
+                        var _eb = _attachCopy.display_b64s[idx];
+                        var _em = _eb[1] || 'image/jpeg';
+                        var _ed = _eb[0];
+                        var _card = document.createElement('div');
+                        _card.style.cssText = 'position:relative;display:inline-flex;align-items:center;justify-content:center;padding:6px;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:12px;';
+                        _card.innerHTML = '<img src="data:' + _em + ';base64,' + _ed + '" style="max-width:100px;max-height:70px;border-radius:6px;object-fit:contain;display:block;">';
+                        var _x = document.createElement('button');
+                        _x.innerHTML = '✕';
+                        _x.title = 'Удалить';
+                        _x.style.cssText = 'position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#e74c3c;border:none;color:#fff;cursor:pointer;font-size:11px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center;';
+                        _x.onclick = function(ev) {
+                            ev.stopPropagation();
+                            fetch(SERVER_URL + '/delete_msg_attachments', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, msg_id: msg.msg_id, kind: 'extra', index: idx })
+                            }).catch(function(){});
+                            _attachCopy.display_b64s.splice(idx, 1);
+                            _attachCopy.extra_b64s.splice(idx, 1);
+                            msg.display_b64s = _attachCopy.display_b64s.slice();
+                            msg.extra_b64s = _attachCopy.extra_b64s.slice();
+                            _renderAttachments();
+                        };
+                        _card.appendChild(_x);
+                        _attachmentsBar.appendChild(_card);
+                    })(_ai);
+                }
+                for (var _fi = 0; _fi < _attachCopy.files_meta.length; _fi++) {
+                    (function(idx) {
+                        var _fm = _attachCopy.files_meta[idx];
+                        var _card = document.createElement('div');
+                        _card.style.cssText = 'position:relative;display:inline-flex;align-items:center;gap:10px;padding:8px 12px;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:12px;max-width:220px;box-sizing:border-box;';
+                        var _fcIcon = FILE_ICON_MAP[_fm.ext] || '📎';
+                        var _size = _fm.size < 1024 ? _fm.size + ' B' : (_fm.size < 1048576 ? (_fm.size / 1024).toFixed(2) + 'KB' : (_fm.size / 1048576).toFixed(2) + 'MB');
+                        _card.innerHTML = '<span style="flex-shrink:0;display:inline-flex;">' + _fcIcon + '</span><span style="display:flex;flex-direction:column;min-width:0;"><span style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(_fm.name) + '</span><span style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (_fm.ext || '').toUpperCase() + ' ' + _size + '</span></span>';
+                        var _x = document.createElement('button');
+                        _x.innerHTML = '✕';
+                        _x.title = 'Удалить';
+                        _x.style.cssText = 'position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#e74c3c;border:none;color:#fff;cursor:pointer;font-size:11px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center;';
+                        _x.onclick = function(ev) {
+                            ev.stopPropagation();
+                            fetch(SERVER_URL + '/delete_msg_attachments', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, msg_id: msg.msg_id, kind: 'file', index: idx })
+                            }).catch(function(){});
+                            _attachCopy.files_meta.splice(idx, 1);
+                            msg.files_meta = _attachCopy.files_meta.slice();
+                            _renderAttachments();
+                        };
+                        _card.appendChild(_x);
+                        _attachmentsBar.appendChild(_card);
+                    })(_fi);
+                }
+                if (_attachCopy.image_b64 || _attachCopy.display_b64s.length || _attachCopy.files_meta.length) {
+                    _attachmentsBar.style.display = 'flex';
+                } else {
+                    _attachmentsBar.style.display = 'none';
+                }
+            }
+            _renderAttachments();
+
             var textarea = document.createElement('textarea');
             textarea.value = originalContent;
             textarea.select();
@@ -3368,12 +3486,20 @@
                 row._editing = false;
                 autoScroll = true;
                 scrollToBottom();
-                regenerateUserMessage(index, newText);
+                var _keptAttachments = {
+                    files_meta: _attachCopy.files_meta,
+                    image_b64: _attachCopy.image_b64,
+                    image_mime: _attachCopy.image_mime,
+                    extra_b64s: _attachCopy.extra_b64s,
+                    display_b64s: _attachCopy.display_b64s
+                };
+                regenerateUserMessage(index, newText, _keptAttachments);
             };
             
             toolbar.appendChild(excessLabel);
             toolbar.appendChild(cancelBtn);
             toolbar.appendChild(saveBtn);
+            wrapper.appendChild(_attachmentsBar);
             wrapper.appendChild(textarea);
             wrapper.appendChild(toolbar);
             
