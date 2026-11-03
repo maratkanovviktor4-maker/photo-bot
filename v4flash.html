@@ -2603,9 +2603,13 @@
                     var data = await resp.json();
                     await navigator.clipboard.writeText(data.share_url);
                     showAlertModal('Ссылка создана', 'Ссылка скопирована в буфер обмена:\n' + data.share_url, '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg>');
+                    var _okBtn5 = document.querySelector('#alertModalOverlay .modal-actions button');
+                    if (_okBtn5) _okBtn5.setAttribute('data-skip-reload', '1');
 
                 } else {
                     showAlertModal('Ошибка', 'Не удалось создать ссылку для публикации.', '\u274C');
+                    var _okBtn8 = document.querySelector('#alertModalOverlay .modal-actions button');
+                    if (_okBtn8) _okBtn8.setAttribute('data-skip-reload', '1');
                 }
             } catch(e) { console.error('shareChat error:', e); }
         }
@@ -4893,6 +4897,8 @@
             } catch (e) {
                 console.error('grabAllGenerations error:', e);
                 showAlertModal('Ошибка', 'Не удалось скачать', '❌');
+                var _okBtn9 = document.querySelector('#alertModalOverlay .modal-actions button');
+                if (_okBtn9) _okBtn9.setAttribute('data-skip-reload', '1');
             }
         }
 
@@ -4929,12 +4935,16 @@
                 var histResp = await fetch(SERVER_URL + '/history?user_id=' + currentUserId + '&session_token=' + sessionToken);
                 if (!histResp.ok) {
                     showAlertModal('Ошибка', 'Не удалось получить список файлов', '❌');
+                    var _okBtn12 = document.querySelector('#alertModalOverlay .modal-actions button');
+                    if (_okBtn12) _okBtn12.setAttribute('data-skip-reload', '1');
                     return;
                 }
                 var histData = await histResp.json();
                 var files = histData.files || [];
                 if (!files.length) {
                     showAlertModal('Нет готовых изображений', 'Сначала сгенерируйте изображение через Flux 2.', '🖼');
+                    var _okBtn3 = document.querySelector('#alertModalOverlay .modal-actions button');
+                    if (_okBtn3) _okBtn3.setAttribute('data-skip-reload', '1');
                     return;
                 }
 
@@ -4943,6 +4953,8 @@
                     var fileResp = await fetch(SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(fname) + '&session_token=' + sessionToken);
                     if (!fileResp.ok) {
                         showAlertModal('Ошибка', 'Не удалось скачать файл', '❌');
+                        var _okBtn11 = document.querySelector('#alertModalOverlay .modal-actions button');
+                        if (_okBtn11) _okBtn11.setAttribute('data-skip-reload', '1');
                         return;
                     }
                     var blob = await fileResp.blob();
@@ -4990,6 +5002,8 @@
             } catch (e) {
                 console.error('grabReadyImage error:', e);
                 showAlertModal('Ошибка', 'Не удалось скачать изображение', '❌');
+                var _okBtn10 = document.querySelector('#alertModalOverlay .modal-actions button');
+                if (_okBtn10) _okBtn10.setAttribute('data-skip-reload', '1');
             }
         }
 
@@ -5822,6 +5836,8 @@
             }
             if (select.options.length === 0) {
                 showAlertModal('Перенос истории', 'Нет других веток для переноса.', '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:24px;height:24px;"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>');
+                var _okBtn6 = document.querySelector('#alertModalOverlay .modal-actions button');
+                if (_okBtn6) _okBtn6.setAttribute('data-skip-reload', '1');
                 return;
             }
             document.getElementById('copyHistoryModal').style.display = 'flex';
@@ -5863,6 +5879,8 @@
                     if (main) { main.scrollTop = main.scrollHeight; }
                 } else {
                     showAlertModal('Ошибка переноса', data.error || 'Неизвестная ошибка', '\u274C');
+                    var _okBtn7 = document.querySelector('#alertModalOverlay .modal-actions button');
+                    if (_okBtn7) _okBtn7.setAttribute('data-skip-reload', '1');
                 }
             } catch (e) {
                 console.error('copyHistory error:', e);
@@ -8551,6 +8569,8 @@
             _deployFileName = '';
             if (_deployEdits.length === 0) {
                 showAlertModal('Нечего деплоить', 'В сообщении не найдено пар «Найди:» / «Замени на:».', '⚠️');
+                var _okBtn4 = document.querySelector('#alertModalOverlay .modal-actions button');
+                if (_okBtn4) _okBtn4.setAttribute('data-skip-reload', '1');
                 return;
             }
             document.getElementById('deployFileName').style.display = 'none';
@@ -8614,9 +8634,13 @@
                     window.location.href = SERVER_URL + data.error_url;
                 } else {
                     showAlertModal('Не удалось', 'Ошибка: ' + (data.error || 'unknown'), '❌');
+                    var _okBtn13 = document.querySelector('#alertModalOverlay .modal-actions button');
+                    if (_okBtn13) _okBtn13.setAttribute('data-skip-reload', '1');
                 }
             } catch (e) {
                 showAlertModal('Не удалось', 'Ошибка соединения', '❌');
+                var _okBtn14 = document.querySelector('#alertModalOverlay .modal-actions button');
+                if (_okBtn14) _okBtn14.setAttribute('data-skip-reload', '1');
             }
         }        
 
