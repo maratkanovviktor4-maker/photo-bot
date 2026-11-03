@@ -3328,15 +3328,9 @@
                     _imgX.style.cssText = 'position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#e74c3c;border:none;color:#fff;cursor:pointer;font-size:11px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center;';
                     _imgX.onclick = function(ev) {
                         ev.stopPropagation();
-                        fetch(SERVER_URL + '/delete_msg_attachments', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                            body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, msg_id: msg.msg_id, kind: 'image_main' })
-                        }).catch(function(){});
                         _attachCopy.image_b64 = null;
-                        msg.image_b64 = null;
-                        msg.image_mime = null;
-                        msg.image_file_id = null;
+                        _attachCopy.image_mime = null;
+                        _attachCopy.removed_main_image = true;
                         _renderAttachments();
                     };
                     _imgCard.appendChild(_imgX);
@@ -3356,15 +3350,8 @@
                         _x.style.cssText = 'position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#e74c3c;border:none;color:#fff;cursor:pointer;font-size:11px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center;';
                         _x.onclick = function(ev) {
                             ev.stopPropagation();
-                            fetch(SERVER_URL + '/delete_msg_attachments', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, msg_id: msg.msg_id, kind: 'extra', index: idx })
-                            }).catch(function(){});
                             _attachCopy.display_b64s.splice(idx, 1);
                             _attachCopy.extra_b64s.splice(idx, 1);
-                            msg.display_b64s = _attachCopy.display_b64s.slice();
-                            msg.extra_b64s = _attachCopy.extra_b64s.slice();
                             _renderAttachments();
                         };
                         _card.appendChild(_x);
@@ -3385,13 +3372,7 @@
                         _x.style.cssText = 'position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#e74c3c;border:none;color:#fff;cursor:pointer;font-size:11px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center;';
                         _x.onclick = function(ev) {
                             ev.stopPropagation();
-                            fetch(SERVER_URL + '/delete_msg_attachments', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, msg_id: msg.msg_id, kind: 'file', index: idx })
-                            }).catch(function(){});
                             _attachCopy.files_meta.splice(idx, 1);
-                            msg.files_meta = _attachCopy.files_meta.slice();
                             _renderAttachments();
                         };
                         _card.appendChild(_x);
@@ -3491,8 +3472,19 @@
                     image_b64: _attachCopy.image_b64,
                     image_mime: _attachCopy.image_mime,
                     extra_b64s: _attachCopy.display_b64s.slice(),
-                    display_b64s: _attachCopy.display_b64s.slice()
+                    display_b64s: _attachCopy.display_b64s.slice(),
+                    removed_main_image: !!_attachCopy.removed_main_image
                 };
+                var _chatRef = chats.find(function(c) { return c.id === currentChatId; });
+                if (_chatRef && _chatRef.messages[index]) {
+                    _chatRef.messages[index].files_meta = _attachCopy.files_meta.slice();
+                    if (_attachCopy.removed_main_image) {
+                        _chatRef.messages[index].image_b64 = null;
+                        _chatRef.messages[index].image_mime = null;
+                    }
+                    _chatRef.messages[index].display_b64s = _attachCopy.display_b64s.slice();
+                    _chatRef.messages[index].extra_b64s = _attachCopy.display_b64s.slice();
+                }
                 regenerateUserMessage(index, newText, _keptAttachments);
             };
             
