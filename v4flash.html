@@ -3490,8 +3490,8 @@
                     files_meta: _attachCopy.files_meta,
                     image_b64: _attachCopy.image_b64,
                     image_mime: _attachCopy.image_mime,
-                    extra_b64s: _attachCopy.extra_b64s,
-                    display_b64s: _attachCopy.display_b64s
+                    extra_b64s: _attachCopy.display_b64s.slice(),
+                    display_b64s: _attachCopy.display_b64s.slice()
                 };
                 regenerateUserMessage(index, newText, _keptAttachments);
             };
@@ -4230,7 +4230,7 @@
                 var _aceLabel = 'Ace Step 1.5' + (msg._ace_meta.key ? ' · ' + msg._ace_meta.key : '') + (msg._ace_meta.bpm ? ' · ' + msg._ace_meta.bpm + ' BPM' : '') + (msg._ace_meta.duration ? ' · ' + msg._ace_meta.duration + 'с' : '');
                 contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 12px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.25);border-radius:12px;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:6px;">🎤 ' + _aceLabel + '</div><audio controls preload="metadata" src="' + _aceUrl + '" style="width:100%;max-width:360px;display:block;"></audio></div>' + contentHtml;
             }
-            if (msg.role === 'user' && (msg.image_b64 || (msg.extra_b64s && msg.extra_b64s.length) || (msg.files_meta && msg.files_meta.length))) {
+            if (msg.role === 'user' && (msg.image_b64 || (msg.extra_b64s && msg.extra_b64s.length) || (msg.display_b64s && msg.display_b64s.length) || (msg.files_meta && msg.files_meta.length))) {
                 var _allImgs = '';
                 if (msg.image_b64) {
                     var _imgMime = msg.image_mime || 'image/jpeg';
