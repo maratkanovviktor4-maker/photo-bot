@@ -3305,23 +3305,6 @@
             var contentDiv = row.querySelector('.message-content');
             var _origContentDisplay = contentDiv.style.display;
             contentDiv.style.display = 'none';
-            var _imgsBlock = row.querySelector('.message-row.user > div > div:first-child') || row.querySelector('div > div > div:first-child');
-            var _imgsBlockEl = null;
-            var _rowDirectChildren = row.querySelectorAll('div > div');
-            for (var _rci = 0; _rci < _rowDirectChildren.length; _rci++) {
-                var _ch = _rowDirectChildren[_rci];
-                if (_ch.querySelector && _ch.querySelector('img') && _ch !== contentDiv) {
-                    var _hasOnlyImgs = true;
-                    var _allKids = _ch.querySelectorAll('*');
-                    for (var _ki = 0; _ki < _allKids.length; _ki++) {
-                        var _kn = _allKids[_ki].tagName;
-                        if (_kn === 'IMG' || _kn === 'DIV' || _kn === 'SPAN') continue;
-                    }
-                    _imgsBlockEl = _ch;
-                    break;
-                }
-            }
-            if (_imgsBlockEl) _imgsBlockEl.style.display = 'none';
             
             var isLight = document.body.classList.contains('light');
             var customBg = localStorage.getItem('photobot_chat_bg') || '';
@@ -3493,7 +3476,6 @@
             cancelBtn.onclick = function() {
                 if (actionsDiv) actionsDiv.style.display = '';
                 contentDiv.style.display = _origContentDisplay;
-                if (_imgsBlockEl) _imgsBlockEl.style.display = '';
                 wrapper.remove();
                 row._editing = false;
             };
