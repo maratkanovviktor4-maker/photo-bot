@@ -4843,6 +4843,8 @@
                 var all = imgFiles.concat(audioFiles).concat(aceFiles);
                 if (!all.length) {
                     showAlertModal('Нет готовых генераций', 'Сначала сгенерируйте изображение или аудио.', '📭');
+                    var _okBtn = document.querySelector('#alertModalOverlay .modal-actions button');
+                    if (_okBtn) _okBtn.setAttribute('data-skip-reload', '1');
                     return;
                 }
 
@@ -8973,12 +8975,15 @@
             document.getElementById('alertModalOverlay').classList.add('active');
         }
 
-	function closeAlertModal() {
+        function closeAlertModal() {
+   	    var _okBtn = document.querySelector('#alertModalOverlay .modal-actions button');
+   	    var _skipReload = _okBtn && _okBtn.getAttribute('data-skip-reload') === '1';
+   	    if (_okBtn) _okBtn.removeAttribute('data-skip-reload');
    	    document.getElementById('alertModalOverlay').classList.remove('active');
     	    isSending = false;
     	    activeStreamId = null;
     	    sendBtnArrow();
-    	    loadChatsFromServer();
+    	    if (!_skipReload) loadChatsFromServer();
 	}
 
 
