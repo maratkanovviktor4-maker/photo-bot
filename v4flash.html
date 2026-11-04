@@ -6021,7 +6021,12 @@
             var _fcIcon = FILE_ICON_MAP[fc.ext] || '📎';
             var _fcSize = fc.size < 1024 ? fc.size + ' B' : (fc.size < 1048576 ? (fc.size / 1024).toFixed(2) + 'KB' : (fc.size / 1048576).toFixed(2) + 'MB');
             var _fcExt = (fc.ext || '').toUpperCase();
-            return '<div style="display:inline-flex;align-items:center;gap:10px;padding:10px 14px;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:14px;margin-bottom:6px;max-width:100%;box-sizing:border-box;"><span style="flex-shrink:0;display:inline-flex;">' + _fcIcon + '</span><span style="display:flex;flex-direction:column;min-width:0;"><span style="font-size:15px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(fc.name) + '</span><span style="font-size:12px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(_fcExt) + ' ' + _fcSize + '</span></span></div>';
+            var _isLight = document.body.classList.contains('light');
+            var _bg = _isLight ? '#ffffff' : '#2c2c2e';
+            var _border = _isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)';
+            var _nameColor = _isLight ? '#111' : '#fff';
+            var _sizeColor = _isLight ? '#888' : '#888';
+            return '<div style="display:inline-flex;align-items:center;gap:10px;padding:10px 14px;background:' + _bg + ';border:1px solid ' + _border + ';border-radius:14px;margin-bottom:6px;max-width:100%;box-sizing:border-box;"><span style="flex-shrink:0;display:inline-flex;">' + _fcIcon + '</span><span style="display:flex;flex-direction:column;min-width:0;"><span style="font-size:15px;font-weight:700;color:' + _nameColor + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(fc.name) + '</span><span style="font-size:12px;color:' + _sizeColor + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(_fcExt) + ' ' + _fcSize + '</span></span></div>';
         }
 
         function renderUserContentWithFiles(escapedHtml, filesMeta) {
