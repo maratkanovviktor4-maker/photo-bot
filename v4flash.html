@@ -4644,7 +4644,7 @@
             }
             var _hasVisibleContent = (reasoningHtml && reasoningHtml.trim()) || (contentHtml && contentHtml.trim()) || msg._streaming;
             var _contentBlock = _hasVisibleContent ? ('<div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div>') : ('<div class="message-content" id="stream-' + index + '" style="display:none;"></div>');
-            var _isAutodeploy = !!msg._autodeploy;
+            var _isAutodeploy = !!msg._autodeploy || (_autoDeployEnabled && msg.role === 'assistant' && msg.finished && parseEditPairs(msg.content || '').length > 0);
             var _autodeployStyle = '' ;
             var _autodeployRowClass = _isAutodeploy ? ' autodeploy-row' : '';
             return '<div class="message-row ' + msg.role + _autodeployRowClass + '" data-msg-index="' + index + '"><div>' + _filesOuterBlock + _contentBlock + '<div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
