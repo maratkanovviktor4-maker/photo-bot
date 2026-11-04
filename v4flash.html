@@ -7687,6 +7687,9 @@
                 if (finalMeta) {
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
                     chat.messages[chat.messages.length - 2].msg_id = finalMeta.user_msg_id;
+                    if (window._markAutodeploy) {
+                        window._markAutodeploy(finalMeta.assistant_msg_id, finalMeta.user_msg_id);
+                    }
                 }
                 if (fluxModeEnabled) {
                     fluxModeEnabled = false;
@@ -9228,16 +9231,23 @@
                     }
 
                     _autoDeployInFlight = false;
-                    msg._autodeploy = true;
+                    var _targetMsgId = msg.msg_id;
+                    var _chatRef = chat;
+                    window._markAutodeploy = function(_mid, _userId) {
+                        var _c = chats.find(function(c) { return c.id === _chatRef.id; });
+                        if (!_c) return;
+                        for (var _i = 0; _i < _c.messages.length; _i++) {
+                            if (_c.messages[_i].msg_id === _mid) _c.messages[_i]._autodeploy = true;
+                            if (_userId && _c.messages[_i].msg_id === _userId) _c.messages[_i]._autodeploy = true;
+                        }
+                        renderMessages();
+                    };
+                    if (_targetMsgId) window._markAutodeploy(_targetMsgId, null);
                     renderMessages();
                     var _input = document.getElementById('userInput');
                     _input.value = 'Применил, фиксируй состояние кода, далее.';
                     _input.dispatchEvent(new Event('input'));
                     sendMessage();
-                    setTimeout(function() {
-                        var _last = chat.messages[chat.messages.length - 1];
-                        if (_last && _last.role === 'user') _last._autodeploy = true;
-                    }, 100);
                     return;
                 }
 
