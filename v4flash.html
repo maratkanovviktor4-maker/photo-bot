@@ -4441,76 +4441,6 @@
                 }
             });
         }        
-        function renderAutodeployGroup(startIdx, endIdx, msgs) {
-            var count = endIdx - startIdx;
-            var lastMsg = msgs[endIdx - 1];
-            var needsReply = false;
-            if (lastMsg && lastMsg.role === 'assistant' && !lastMsg._streaming && lastMsg.finished) {
-                var pairs = parseEditPairs(lastMsg.content || '');
-                var hasMarker = (lastMsg.content || '').indexOf('[ПРАВКИ ОКОНЧЕНЫ]') !== -1;
-                if (!pairs.length && !hasMarker) needsReply = true;
-            }
-            var groupKey = 'grp_' + startIdx;
-            var collapsed;
-            if (needsReply) {
-                collapsed = false;
-            } else {
-                var _savedMsgId = null;
-                for (var _si = startIdx; _si < endIdx; _si++) {
-                    if (msgs[_si] && msgs[_si].msg_id) { _savedMsgId = msgs[_si].msg_id; break; }
-                }
-                var _stored = _savedMsgId ? localStorage.getItem('autodeploy_collapsed:' + _savedMsgId) : null;
-                if (_savedMsgId && _stored !== null) {
-                    collapsed = _stored === '1';
-                } else if (msgs[startIdx] && msgs[startIdx]._autodeployCollapsed !== undefined) {
-                    collapsed = msgs[startIdx]._autodeployCollapsed;
-                } else {
-                    collapsed = true;
-                }
-            }
-            var inner = '';
-            for (var i = startIdx; i < endIdx; i++) {
-                inner += buildMessageHtml(i, msgs[i]);
-            }
-            var label = '🔁 Автодеплой: ' + count + ' сообщ.';
-            if (needsReply) label = '⚠ Автодеплой: требуется ваш ответ';
-            var headerStyle = needsReply
-                ? 'display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.3);border-radius:12px;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;font-weight:600;color:#FFA500;margin-bottom:6px;'
-                : 'display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.2);border-radius:12px;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;font-weight:600;color:#00CBF5;margin-bottom:6px;';
-            var bodyStyle = collapsed ? 'display:none;' : '';
-            var toggleIcon = collapsed ? '▼' : '▲';
-            return '<div class="autodeploy-group" data-grp-start="' + startIdx + '" data-grp-end="' + endIdx + '">' +
-                '<div class="autodeploy-header" style="' + headerStyle + '" onclick="toggleAutodeployGroup(this)"><span>' + label + '</span><span style="margin-left:auto;">' + toggleIcon + '</span></div>' +
-                '<div class="autodeploy-body" style="' + bodyStyle + '">' + inner + '</div>' +
-                '</div>';
-        }
-
-        function toggleAutodeployGroup(headerEl) {
-            var group = headerEl.closest('.autodeploy-group');
-            if (!group) return;
-            var body = group.querySelector('.autodeploy-body');
-            if (!body) return;
-            var willCollapse = body.style.display !== 'none';
-            body.style.display = willCollapse ? 'none' : 'block';
-            headerEl.querySelector('span:last-child').textContent = willCollapse ? '▼' : '▲';
-            var startIdx = parseInt(group.getAttribute('data-grp-start'));
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return;
-            var _savedMsgId = null;
-            for (var i = startIdx; i < chat.messages.length; i++) {
-                if (chat.messages[i] && chat.messages[i]._autodeploy && chat.messages[i].msg_id) {
-                    _savedMsgId = chat.messages[i].msg_id;
-                    break;
-                }
-            }
-            if (chat.messages[startIdx]) {
-                chat.messages[startIdx]._autodeployCollapsed = willCollapse;
-            }
-            if (_savedMsgId) {
-                localStorage.setItem('autodeploy_collapsed:' + _savedMsgId, willCollapse ? '1' : '0');
-            }
-        }
-
         function buildMessageHtml(index, msg) {
             if (!msg) return '';
             if (msg.role === 'system') {
@@ -4796,17 +4726,8 @@
             var start = Math.max(0, total - RENDER_BATCH_SIZE);
             renderedCount = total - start;
             var html = '';
-            var _i = start;
-            while (_i < total) {
-                if (chat.messages[_i] && chat.messages[_i]._autodeploy) {
-                    var _j = _i;
-                    while (_j < total && chat.messages[_j] && chat.messages[_j]._autodeploy) _j++;
-                    html += renderAutodeployGroup(_i, _j, chat.messages);
-                    _i = _j;
-                } else {
-                    html += buildMessageHtml(_i, chat.messages[_i]);
-                    _i++;
-                }
+            for (var i = start; i < total; i++) {
+                html += buildMessageHtml(i, chat.messages[i]);
             }
             area.innerHTML = html;
             renderMathInChat(area);
@@ -4857,17 +4778,8 @@
             renderedCount = total - start;
             
             var html = '';
-            var _i = start;
-            while (_i < total) {
-                if (chat.messages[_i] && chat.messages[_i]._autodeploy) {
-                    var _j = _i;
-                    while (_j < total && chat.messages[_j] && chat.messages[_j]._autodeploy) _j++;
-                    html += renderAutodeployGroup(_i, _j, chat.messages);
-                    _i = _j;
-                } else {
-                    html += buildMessageHtml(_i, chat.messages[_i]);
-                    _i++;
-                }
+            for (var i = start; i < total; i++) {
+                html += buildMessageHtml(i, chat.messages[i]);
             }
             area.innerHTML = html;
             renderMathInChat(area);            
@@ -7406,7 +7318,6 @@
         async function sendMessage(overrideChatId, overrideBranchId, previewFile) {
             if (selectionMode) toggleSelectionMode();
 
-            console.log('[SEND] called, isSending=', isSending);
             if (isSending) return;
             const input = document.getElementById('userInput');
             const text = input.value.trim();
@@ -7497,10 +7408,6 @@
                 files_meta: _filesMeta.length ? _filesMeta : null
             });
             var _pushedUserMsgIndex = chat.messages.length - 1;
-            if (window._pendingAutoDeployMsg) {
-                chat.messages[_pushedUserMsgIndex]._autodeploy = true;
-                window._pendingAutoDeployMsg = false;
-            }
             playSound('send');
             var _isActiveChat = (_targetChatId === currentChatId);
             if (_isActiveChat) {
@@ -7569,9 +7476,6 @@
                 }
             }
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _fluxPlaceholder: fluxModeEnabled, _pdfReading: _hasPdfAttach };
-            if (_pushedUserMsgIndex >= 0 && chat.messages[_pushedUserMsgIndex] && chat.messages[_pushedUserMsgIndex]._autodeploy) {
-                assistantMsg._autodeploy = true;
-            }
             chat.messages.push(assistantMsg);
             const msgIndex = chat.messages.length - 1;
             const streamId = 'stream_' + msgIndex;
@@ -7831,7 +7735,6 @@
                     }
                 }
                 setTimeout(function() {
-                    console.log('[AUTODEPLOY] hook', 'len=', chat.messages.length, 'finished=', assistantMsg.finished, 'streaming=', assistantMsg._streaming);
                     _autoDeployAfterAssistant(chat.messages.length - 1);
                 }, 500);
             } catch (e) {
@@ -9194,7 +9097,6 @@
         }        
 
         var _autoDeployInFlight = false;
-        var _pendingAutoDeployMsg = false;
 
         async function _autoDeployAfterAssistant(msgIndex) {
             if (_autoDeployInFlight) return;
@@ -9203,11 +9105,6 @@
             if (!chat) return;
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'assistant') return;
-            if (msg._streaming || !msg.finished) return;
-
-            if (_autoDeployLoopCount > 0) {
-                msg._autodeploy = true;
-            }
 
             if ((msg.content || '').indexOf('[ПРАВКИ ОКОНЧЕНЫ]') !== -1) {
                 _autoDeployLoopCount = 0;
@@ -9331,8 +9228,6 @@
                     }
 
                     _autoDeployInFlight = false;
-                    window._pendingAutoDeployMsg = true;
-                    isSending = false;
                     var _input = document.getElementById('userInput');
                     _input.value = 'Применил, фиксируй состояние кода, далее.';
                     _input.dispatchEvent(new Event('input'));
@@ -9366,8 +9261,6 @@
                     });
 
                     _autoDeployInFlight = false;
-                    window._pendingAutoDeployMsg = true;
-                    isSending = false;
                     var _input2 = document.getElementById('userInput');
                     _input2.value = 'Деплой не удался. Разберись по логу ошибок и перевыдай правку заново.';
                     _input2.dispatchEvent(new Event('input'));
