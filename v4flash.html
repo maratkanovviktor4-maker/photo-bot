@@ -4443,56 +4443,34 @@
         }        
         function renderAutodeployGroup(startIdx, endIdx, msgs) {
             var count = endIdx - startIdx;
-            var lastMsg = msgs[endIdx - 1];
-            var needsReply = false;
-            if (lastMsg && lastMsg.role === 'assistant') {
-                var pairs = parseEditPairs(lastMsg.content || '');
-                var hasMarker = (lastMsg.content || '').indexOf('[ПРАВКИ ОКОНЧЕНЫ]') !== -1;
-                if (!pairs.length && !hasMarker) needsReply = true;
+            var _savedMsgId = null;
+            for (var _si = startIdx; _si < endIdx; _si++) {
+                if (msgs[_si] && msgs[_si].msg_id) { _savedMsgId = msgs[_si].msg_id; break; }
             }
-            var groupKey = 'grp_' + startIdx;
             var collapsed;
-            if (needsReply) {
-                collapsed = false;
+            var _stored = _savedMsgId ? localStorage.getItem('autodeploy_collapsed:' + _savedMsgId) : null;
+            if (_savedMsgId && _stored !== null) {
+                collapsed = _stored === '1';
+            } else if (msgs[startIdx] && msgs[startIdx]._autodeployCollapsed !== undefined) {
+                collapsed = msgs[startIdx]._autodeployCollapsed;
             } else {
-                var _savedMsgId = null;
-                for (var _si = startIdx; _si < endIdx; _si++) {
-                    if (msgs[_si] && msgs[_si].msg_id) { _savedMsgId = msgs[_si].msg_id; break; }
-                }
-                var _stored = _savedMsgId ? localStorage.getItem('autodeploy_collapsed:' + _savedMsgId) : null;
-                if (_savedMsgId && _stored !== null) {
-                    collapsed = _stored === '1';
-                } else if (msgs[startIdx] && msgs[startIdx]._autodeployCollapsed !== undefined) {
-                    collapsed = msgs[startIdx]._autodeployCollapsed;
-                } else {
-                    collapsed = true;
-                }
+                collapsed = true;
             }
             var inner = '';
             for (var i = startIdx; i < endIdx; i++) {
                 inner += buildMessageHtml(i, msgs[i]);
             }
-            var label = '🔁 Автодеплой: ' + count + ' сообщ.';
-            if (needsReply) label = '⚠ Автодеплой: требуется ваш ответ';
-            var headerStyle = needsReply
-                ? 'display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.3);border-radius:12px;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;font-weight:600;color:#FFA500;margin-bottom:6px;'
-                : 'display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.2);border-radius:12px;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;font-weight:600;color:#00CBF5;margin-bottom:6px;';
-            var bodyStyle = collapsed ? 'display:none;' : '';
-            var toggleIcon = collapsed ? '▼' : '▲';
-            return '<div class="autodeploy-group" data-grp-start="' + startIdx + '" data-grp-end="' + endIdx + '">' +
-                '<div class="autodeploy-header" style="' + headerStyle + '" onclick="toggleAutodeployGroup(this)"><span>' + label + '</span><span style="margin-left:auto;">' + toggleIcon + '</span></div>' +
-                '<div class="autodeploy-body" style="' + bodyStyle + '">' + inner + '</div>' +
+            return '<div class="reasoning-block autodeploy-group' + (collapsed ? ' collapsed' : '') + '" data-grp-start="' + startIdx + '" data-grp-end="' + endIdx + '">' +
+                '<div class="reasoning-header"><svg fill="#00CBF5" viewBox="-3 -3 24 24" preserveAspectRatio="xMinYMin" width="18" height="18" style="vertical-align:middle;flex-shrink:0;"><path d="M.694 17.306c-1.91-1.912.258-7.18 4.845-11.767S15.394-1.217 17.306.694c1.91 1.912-.258 7.18-4.845 11.767S2.606 19.217.694 17.306zM2.08 15.92c.815.816 5.102-.95 8.997-4.845 3.895-3.895 5.66-8.182 4.845-8.997-.815-.816-5.102.95-8.997 4.845-3.895 3.895-5.66 8.182-4.845 8.997zm3.46-3.46C.952 7.874-1.217 2.606.694.694c1.912-1.91 7.18.258 11.767 4.845s6.756 9.855 4.845 11.767c-1.912 1.91-7.18-.258-11.767-4.845zm1.385-1.385c3.895 3.895 8.182 5.66 8.997 4.845.816-.815-.95-5.102-4.845-8.997-3.895-3.895-8.182-5.66-8.997-4.845-.816.815.95 5.102 4.845 8.997zM9 11a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg><span class="reasoning-label">Деплой</span><svg class="reasoning-toggle" width="18" height="18" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" fill="white" fill-opacity="0.01"/><path d="M31 36L19 24L31 12" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+                '<div class="reasoning-content">' + inner + '</div>' +
                 '</div>';
         }
 
         function toggleAutodeployGroup(headerEl) {
             var group = headerEl.closest('.autodeploy-group');
             if (!group) return;
-            var body = group.querySelector('.autodeploy-body');
-            if (!body) return;
-            var willCollapse = body.style.display !== 'none';
-            body.style.display = willCollapse ? 'none' : 'block';
-            headerEl.querySelector('span:last-child').textContent = willCollapse ? '▼' : '▲';
+            group.classList.toggle('collapsed');
+            var willCollapse = group.classList.contains('collapsed');
             var startIdx = parseInt(group.getAttribute('data-grp-start'));
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
@@ -10454,6 +10432,10 @@
             if (!header) return;
             var block = header.closest('.reasoning-block');
             if (!block) return;
+            if (block.classList.contains('autodeploy-group')) {
+                toggleAutodeployGroup(header);
+                return;
+            }
 
             var isSticky = header.style.position === 'fixed';
             var wasCollapsed = block.classList.contains('collapsed');
