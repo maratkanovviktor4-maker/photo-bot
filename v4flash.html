@@ -4560,7 +4560,7 @@
                 }
                 var _hasUserText = (contentHtml && contentHtml.replace(/<[^>]+>/g, '').trim().length > 0);
                 var _userContentBlock = _hasUserText ? ('<div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div>') : ('<div class="message-content" id="stream-' + index + '" style="display:none;"></div>');
-                var _isAutodeployU = msg._autodeploy || (msg.msg_id && localStorage.getItem('autodeploy_msg:' + msg.msg_id) === '1');
+                var _isAutodeployU = !!msg._autodeploy;
                 var _autodeployRowClassU = _isAutodeployU ? ' autodeploy-row' : '';
                 return '<div class="message-row ' + msg.role + _autodeployRowClassU + '" data-msg-index="' + index + '"><div><div>' + _userImgsBlock + '</div>' + _userContentBlock + '<div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
             }
@@ -4644,7 +4644,7 @@
             }
             var _hasVisibleContent = (reasoningHtml && reasoningHtml.trim()) || (contentHtml && contentHtml.trim()) || msg._streaming;
             var _contentBlock = _hasVisibleContent ? ('<div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div>') : ('<div class="message-content" id="stream-' + index + '" style="display:none;"></div>');
-            var _isAutodeploy = msg._autodeploy || (msg.msg_id && localStorage.getItem('autodeploy_msg:' + msg.msg_id) === '1');
+            var _isAutodeploy = !!msg._autodeploy;
             var _autodeployStyle = '' ;
             var _autodeployRowClass = _isAutodeploy ? ' autodeploy-row' : '';
             return '<div class="message-row ' + msg.role + _autodeployRowClass + '" data-msg-index="' + index + '"><div>' + _filesOuterBlock + _contentBlock + '<div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
@@ -9244,13 +9244,19 @@
                     var _targetMsgId = msg.msg_id;
                     var _chatRef = chat;
                     window._markAutodeploy = function(_mid, _userId) {
-                        if (_mid) localStorage.setItem('autodeploy_msg:' + _mid, '1');
-                        if (_userId) localStorage.setItem('autodeploy_msg:' + _userId, '1');
                         var _c = chats.find(function(c) { return c.id === _chatRef.id; });
                         if (!_c) return;
+                        var _ids = [];
                         for (var _i = 0; _i < _c.messages.length; _i++) {
-                            if (_c.messages[_i].msg_id === _mid) _c.messages[_i]._autodeploy = true;
-                            if (_userId && _c.messages[_i].msg_id === _userId) _c.messages[_i]._autodeploy = true;
+                            if (_c.messages[_i].msg_id === _mid) { _c.messages[_i]._autodeploy = true; _ids.push(_mid); }
+                            if (_userId && _c.messages[_i].msg_id === _userId) { _c.messages[_i]._autodeploy = true; _ids.push(_userId); }
+                        }
+                        if (_ids.length) {
+                            fetch(SERVER_URL + '/mark_autodeploy', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: _chatRef.id, msg_ids: _ids })
+                            }).catch(function(){});
                         }
                         renderMessages();
                     };
