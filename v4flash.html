@@ -7702,7 +7702,7 @@
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
                     chat.messages[chat.messages.length - 2].msg_id = finalMeta.user_msg_id;
                     if (window._markAutodeploy) {
-                        window._markAutodeploy(finalMeta.assistant_msg_id, finalMeta.user_msg_id);
+                        await window._markAutodeploy(finalMeta.assistant_msg_id, finalMeta.user_msg_id);
                     }
                 }
                 if (fluxModeEnabled) {
@@ -9311,7 +9311,7 @@
                     _autoDeployInFlight = false;
                     var _targetMsgId = msg.msg_id;
                     var _chatRef = chat;
-                    window._markAutodeploy = function(_mid, _userId) {
+                    window._markAutodeploy = async function(_mid, _userId) {
                         var _c = chats.find(function(c) { return c.id === _chatRef.id; });
                         if (!_c) return;
                         var _ids = [];
@@ -9320,11 +9320,13 @@
                             if (_userId && _c.messages[_i].msg_id === _userId) { _c.messages[_i]._autodeploy = true; _ids.push(_userId); }
                         }
                         if (_ids.length) {
-                            fetch(SERVER_URL + '/mark_autodeploy', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: _chatRef.id, msg_ids: _ids })
-                            }).catch(function(){});
+                            try {
+                                await fetch(SERVER_URL + '/mark_autodeploy', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: _chatRef.id, msg_ids: _ids })
+                                });
+                            } catch(e) {}
                         }
                         renderMessages();
                     };
