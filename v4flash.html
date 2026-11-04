@@ -4390,9 +4390,11 @@
             items.forEach(function(item) {
                 var el = document.createElement('div');
                 el.innerHTML = item.icon + ' ' + item.label;
-                el.style.cssText = 'padding:8px 12px;font-size:13px;color:' + (document.body.classList.contains('light') ? '#333' : '#e0e0e0') + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;display:flex;align-items:center;gap:8px;transition:background 0.1s;' + (item._glow || '');
-                el.addEventListener('mouseenter', function() { this.style.background = 'rgba(0,203,245,0.15)'; });
-                el.addEventListener('mouseleave', function() { this.style.background = 'transparent'; });
+                var _baseBg = item._glow ? 'rgba(255,140,0,0.18)' : 'transparent';
+                var _baseColor = item._glow ? '#FFA500' : (document.body.classList.contains('light') ? '#333' : '#e0e0e0');
+                el.style.cssText = 'padding:8px 12px;font-size:13px;color:' + _baseColor + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;display:flex;align-items:center;gap:8px;transition:background 0.1s;background:' + _baseBg + ';';
+                el.addEventListener('mouseenter', function() { this.style.background = item._glow ? 'rgba(255,140,0,0.28)' : 'rgba(0,203,245,0.15)'; });
+                el.addEventListener('mouseleave', function() { this.style.background = _baseBg; });
                 el.addEventListener('click', function() { menu.remove(); item.action(); });
                 menu.appendChild(el);
             });
@@ -9229,7 +9231,7 @@
                     var _input = document.getElementById('userInput');
                     _input.value = 'Применил, фиксируй состояние кода, далее.';
                     _input.dispatchEvent(new Event('input'));
-                    setTimeout(function() { sendMessage(); }, 300);
+                    sendMessage();
                     return;
                 }
 
