@@ -4553,7 +4553,8 @@
                 }
                 var _hasUserText = (contentHtml && contentHtml.replace(/<[^>]+>/g, '').trim().length > 0);
                 var _userContentBlock = _hasUserText ? ('<div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div>') : ('<div class="message-content" id="stream-' + index + '" style="display:none;"></div>');
-                var _autodeployStyleU = msg._autodeploy ? ' style="background:rgba(0,203,245,0.04);border-left:2px solid rgba(0,203,245,0.25);border-radius:8px;padding:6px 8px;margin:2px 0;font-family:\'Courier New\',Consolas,monospace;font-size:13px;font-style:italic;"' : '';
+                var _isAutodeployU = msg._autodeploy || (msg.msg_id && localStorage.getItem('autodeploy_msg:' + msg.msg_id) === '1');
+                var _autodeployStyleU = _isAutodeployU ? ' style="background:rgba(0,203,245,0.04);border-left:2px solid rgba(0,203,245,0.25);border-radius:8px;padding:6px 8px;margin:2px 0;font-family:\'Courier New\',Consolas,monospace;font-size:13px;font-style:italic;"' : '';
                 return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"' + _autodeployStyleU + '><div><div>' + _userImgsBlock + '</div>' + _userContentBlock + '<div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
             }
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
@@ -4636,7 +4637,8 @@
             }
             var _hasVisibleContent = (reasoningHtml && reasoningHtml.trim()) || (contentHtml && contentHtml.trim()) || msg._streaming;
             var _contentBlock = _hasVisibleContent ? ('<div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div>') : ('<div class="message-content" id="stream-' + index + '" style="display:none;"></div>');
-            var _autodeployStyle = msg._autodeploy ? ' style="background:rgba(0,203,245,0.04);border-left:2px solid rgba(0,203,245,0.25);border-radius:8px;padding:6px 8px;margin:2px 0;font-family:\'Courier New\',Consolas,monospace;font-size:13px;font-style:italic;"' : '';
+            var _isAutodeploy = msg._autodeploy || (msg.msg_id && localStorage.getItem('autodeploy_msg:' + msg.msg_id) === '1');
+            var _autodeployStyle = _isAutodeploy ? ' style="background:rgba(0,203,245,0.04);border-left:2px solid rgba(0,203,245,0.25);border-radius:8px;padding:6px 8px;margin:2px 0;font-family:\'Courier New\',Consolas,monospace;font-size:13px;font-style:italic;"' : '';
             return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"' + _autodeployStyle + '><div>' + _filesOuterBlock + _contentBlock + '<div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
         }
         async function deleteMessage(index) {
@@ -9234,6 +9236,8 @@
                     var _targetMsgId = msg.msg_id;
                     var _chatRef = chat;
                     window._markAutodeploy = function(_mid, _userId) {
+                        if (_mid) localStorage.setItem('autodeploy_msg:' + _mid, '1');
+                        if (_userId) localStorage.setItem('autodeploy_msg:' + _userId, '1');
                         var _c = chats.find(function(c) { return c.id === _chatRef.id; });
                         if (!_c) return;
                         for (var _i = 0; _i < _c.messages.length; _i++) {
