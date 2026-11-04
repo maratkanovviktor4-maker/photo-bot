@@ -9235,8 +9235,8 @@
 
                 if (data.error_url) {
                     var er = await fetch(SERVER_URL + data.error_url);
-                    var errBlob = await er.blob();
                     var errText = await er.text();
+                    var errBlob = new Blob([errText], { type: 'text/plain;charset=utf-8' });
 
                     try {
                         var eFH = await _deployHandles.error.getFileHandle('deploy_error.txt', { create: true });
