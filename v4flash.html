@@ -4553,7 +4553,8 @@
                 }
                 var _hasUserText = (contentHtml && contentHtml.replace(/<[^>]+>/g, '').trim().length > 0);
                 var _userContentBlock = _hasUserText ? ('<div class="message-content" id="stream-' + index + '">' + reasoningHtml + contentHtml + '</div>') : ('<div class="message-content" id="stream-' + index + '" style="display:none;"></div>');
-                return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"><div><div>' + _userImgsBlock + '</div>' + _userContentBlock + '<div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
+                var _autodeployStyleU = msg._autodeploy ? ' style="background:rgba(0,203,245,0.04);border-left:2px solid rgba(0,203,245,0.25);border-radius:8px;padding:6px 8px;margin:2px 0;font-family:\'Courier New\',Consolas,monospace;font-size:13px;font-style:italic;"' : '';
+                return '<div class="message-row ' + msg.role + '" data-msg-index="' + index + '"' + _autodeployStyleU + '><div><div>' + _userImgsBlock + '</div>' + _userContentBlock + '<div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div></div></div>';
             }
             if (msg.role === 'assistant' && msg._sources && msg._sources.length) {
                 contentHtml = contentHtml.replace(/<a href="([^"]+)" target="_blank">([^<]+)<\/a>/g, function(m, url, text) {
