@@ -3610,9 +3610,13 @@
 
             function _renderAttachments() {
                 _attachmentsBar.innerHTML = '';
+                var _isLightAtt = document.body.classList.contains('light');
+                var _attBg = _isLightAtt ? '#ffffff' : '#2c2c2e';
+                var _attBorder = _isLightAtt ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)';
+                var _attNameColor = _isLightAtt ? '#111' : '#fff';
                 if (_attachCopy.image_b64) {
                     var _imgCard = document.createElement('div');
-                    _imgCard.style.cssText = 'position:relative;display:inline-flex;align-items:center;justify-content:center;padding:6px;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:12px;';
+                    _imgCard.style.cssText = 'position:relative;display:inline-flex;align-items:center;justify-content:center;padding:6px;background:' + _attBg + ';border:1px solid ' + _attBorder + ';border-radius:12px;';
                     _imgCard.innerHTML = '<img src="data:' + _attachCopy.image_mime + ';base64,' + _attachCopy.image_b64 + '" style="max-width:100px;max-height:70px;border-radius:6px;object-fit:contain;display:block;">';
                     var _imgX = document.createElement('button');
                     _imgX.innerHTML = '<svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>';
@@ -3636,7 +3640,7 @@
                         var _em = _eb[1] || 'image/jpeg';
                         var _ed = _eb[0];
                         var _card = document.createElement('div');
-                        _card.style.cssText = 'position:relative;display:inline-flex;align-items:center;justify-content:center;padding:6px;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:12px;';
+                        _card.style.cssText = 'position:relative;display:inline-flex;align-items:center;justify-content:center;padding:6px;background:' + _attBg + ';border:1px solid ' + _attBorder + ';border-radius:12px;';
                         _card.innerHTML = '<img src="data:' + _em + ';base64,' + _ed + '" style="max-width:100px;max-height:70px;border-radius:6px;object-fit:contain;display:block;">';
                         var _x = document.createElement('button');
                         _x.innerHTML = '<svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>';
@@ -3658,10 +3662,10 @@
                     (function(idx) {
                         var _fm = _attachCopy.files_meta[idx];
                         var _card = document.createElement('div');
-                        _card.style.cssText = 'position:relative;display:inline-flex;align-items:center;gap:10px;padding:8px 12px;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:12px;max-width:220px;box-sizing:border-box;';
+                        _card.style.cssText = 'position:relative;display:inline-flex;align-items:center;gap:10px;padding:8px 12px;background:' + _attBg + ';border:1px solid ' + _attBorder + ';border-radius:12px;max-width:220px;box-sizing:border-box;';
                         var _fcIcon = FILE_ICON_MAP[_fm.ext] || '📎';
                         var _size = _fm.size < 1024 ? _fm.size + ' B' : (_fm.size < 1048576 ? (_fm.size / 1024).toFixed(2) + 'KB' : (_fm.size / 1048576).toFixed(2) + 'MB');
-                        _card.innerHTML = '<span style="flex-shrink:0;display:inline-flex;">' + _fcIcon + '</span><span style="display:flex;flex-direction:column;min-width:0;"><span style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(_fm.name) + '</span><span style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (_fm.ext || '').toUpperCase() + ' ' + _size + '</span></span>';
+                        _card.innerHTML = '<span style="flex-shrink:0;display:inline-flex;">' + _fcIcon + '</span><span style="display:flex;flex-direction:column;min-width:0;"><span style="font-size:13px;font-weight:700;color:' + _attNameColor + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(_fm.name) + '</span><span style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (_fm.ext || '').toUpperCase() + ' ' + _size + '</span></span>';
                         var _x = document.createElement('button');
                         _x.innerHTML = '<svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>';
                         _x.title = 'Удалить';
