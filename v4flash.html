@@ -8933,14 +8933,11 @@
             if (!el) return;
             if (!_deployHandles.work) { el.style.display = 'none'; return; }
             try {
-                var names = [];
-                for await (var _e of _deployHandles.work.values()) {
-                    if (_e.kind === 'file' && _e.name.indexOf('_бэкап') === -1 && _e.name.indexOf('_ошибка') === -1) names.push(_e.name);
-                }
+                var names = await _listWorkFiles(_deployHandles.work);
                 if (names.length === 1) {
                     el.textContent = 'Файл в папке: ' + names[0];
                 } else if (names.length > 1) {
-                    el.textContent = 'В папке несколько файлов: ' + names.join(', ');
+                    el.textContent = 'В папке несколько файлов (' + names.length + '): ' + names.join(', ');
                 } else {
                     el.textContent = 'В папке пока нет файла (загрузите вручную)';
                 }
@@ -9106,6 +9103,31 @@
             return name.replace(/(\.[^./\\]+)(?:\s*\(\d+\))+$/, '$1');
         }
 
+        async function _listWorkFiles(workHandle) {
+            var names = [];
+            if (!workHandle) return names;
+            try {
+                for await (var _entry of workHandle.values()) {
+                    if (_entry.kind !== 'file') continue;
+                    if (_entry.name.indexOf('_бэкап') !== -1) continue;
+                    if (_entry.name.indexOf('_ошибка') !== -1) continue;
+                    names.push(_entry.name);
+                }
+            } catch(e) {
+                console.warn('list work files failed', e);
+            }
+            return names;
+        }
+
+        function _extractTargetFileName(content) {
+            if (!content) return null;
+            var _tpl = String.fromCharCode(96, 96, 96);
+            var _re = new RegExp('[«"\\']?([\\w.\\-]+\\.(?:html|htm|js|css|py|json|txt|md|xml|yml|yaml|ts|jsx|tsx|vue|php|rb|go|java|kt|c|cpp|h|hpp|cs|rs|sh|bat|ps1|sql|ini|cfg|conf|env))[»"\\']?', 'i');
+            var _m = _re.exec(content);
+            if (_m && _m[1]) return _m[1];
+            return null;
+        }
+
 
         async function confirmDeploy() {
             if (!_deployFileContent || !_deployEdits.length) return;
@@ -9115,9 +9137,13 @@
 
             var _eol = _deployFileContent.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
             var _fileNorm = _deployFileContent.replace(/\r\n/g, '\n');
+            var _chatForName = chats.find(function(c) { return c.id === currentChatId; });
+            var _msgForName = _chatForName ? _chatForName.messages[_deployMsgIndex] : null;
+            var _explicitName = _msgForName ? _extractTargetFileName(_msgForName.content || '') : null;
+            var _resolvedName = _explicitName || _deployFileName;
             var payload = {
                 user_id: currentUserId,
-                file_name: _deployFileName,
+                file_name: _resolvedName,
                 file_content: _fileNorm,
                 edits: _deployEdits.map(function(e) { return { old: e.old, new: e.new }; }),
                 eol: _eol
@@ -9242,25 +9268,46 @@
             _autoDeployLoopCount++;
 
             var _fileContent = null;
-            var _fileName = 'source.txt';
+            var _fileName = null;
+            var _explicitFileName = _extractTargetFileName(msg.content || '');
 
             try {
                 var workHandle = _deployHandles.work;
-                var _names = [];
-                for await (var _entry of workHandle.values()) {
-                    if (_entry.kind === 'file' && _entry.name.indexOf('_бэкап') === -1 && _entry.name.indexOf('_ошибка') === -1) {
-                        _names.push(_entry.name);
-                    }
-                }
-                if (_names.length !== 1) {
+                var _names = await _listWorkFiles(workHandle);
+                if (_names.length === 0) {
                     _autoDeployInFlight = false;
                     openDeployModal(msgIndex);
                     return;
                 }
-                var _fh = await workHandle.getFileHandle(_names[0]);
+                if (_explicitFileName) {
+                    var _hit = null;
+                    for (var _ni = 0; _ni < _names.length; _ni++) {
+                        if (_names[_ni] === _explicitFileName) { _hit = _names[_ni]; break; }
+                    }
+                    if (!_hit) {
+                        for (var _nj = 0; _nj < _names.length; _nj++) {
+                            if (_names[_nj].toLowerCase() === _explicitFileName.toLowerCase()) { _hit = _names[_nj]; break; }
+                        }
+                    }
+                    if (!_hit) {
+                        _autoDeployInFlight = false;
+                        showAlertModal('Файл не найден', 'Ассистент указал файл «' + _explicitFileName + '», но в рабочей папке его нет. Загрузите файл или проверьте имя.', '⚠️');
+                        var _b2 = document.querySelector('#alertModalOverlay .modal-actions button');
+                        if (_b2) _b2.setAttribute('data-skip-reload', '1');
+                        return;
+                    }
+                    _fileName = _hit;
+                } else {
+                    if (_names.length > 1) {
+                        _autoDeployInFlight = false;
+                        openDeployModal(msgIndex);
+                        return;
+                    }
+                    _fileName = _names[0];
+                }
+                var _fh = await workHandle.getFileHandle(_fileName);
                 var _file = await _fh.getFile();
                 _fileContent = await _file.text();
-                _fileName = _names[0];
             } catch(e) {
                 console.warn('autodeploy read failed', e);
                 _autoDeployInFlight = false;
