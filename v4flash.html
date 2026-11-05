@@ -9286,6 +9286,10 @@
                 _autoDeployBuildJson();
                 return;
             }
+            if ((msg.content || '').indexOf('[СПИСОК ГОТОВ]') !== -1) {
+                _autoDeployStartPassports();
+                return;
+            }
 
             var edits = parseEditPairs(msg.content || '');
             if (!edits.length) return;
@@ -9461,6 +9465,54 @@
             } catch(e) {
                 console.warn('autodeploy critical', e);
                 _autoDeployInFlight = false;
+            }
+        }
+
+        var _autoDeployPassportsInFlight = false;
+
+        async function _autoDeployStartPassports() {
+            if (_autoDeployPassportsInFlight) return;
+            if (!_autoDeployEnabled) return;
+            if (!_deployHandles || !_deployHandles.work) return;
+
+            try {
+                var _names = [];
+                for await (var _e of _deployHandles.work.values()) {
+                    if (_e.kind === 'file' && _e.name.indexOf('_бэкап') === -1 && _e.name.indexOf('_ошибка') === -1) {
+                        _names.push(_e.name);
+                    }
+                }
+                if (_names.length !== 1) return;
+
+                var _fh = await _deployHandles.work.getFileHandle(_names[0]);
+                var _file = await _fh.getFile();
+                var _text = await _file.text();
+
+                _autoDeployPassportsInFlight = true;
+
+                var _b64 = btoa(unescape(encodeURIComponent(_text)));
+                pendingFiles = [{
+                    name: _names[0],
+                    mime: 'text/plain',
+                    data: _b64,
+                    _status: 'ok'
+                }];
+                updateFileList();
+
+                webSearchEnabled = true;
+                localStorage.setItem('photobot_web_search', 'true');
+                var _wsBtn = document.getElementById('webSearchToggle');
+                if (_wsBtn) _wsBtn.classList.add('active');
+
+                var _inp = document.getElementById('userInput');
+                _inp.value = 'Список согласован. Найди паспорт для первой позиции и выдай правку [BEFORE]/[AFTER] к файлу.';
+                _inp.dispatchEvent(new Event('input'));
+
+                sendMessage();
+            } catch(e) {
+                console.warn('autodeploy start passports failed', e);
+            } finally {
+                setTimeout(function() { _autoDeployPassportsInFlight = false; }, 500);
             }
         }
 
