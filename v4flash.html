@@ -9278,6 +9278,7 @@
 
             if ((msg.content || '').indexOf('[ПРАВКИ ОКОНЧЕНЫ]') !== -1) {
                 _autoDeployLoopCount = 0;
+                _autoDeployBuildJson();
                 return;
             }
 
@@ -9455,6 +9456,54 @@
             } catch(e) {
                 console.warn('autodeploy critical', e);
                 _autoDeployInFlight = false;
+            }
+        }
+
+        var _autoDeployJsonInFlight = false;
+
+        async function _autoDeployBuildJson() {
+            if (_autoDeployJsonInFlight) return;
+            if (!_autoDeployEnabled) return;
+            if (!_deployHandles || !_deployHandles.work) return;
+
+            try {
+                var _names = [];
+                for await (var _e of _deployHandles.work.values()) {
+                    if (_e.kind === 'file' && _e.name.indexOf('_бэкап') === -1 && _e.name.indexOf('_ошибка') === -1) {
+                        _names.push(_e.name);
+                    }
+                }
+                if (_names.length !== 1) return;
+
+                var _fh = await _deployHandles.work.getFileHandle(_names[0]);
+                var _file = await _fh.getFile();
+                var _text = await _file.text();
+
+                _autoDeployJsonInFlight = true;
+
+                var _b64 = btoa(unescape(encodeURIComponent(_text)));
+                pendingFiles = [{
+                    name: _names[0],
+                    mime: 'text/plain',
+                    data: _b64,
+                    _status: 'ok'
+                }];
+                updateFileList();
+
+                webSearchEnabled = true;
+                localStorage.setItem('photobot_web_search', 'true');
+                var _wsBtn = document.getElementById('webSearchToggle');
+                if (_wsBtn) _wsBtn.classList.add('active');
+
+                var _inp = document.getElementById('userInput');
+                _inp.value = 'Собери JSON для рендера листа А3 из файла';
+                _inp.dispatchEvent(new Event('input'));
+
+                sendMessage();
+            } catch(e) {
+                console.warn('autodeploy build json failed', e);
+            } finally {
+                setTimeout(function() { _autoDeployJsonInFlight = false; }, 500);
             }
         }
 
