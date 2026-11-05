@@ -9124,33 +9124,43 @@
 
         async function _autoSaveShieldMap(msg) {
             if (!msg || msg.role !== 'assistant') return;
-            var json = _extractJsonBlock(msg.content || '');
-            if (!json) return;
-            if (!(json.shield && json.tags)) return;
             var _txt = msg.content || '';
-            var _nameMatch = _txt.match(/([\w.\-]+)\.json/);
+            var json = _extractJsonBlock(_txt);
+            var hasMap = !!(json && json.shield && json.tags);
+            var list = _parsePassportList(_txt);
+            if (!hasMap && !list.length) return;
+            var _nameMatch = _txt.match(/([\w.\-]+)\.(json|txt)/i);
+            if (!_nameMatch) {
+                for (var _mi = msg ? 1 : 0; _mi < 6; _mi++) {
+                    var _mm = (chats && currentChatId) ? (chats.find(function(c){return c.id===currentChatId;}) || {}).messages : null;
+                    if (!_mm) break;
+                    var _cand = _mm[_mm.length - 1 - _mi];
+                    if (!_cand || _cand.role !== 'assistant' || !_cand.content) continue;
+                    var _m2 = _cand.content.match(/([\w.\-]+)\.(json|txt)/i);
+                    if (_m2) { _nameMatch = _m2; break; }
+                }
+            }
             var base = _nameMatch ? _nameMatch[1] : 'shield';
-            var text = JSON.stringify(json, null, 2);
             try {
                 if (!_deployHandles.work) await _restoreDeployHandles();
                 if (!_deployHandles.work) return;
-                var handle = await _deployHandles.work.getFileHandle(base + '.json', { create: true });
-                var wr = await handle.createWritable();
-                await wr.write(text);
-                await wr.close();
-            } catch(e) {
-                console.warn('save shield map failed', e);
+            } catch(e) { return; }
+            if (hasMap) {
+                try {
+                    var text = JSON.stringify(json, null, 2);
+                    var handle = await _deployHandles.work.getFileHandle(base + '.json', { create: true });
+                    var wr = await handle.createWritable();
+                    await wr.write(text);
+                    await wr.close();
+                } catch(e) { console.warn('save shield map failed', e); }
             }
-            var _list = _parsePassportList(_txt);
-            if (_list.length) {
+            if (list.length) {
                 try {
                     var lh = await _deployHandles.work.getFileHandle(base + '.txt', { create: true });
                     var lw = await lh.createWritable();
-                    await lw.write(_list.join('\n'));
+                    await lw.write(list.join('\n'));
                     await lw.close();
-                } catch(e) {
-                    console.warn('save shield list failed', e);
-                }
+                } catch(e) { console.warn('save shield list failed', e); }
             }
         }
 
