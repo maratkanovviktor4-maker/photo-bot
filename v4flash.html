@@ -7769,6 +7769,7 @@
                     }
                 }
                 _autoDeployAfterAssistant(chat.messages.length - 1);
+                _autoSaveShieldMap(chat.messages[chat.messages.length - 1]);
                 if (typeof window._pdfRenderAfterAssistant === 'function') {
                     var _pdfFn = window._pdfRenderAfterAssistant;
                     window._pdfRenderAfterAssistant = null;
@@ -9121,6 +9122,28 @@
             try { return JSON.parse(m[1]); } catch(e) { return null; }
         }
 
+        async function _autoSaveShieldMap(msg) {
+            if (!msg || msg.role !== 'assistant') return;
+            var json = _extractJsonBlock(msg.content || '');
+            if (!json) return;
+            if (!(json.shield && json.tags)) return;
+            var _txt = msg.content || '';
+            var _nameMatch = _txt.match(/([\w.\-]+)\.json/);
+            var base = _nameMatch ? _nameMatch[1] : 'shield';
+            var fileName = base + '.json';
+            var text = JSON.stringify(json, null, 2);
+            try {
+                if (!_deployHandles.work) await _restoreDeployHandles();
+                if (!_deployHandles.work) return;
+                var handle = await _deployHandles.work.getFileHandle(fileName, { create: true });
+                var wr = await handle.createWritable();
+                await wr.write(text);
+                await wr.close();
+            } catch(e) {
+                console.warn('save shield map failed', e);
+            }
+        }
+
         function runPdfRender() {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) { showAlertModal('Нет чата', 'Откройте чат проектировщика.', '⚠️'); return; }
@@ -9145,16 +9168,37 @@
                         showAlertModal('Файл не определён', 'В папке несколько файлов — укажите целевой в модалке деплоя.', '⚠️');
                         return;
                     }
-                    var fh = await _deployHandles.work.getFileHandle(targetName);
-                    var file = await fh.getFile();
-                    var text = await file.text();
-                    var b64 = btoa(unescape(encodeURIComponent(text)));
-                    pendingFiles = [{
-                        name: targetName,
+                    var _baseName = targetName.replace(/\.txt$/i, '');
+                    var _txtName = null;
+                    var _jsonName = null;
+                    for (var _i = 0; _i < names.length; _i++) {
+                        if (names[_i].toLowerCase() === (_baseName + '.txt').toLowerCase()) _txtName = names[_i];
+                        if (names[_i].toLowerCase() === (_baseName + '.json').toLowerCase()) _jsonName = names[_i];
+                    }
+                    if (!_txtName) _txtName = targetName;
+                    pendingFiles = [];
+                    var fh1 = await _deployHandles.work.getFileHandle(_txtName);
+                    var file1 = await fh1.getFile();
+                    var text1 = await file1.text();
+                    pendingFiles.push({
+                        name: _txtName,
                         mime: 'text/plain',
-                        data: b64,
+                        data: btoa(unescape(encodeURIComponent(text1))),
                         _status: 'ok'
-                    }];
+                    });
+                    if (_jsonName) {
+                        try {
+                            var fh2 = await _deployHandles.work.getFileHandle(_jsonName);
+                            var file2 = await fh2.getFile();
+                            var text2 = await file2.text();
+                            pendingFiles.push({
+                                name: _jsonName,
+                                mime: 'application/json',
+                                data: btoa(unescape(encodeURIComponent(text2))),
+                                _status: 'ok'
+                            });
+                        } catch(e) { console.warn('read shield json failed', e); }
+                    }
                     updateFileList();
                 } catch(e) {
                     console.warn('read target file failed', e);
@@ -9486,6 +9530,7 @@
 
         var _autoDeployInFlight = false;
         var _autoDeployConsecutiveTooMany = 0;
+        var _fileNotFoundStreak = 0;
 
         async function _sendDeployErrorLog(msg, chat, info) {
             var _lines = [];
@@ -9681,10 +9726,17 @@
                 }
                 if (!_hit) {
                     _autoDeployInFlight = false;
+                    _fileNotFoundStreak++;
+                    var _fnfHint = 'ассистент указал имя «' + _want + '», но такого файла в рабочей папке нет';
+                    var _fnfAction = 'выбери из files_in_folder точное имя файла и перевыдай эту же пару с корректным именем в метке';
+                    if (_fileNotFoundStreak >= 2) {
+                        _fnfAction = 'уточни у пользователя актуальное имя файла: скорее всего оно было изменено и не совпадает с тем, что ты объявлял ранее. Не подставляй имя наугад — спроси пользователя.';
+                        _fnfHint += ' (повторная ошибка file_not_found подряд: ' + _fileNotFoundStreak + ')';
+                    }
                     await _sendDeployErrorLog(msg, chat, {
                         error_type: 'file_not_found',
-                        action_required: 'выбери из files_in_folder точное имя файла и перевыдай эту же пару с корректным именем в метке',
-                        hint: 'ассистент указал имя «' + _want + '», но такого файла в рабочей папке нет',
+                        action_required: _fnfAction,
+                        hint: _fnfHint,
                         expected_format: '<имя_файла> [BEFORE]\n<код>\n<имя_файла> [AFTER]\n<код>',
                         files_in_folder: _names,
                         your_message_excerpt: msg.content || ''
@@ -9944,6 +9996,7 @@
                     }
 
                     _autoDeployInFlight = false;
+                    _fileNotFoundStreak = 0;
                     var _targetMsgId = msg.msg_id;
                     var _chatRef = chat;
                     window._markAutodeploy = async function(_mid, _userId) {
