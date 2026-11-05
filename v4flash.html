@@ -7028,7 +7028,6 @@
         function saveSoundSettings() {
             localStorage.setItem('photobot_sound_send', document.getElementById('soundSendSelect').value);
             localStorage.setItem('photobot_sound_reply', document.getElementById('soundReplySelect').value);
-            // test-flag-2
         }
         var recognition = null;
 
@@ -9330,7 +9329,7 @@
             if (!msg || msg.role !== 'assistant') return;
 
             var _pairsPrecheck = parseEditPairs(msg.content || '');
-            if (_pairsPrecheck.length === 0 && (msg.content || '').indexOf('[ПРАВКИ' + ' ОКОНЧЕНЫ]') !== -1) {
+            if (_pairsPrecheck.length === 0 && (msg.content || '').indexOf('[COMPLETE] edit cycle closed') !== -1) {
                 _autoDeployLoopCount = 0;
                 if (!msg._autodeploy) {
                     msg._autodeploy = true;
