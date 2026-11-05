@@ -9130,17 +9130,27 @@
             var _txt = msg.content || '';
             var _nameMatch = _txt.match(/([\w.\-]+)\.json/);
             var base = _nameMatch ? _nameMatch[1] : 'shield';
-            var fileName = base + '.json';
             var text = JSON.stringify(json, null, 2);
             try {
                 if (!_deployHandles.work) await _restoreDeployHandles();
                 if (!_deployHandles.work) return;
-                var handle = await _deployHandles.work.getFileHandle(fileName, { create: true });
+                var handle = await _deployHandles.work.getFileHandle(base + '.json', { create: true });
                 var wr = await handle.createWritable();
                 await wr.write(text);
                 await wr.close();
             } catch(e) {
                 console.warn('save shield map failed', e);
+            }
+            var _list = _parsePassportList(_txt);
+            if (_list.length) {
+                try {
+                    var lh = await _deployHandles.work.getFileHandle(base + '.txt', { create: true });
+                    var lw = await lh.createWritable();
+                    await lw.write(_list.join('\n'));
+                    await lw.close();
+                } catch(e) {
+                    console.warn('save shield list failed', e);
+                }
             }
         }
 
