@@ -4526,6 +4526,12 @@
                     contentHtml = '<div style="margin:6px 0 10px 0;"><img src="' + _fluxImgUrl + '" style="max-width:280px;max-height:280px;border-radius:12px;display:block;cursor:pointer;object-fit:contain;background:rgba(0,0,0,0.1);" onclick="toggleFullPreview(this)" onerror="this.style.display=\'none\'"></div>' + contentHtml;
                 }
             }
+            if (msg.role === 'assistant' && msg._doc_meta && msg._doc_meta.status === 'success' && msg._doc_meta.file && msg._doc_meta.downloaded) {
+                contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 14px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.25);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали этот PDF.</div>' + contentHtml;
+            } else if (msg.role === 'assistant' && msg._doc_meta && msg._doc_meta.status === 'success' && msg._doc_meta.file) {
+                var _docUrl = SERVER_URL + '/get_doc_file?job_id=' + encodeURIComponent(msg._doc_meta.file) + '&session_token=' + sessionToken;
+                contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 12px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.25);border-radius:12px;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:6px;">📄 ' + escapeHtml(msg._doc_meta.display_name || 'Документ.pdf') + '</div><div style="display:flex;gap:8px;align-items:center;"><a href="' + _docUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(0,203,245,0.15);border:1px solid rgba(0,203,245,0.4);border-radius:8px;color:#00CBF5;text-decoration:none;font-size:12px;font-family:Inter,sans-serif;font-weight:600;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Забрать</a></div></div>' + contentHtml;
+            }
             if (msg.role === 'assistant' && msg._audio_meta && msg._audio_meta.status === 'success' && msg._audio_meta.file && msg._audio_meta.downloaded) {
                 contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 14px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.25);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали этот аудиотрек.</div>' + contentHtml;
             } else if (msg.role === 'assistant' && msg._audio_meta && msg._audio_meta.status === 'success' && msg._audio_meta.file) {
@@ -7714,6 +7720,31 @@
                         await window._markAutodeploy(finalMeta.assistant_msg_id, finalMeta.user_msg_id);
                     }
                 }
+                var _docJson = _extractDocJson(assistantMsg.content || '');
+                if (_docJson) {
+                    try {
+                        var _docResp = await fetch(SERVER_URL + '/generate_doc', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                            body: JSON.stringify(Object.assign({ user_id: currentUserId }, _docJson))
+                        });
+                        var _docData = await _docResp.json();
+                        if (_docData.success) {
+                            assistantMsg._doc_meta = {
+                                status: 'success',
+                                file: _docData.file,
+                                display_name: _docData.display_name || _docJson.filename || 'document.pdf',
+                                downloaded: false
+                            };
+                            assistantMsg.content = (assistantMsg.content || '').replace(/&#8203;`&#8203;`&#8203;`&#8203;json[\s\S]*?&#8203;`&#8203;`&#8203;`&#8203;/gi, '').trim() || 'Документ сформирован.';
+                            await fetch(SERVER_URL + '/save_doc_meta', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                body: JSON.stringify({ user_id: currentUserId, chat_id: chat.id, msg_id: assistantMsg.msg_id, _doc_meta: assistantMsg._doc_meta })
+                            }).catch(function(){});
+                        }
+                    } catch(e) { console.warn('generate_doc failed', e); }
+                }
                 if (fluxModeEnabled) {
                     fluxModeEnabled = false;
                     var _fb = document.getElementById('fluxBtn');
@@ -8820,6 +8851,17 @@
             for (var i = 0; i < strips.length; i++) { strips[i].classList.remove('active'); }
             var activeStrip = document.querySelector('.nav-strip[data-msg-index="' + index + '"]');
             if (activeStrip) activeStrip.classList.add('active');
+        }
+
+        function _extractDocJson(text) {
+            if (!text) return null;
+            var m = text.match(/&#8203;`&#8203;`&#8203;`&#8203;json\s*([\s\S]*?)&#8203;`&#8203;`&#8203;`&#8203;/i);
+            if (!m) return null;
+            try {
+                var obj = JSON.parse(m[1].trim());
+                if (obj && (obj.title || obj.content)) return obj;
+            } catch(e) { return null; }
+            return null;
         }
 
         function parseEditPairs(content) {
