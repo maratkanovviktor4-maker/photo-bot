@@ -9027,6 +9027,19 @@
             };
         }
 
+        document.addEventListener('input', function(e) {
+            if (!e.target) return;
+            if (['githubToken','githubRepo','githubBranch','githubFolder','githubFiles'].indexOf(e.target.id) !== -1) {
+                _markDeployDirty();
+            }
+        });
+        document.addEventListener('change', function(e) {
+            if (!e.target) return;
+            if (e.target.id === 'githubSyncCheckbox') {
+                _markDeployDirty();
+            }
+        });
+
         function _writeGithubSettings(s) {
             if (!s) return;
             if (document.getElementById('githubToken')) document.getElementById('githubToken').value = s.token || '';
@@ -9660,6 +9673,12 @@
                     var cleanName = _stripCopySuffix(data.filename || _deployFileName);
 
                     var workHandle = _deployHandles.work;
+                    var _ghOk = false;
+                    var _ghCfg = _readGithubSettings();
+                    if (_ghCfg.enabled && _ghCfg.token && _ghCfg.repo) {
+                        var _allow = String(_ghCfg.files || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+                        if (_allow.indexOf(cleanName) !== -1) _ghOk = true;
+                    }
 
                     if (workHandle) {
                         try {
@@ -9687,7 +9706,15 @@
                                 var nw = await newFH.createWritable();
                                 await nw.write(newBlob);
                                 await nw.close();
-                                try { await _pushFileToGithub(cleanName, _newText); } catch(e) { console.warn('github push error', e); }
+                                var _ghPushed = false;
+                                try { _ghPushed = await _pushFileToGithub(cleanName, _newText); } catch(e) { console.warn('github push error', e); }
+                                if (_ghPushed) {
+                                    var _ghToast = document.createElement('div');
+                                    _ghToast.textContent = '🐙 GitHub: ' + cleanName + ' запушен';
+                                    _ghToast.style.cssText = 'position:fixed;top:110px;left:50%;transform:translateX(-50%);background:#24292f;color:#fff;padding:10px 18px;border-radius:10px;font-family:Inter,sans-serif;font-size:13px;font-weight:500;z-index:100000;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+                                    document.body.appendChild(_ghToast);
+                                    setTimeout(function() { _ghToast.remove(); }, 3500);
+                                }
 
                                 var toast = document.createElement('div');
                                 toast.textContent = '✅ Файл сохранён: ' + cleanName;
@@ -10027,7 +10054,15 @@
                             await nw2.close();
                             _respOk = true;
                             _appliedFiles.push(cleanName);
-                            try { await _pushFileToGithub(cleanName, _newText); } catch(e) { console.warn('github push error', e); }
+                            var _ghPushed2 = false;
+                            try { _ghPushed2 = await _pushFileToGithub(cleanName, _newText); } catch(e) { console.warn('github push error', e); }
+                            if (_ghPushed2) {
+                                var _ghT2 = document.createElement('div');
+                                _ghT2.textContent = '🐙 GitHub: ' + cleanName + ' запушен';
+                                _ghT2.style.cssText = 'position:fixed;top:110px;left:50%;transform:translateX(-50%);background:#24292f;color:#fff;padding:10px 18px;border-radius:10px;font-family:Inter,sans-serif;font-size:13px;font-weight:500;z-index:100000;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+                                document.body.appendChild(_ghT2);
+                                setTimeout(function() { _ghT2.remove(); }, 3500);
+                            }
                         } catch(e2) {
                             console.warn('autodeploy save failed for ' + cleanName, e2);
                             _failedFile = cleanName;
