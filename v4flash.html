@@ -9281,6 +9281,11 @@
                 _autoDeployBuildJson();
                 return;
             }
+            if ((msg.content || '').indexOf('[СБОР ИНФОРМАЦИИ ЗАВЕРШЁН]') !== -1) {
+                _autoDeployLoopCount = 0;
+                _autoDeployBuildJson();
+                return;
+            }
 
             var edits = parseEditPairs(msg.content || '');
             if (!edits.length) return;
@@ -9496,7 +9501,7 @@
                 if (_wsBtn) _wsBtn.classList.add('active');
 
                 var _inp = document.getElementById('userInput');
-                _inp.value = 'Собери JSON для рендера листа А3 из файла';
+                _inp.value = 'Сбор информации завершён. Верни JSON для рендера листа А3 по этому файлу.';
                 _inp.dispatchEvent(new Event('input'));
 
                 sendMessage();
