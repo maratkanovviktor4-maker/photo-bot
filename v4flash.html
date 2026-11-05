@@ -4526,12 +4526,6 @@
                     contentHtml = '<div style="margin:6px 0 10px 0;"><img src="' + _fluxImgUrl + '" style="max-width:280px;max-height:280px;border-radius:12px;display:block;cursor:pointer;object-fit:contain;background:rgba(0,0,0,0.1);" onclick="toggleFullPreview(this)" onerror="this.style.display=\'none\'"></div>' + contentHtml;
                 }
             }
-            if (msg.role === 'assistant' && msg._doc_meta && msg._doc_meta.status === 'success' && msg._doc_meta.file && msg._doc_meta.downloaded) {
-                contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 14px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.25);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали этот PDF.</div>' + contentHtml;
-            } else if (msg.role === 'assistant' && msg._doc_meta && msg._doc_meta.status === 'success' && msg._doc_meta.file) {
-                var _docUrl = SERVER_URL + '/get_doc_file?job_id=' + encodeURIComponent(msg._doc_meta.file) + '&session_token=' + sessionToken;
-                contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 12px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.25);border-radius:12px;"><div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:6px;">📄 ' + escapeHtml(msg._doc_meta.display_name || 'Документ.pdf') + '</div><div style="display:flex;gap:8px;align-items:center;"><a href="' + _docUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(0,203,245,0.15);border:1px solid rgba(0,203,245,0.4);border-radius:8px;color:#00CBF5;text-decoration:none;font-size:12px;font-family:Inter,sans-serif;font-weight:600;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Забрать</a></div></div>' + contentHtml;
-            }
             if (msg.role === 'assistant' && msg._audio_meta && msg._audio_meta.status === 'success' && msg._audio_meta.file && msg._audio_meta.downloaded) {
                 contentHtml = '<div style="margin:6px 0 10px 0;padding:10px 14px;background:rgba(0,203,245,0.08);border:1px solid rgba(0,203,245,0.25);border-radius:12px;font-size:14px;color:#888;font-style:italic;">Вы скачали этот аудиотрек.</div>' + contentHtml;
             } else if (msg.role === 'assistant' && msg._audio_meta && msg._audio_meta.status === 'success' && msg._audio_meta.file) {
@@ -7346,24 +7340,7 @@
             }, 16);
         }
 
-        function _autoDeployExtractFirstArticle(text) {
-            if (!text) return '';
-            var _lines = String(text).split(/\r?\n/);
-            for (var _i = 0; _i < _lines.length; _i++) {
-                var _ln = _lines[_i].trim();
-                if (!_ln) continue;
-                // ещё нет характеристик: строка вида «артикул — тип — бренд» без размеров/тока
-                if (/[×xх]\s*\d|\d+\s*(мм|А|В|Вт|mA|кг|IP)/i.test(_ln)) continue;
-                var _parts = _ln.split(/\s+—\s+/);
-                if (_parts.length >= 2) {
-                    return _parts[0].trim().slice(0, 128);
-                }
-                return _ln.slice(0, 128);
-            }
-            return '';
-        }
-
-        async function sendMessage(overrideChatId, overrideBranchId, previewFile, overrideSearchQuery) {
+        async function sendMessage(overrideChatId, overrideBranchId, previewFile) {
             if (selectionMode) toggleSelectionMode();
 
             if (isSending) return;
@@ -7560,8 +7537,6 @@
                         branch_id: _targetBranchId,
                         personality: currentPersonality,
                         web_search: webSearchEnabled,
-                        search_query: overrideSearchQuery || '',
-                        article: overrideSearchQuery || '',
                         files: _sendFilesSnapshot.map(function(f) { return { data: f.data || '', name: f.name || '', mime: f.mime || '', file_id: f.file_id || '' }; }),
                         flux: fluxModeEnabled,
                         flux_resolution: fluxModeEnabled ? getFluxSelectedResolution() : '',
@@ -7738,31 +7713,6 @@
                     if (window._markAutodeploy) {
                         await window._markAutodeploy(finalMeta.assistant_msg_id, finalMeta.user_msg_id);
                     }
-                }
-                var _docJson = _extractDocJson(assistantMsg.content || '');
-                if (_docJson) {
-                    try {
-                        var _docResp = await fetch(SERVER_URL + '/generate_doc', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                            body: JSON.stringify(Object.assign({ user_id: currentUserId }, _docJson))
-                        });
-                        var _docData = await _docResp.json();
-                        if (_docData.success) {
-                            assistantMsg._doc_meta = {
-                                status: 'success',
-                                file: _docData.file,
-                                display_name: _docData.display_name || _docJson.filename || 'document.pdf',
-                                downloaded: false
-                            };
-                            assistantMsg.content = (assistantMsg.content || '').replace(/&#8203;`&#8203;`&#8203;`&#8203;json[\s\S]*?&#8203;`&#8203;`&#8203;`&#8203;/gi, '').trim() || 'Документ сформирован.';
-                            await fetch(SERVER_URL + '/save_doc_meta', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                                body: JSON.stringify({ user_id: currentUserId, chat_id: chat.id, msg_id: assistantMsg.msg_id, _doc_meta: assistantMsg._doc_meta })
-                            }).catch(function(){});
-                        }
-                    } catch(e) { console.warn('generate_doc failed', e); }
                 }
                 if (fluxModeEnabled) {
                     fluxModeEnabled = false;
@@ -8872,36 +8822,6 @@
             if (activeStrip) activeStrip.classList.add('active');
         }
 
-        function _extractDocJson(text) {
-            if (!text) return null;
-            var m = text.match(/&#8203;`&#8203;`&#8203;`&#8203;json\s*([\s\S]*?)&#8203;`&#8203;`&#8203;`&#8203;/i);
-            var candidate = null;
-            if (m) {
-                candidate = m[1].trim();
-            } else {
-                var pos = text.indexOf('"title"');
-                if (pos !== -1) {
-                    var start = text.lastIndexOf('{', pos);
-                    if (start === -1) start = text.indexOf('{');
-                    if (start !== -1) {
-                        var depth = 0;
-                        var end = -1;
-                        for (var i = start; i < text.length; i++) {
-                            if (text[i] === '{') depth++;
-                            else if (text[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
-                        }
-                        if (end !== -1) candidate = text.substring(start, end + 1);
-                    }
-                }
-            }
-            if (!candidate) return null;
-            try {
-                var obj = JSON.parse(candidate);
-                if (obj && (obj.title || obj.content)) return obj;
-            } catch(e) { return null; }
-            return null;
-        }
-
         function parseEditPairs(content) {
             var edits = [];
             if (!content) return edits;
@@ -9297,16 +9217,6 @@
 
             if ((msg.content || '').indexOf('[ПРАВКИ ОКОНЧЕНЫ]') !== -1) {
                 _autoDeployLoopCount = 0;
-                _autoDeployBuildJson();
-                return;
-            }
-            if ((msg.content || '').indexOf('[СБОР ИНФОРМАЦИИ ЗАВЕРШЁН]') !== -1) {
-                _autoDeployLoopCount = 0;
-                _autoDeployBuildJson();
-                return;
-            }
-            if ((msg.content || '').indexOf('[СПИСОК ГОТОВ]') !== -1) {
-                _autoDeployStartPassports();
                 return;
             }
 
@@ -9484,105 +9394,6 @@
             } catch(e) {
                 console.warn('autodeploy critical', e);
                 _autoDeployInFlight = false;
-            }
-        }
-
-        var _autoDeployPassportsInFlight = false;
-
-        async function _autoDeployStartPassports() {
-            if (_autoDeployPassportsInFlight) return;
-            if (!_autoDeployEnabled) return;
-            if (!_deployHandles || !_deployHandles.work) return;
-
-            try {
-                var _names = [];
-                for await (var _e of _deployHandles.work.values()) {
-                    if (_e.kind === 'file' && _e.name.indexOf('_бэкап') === -1 && _e.name.indexOf('_ошибка') === -1) {
-                        _names.push(_e.name);
-                    }
-                }
-                if (_names.length !== 1) return;
-
-                var _fh = await _deployHandles.work.getFileHandle(_names[0]);
-                var _file = await _fh.getFile();
-                var _text = await _file.text();
-
-                _autoDeployPassportsInFlight = true;
-
-                var _b64 = btoa(unescape(encodeURIComponent(_text)));
-                pendingFiles = [{
-                    name: _names[0],
-                    mime: 'text/plain',
-                    data: _b64,
-                    _status: 'ok'
-                }];
-                updateFileList();
-
-                webSearchEnabled = true;
-                localStorage.setItem('photobot_web_search', 'true');
-                var _wsBtn = document.getElementById('webSearchToggle');
-                if (_wsBtn) _wsBtn.classList.add('active');
-
-                // Парсим первую строку артикула из файла и делаем по ней отдельный запрос поиска
-                var _firstArticle = _autoDeployExtractFirstArticle(_text);
-
-                var _inp = document.getElementById('userInput');
-                _inp.value = 'Список согласован. Найди паспорт для первой позиции и выдай правку [BEFORE]/[AFTER] к файлу.';
-                _inp.dispatchEvent(new Event('input'));
-
-                sendMessage(undefined, undefined, undefined, _firstArticle);
-            } catch(e) {
-                console.warn('autodeploy start passports failed', e);
-            } finally {
-                setTimeout(function() { _autoDeployPassportsInFlight = false; }, 500);
-            }
-        }
-
-        var _autoDeployJsonInFlight = false;
-
-        async function _autoDeployBuildJson() {
-            if (_autoDeployJsonInFlight) return;
-            if (!_autoDeployEnabled) return;
-            if (!_deployHandles || !_deployHandles.work) return;
-
-            try {
-                var _names = [];
-                for await (var _e of _deployHandles.work.values()) {
-                    if (_e.kind === 'file' && _e.name.indexOf('_бэкап') === -1 && _e.name.indexOf('_ошибка') === -1) {
-                        _names.push(_e.name);
-                    }
-                }
-                if (_names.length !== 1) return;
-
-                var _fh = await _deployHandles.work.getFileHandle(_names[0]);
-                var _file = await _fh.getFile();
-                var _text = await _file.text();
-
-                _autoDeployJsonInFlight = true;
-
-                var _b64 = btoa(unescape(encodeURIComponent(_text)));
-                pendingFiles = [{
-                    name: _names[0],
-                    mime: 'text/plain',
-                    data: _b64,
-                    _status: 'ok'
-                }];
-                updateFileList();
-
-                webSearchEnabled = true;
-                localStorage.setItem('photobot_web_search', 'true');
-                var _wsBtn = document.getElementById('webSearchToggle');
-                if (_wsBtn) _wsBtn.classList.add('active');
-
-                var _inp = document.getElementById('userInput');
-                _inp.value = 'Сбор информации завершён. Верни JSON для рендера листа А3 по этому файлу.';
-                _inp.dispatchEvent(new Event('input'));
-
-                sendMessage();
-            } catch(e) {
-                console.warn('autodeploy build json failed', e);
-            } finally {
-                setTimeout(function() { _autoDeployJsonInFlight = false; }, 500);
             }
         }
 
