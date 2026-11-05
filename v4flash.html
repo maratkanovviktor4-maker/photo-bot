@@ -8867,7 +8867,7 @@
         var _deployHandles = { work: null };
         var _autoDeployEnabled = localStorage.getItem('photobot_autodeploy') === 'true';
         var _autoDeployLoopCount = 0;
-        var _autoDeployMaxLoops = 3;
+        var _autoDeployMaxLoops = 30;
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', _updateAutoDeployFloat);
         } else {
@@ -9078,25 +9078,9 @@
                 if (_okBtn4) _okBtn4.setAttribute('data-skip-reload', '1');
                 return;
             }
-            if (_deployEdits.length > 1) {
-                showAlertModal('Нельзя применить', 'Ручной деплой — только одна пара [BEFORE]/[AFTER] для одного файла за раз. В сообщении найдено пар: ' + _deployEdits.length + '.', '⚠️');
-                var _okBtn4b = document.querySelector('#alertModalOverlay .modal-actions button');
-                if (_okBtn4b) _okBtn4b.setAttribute('data-skip-reload', '1');
-                return;
-            }
             document.getElementById('deployFileName').style.display = 'none';
             document.getElementById('deployWorkDir').value = '';
             document.getElementById('deployFileInDir').style.display = 'none';
-            var _dtf = document.getElementById('deployTargetFile');
-            if (_dtf) {
-                var _tgt = (_deployEdits[0] && _deployEdits[0].file) ? _deployEdits[0].file : '';
-                if (_tgt) {
-                    _dtf.textContent = 'Целевой файл: ' + _tgt;
-                    _dtf.style.display = 'block';
-                } else {
-                    _dtf.style.display = 'none';
-                }
-            }
             document.getElementById('deployConfirmBtn').disabled = true;
             _updateAutoDeployCheckbox();
             _resetDeployDirty();
@@ -9276,104 +9260,7 @@
             }
 
             var edits = parseEditPairs(msg.content || '');
-
-            // Запрет: строго одна пара [BEFORE]/[AFTER] за раз, только для одного файла.
-            if (edits.length > 1) {
-                _autoDeployLoopCount++;
-                if (_autoDeployLoopCount > _autoDeployMaxLoops) {
-                    _autoDeployLoopCount = 0;
-                    showAlertModal('Автодеплой', 'Ассистент повторно нарушает правило «одна правка за раз» (' + _autoDeployMaxLoops + ' попытки). Цикл остановлен.', '⚠️');
-                    var _bToo = document.querySelector('#alertModalOverlay .modal-actions button');
-                    if (_bToo) _bToo.setAttribute('data-skip-reload', '1');
-                    return;
-                }
-                var _tooLog = '=== DEPLOY ERROR LOG ===\n'
-                    + 'error_type: too_many_pairs\n'
-                    + 'action_required: перевыдай ЗАНОВО план правок — строго одну пару [BEFORE]/[AFTER] за один ответ, только для одного файла. Никаких двух правок на один код и никаких правок для двух файлов в одном сообщении.\n'
-                    + 'hint: в ответе найдено пар: ' + edits.length + ', разрешена ровно 1\n'
-                    + 'expected_format:\n  <имя_файла> [BEFORE]\n  <код>\n  <имя_файла> [AFTER]\n  <код>\n'
-                    + '=== END LOG ===\n';
-                try {
-                    var _wHandle = _deployHandles.work;
-                    if (_wHandle) {
-                        var _eFH = await _wHandle.getFileHandle('deploy_error.txt', { create: true });
-                        var _ew = await _eFH.createWritable();
-                        await _ew.write(_tooLog);
-                        await _ew.close();
-                    }
-                } catch(e) { console.warn('too_many_pairs log save failed', e); }
-                var _errB64 = null;
-                try {
-                    _errB64 = btoa(unescape(encodeURIComponent(_tooLog)));
-                } catch(e) { _errB64 = null; }
-                if (_errB64) {
-                    pendingFiles.push({ name: 'deploy_error.txt', mime: 'text/plain', data: _errB64, _status: 'ok' });
-                }
-                msg._autodeploy = true;
-                renderMessages();
-                var _inp = document.getElementById('userInput');
-                _inp.value = '[FAIL] patch failed';
-                _inp.dispatchEvent(new Event('input'));
-                updateFileList();
-                sendMessage();
-                return;
-            }
-
-            // Пары нет, но в тексте есть метки [BEFORE]/[AFTER] — значит формат сломан.
-            if (!edits.length) {
-                var _rawContent = msg.content || '';
-                if (_rawContent.indexOf('[BEFORE]') !== -1 || _rawContent.indexOf('[AFTER]') !== -1) {
-                    _autoDeployLoopCount++;
-                    if (_autoDeployLoopCount > _autoDeployMaxLoops) {
-                        _autoDeployLoopCount = 0;
-                        showAlertModal('Автодеплой', 'Ассистент повторно присылает метки без имени файла (' + _autoDeployMaxLoops + ' попытки). Цикл остановлен.', '⚠️');
-                        var _bNP = document.querySelector('#alertModalOverlay .modal-actions button');
-                        if (_bNP) _bNP.setAttribute('data-skip-reload', '1');
-                        return;
-                    }
-                    var _namesNP = [];
-                    try {
-                        await _restoreDeployHandles();
-                        if (_deployHandles.work) _namesNP = await _listWorkFiles(_deployHandles.work);
-                    } catch(e) { console.warn('no_pairs list failed', e); }
-                    var _truncNP = false;
-                    var _namesNPOut = _namesNP;
-                    if (_namesNP.length > 100) { _namesNPOut = _namesNP.slice(0, 100); _truncNP = true; }
-                    var _excerpt = _rawContent;
-                    var _bi = _excerpt.indexOf('[BEFORE]');
-                    if (_bi === -1) _bi = _excerpt.indexOf('[AFTER]');
-                    var _startEx = Math.max(0, _bi - 80);
-                    var _excerptOut = _excerpt.substring(_startEx, _startEx + 240).replace(/\n/g, '\\n');
-                    var _npLog = '=== DEPLOY ERROR LOG ===\n'
-                        + 'error_type: no_pairs\n'
-                        + 'action_required: перевыдай правку с корректным форматом меток — имя файла перед [BEFORE] и [AFTER] на той же строке\n'
-                        + 'hint: найдена метка [BEFORE]/[AFTER] без имени файла или имя не совпадает с рабочей папкой\n'
-                        + 'expected_format:\n  <имя_файла> [BEFORE]\n  <код>\n  <имя_файла> [AFTER]\n  <код>\n'
-                        + 'files_in_folder: ' + (_namesNPOut.join(', ') || '(папка пуста)') + '\n'
-                        + ('truncated: true\n' if _truncNP else '')
-                        + 'your_message_excerpt: "' + _excerptOut + '"\n'
-                        + '=== END LOG ===\n';
-                    try {
-                        if (_deployHandles.work) {
-                            var _npFH = await _deployHandles.work.getFileHandle('deploy_error.txt', { create: true });
-                            var _npW = await _npFH.createWritable();
-                            await _npW.write(_npLog);
-                            await _npW.close();
-                        }
-                    } catch(e) { console.warn('no_pairs log save failed', e); }
-                    var _npB64 = null;
-                    try { _npB64 = btoa(unescape(encodeURIComponent(_npLog))); } catch(e) { _npB64 = null; }
-                    if (_npB64) pendingFiles.push({ name: 'deploy_error.txt', mime: 'text/plain', data: _npB64, _status: 'ok' });
-                    msg._autodeploy = true;
-                    renderMessages();
-                    var _inp2 = document.getElementById('userInput');
-                    _inp2.value = '[FAIL] patch failed';
-                    _inp2.dispatchEvent(new Event('input'));
-                    updateFileList();
-                    sendMessage();
-                }
-                return;
-            }
+            if (!edits.length) return;
 
             if (_autoDeployLoopCount >= _autoDeployMaxLoops) {
                 _autoDeployLoopCount = 0;
@@ -10982,7 +10869,6 @@
                     <input type="text" id="deployWorkDir" readonly placeholder="Папка не выбрана" style="flex:1;padding:10px 12px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;cursor:pointer;" onclick="pickDeployDir('work')">
                     <button onclick="pickDeployDir('work')" title="Выбрать рабочую папку" style="width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
                 </div>
-                <div id="deployTargetFile" style="font-size:12px;color:#00CBF5;font-family:Inter,sans-serif;margin-top:8px;display:none;"></div>
                 <div id="deployFileInDir" style="font-size:11px;color:#666;font-family:Inter,sans-serif;margin-top:6px;display:none;"></div>
             </div>
             <div style="margin-top:16px;display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,203,245,0.06);border:1px solid rgba(0,203,245,0.2);border-radius:10px;cursor:pointer;" onclick="toggleAutoDeployFromModal(event)">
