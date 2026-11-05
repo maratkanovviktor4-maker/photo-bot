@@ -8823,12 +8823,12 @@
         }
 
         function parseEditPairs(content) {
-            // Возвращает массив { file, old, new }.
-            // Формат метки: "<name> [BEFORE]" и "<name> [AFTER]" на отдельной строке.
-            // Имя файла — строго как в рабочей папке, без пути.
             var edits = [];
             if (!content) return edits;
             var tpl = String.fromCharCode(96, 96, 96);
+            var _masked = content.replace(new RegExp(tpl + tpl + tpl + "[\\s\\S]*?" + tpl + tpl + tpl, "g"), function(m) {
+                return m.replace(/[^\n]/g, ' ');
+            });
             var _pre = "(?:^|\\n)[ \\t]*(?:\\*\\*|__)?[ \\t]*([\\w.\\-]+\\.[A-Za-z0-9]{1,8})[ \\t]+";
             var _post = "[ \\t]*(?:\\*\\*|__)?[ \\t]*\\n\\s*" + tpl + "\\w*\\r?\\n([\\s\\S]*?)" + tpl;
             var oldRe = new RegExp(_pre + "\\[BEFORE\\]" + _post, "gi");
@@ -8836,8 +8836,16 @@
             var olds = [];
             var news = [];
             var m;
-            while ((m = oldRe.exec(content)) !== null) olds.push({ file: m[1], code: m[2], pos: m.index });
-            while ((m = newRe.exec(content)) !== null) news.push({ file: m[1], code: m[2], pos: m.index });
+            while ((m = oldRe.exec(_masked)) !== null) {
+                var _cs = m.index + m[0].length - m[2].length - tpl.length;
+                var _ce = m.index + m[0].length;
+                olds.push({ file: m[1], code: content.substring(_cs, _ce - tpl.length), pos: m.index });
+            }
+            while ((m = newRe.exec(_masked)) !== null) {
+                var _cs2 = m.index + m[0].length - m[2].length - tpl.length;
+                var _ce2 = m.index + m[0].length;
+                news.push({ file: m[1], code: content.substring(_cs2, _ce2 - tpl.length), pos: m.index });
+            }
             // Сопоставляем AFTER к соответствующему BEFORE: по порядку и с проверкой совпадения имени файла.
             var _usedNew = {};
             for (var i = 0; i < olds.length; i++) {
