@@ -8870,8 +8870,13 @@
         var _autoDeployMaxLoops = 30;
         var _autoDeployTooManyStreak = 0;
 
-        async function _sendAutoDeployFail(logText, errorType, workHandle) {
+        async function _sendAutoDeployFail(logText, errorType, workHandle, msg) {
             try {
+                // Помечаем текущее сообщение как обработанное ДО отправки,
+                // чтобы автодеплой не взял его повторно.
+                if (msg) {
+                    msg._autodeploy = true;
+                }
                 if (workHandle) {
                     try {
                         var eFH = await workHandle.getFileHandle('deploy_error.txt', { create: true });
@@ -8897,6 +8902,7 @@
                 _input.value = '[FAIL] patch failed';
                 _input.dispatchEvent(new Event('input'));
                 _autoDeployInFlight = false;
+                if (chats.find(function(c) { return c.id === currentChatId; })) renderMessages();
                 sendMessage();
             } catch(e) {
                 console.warn('sendAutoDeployFail error', e);
@@ -9288,6 +9294,7 @@
             if (!chat) return;
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'assistant') return;
+            if (msg._autodeploy) return;
 
             if ((msg.content || '').indexOf('[ПРАВКИ ОКОНЧЕНЫ]') !== -1) {
                 _autoDeployLoopCount = 0;
@@ -9361,7 +9368,7 @@
                     + '  <код>\n'
                     + 'files_in_folder: ' + _names.join(', ') + (_names.length > 100 ? ' (truncated)' : '') + '\n'
                     + '=== END LOG ===\n';
-                await _sendAutoDeployFail(_logText, 'no_pairs', workHandle);
+                await _sendAutoDeployFail(_logText, 'no_pairs', workHandle, msg);
                 return;
             }
             if (edits.length > 1) {
@@ -9386,7 +9393,7 @@
                     + '  v4flash.html [AFTER]\n'
                     + '  <код>\n'
                     + '=== END LOG ===\n';
-                await _sendAutoDeployFail(_logText2, 'too_many_pairs', workHandle);
+                await _sendAutoDeployFail(_logText2, 'too_many_pairs', workHandle, msg);
                 return;
             }
 
@@ -9423,7 +9430,7 @@
                     + '  <имя_файла> [AFTER]\n'
                     + '  <код>\n'
                     + '=== END LOG ===\n';
-                await _sendAutoDeployFail(_logNF, 'file_not_found', workHandle);
+                await _sendAutoDeployFail(_logNF, 'file_not_found', workHandle, msg);
                 return;
             }
 
