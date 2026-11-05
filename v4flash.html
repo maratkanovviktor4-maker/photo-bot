@@ -1458,6 +1458,9 @@
                     <button id="autoDeployFloatBtn" onclick="toggleAutoDeployFloat()" title="Автодеплой: после ответа ассистента применять правки без открытия модалки" style="position:absolute;top:-24px;left:14px;display:inline-flex;align-items:center;justify-content:center;width:26px;height:24px;border-radius:5px 5px 0 0;border:1px solid rgba(255,255,255,0.1);border-bottom:none;background:rgba(34,34,34,0.9);color:#888;cursor:pointer;transition:background 0.15s,color 0.15s;z-index:3;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m6.75 12-3-3m0 0-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
                     </button>
+                    <button id="projectorFloatBtn" onclick="toggleProjectorMode()" title="Проектировщик: авто-обогащение файла по списку" style="position:absolute;top:-24px;left:46px;display:none;align-items:center;justify-content:center;width:26px;height:24px;border-radius:5px 5px 0 0;border:1px solid rgba(255,255,255,0.1);border-bottom:none;background:rgba(34,34,34,0.9);color:#888;cursor:pointer;transition:background 0.15s,color 0.15s;z-index:3;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>
+                    </button>
                     <div id="dropZone" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none;align-items:center;justify-content:center;background:rgba(0,203,245,0.1);border:2px dashed #00CBF5;border-radius:16px;font-size:14px;color:#00CBF5;">Отпустите файл для загрузки</div>
                     <div class="file-list" id="fileList"></div>
                     <div class="input-row-wrapper">
@@ -2141,6 +2144,7 @@
         }
         function changePersonality() {
             var val = document.getElementById('personalitySelect').value;
+            setTimeout(_refreshProjectorBtnVisibility, 0);
             if (val === 'custom') {
                 const personalityBtnC = document.getElementById('personalityBtn');
                 if (personalityBtnC) {
@@ -9073,6 +9077,95 @@
             }
         }
 
+        var _projectorModeEnabled = false;
+        var _passportQueue = [];
+        var _passportIndex = 0;
+
+        function _updateProjectorFloat() {
+            var b = document.getElementById('projectorFloatBtn');
+            if (!b) return;
+            if (_projectorModeEnabled) {
+                b.style.color = '#27ae60';
+                b.style.background = 'rgba(39,174,96,0.15)';
+                b.style.borderColor = 'rgba(39,174,96,0.4)';
+                b.title = 'Проектировщик ВКЛ (' + (_passportIndex + 1) + '/' + _passportQueue.length + ')';
+            } else {
+                b.style.color = '#666';
+                b.style.background = 'rgba(34,34,34,0.9)';
+                b.style.borderColor = 'rgba(255,255,255,0.1)';
+                b.title = 'Проектировщик ВЫКЛ';
+            }
+        }
+
+        function _refreshProjectorBtnVisibility() {
+            var b = document.getElementById('projectorFloatBtn');
+            if (!b) return;
+            b.style.display = (currentPersonality === 'projector') ? 'inline-flex' : 'none';
+        }
+
+        function _parsePassportList(text) {
+            var lines = String(text || '').split('\n');
+            var arr = [];
+            for (var i = 0; i < lines.length; i++) {
+                var ln = lines[i].trim();
+                if (!ln) continue;
+                if (ln.indexOf(' — ') === -1) continue;
+                arr.push(ln);
+            }
+            return arr;
+        }
+
+        function toggleProjectorMode() {
+            if (_projectorModeEnabled) {
+                _projectorModeEnabled = false;
+                _updateProjectorFloat();
+                return;
+            }
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            if (!chat) { showAlertModal('Нет чата', 'Откройте чат с согласованным списком.', '⚠️'); return; }
+            var list = [];
+            for (var i = chat.messages.length - 1; i >= 0; i--) {
+                var m = chat.messages[i];
+                if (m.role !== 'assistant' || !m.content) continue;
+                var parsed = _parsePassportList(m.content);
+                if (parsed.length >= 1) { list = parsed; break; }
+            }
+            if (!list.length) {
+                showAlertModal('Список не найден', 'Не найден согласованный список вида «артикул — тип — производитель».', '⚠️');
+                return;
+            }
+            _passportQueue = list.slice();
+            _passportIndex = 0;
+            _projectorModeEnabled = true;
+            _updateProjectorFloat();
+            _sendNextPassport();
+        }
+
+        function _sendNextPassport() {
+            if (!_projectorModeEnabled) return;
+            if (_passportIndex >= _passportQueue.length) {
+                _projectorModeEnabled = false;
+                _updateProjectorFloat();
+                return;
+            }
+            var line = _passportQueue[_passportIndex];
+            _passportIndex++;
+            _updateProjectorFloat();
+            var input = document.getElementById('userInput');
+            if (!_autoDeployEnabled) {
+                _autoDeployEnabled = true;
+                localStorage.setItem('photobot_autodeploy', 'true');
+                _updateAutoDeployFloat();
+            }
+            webSearchEnabled = true;
+            localStorage.setItem('photobot_web_search', 'true');
+            var wb = document.getElementById('webSearchToggle');
+            if (wb) wb.classList.add('active');
+            input.value = 'паспорт ' + line;
+            input.dispatchEvent(new Event('input'));
+            sendMessage();
+        }
+
         function openDeployModalSettings() {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             var msgIndex = chat ? chat.messages.length - 1 : -1;
@@ -9615,6 +9708,23 @@
             }
 
             _autoDeployInFlight = false;
+
+            if (_projectorModeEnabled && !_failedFile) {
+                var _lastA = chat.messages[chat.messages.length - 1];
+                var _lastTxt = (_lastA && _lastA.content) ? _lastA.content : '';
+                if (_lastTxt.indexOf('паспорт-нет данных') !== -1) {
+                    _projectorModeEnabled = false;
+                    _updateProjectorFloat();
+                    return;
+                }
+                if (_lastTxt.indexOf('сбор окончен') !== -1) {
+                    _projectorModeEnabled = false;
+                    _updateProjectorFloat();
+                    return;
+                }
+                _sendNextPassport();
+                return;
+            }
 
             // Разбор результата по всем файлам.
             if (_failedFile) {
