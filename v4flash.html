@@ -8868,47 +8868,6 @@
         var _autoDeployEnabled = localStorage.getItem('photobot_autodeploy') === 'true';
         var _autoDeployLoopCount = 0;
         var _autoDeployMaxLoops = 30;
-        var _autoDeployTooManyStreak = 0;
-
-        async function _sendAutoDeployFail(logText, errorType, workHandle, msg) {
-            try {
-                // Помечаем текущее сообщение как обработанное ДО отправки,
-                // чтобы автодеплой не взял его повторно.
-                if (msg) {
-                    msg._autodeploy = true;
-                }
-                if (workHandle) {
-                    try {
-                        var eFH = await workHandle.getFileHandle('deploy_error.txt', { create: true });
-                        var ew = await eFH.createWritable();
-                        await ew.write(logText);
-                        await ew.close();
-                    } catch(e) { console.warn('log save failed', e); }
-                }
-                var errBlob = new Blob([logText], { type: 'text/plain;charset=utf-8' });
-                var _errBase64 = await new Promise(function(resolve) {
-                    var rdr = new FileReader();
-                    rdr.onload = function(ev) { resolve(ev.target.result.split(',')[1]); };
-                    rdr.readAsDataURL(errBlob);
-                });
-                pendingFiles.push({
-                    name: 'deploy_error.txt',
-                    mime: 'text/plain',
-                    data: _errBase64,
-                    _status: 'ok'
-                });
-                updateFileList();
-                var _input = document.getElementById('userInput');
-                _input.value = '[FAIL] patch failed';
-                _input.dispatchEvent(new Event('input'));
-                _autoDeployInFlight = false;
-                if (chats.find(function(c) { return c.id === currentChatId; })) renderMessages();
-                sendMessage();
-            } catch(e) {
-                console.warn('sendAutoDeployFail error', e);
-                _autoDeployInFlight = false;
-            }
-        }
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', _updateAutoDeployFloat);
         } else {
@@ -9294,7 +9253,6 @@
             if (!chat) return;
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'assistant') return;
-            if (msg._autodeploy) return;
 
             if ((msg.content || '').indexOf('[ПРАВКИ ОКОНЧЕНЫ]') !== -1) {
                 _autoDeployLoopCount = 0;
@@ -9320,6 +9278,7 @@
             }
 
             _autoDeployInFlight = true;
+            _autoDeployLoopCount++;
 
             var workHandle = _deployHandles.work;
             var _names = [];
@@ -9336,122 +9295,224 @@
                 return;
             }
 
-            // === АВТОДЕПЛОЙ: строго одна пара за раз, для одного файла ===
-            // 1. Если парсер не нашёл ни одной пары, но в тексте есть метки [BEFORE]/[AFTER]
-            //    — это нарушение формата (нет имени файла в метке). Шлём лог no_pairs.
-            // 2. Если пар больше одной — нарушение правила «одна пара за раз». Шлём лог too_many_pairs.
-            if (edits.length === 0) {
-                var _hasRawMarker = /\[BEFORE\]|\[AFTER\]/i.test(msg.content || '');
-                if (!_hasRawMarker) {
-                    _autoDeployInFlight = false;
-                    _autoDeployLoopCount = 0;
-                    return;
-                }
-                _autoDeployTooManyStreak++;
-                if (_autoDeployTooManyStreak >= 3) {
-                    _autoDeployTooManyStreak = 0;
-                    _autoDeployLoopCount = 0;
-                    _autoDeployInFlight = false;
-                    showAlertModal('Автодеплой', 'Ассистент 3 раза подряд нарушил формат. Цикл остановлен. Проверьте вручную.', '⚠️');
-                    var _bst = document.querySelector('#alertModalOverlay .modal-actions button');
-                    if (_bst) _bst.setAttribute('data-skip-reload', '1');
-                    return;
-                }
-                var _logText = '=== DEPLOY ERROR LOG ===\n'
-                    + 'error_type: no_pairs\n'
-                    + 'action_required: выдай правку строго в формате меток с именем файла. Каждая метка на отдельной строке: "<имя_файла> [BEFORE]" и "<имя_файла> [AFTER]" — затем блок кода. Имя файла обязательно.\n'
-                    + 'hint: в твоём ответе присутствует метка [BEFORE] или [AFTER], но парсер не смог её разобрать. Вероятные причины: (а) метка без имени файла на той же строке; (б) имя файла с путём (src/file.html) или в кавычках; (в) метка и имя не на одной строке; (г) имя без расширения.\n'
-                    + 'expected_format:\n'
-                    + '  v4flash.html [BEFORE]\n'
-                    + '  <код>\n'
-                    + '  v4flash.html [AFTER]\n'
-                    + '  <код>\n'
-                    + 'files_in_folder: ' + _names.join(', ') + (_names.length > 100 ? ' (truncated)' : '') + '\n'
-                    + '=== END LOG ===\n';
-                await _sendAutoDeployFail(_logText, 'no_pairs', workHandle, msg);
-                return;
+            // Группируем правки по имени файла (из метки "<name> [BEFORE]").
+            var _byFile = {};
+            var _order = [];
+            for (var _ei = 0; _ei < edits.length; _ei++) {
+                var _e = edits[_ei];
+                var _f = _e.file || '';
+                if (!_f) continue;
+                if (!_byFile[_f]) { _byFile[_f] = []; _order.push(_f); }
+                _byFile[_f].push(_e);
             }
-            if (edits.length > 1) {
-                _autoDeployTooManyStreak++;
-                if (_autoDeployTooManyStreak >= 3) {
-                    _autoDeployTooManyStreak = 0;
-                    _autoDeployLoopCount = 0;
-                    _autoDeployInFlight = false;
-                    showAlertModal('Автодеплой', 'Ассистент 3 раза подряд выдал больше одной пары. Цикл остановлен. Проверьте вручную.', '⚠️');
-                    var _bst2 = document.querySelector('#alertModalOverlay .modal-actions button');
-                    if (_bst2) _bst2.setAttribute('data-skip-reload', '1');
-                    return;
-                }
-                var _logText2 = '=== DEPLOY ERROR LOG ===\n'
-                    + 'error_type: too_many_pairs\n'
-                    + 'count: ' + edits.length + '\n'
-                    + 'action_required: ЗАПРЕЩЕНО выдавать более одной пары [BEFORE]/[AFTER] за один ответ. ЗАПРЕЩЕНО выдавать правки для более чем одного файла за один ответ. Выдавай снова — по одной паре за раз, для одного файла. Дождись ответа [OK] или [FAIL], прежде чем выдавать следующую.\n'
-                    + 'hint: ты прислал ' + edits.length + ' пары. План правок нужно построить заново: один ответ = одна пара = один файл.\n'
-                    + 'expected_format:\n'
-                    + '  v4flash.html [BEFORE]\n'
-                    + '  <код>\n'
-                    + '  v4flash.html [AFTER]\n'
-                    + '  <код>\n'
-                    + '=== END LOG ===\n';
-                await _sendAutoDeployFail(_logText2, 'too_many_pairs', workHandle, msg);
-                return;
-            }
-
-            // Нормализация: строго одна правка, один файл.
-            _autoDeployLoopCount++;
-            _autoDeployTooManyStreak = 0;
-
-            var _one = edits[0];
-            var _wantFile = _one.file || '';
-            if (!_wantFile) {
+            if (_order.length === 0) {
                 _autoDeployInFlight = false;
                 return;
             }
 
-            // Сверяем имя файла с папкой.
-            var _realName = null;
-            for (var _ni = 0; _ni < _names.length; _ni++) {
-                if (_names[_ni] === _wantFile) { _realName = _names[_ni]; break; }
-            }
-            if (!_realName) {
-                for (var _nj = 0; _nj < _names.length; _nj++) {
-                    if (_names[_nj].toLowerCase() === _wantFile.toLowerCase()) { _realName = _names[_nj]; break; }
+            // Проверяем, что все указанные файлы существуют в папке.
+            var _resolved = {};
+            for (var _oi = 0; _oi < _order.length; _oi++) {
+                var _want = _order[_oi];
+                var _hit = null;
+                for (var _ni = 0; _ni < _names.length; _ni++) {
+                    if (_names[_ni] === _want) { _hit = _names[_ni]; break; }
                 }
+                if (!_hit) {
+                    for (var _nj = 0; _nj < _names.length; _nj++) {
+                        if (_names[_nj].toLowerCase() === _want.toLowerCase()) { _hit = _names[_nj]; break; }
+                    }
+                }
+                if (!_hit) {
+                    _autoDeployInFlight = false;
+                    showAlertModal('Файл не найден', 'Ассистент указал файл «' + _want + '», но в рабочей папке его нет. Загрузите файл или проверьте имя.', '⚠️');
+                    var _b2 = document.querySelector('#alertModalOverlay .modal-actions button');
+                    if (_b2) _b2.setAttribute('data-skip-reload', '1');
+                    return;
+                }
+                _resolved[_want] = _hit;
             }
-            if (!_realName) {
-                var _logNF = '=== DEPLOY ERROR LOG ===\n'
-                    + 'error_type: file_not_found\n'
-                    + 'wanted_file: ' + _wantFile + '\n'
-                    + 'action_required: файл с таким именем не найден в рабочей папке. Выбери точное имя из files_in_folder и перевыдай правку заново.\n'
-                    + 'files_in_folder: ' + _names.join(', ') + (_names.length > 100 ? ' (truncated)' : '') + '\n'
-                    + 'expected_format:\n'
-                    + '  <имя_файла> [BEFORE]\n'
-                    + '  <код>\n'
-                    + '  <имя_файла> [AFTER]\n'
-                    + '  <код>\n'
-                    + '=== END LOG ===\n';
-                await _sendAutoDeployFail(_logNF, 'file_not_found', workHandle, msg);
+
+            // Применяем файлы по очереди — каждый файл отдельным запросом к серверу.
+            var _appliedFiles = [];
+            var _failedFile = null;
+            var _failedError = null;
+
+            for (var _fi = 0; _fi < _order.length; _fi++) {
+                var _origName = _order[_fi];
+                var _realName = _resolved[_origName];
+                var _fileEdits = _byFile[_origName];
+
+                var _fileContent = null;
+                try {
+                    var _fh = await workHandle.getFileHandle(_realName);
+                    var _file = await _fh.getFile();
+                    _fileContent = await _file.text();
+                } catch(e) {
+                    console.warn('autodeploy read failed for ' + _realName, e);
+                    _failedFile = _realName;
+                    _failedError = 'не удалось прочитать файл';
+                    break;
+                }
+
+                var _eol = _fileContent.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+                var _fileNorm = _fileContent.replace(/\r\n/g, '\n');
+                var payload = {
+                    user_id: currentUserId,
+                    file_name: _realName,
+                    file_content: _fileNorm,
+                    edits: _fileEdits.map(function(e) { return { old: e.old, new: e.new }; }),
+                    eol: _eol
+                };
+
+                var _respOk = false;
+                try {
+                    var resp = await fetch(SERVER_URL + '/apply_edit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify(payload)
+                    });
+                    var data = await resp.json();
+
+                    if (data.success) {
+                        var fileResp = await fetch(SERVER_URL + data.file_url);
+                        var _newText = await fileResp.text();
+                        if (_eol === '\r\n') _newText = _newText.replace(/\n/g, '\r\n');
+                        var newBlob = new Blob([_newText], { type: 'text/plain;charset=utf-8' });
+                        var cleanName = _stripCopySuffix(data.filename || _realName);
+
+                        try {
+                            var oldFileHandle = null;
+                            try { oldFileHandle = await workHandle.getFileHandle(cleanName); } catch(e2) { oldFileHandle = null; }
+                            if (oldFileHandle) {
+                                try {
+                                    var oldFile = await oldFileHandle.getFile();
+                                    var _dotIdx2 = cleanName.lastIndexOf('.');
+                                    var _bkName2 = _dotIdx2 > 0 ? (cleanName.substring(0, _dotIdx2) + '_бэкап' + cleanName.substring(_dotIdx2)) : (cleanName + '_бэкап');
+                                    var bkFH2 = await workHandle.getFileHandle(_bkName2, { create: true });
+                                    var bw2 = await bkFH2.createWritable();
+                                    await bw2.write(oldFile);
+                                    await bw2.close();
+                                } catch(e2) { console.warn('backup failed', e2); }
+                            }
+                            var newFH2 = await workHandle.getFileHandle(cleanName, { create: true });
+                            var nw2 = await newFH2.createWritable();
+                            await nw2.write(newBlob);
+                            await nw2.close();
+                            _respOk = true;
+                            _appliedFiles.push(cleanName);
+                        } catch(e2) {
+                            console.warn('autodeploy save failed for ' + cleanName, e2);
+                            _failedFile = cleanName;
+                            _failedError = 'не удалось сохранить файл';
+                            break;
+                        }
+                    } else if (data.error_url) {
+                        var er = await fetch(SERVER_URL + data.error_url);
+                        var errText = await er.text();
+                        try {
+                            var _dotIdxErr = _realName.lastIndexOf('.');
+                            var _errName = _dotIdxErr > 0 ? (_realName.substring(0, _dotIdxErr) + '_ошибка.txt') : (_realName + '_ошибка.txt');
+                            var eFH = await workHandle.getFileHandle(_errName, { create: true });
+                            var ew = await eFH.createWritable();
+                            await ew.write(errText);
+                            await ew.close();
+                        } catch(e2) { console.warn('error log save failed', e2); }
+
+                        // Прикрепляем лог ошибки к следующему сообщению (тот же протокол, что раньше).
+                        var errBlob = new Blob([errText], { type: 'text/plain;charset=utf-8' });
+                        var _errBase64 = await new Promise(function(resolve) {
+                            var rdr = new FileReader();
+                            rdr.onload = function(ev) { resolve(ev.target.result.split(',')[1]); };
+                            rdr.readAsDataURL(errBlob);
+                        });
+                        pendingFiles.push({
+                            name: 'deploy_error.txt',
+                            mime: 'text/plain',
+                            data: _errBase64,
+                            _status: 'ok'
+                        });
+
+                        _failedFile = _realName;
+                        _failedError = 'patch failed';
+                        break;
+                    } else {
+                        _failedFile = _realName;
+                        _failedError = data.error || 'unknown';
+                        break;
+                    }
+                } catch(e) {
+                    console.warn('autodeploy apply failed for ' + _realName, e);
+                    _failedFile = _realName;
+                    _failedError = 'ошибка соединения';
+                    break;
+                }
+
+                if (!_respOk) break;
+            }
+
+            _autoDeployInFlight = false;
+
+            // Разбор результата по всем файлам.
+            if (_failedFile) {
+                // Отката не делаем — сервер apply_edit атомарен по каждому файлу,
+                // уже применённые файлы остались применёнными.
+                msg._autodeploy = true;
+                renderMessages();
+                var _input2 = document.getElementById('userInput');
+                _input2.value = '[FAIL] patch failed: ' + _failedFile + ' (' + (_failedError || 'unknown') + ')';
+                if (_failedError === 'patch failed') {
+                    // лог уже прикреплён
+                    _input2.value = '[FAIL] patch failed';
+                }
+                _input2.dispatchEvent(new Event('input'));
+                updateFileList();
+                sendMessage();
+                setTimeout(function() {
+                    var _last2 = chat.messages[chat.messages.length - 1];
+                    if (_last2 && _last2.role === 'user') _last2._autodeploy = true;
+                }, 100);
                 return;
             }
 
-            var _fileContent = null;
-            try {
-                var _fh = await workHandle.getFileHandle(_realName);
-                var _file = await _fh.getFile();
-                _fileContent = await _file.text();
-            } catch(e) {
-                console.warn('autodeploy read failed for ' + _realName, e);
-                _autoDeployInFlight = false;
-                return;
-            }
+            // Все файлы применены
+            var _targetMsgId = msg.msg_id;
+            var _chatRef = chat;
+            window._markAutodeploy = async function(_mid, _userId) {
+                var _c = chats.find(function(c) { return c.id === _chatRef.id; });
+                if (!_c) return;
+                var _ids = [];
+                for (var _i = 0; _i < _c.messages.length; _i++) {
+                    if (_c.messages[_i].msg_id === _mid) { _c.messages[_i]._autodeploy = true; _ids.push(_mid); }
+                    if (_userId && _c.messages[_i].msg_id === _userId) { _c.messages[_i]._autodeploy = true; _ids.push(_userId); }
+                }
+                if (_ids.length) {
+                    try {
+                        await fetch(SERVER_URL + '/mark_autodeploy', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                            body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: _chatRef.id, msg_ids: _ids })
+                        });
+                    } catch(e) {}
+                }
+                renderMessages();
+            };
+            if (_targetMsgId) window._markAutodeploy(_targetMsgId, null);
+            renderMessages();
+            var _input = document.getElementById('userInput');
+            _input.value = '[OK] patch applied · state committed';
+            _input.dispatchEvent(new Event('input'));
+            sendMessage();
+            return;
 
             var _eol = _fileContent.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
             var _fileNorm = _fileContent.replace(/\r\n/g, '\n');
+
             var payload = {
                 user_id: currentUserId,
-                file_name: _realName,
+                file_name: _fileName,
                 file_content: _fileNorm,
-                edits: [{ old: _one.old, new: _one.new }],
+                edits: edits.map(function(e) { return { old: e.old, new: e.new }; }),
                 eol: _eol
             };
 
@@ -9468,28 +9529,28 @@
                     var _newText = await fileResp.text();
                     if (_eol === '\r\n') _newText = _newText.replace(/\n/g, '\r\n');
                     var newBlob = new Blob([_newText], { type: 'text/plain;charset=utf-8' });
-                    var cleanName = _stripCopySuffix(data.filename || _realName);
+                    var cleanName = _stripCopySuffix(data.filename || _fileName);
 
                     try {
                         var oldFileHandle = null;
-                        try { oldFileHandle = await workHandle.getFileHandle(cleanName); } catch(e2) { oldFileHandle = null; }
+                        try { oldFileHandle = await _deployHandles.work.getFileHandle(cleanName); } catch(e) { oldFileHandle = null; }
                         if (oldFileHandle) {
                             try {
                                 var oldFile = await oldFileHandle.getFile();
                                 var _dotIdx2 = cleanName.lastIndexOf('.');
                                 var _bkName2 = _dotIdx2 > 0 ? (cleanName.substring(0, _dotIdx2) + '_бэкап' + cleanName.substring(_dotIdx2)) : (cleanName + '_бэкап');
-                                var bkFH2 = await workHandle.getFileHandle(_bkName2, { create: true });
+                                var bkFH2 = await _deployHandles.work.getFileHandle(_bkName2, { create: true });
                                 var bw2 = await bkFH2.createWritable();
                                 await bw2.write(oldFile);
                                 await bw2.close();
-                            } catch(e2) { console.warn('backup failed', e2); }
+                            } catch(e) { console.warn('backup failed', e); }
                         }
-                        var newFH2 = await workHandle.getFileHandle(cleanName, { create: true });
+                        var newFH2 = await _deployHandles.work.getFileHandle(cleanName, { create: true });
                         var nw2 = await newFH2.createWritable();
                         await nw2.write(newBlob);
                         await nw2.close();
-                    } catch(e2) {
-                        console.warn('autodeploy save failed for ' + cleanName, e2);
+                    } catch(e) {
+                        console.warn('autodeploy save failed', e);
                         _autoDeployInFlight = false;
                         return;
                     }
@@ -9528,21 +9589,23 @@
                 if (data.error_url) {
                     var er = await fetch(SERVER_URL + data.error_url);
                     var errText = await er.text();
+                    var errBlob = new Blob([errText], { type: 'text/plain;charset=utf-8' });
+
                     try {
-                        var _dotIdxErr = _realName.lastIndexOf('.');
-                        var _errName = _dotIdxErr > 0 ? (_realName.substring(0, _dotIdxErr) + '_ошибка.txt') : (_realName + '_ошибка.txt');
-                        var eFH = await workHandle.getFileHandle(_errName, { create: true });
+                        var _dotIdxErr = _fileName.lastIndexOf('.');
+                        var _errName = _dotIdxErr > 0 ? (_fileName.substring(0, _dotIdxErr) + '_ошибка.txt') : (_fileName + '_ошибка.txt');
+                        var eFH = await _deployHandles.work.getFileHandle(_errName, { create: true });
                         var ew = await eFH.createWritable();
                         await ew.write(errText);
                         await ew.close();
-                    } catch(e2) { console.warn('error log save failed', e2); }
+                    } catch(e) { console.warn('error log save failed', e); }
 
-                    var errBlob = new Blob([errText], { type: 'text/plain;charset=utf-8' });
                     var _errBase64 = await new Promise(function(resolve) {
                         var rdr = new FileReader();
                         rdr.onload = function(ev) { resolve(ev.target.result.split(',')[1]); };
                         rdr.readAsDataURL(errBlob);
                     });
+
                     pendingFiles.push({
                         name: 'deploy_error.txt',
                         mime: 'text/plain',
