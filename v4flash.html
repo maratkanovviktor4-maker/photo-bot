@@ -9397,6 +9397,7 @@
                         var nw2 = await newFH2.createWritable();
                         await nw2.write(newBlob);
                         await nw2.close();
+                        try { localStorage.setItem('photobot_last_deploy_file', cleanName); } catch(_le) {}
                     } catch(e) {
                         console.warn('autodeploy save failed', e);
                         _autoDeployInFlight = false;
