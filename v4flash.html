@@ -9068,6 +9068,24 @@
             localStorage.setItem('photobot_autodeploy', _autoDeployEnabled ? 'true' : 'false');
             _updateAutoDeployCheckbox();
             _updateAutoDeployFloat();
+            if (_autoDeployEnabled) {
+                openDeployModalSettings();
+            }
+        }
+
+        function openDeployModalSettings() {
+            var chat = chats.find(function(c) { return c.id === currentChatId; });
+            var msgIndex = chat ? chat.messages.length - 1 : -1;
+            _deployMsgIndex = msgIndex;
+            _deployEdits = [];
+            _deployFileContent = null;
+            _deployFileName = '';
+            document.getElementById('deployFileName').style.display = 'none';
+            document.getElementById('deployFileInDir').style.display = 'none';
+            _updateAutoDeployCheckbox();
+            _resetDeployDirty();
+            document.getElementById('deployModal').classList.add('active');
+            _restoreDeployHandles();
         }
 
         function openDeployModal(msgIndex) {
