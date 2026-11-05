@@ -9127,7 +9127,8 @@
             var _txt = msg.content || '';
             var json = _extractJsonBlock(_txt);
             var hasMap = !!(json && json.shield && json.tags);
-            var list = _parsePassportList(_txt);
+            var _listMatch = _txt.match(/\[EQUIPMENT_LIST\]([\s\S]*?)\[\/EQUIPMENT_LIST\]/i);
+            var list = _listMatch ? _parsePassportList(_listMatch[1]) : [];
             if (!hasMap && !list.length) return;
             var _nameMatch = _txt.match(/([\w.\-]+)\.(json|txt)/i);
             if (!_nameMatch) {
