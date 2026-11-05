@@ -9163,30 +9163,22 @@
                         return;
                     }
                     var names = await _listWorkFiles(_deployHandles.work);
-                    var targetName = _deployFileName || null;
-                    if (!targetName) {
-                        var _baseFromChat = null;
-                        for (var _mi = chat.messages.length - 1; _mi >= 0; _mi--) {
-                            var _mm = chat.messages[_mi];
-                            if (_mm.role !== 'assistant' || !_mm.content) continue;
-                            var _m = _mm.content.match(/([\w.\-]+)\.json/i);
-                            if (_m) { _baseFromChat = _m[1]; break; }
-                        }
-                        if (_baseFromChat) {
-                            for (var _ni = 0; _ni < names.length; _ni++) {
-                                if (names[_ni].toLowerCase() === (_baseFromChat + '.txt').toLowerCase()) { targetName = names[_ni]; break; }
-                            }
-                        }
-                        if (!targetName) {
-                            var _txtFiles = [];
-                            for (var _tj = 0; _tj < names.length; _tj++) {
-                                if (/\.txt$/i.test(names[_tj])) _txtFiles.push(names[_tj]);
-                            }
-                            if (_txtFiles.length === 1) targetName = _txtFiles[0];
+                    var _txtFiles = [];
+                    var _jsonFiles = [];
+                    for (var _tj = 0; _tj < names.length; _tj++) {
+                        if (/\.txt$/i.test(names[_tj])) _txtFiles.push(names[_tj]);
+                        else if (/\.json$/i.test(names[_tj])) _jsonFiles.push(names[_tj]);
+                    }
+                    var targetName = null;
+                    if (_txtFiles.length === 1) targetName = _txtFiles[0];
+                    if (!targetName && _jsonFiles.length === 1) {
+                        var _baseFromJson = _jsonFiles[0].replace(/\.json$/i, '');
+                        for (var _ti = 0; _ti < _txtFiles.length; _ti++) {
+                            if (_txtFiles[_ti].toLowerCase() === (_baseFromJson + '.txt').toLowerCase()) { targetName = _txtFiles[_ti]; break; }
                         }
                     }
                     if (!targetName) {
-                        showAlertModal('Файл не определён', 'Не удалось определить обогащённый файл. Уточните имя файла.', '⚠️');
+                        showAlertModal('Файл не определён', 'В папке должно быть ровно один .txt (список) и один .json (карта). Уберите лишние.', '⚠️');
                         return;
                     }
                     var _baseName = targetName.replace(/\.txt$/i, '');
