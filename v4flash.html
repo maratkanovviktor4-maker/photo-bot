@@ -2145,6 +2145,25 @@
                 document.getElementById('editCustomBtn').style.display = 'inline-flex';
             }
         }
+        function _applyPersonalityUI(pers) {
+            var select = document.getElementById('personalitySelect');
+            if (select) select.value = pers;
+            updatePersonalityPrompt(pers);
+            var editBtn = document.getElementById('editCustomBtn');
+            if (editBtn) editBtn.style.display = pers === 'custom' ? 'inline-flex' : 'none';
+            var personalityBtn = document.getElementById('personalityBtn');
+            if (personalityBtn) {
+                var p = personalities[pers];
+                if (pers === 'custom') {
+                    personalityBtn.innerHTML = ICON_MAP.custom + ' Агент';
+                } else if (p) {
+                    personalityBtn.innerHTML = ICON_MAP[p.icon] + ' ' + p.name;
+                } else {
+                    personalityBtn.textContent = '🤖 Ассистент';
+                }
+            }
+        }
+
         function changePersonality() {
             var val = document.getElementById('personalitySelect').value;
             setTimeout(_refreshProjectorBtnVisibility, 0);
@@ -2555,20 +2574,9 @@
                 var pers = chat._personality || 'default';
                 currentPersonality = pers;
                 localStorage.setItem('photobot_personality', pers);
-                var select = document.getElementById('personalitySelect');
-                if (select) select.value = pers;
-                updatePersonalityPrompt(pers);
-                const personalityBtn = document.getElementById('personalityBtn');
-                if (personalityBtn) {
-                    const p = personalities[pers];
-                    if (pers === 'custom') {
-                        personalityBtn.innerHTML = ICON_MAP.custom + ' Агент';
-
-                    } else if (p) {
-                        personalityBtn.innerHTML = ICON_MAP[p.icon] + ' ' + p.name;
-
-                    }
-                }
+                _applyPersonalityUI(pers);
+                _refreshProjectorBtnVisibility();
+            }
                 currentBranchId = chat.activeBranch || 'main';
                 document.querySelector('.chat-wrapper').classList.remove('empty-state-active');
                 document.querySelector('.chat-wrapper').classList.add('has-messages');
