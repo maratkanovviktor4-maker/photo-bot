@@ -8828,15 +8828,27 @@
             var tpl = String.fromCharCode(96, 96, 96);
             var oldRe = new RegExp("(?:^|\\n)[ \\t]*(?:\\*\\*|__)?[ \\t]*(\\[BEFORE\\]|Найди|Было|Удали|Старый код)[ \\t]*:?[ \\t]*(?:\\*\\*|__)?[ \\t]*\\n\\s*" + tpl + "\\w*\\r?\\n([\\s\\S]*?)" + tpl, "gi");
             var newRe = new RegExp("(?:^|\\n)[ \\t]*(?:\\*\\*|__)?[ \\t]*(\\[AFTER\\]|Замени на|Стало|Вставь|Новый код)[ \\t]*:?[ \\t]*(?:\\*\\*|__)?[ \\t]*\\n\\s*" + tpl + "\\w*\\r?\\n([\\s\\S]*?)" + tpl, "gi");
+            var fileRe = new RegExp("(?:^|\\n)[ \\t]*(?:\\*\\*|__)?[ \\t]*(?:Файл|File)[ \\t]*:?[ \\t]*(?:\\*\\*|__)?[ \\t]*([^\\n\\r*_]+?)[ \\t]*(?:\\*\\*|__)?[ \\t]*(?=\\r?\\n)", "gi");
             var olds = [];
             var news = [];
+            var files = [];
             var m;
             while ((m = oldRe.exec(content)) !== null) olds.push({ code: m[2], pos: m.index });
             while ((m = newRe.exec(content)) !== null) news.push({ code: m[2], pos: m.index });
+            while ((m = fileRe.exec(content)) !== null) files.push({ name: m[1].trim(), pos: m.index });
             for (var i = 0; i < Math.min(olds.length, news.length); i++) {
+                var fileName = '';
+                for (var fi = 0; fi < files.length; fi++) {
+                    if (files[fi].pos < olds[i].pos) {
+                        fileName = files[fi].name;
+                    } else {
+                        break;
+                    }
+                }
                 edits.push({
                     old: olds[i].code.replace(/\r?\n$/, ''),
-                    new: news[i].code.replace(/\r?\n$/, '')
+                    new: news[i].code.replace(/\r?\n$/, ''),
+                    file: fileName
                 });
             }
             return edits;
@@ -9097,6 +9109,37 @@
 
         });
 
+        async function _readDeployFileByName(name) {
+            if (!_deployHandles.work || !name) return null;
+            try {
+                var _wPerm = await _deployHandles.work.queryPermission({ mode: 'readwrite' });
+                if (_wPerm !== 'granted') _wPerm = await _deployHandles.work.requestPermission({ mode: 'readwrite' });
+                if (_wPerm !== 'granted') return null;
+                var _names = [];
+                for await (var _entry of _deployHandles.work.values()) {
+                    if (_entry.kind === 'file' && _entry.name.indexOf('_бэкап') === -1 && _entry.name.indexOf('_ошибка') === -1) {
+                        _names.push(_entry.name);
+                    }
+                }
+                var _match = null;
+                for (var _i = 0; _i < _names.length; _i++) {
+                    if (_names[_i] === name) { _match = _names[_i]; break; }
+                }
+                if (!_match) {
+                    for (var _j = 0; _j < _names.length; _j++) {
+                        if (_names[_j].toLowerCase() === name.toLowerCase()) { _match = _names[_j]; break; }
+                    }
+                }
+                if (!_match) return null;
+                var _fh = await _deployHandles.work.getFileHandle(_match);
+                var _f = await _fh.getFile();
+                return { name: _match, content: await _f.text() };
+            } catch(e) {
+                console.warn('readDeployFileByName failed', e);
+                return null;
+            }
+        }
+
 
         document.addEventListener('click', function(e) {
             if (e.target && e.target.id === 'deployModal') closeDeployModal();
@@ -9112,6 +9155,18 @@
             var btn = document.getElementById('deployConfirmBtn');
             btn.disabled = true;
             btn.textContent = '...';
+
+            var _patchFileName = '';
+            for (var _pei = 0; _pei < _deployEdits.length; _pei++) {
+                if (_deployEdits[_pei].file) { _patchFileName = _deployEdits[_pei].file; break; }
+            }
+            if (_patchFileName && (!_deployFileName || _deployFileName !== _patchFileName)) {
+                var _fromDir = await _readDeployFileByName(_patchFileName);
+                if (_fromDir) {
+                    _deployFileContent = _fromDir.content;
+                    _deployFileName = _fromDir.name;
+                }
+            }
 
             var _eol = _deployFileContent.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
             var _fileNorm = _deployFileContent.replace(/\r\n/g, '\n');
@@ -9252,15 +9307,45 @@
                         _names.push(_entry.name);
                     }
                 }
-                if (_names.length !== 1) {
+                if (!_names.length) {
                     _autoDeployInFlight = false;
                     openDeployModal(msgIndex);
                     return;
                 }
-                var _fh = await workHandle.getFileHandle(_names[0]);
+                // Определяем имя файла: из первой правки, где указан «Файл:»
+                var _targetName = '';
+                for (var _ei = 0; _ei < edits.length; _ei++) {
+                    if (edits[_ei].file) { _targetName = edits[_ei].file; break; }
+                }
+                if (_targetName) {
+                    var _found = null;
+                    for (var _ni = 0; _ni < _names.length; _ni++) {
+                        if (_names[_ni] === _targetName) { _found = _names[_ni]; break; }
+                    }
+                    if (!_found) {
+                        for (var _ni2 = 0; _ni2 < _names.length; _ni2++) {
+                            if (_names[_ni2].toLowerCase() === _targetName.toLowerCase()) { _found = _names[_ni2]; break; }
+                        }
+                    }
+                    if (!_found) {
+                        console.warn('autodeploy: file from patch not found in dir: ' + _targetName + ' (have: ' + _names.join(', ') + ')');
+                        _autoDeployInFlight = false;
+                        openDeployModal(msgIndex);
+                        return;
+                    }
+                    _targetName = _found;
+                } else {
+                    if (_names.length !== 1) {
+                        _autoDeployInFlight = false;
+                        openDeployModal(msgIndex);
+                        return;
+                    }
+                    _targetName = _names[0];
+                }
+                var _fh = await workHandle.getFileHandle(_targetName);
                 var _file = await _fh.getFile();
                 _fileContent = await _file.text();
-                _fileName = _names[0];
+                _fileName = _targetName;
             } catch(e) {
                 console.warn('autodeploy read failed', e);
                 _autoDeployInFlight = false;
