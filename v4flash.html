@@ -9326,23 +9326,58 @@
             return arr;
         }
 
-        function toggleProjectorMode() {
+        async function toggleProjectorMode() {
             if (_projectorModeEnabled) {
                 _projectorModeEnabled = false;
                 _updateProjectorFloat();
                 return;
             }
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) { showAlertModal('Нет чата', 'Откройте чат с согласованным списком.', '⚠️'); return; }
+            if (!_deployHandles.work) {
+                await _restoreDeployHandles();
+            }
+            if (!_deployHandles.work) {
+                showAlertModal('Папка не выбрана', 'Выберите рабочую папку с файлом списка.', '⚠️');
+                return;
+            }
+            var names = [];
+            try { names = await _listWorkFiles(_deployHandles.work); } catch(e) { names = []; }
+            var txtFiles = [];
+            for (var ni = 0; ni < names.length; ni++) {
+                if (/\.txt$/i.test(names[ni])) txtFiles.push(names[ni]);
+            }
+            if (txtFiles.length !== 1) {
+                showAlertModal('Файл не определён', 'В рабочей папке должен быть ровно один .txt со списком. Сейчас: ' + txtFiles.length + '.', '⚠️');
+                return;
+            }
+            var fileName = txtFiles[0];
+            var fileText = '';
+            try {
+                var fh = await _deployHandles.work.getFileHandle(fileName);
+                var file = await fh.getFile();
+                fileText = await file.text();
+            } catch(e) {
+                showAlertModal('Ошибка чтения', 'Не удалось прочитать ' + fileName, '❌');
+                return;
+            }
+            var lines = fileText.split('\n');
             var list = [];
-            for (var i = chat.messages.length - 1; i >= 0; i--) {
-                var m = chat.messages[i];
-                if (m.role !== 'assistant' || !m.content) continue;
-                var parsed = _parsePassportList(m.content);
-                if (parsed.length >= 1) { list = parsed; break; }
+            var alreadyEnriched = 0;
+            for (var li = 0; li < lines.length; li++) {
+                var ln = lines[li].trim();
+                if (!ln) continue;
+                var parts = ln.split(' — ');
+                if (parts.length === 3) {
+                    list.push(ln);
+                } else if (parts.length > 3) {
+                    alreadyEnriched++;
+                }
             }
             if (!list.length) {
-                showAlertModal('Список не найден', 'Не найден согласованный список вида «артикул — тип — производитель».', '⚠️');
+                if (alreadyEnriched > 0) {
+                    showAlertModal('Файл уже обогащён', 'Все ' + alreadyEnriched + ' позиций в ' + fileName + ' уже содержат характеристики. Обогащать нечего.', '✅');
+                } else {
+                    showAlertModal('Список не найден', 'В файле ' + fileName + ' нет строк вида «артикул — тип — производитель».', '⚠️');
+                }
                 return;
             }
             _passportQueue = list.slice();
@@ -9353,7 +9388,6 @@
         }
 
         function _resumeProjectorAfterReply() {
-            console.log('[PROJECTOR] resume: enabled=' + _projectorModeEnabled + ' inflight=' + _autoDeployInFlight + ' sending=' + isSending + ' idx=' + _passportIndex + ' total=' + _passportQueue.length);
             if (!_projectorModeEnabled) return;
             if (_autoDeployInFlight) { setTimeout(_resumeProjectorAfterReply, 800); return; }
             if (isSending) { setTimeout(_resumeProjectorAfterReply, 800); return; }
@@ -9378,10 +9412,8 @@
         }
 
         function _sendNextPassport() {
-            console.log('[PROJECTOR] sendNext: enabled=' + _projectorModeEnabled + ' idx=' + _passportIndex + ' total=' + _passportQueue.length);
             if (!_projectorModeEnabled) return;
             if (_passportIndex >= _passportQueue.length) {
-                console.log('[PROJECTOR] queue exhausted — stop');
                 _projectorModeEnabled = false;
                 _updateProjectorFloat();
                 return;
