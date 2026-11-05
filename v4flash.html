@@ -9607,11 +9607,30 @@
             if (sha) body.sha = sha;
             try {
                 var r = await fetch(apiUrl, { method: 'PUT', headers: headers, body: JSON.stringify(body) });
-                return r.ok;
+                if (r.ok) {
+                    _showGithubToast('📤 Запушено в GitHub: ' + path, '#27ae60');
+                    return true;
+                }
+                var _errText = '';
+                try { var _ej = await r.json(); _errText = _ej && _ej.message ? _ej.message : ''; } catch(e) {}
+                _showGithubToast('⚠️ GitHub: ' + (path || '') + (_errText ? ' — ' + _errText : ' — ' + r.status), '#e74c3c');
+                return false;
             } catch(e) {
                 console.warn('github push failed', e);
+                _showGithubToast('⚠️ GitHub: ошибка соединения', '#e74c3c');
                 return false;
             }
+        }
+
+        function _showGithubToast(text, color) {
+            var t = document.createElement('div');
+            t.textContent = text;
+            t.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);background:' + (color || '#27ae60') + ';color:#fff;padding:10px 18px;border-radius:10px;font-family:Inter,sans-serif;font-size:13px;font-weight:500;z-index:100001;box-shadow:0 8px 24px rgba(0,0,0,0.35);opacity:1;transition:opacity 0.6s ease;';
+            document.body.appendChild(t);
+            setTimeout(function() {
+                t.style.opacity = '0';
+                setTimeout(function() { t.remove(); }, 700);
+            }, 5000);
         }
 
         async function _listWorkFiles(workHandle) {
