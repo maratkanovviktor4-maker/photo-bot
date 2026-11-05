@@ -7525,6 +7525,7 @@
             assistantMsg._abortController = abortController;
 
             try {
+                var _isAutoDeployMarker = /^\s*\[(OK|FAIL)\]/i.test(text || '');
                 const resp = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
@@ -7536,7 +7537,7 @@
                         chat_id: _targetChatId,
                         branch_id: _targetBranchId,
                         personality: currentPersonality,
-                        web_search: webSearchEnabled,
+                        web_search: _isAutoDeployMarker ? false : webSearchEnabled,
                         files: _sendFilesSnapshot.map(function(f) { return { data: f.data || '', name: f.name || '', mime: f.mime || '', file_id: f.file_id || '' }; }),
                         flux: fluxModeEnabled,
                         flux_resolution: fluxModeEnabled ? getFluxSelectedResolution() : '',
