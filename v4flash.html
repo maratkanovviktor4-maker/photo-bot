@@ -7772,8 +7772,8 @@
                     }
                 }
                 _autoDeployAfterAssistant(chat.messages.length - 1);
-                if (!_autoDeployEnabled) _resumeProjectorAfterReply();
                 _autoSaveShieldMap(chat.messages[chat.messages.length - 1]);
+                setTimeout(_resumeProjectorAfterReply, 1000);
                 if (typeof window._pdfRenderAfterAssistant === 'function') {
                     var _pdfFn = window._pdfRenderAfterAssistant;
                     window._pdfRenderAfterAssistant = null;
@@ -9353,9 +9353,10 @@
         }
 
         function _resumeProjectorAfterReply() {
+            console.log('[PROJECTOR] resume: enabled=' + _projectorModeEnabled + ' inflight=' + _autoDeployInFlight + ' sending=' + isSending + ' idx=' + _passportIndex + ' total=' + _passportQueue.length);
             if (!_projectorModeEnabled) return;
-            if (_autoDeployInFlight) return;
-            if (isSending) return;
+            if (_autoDeployInFlight) { setTimeout(_resumeProjectorAfterReply, 800); return; }
+            if (isSending) { setTimeout(_resumeProjectorAfterReply, 800); return; }
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
             var lastA = null;
@@ -9377,8 +9378,10 @@
         }
 
         function _sendNextPassport() {
+            console.log('[PROJECTOR] sendNext: enabled=' + _projectorModeEnabled + ' idx=' + _passportIndex + ' total=' + _passportQueue.length);
             if (!_projectorModeEnabled) return;
             if (_passportIndex >= _passportQueue.length) {
+                console.log('[PROJECTOR] queue exhausted — stop');
                 _projectorModeEnabled = false;
                 _updateProjectorFloat();
                 return;
