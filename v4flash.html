@@ -9326,6 +9326,32 @@
                 return;
             }
 
+            if ((msg.content || '').indexOf('[' + 'ПРАВКИ' + ' ОКОНЧЕНЫ' + ']') !== -1) {
+                _autoDeployLoopCount = 0;
+                var _clearIds = [];
+                for (var _ci = 0; _ci < chat.messages.length; _ci++) {
+                    if (chat.messages[_ci]._autodeploy && chat.messages[_ci].msg_id) {
+                        _clearIds.push(chat.messages[_ci].msg_id);
+                    }
+                }
+                if (_clearIds.length) {
+                    for (var _ci2 = 0; _ci2 < chat.messages.length; _ci2++) {
+                        if (!chat.messages[_ci2]._autodeploy && chat.messages[_ci2].msg_id) {
+                            chat.messages[_ci2]._autodeploy = true;
+                            _clearIds.push(chat.messages[_ci2].msg_id);
+                        }
+                    }
+                    try {
+                        await fetch(SERVER_URL + '/mark_autodeploy', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                            body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: chat.id, msg_ids: _clearIds })
+                        });
+                    } catch(e) {}
+                }
+                renderMessages();
+                return;
+            }
             var edits = parseEditPairs(msg.content || '');
             var _msgText = msg.content || '';
             var _hasMention = /\[(BEFORE|AFTER)\]/.test(_msgText);
