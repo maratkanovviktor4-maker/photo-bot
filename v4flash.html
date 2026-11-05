@@ -7028,7 +7028,6 @@
         function saveSoundSettings() {
             localStorage.setItem('photobot_sound_send', document.getElementById('soundSendSelect').value);
             localStorage.setItem('photobot_sound_reply', document.getElementById('soundReplySelect').value);
-            // test-valid-3
         }
         var recognition = null;
 
@@ -9355,7 +9354,7 @@
             }
             var edits = parseEditPairs(msg.content || '');
             var _msgText = msg.content || '';
-            var _hasMention = /\[(BEFORE|AFTER)\]/.test(_msgText);
+            var _hasMention = /(?:^|\n)[ \t]*(?:[*_]{1,2})?[ \t]*[\w.\-]+\.[A-Za-z0-9]{1,8}[ \t]+\[(BEFORE|AFTER)\]/.test(_msgText) || /(?:^|\n)[ \t]*(?:[*_]{1,2})?[ \t]*\[(BEFORE|AFTER)\]/.test(_msgText);
             if (!edits.length) {
                 // Если метки есть, но парсер их не распознал — это нарушение формата (no_pairs).
                 if (_hasMention) {
