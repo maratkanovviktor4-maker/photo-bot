@@ -9163,9 +9163,30 @@
                         return;
                     }
                     var names = await _listWorkFiles(_deployHandles.work);
-                    var targetName = _deployFileName || (names.length === 1 ? names[0] : null);
+                    var targetName = _deployFileName || null;
                     if (!targetName) {
-                        showAlertModal('Файл не определён', 'В папке несколько файлов — укажите целевой в модалке деплоя.', '⚠️');
+                        var _baseFromChat = null;
+                        for (var _mi = chat.messages.length - 1; _mi >= 0; _mi--) {
+                            var _mm = chat.messages[_mi];
+                            if (_mm.role !== 'assistant' || !_mm.content) continue;
+                            var _m = _mm.content.match(/([\w.\-]+)\.json/i);
+                            if (_m) { _baseFromChat = _m[1]; break; }
+                        }
+                        if (_baseFromChat) {
+                            for (var _ni = 0; _ni < names.length; _ni++) {
+                                if (names[_ni].toLowerCase() === (_baseFromChat + '.txt').toLowerCase()) { targetName = names[_ni]; break; }
+                            }
+                        }
+                        if (!targetName) {
+                            var _txtFiles = [];
+                            for (var _tj = 0; _tj < names.length; _tj++) {
+                                if (/\.txt$/i.test(names[_tj])) _txtFiles.push(names[_tj]);
+                            }
+                            if (_txtFiles.length === 1) targetName = _txtFiles[0];
+                        }
+                    }
+                    if (!targetName) {
+                        showAlertModal('Файл не определён', 'Не удалось определить обогащённый файл. Уточните имя файла.', '⚠️');
                         return;
                     }
                     var _baseName = targetName.replace(/\.txt$/i, '');
