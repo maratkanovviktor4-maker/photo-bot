@@ -9128,7 +9128,12 @@
             var _mapMatch = _txt.match(/\[SHIELD_MAP\]([\s\S]*?)\[\/SHIELD_MAP\]/i);
             var json = null;
             if (_mapMatch) {
-                try { json = JSON.parse(_mapMatch[1].trim()); } catch(e) { json = null; }
+                var _inner = _mapMatch[1].trim();
+                var _tpl = String.fromCharCode(96, 96, 96);
+                var _cb = new RegExp('^' + _tpl + '\\w*\\s*\\r?\\n([\\s\\S]*?)\\r?\\n?' + _tpl + '$');
+                var _cm = _inner.match(_cb);
+                if (_cm) _inner = _cm[1].trim();
+                try { json = JSON.parse(_inner); } catch(e) { json = null; }
             }
             var hasMap = !!(json && json.shield && json.tags);
             var _listMatch = _txt.match(/\[EQUIPMENT_LIST\]([\s\S]*?)\[\/EQUIPMENT_LIST\]/i);
