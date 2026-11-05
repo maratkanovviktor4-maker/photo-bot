@@ -7346,7 +7346,24 @@
             }, 16);
         }
 
-        async function sendMessage(overrideChatId, overrideBranchId, previewFile) {
+        function _autoDeployExtractFirstArticle(text) {
+            if (!text) return '';
+            var _lines = String(text).split(/\r?\n/);
+            for (var _i = 0; _i < _lines.length; _i++) {
+                var _ln = _lines[_i].trim();
+                if (!_ln) continue;
+                // ещё нет характеристик: строка вида «артикул — тип — бренд» без размеров/тока
+                if (/[×xх]\s*\d|\d+\s*(мм|А|В|Вт|mA|кг|IP)/i.test(_ln)) continue;
+                var _parts = _ln.split(/\s+—\s+/);
+                if (_parts.length >= 2) {
+                    return _parts[0].trim().slice(0, 128);
+                }
+                return _ln.slice(0, 128);
+            }
+            return '';
+        }
+
+        async function sendMessage(overrideChatId, overrideBranchId, previewFile, overrideSearchQuery) {
             if (selectionMode) toggleSelectionMode();
 
             if (isSending) return;
@@ -7543,6 +7560,8 @@
                         branch_id: _targetBranchId,
                         personality: currentPersonality,
                         web_search: webSearchEnabled,
+                        search_query: overrideSearchQuery || '',
+                        article: overrideSearchQuery || '',
                         files: _sendFilesSnapshot.map(function(f) { return { data: f.data || '', name: f.name || '', mime: f.mime || '', file_id: f.file_id || '' }; }),
                         flux: fluxModeEnabled,
                         flux_resolution: fluxModeEnabled ? getFluxSelectedResolution() : '',
@@ -9504,11 +9523,14 @@
                 var _wsBtn = document.getElementById('webSearchToggle');
                 if (_wsBtn) _wsBtn.classList.add('active');
 
+                // Парсим первую строку артикула из файла и делаем по ней отдельный запрос поиска
+                var _firstArticle = _autoDeployExtractFirstArticle(_text);
+
                 var _inp = document.getElementById('userInput');
                 _inp.value = 'Список согласован. Найди паспорт для первой позиции и выдай правку [BEFORE]/[AFTER] к файлу.';
                 _inp.dispatchEvent(new Event('input'));
 
-                sendMessage();
+                sendMessage(undefined, undefined, undefined, _firstArticle);
             } catch(e) {
                 console.warn('autodeploy start passports failed', e);
             } finally {
