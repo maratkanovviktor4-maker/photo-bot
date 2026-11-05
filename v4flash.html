@@ -9321,13 +9321,14 @@
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'assistant') return;
 
-            if ((msg.content || '').indexOf('[ПРАВКИ ОКОНЧЕНЫ]') !== -1) {
+            var _pairsPrecheck = parseEditPairs(msg.content || '');
+            if (_pairsPrecheck.length === 0 && (msg.content || '').indexOf('[ПРАВКИ' + ' ОКОНЧЕНЫ]') !== -1) {
                 _autoDeployLoopCount = 0;
                 return;
             }
 
 
-            var edits = parseEditPairs(msg.content || '');
+            var edits = _pairsPrecheck;
             var _msgText = msg.content || '';
             var _hasMention = /(?:^|\n)[ \t]*(?:[*_]{1,2})?[ \t]*[\w.\-]+\.[A-Za-z0-9]{1,8}[ \t]+\[(BEFORE|AFTER)\]/.test(_msgText) || /(?:^|\n)[ \t]*(?:[*_]{1,2})?[ \t]*\[(BEFORE|AFTER)\]/.test(_msgText);
             if (!edits.length) {
