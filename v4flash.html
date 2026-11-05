@@ -9016,6 +9016,20 @@
             }
         }
 
+        document.addEventListener('input', function(e) {
+            if (!e.target) return;
+            var id = e.target.id || '';
+            if (id === 'githubToken' || id === 'githubRepo' || id === 'githubBranch' || id === 'githubFolder' || id === 'githubFiles') {
+                _markDeployDirty();
+            }
+        });
+
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.id === 'githubSyncCheckbox') {
+                _markDeployDirty();
+            }
+        });
+
         function _readGithubSettings() {
             return {
                 token: (document.getElementById('githubToken') || {}).value || '',
