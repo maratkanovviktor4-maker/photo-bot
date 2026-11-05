@@ -9125,7 +9125,11 @@
         async function _autoSaveShieldMap(msg) {
             if (!msg || msg.role !== 'assistant') return;
             var _txt = msg.content || '';
-            var json = _extractJsonBlock(_txt);
+            var _mapMatch = _txt.match(/\[SHIELD_MAP\]([\s\S]*?)\[\/SHIELD_MAP\]/i);
+            var json = null;
+            if (_mapMatch) {
+                try { json = JSON.parse(_mapMatch[1].trim()); } catch(e) { json = null; }
+            }
             var hasMap = !!(json && json.shield && json.tags);
             var _listMatch = _txt.match(/\[EQUIPMENT_LIST\]([\s\S]*?)\[\/EQUIPMENT_LIST\]/i);
             var list = _listMatch ? _parsePassportList(_listMatch[1]) : [];
