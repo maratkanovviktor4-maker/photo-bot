@@ -9618,10 +9618,44 @@
             if (sha) body.sha = sha;
             try {
                 var r = await fetch(apiUrl, { method: 'PUT', headers: headers, body: JSON.stringify(body) });
-                return r.ok;
+                if (!r.ok) {
+                    try { console.warn('[GH_PUSH_ERR]', await r.text()); } catch(e) {}
+                    return { ok: false };
+                }
+                var putData = await r.json();
+                var newSha = (putData && putData.content && putData.content.sha) || null;
+                var ghIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>';
+                var sentToast = _ghToast('GitHub · ' + fileName + ' ✓ отправлен', '#27ae60', ghIcon);
+                setTimeout(function() { sentToast.remove(); }, 5000);
+
+                var st = _ghPushState[fileName] || (_ghPushState[fileName] = { latestSha: null, pollTimer: null, waitToast: null });
+                st.latestSha = newSha;
+                if (st.waitToast) { st.waitToast.remove(); st.waitToast = null; }
+                if (st.pollTimer) { clearInterval(st.pollTimer); st.pollTimer = null; }
+                st.waitToast = _ghToast('GitHub · ' + fileName + ' · ждём финализацию…', '#00CBF5', ghIcon);
+                st.pollTimer = setInterval(function() {
+                    (async function() {
+                        var stx = _ghPushState[fileName];
+                        if (!stx || !stx.latestSha) return;
+                        var want = stx.latestSha;
+                        try {
+                            var checkResp = await fetch(apiUrl + '?ref=' + encodeURIComponent(s.branch) + '&t=' + Date.now(), { headers: headers, cache: 'no-store' });
+                            if (!checkResp.ok) return;
+                            var cd = await checkResp.json();
+                            if (cd && cd.sha && cd.sha === want && stx.latestSha === want) {
+                                if (stx.pollTimer) { clearInterval(stx.pollTimer); stx.pollTimer = null; }
+                                if (stx.waitToast) { stx.waitToast.remove(); stx.waitToast = null; }
+                                var doneToast = _ghToast('GitHub · ' + fileName + ' ✓ финализирован', '#27ae60', ghIcon);
+                                setTimeout(function() { doneToast.remove(); }, 5000);
+                            }
+                        } catch(e) {}
+                    })();
+                }, 1000);
+
+                return { ok: true, sha: newSha };
             } catch(e) {
                 console.warn('github push failed', e);
-                return false;
+                return { ok: false };
             }
         }
 
