@@ -7028,6 +7028,7 @@
         function saveSoundSettings() {
             localStorage.setItem('photobot_sound_send', document.getElementById('soundSendSelect').value);
             localStorage.setItem('photobot_sound_reply', document.getElementById('soundReplySelect').value);
+            // test-flag-2
         }
         var recognition = null;
 
@@ -7423,6 +7424,7 @@
                     _filesMeta.push({ name: _fm.name, size: _fmSize, ext: (_fm.name.split('.').pop() || '').toLowerCase() });
                 }
             }
+            var _isSysUser = (text === '[OK] patch applied · state committed') || (text === '[FAIL] patch failed');
             chat.messages.push({
                 role: 'user',
                 content: displayText,
@@ -7430,7 +7432,8 @@
                 image_mime: _sendImageMime,
                 extra_b64s: _sendDisplayB64s,
                 display_b64s: _sendDisplayB64s,
-                files_meta: _filesMeta.length ? _filesMeta : null
+                files_meta: _filesMeta.length ? _filesMeta : null,
+                _autodeploy: _isSysUser ? true : undefined
             });
             var _pushedUserMsgIndex = chat.messages.length - 1;
             playSound('send');
@@ -9329,6 +9332,19 @@
             var _pairsPrecheck = parseEditPairs(msg.content || '');
             if (_pairsPrecheck.length === 0 && (msg.content || '').indexOf('[ПРАВКИ' + ' ОКОНЧЕНЫ]') !== -1) {
                 _autoDeployLoopCount = 0;
+                if (!msg._autodeploy) {
+                    msg._autodeploy = true;
+                    if (msg.msg_id) {
+                        try {
+                            await fetch(SERVER_URL + '/mark_autodeploy', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: chat.id, msg_ids: [msg.msg_id] })
+                            });
+                        } catch(e) {}
+                    }
+                    renderMessages();
+                }
                 return;
             }
 
