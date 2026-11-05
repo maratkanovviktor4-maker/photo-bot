@@ -9016,8 +9016,44 @@
             }
         }
 
+        function _readGithubSettings() {
+            return {
+                token: (document.getElementById('githubToken') || {}).value || '',
+                repo: (document.getElementById('githubRepo') || {}).value || '',
+                branch: (document.getElementById('githubBranch') || {}).value || 'main',
+                folder: (document.getElementById('githubFolder') || {}).value || '',
+                files: (document.getElementById('githubFiles') || {}).value || '',
+                enabled: !!(document.getElementById('githubSyncCheckbox') || {}).checked
+            };
+        }
+
+        function _writeGithubSettings(s) {
+            if (!s) return;
+            if (document.getElementById('githubToken')) document.getElementById('githubToken').value = s.token || '';
+            if (document.getElementById('githubRepo')) document.getElementById('githubRepo').value = s.repo || '';
+            if (document.getElementById('githubBranch')) document.getElementById('githubBranch').value = s.branch || 'main';
+            if (document.getElementById('githubFolder')) document.getElementById('githubFolder').value = s.folder || 'deploy';
+            if (document.getElementById('githubFiles')) document.getElementById('githubFiles').value = s.files || '';
+            if (document.getElementById('githubSyncCheckbox')) document.getElementById('githubSyncCheckbox').checked = !!s.enabled;
+        }
+
+        function _saveGithubSettingsToLS() {
+            var s = _readGithubSettings();
+            localStorage.setItem('photobot_github', JSON.stringify(s));
+        }
+
+        function _loadGithubSettingsFromLS() {
+            try {
+                var raw = localStorage.getItem('photobot_github');
+                if (!raw) return;
+                var s = JSON.parse(raw);
+                _writeGithubSettings(s);
+            } catch(e) {}
+        }
+
         function saveDeploySettings() {
             if (!_deploySettingsDirty) return;
+            _saveGithubSettingsToLS();
             _resetDeployDirty();
             var t = document.createElement('div');
             t.textContent = '✅ Настройки сохранены';
@@ -9456,6 +9492,7 @@
             document.getElementById('deployFileName').style.display = 'none';
             document.getElementById('deployFileInDir').style.display = 'none';
             _updateAutoDeployCheckbox();
+            _loadGithubSettingsFromLS();
             _resetDeployDirty();
             document.getElementById('deployModal').classList.add('active');
             _restoreDeployHandles();
@@ -9489,6 +9526,7 @@
             document.getElementById('deployFileInDir').style.display = 'none';
             document.getElementById('deployConfirmBtn').disabled = true;
             _updateAutoDeployCheckbox();
+            _loadGithubSettingsFromLS();
             _resetDeployDirty();
             document.getElementById('deployModal').classList.add('active');
             _restoreDeployHandles();
@@ -9526,6 +9564,40 @@
 
         function _stripCopySuffix(name) {
             return name.replace(/(\.[^./\\]+)(?:\s*\(\d+\))+$/, '$1');
+        }
+
+        async function _pushFileToGithub(fileName, content) {
+            var s = _readGithubSettings();
+            if (!s.enabled) return false;
+            if (!s.token || !s.repo || !s.branch) return false;
+            var allow = String(s.files || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+            if (allow.length === 0) return false;
+            if (allow.indexOf(fileName) === -1) return false;
+            var folder = String(s.folder || '').replace(/^\/+|\/+$/g, '');
+            var path = folder ? (folder + '/' + fileName) : fileName;
+            var apiUrl = 'https://api.github.com/repos/' + s.repo + '/contents/' + encodeURI(path);
+            var headers = { 'Authorization': 'token ' + s.token, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' };
+            var sha = null;
+            try {
+                var g = await fetch(apiUrl + '?ref=' + encodeURIComponent(s.branch), { headers: headers });
+                if (g.ok) {
+                    var gd = await g.json();
+                    if (gd && gd.sha) sha = gd.sha;
+                }
+            } catch(e) {}
+            var body = {
+                message: 'deploy: ' + fileName + ' via PhotoBot',
+                content: btoa(unescape(encodeURIComponent(content))),
+                branch: s.branch
+            };
+            if (sha) body.sha = sha;
+            try {
+                var r = await fetch(apiUrl, { method: 'PUT', headers: headers, body: JSON.stringify(body) });
+                return r.ok;
+            } catch(e) {
+                console.warn('github push failed', e);
+                return false;
+            }
         }
 
         async function _listWorkFiles(workHandle) {
@@ -9615,6 +9687,7 @@
                                 var nw = await newFH.createWritable();
                                 await nw.write(newBlob);
                                 await nw.close();
+                                try { await _pushFileToGithub(cleanName, _newText); } catch(e) { console.warn('github push error', e); }
 
                                 var toast = document.createElement('div');
                                 toast.textContent = '✅ Файл сохранён: ' + cleanName;
@@ -9954,6 +10027,7 @@
                             await nw2.close();
                             _respOk = true;
                             _appliedFiles.push(cleanName);
+                            try { await _pushFileToGithub(cleanName, _newText); } catch(e) { console.warn('github push error', e); }
                         } catch(e2) {
                             console.warn('autodeploy save failed for ' + cleanName, e2);
                             _failedFile = cleanName;
@@ -11437,6 +11511,22 @@
                     <button onclick="pickDeployDir('work')" title="Выбрать рабочую папку" style="width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
                 </div>
                 <div id="deployFileInDir" style="font-size:11px;color:#666;font-family:Inter,sans-serif;margin-top:6px;display:none;"></div>
+            </div>
+            <div style="margin-top:16px;padding:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:10px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
+                    <input type="checkbox" id="githubSyncCheckbox" style="width:16px;height:16px;accent-color:#00CBF5;cursor:pointer;flex-shrink:0;">
+                    <span style="font-size:12px;color:#e0e0e0;font-family:Inter,sans-serif;font-weight:500;">Пушить в GitHub после автодеплоя</span>
+                </label>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <input type="password" id="githubToken" placeholder="GitHub PAT (repo scope)" style="width:100%;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                    <input type="text" id="githubRepo" placeholder="owner/repo" style="width:100%;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="githubBranch" placeholder="branch (main)" value="main" style="flex:1;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                        <input type="text" id="githubFolder" placeholder="folder (deploy)" style="flex:1;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                    </div>
+                    <input type="text" id="githubFiles" placeholder="файлы через запятую: v4flash.html, v4pro.html" style="width:100%;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                    <div style="font-size:11px;color:#666;font-family:Inter,sans-serif;line-height:1.4;">Пушатся только файлы из списка. Пусто = ничего не пушится.</div>
+                </div>
             </div>
             <div style="margin-top:16px;display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,203,245,0.06);border:1px solid rgba(0,203,245,0.2);border-radius:10px;cursor:pointer;" onclick="toggleAutoDeployFromModal(event)">
                 <input type="checkbox" id="autodeployCheckbox" style="width:16px;height:16px;accent-color:#00CBF5;cursor:pointer;flex-shrink:0;" onclick="event.stopPropagation();toggleAutoDeployFromModal()">
