@@ -9104,12 +9104,16 @@
         }
 
         function _parsePassportList(text) {
-            var lines = String(text || '').split('\n');
+            var src = String(text || '');
+            src = src.replace(new RegExp(String.fromCharCode(96, 96, 96) + '[\\s\\S]*?' + String.fromCharCode(96, 96, 96), 'g'), '');
+            var lines = src.split('\n');
             var arr = [];
             for (var i = 0; i < lines.length; i++) {
                 var ln = lines[i].trim();
                 if (!ln) continue;
-                if (ln.indexOf(' — ') === -1) continue;
+                if (ln.length > 120) continue;
+                var parts = ln.split(' — ');
+                if (parts.length !== 3) continue;
                 arr.push(ln);
             }
             return arr;
