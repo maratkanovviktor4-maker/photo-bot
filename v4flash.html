@@ -7028,6 +7028,7 @@
         function saveSoundSettings() {
             localStorage.setItem('photobot_sound_send', document.getElementById('soundSendSelect').value);
             localStorage.setItem('photobot_sound_reply', document.getElementById('soundReplySelect').value);
+            // test-ad-flag
         }
         var recognition = null;
 
@@ -9610,9 +9611,15 @@
                 var _c = chats.find(function(c) { return c.id === _chatRef.id; });
                 if (!_c) return;
                 var _ids = [];
-                for (var _i = 0; _i < _c.messages.length; _i++) {
-                    if (_c.messages[_i].msg_id === _mid) { _c.messages[_i]._autodeploy = true; _ids.push(_mid); }
-                    if (_userId && _c.messages[_i].msg_id === _userId) { _c.messages[_i]._autodeploy = true; _ids.push(_userId); }
+                if (_mid) {
+                    for (var _i = 0; _i < _c.messages.length; _i++) {
+                        if (_c.messages[_i].msg_id === _mid) { _c.messages[_i]._autodeploy = true; _ids.push(_mid); break; }
+                    }
+                }
+                if (_userId) {
+                    for (var _j = 0; _j < _c.messages.length; _j++) {
+                        if (_c.messages[_j].msg_id === _userId) { _c.messages[_j]._autodeploy = true; _ids.push(_userId); break; }
+                    }
                 }
                 if (_ids.length) {
                     try {
