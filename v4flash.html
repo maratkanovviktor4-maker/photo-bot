@@ -9118,8 +9118,13 @@
             var tpl = String.fromCharCode(96, 96, 96);
             var re = new RegExp(tpl + 'json\\s*\\r?\\n([\\s\\S]*?)' + tpl, 'i');
             var m = re.exec(text);
-            if (!m) return null;
-            try { return JSON.parse(m[1]); } catch(e) { return null; }
+            if (m) { try { return JSON.parse(m[1]); } catch(e) {} }
+            var re2 = new RegExp(tpl + '\\w*\\s*\\r?\\n([\\s\\S]*?)' + tpl, 'i');
+            var m2 = re2.exec(text);
+            if (m2) { try { return JSON.parse(m2[1]); } catch(e) {} }
+            var m3 = text.match(/\{[\s\S]*\}/);
+            if (m3) { try { return JSON.parse(m3[0]); } catch(e) {} }
+            return null;
         }
 
         async function _autoSaveShieldMap(msg) {
