@@ -8856,9 +8856,28 @@
         function _extractDocJson(text) {
             if (!text) return null;
             var m = text.match(/&#8203;`&#8203;`&#8203;`&#8203;json\s*([\s\S]*?)&#8203;`&#8203;`&#8203;`&#8203;/i);
-            if (!m) return null;
+            var candidate = null;
+            if (m) {
+                candidate = m[1].trim();
+            } else {
+                var pos = text.indexOf('"title"');
+                if (pos !== -1) {
+                    var start = text.lastIndexOf('{', pos);
+                    if (start === -1) start = text.indexOf('{');
+                    if (start !== -1) {
+                        var depth = 0;
+                        var end = -1;
+                        for (var i = start; i < text.length; i++) {
+                            if (text[i] === '{') depth++;
+                            else if (text[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+                        }
+                        if (end !== -1) candidate = text.substring(start, end + 1);
+                    }
+                }
+            }
+            if (!candidate) return null;
             try {
-                var obj = JSON.parse(m[1].trim());
+                var obj = JSON.parse(candidate);
                 if (obj && (obj.title || obj.content)) return obj;
             } catch(e) { return null; }
             return null;
