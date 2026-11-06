@@ -9270,39 +9270,24 @@
                         }
                     }
                     if (!targetName) {
-                        showAlertModal('Файл не определён', 'В папке должно быть ровно один .txt (список) и один .json (карта). Уберите лишние.', '⚠️');
+                        showAlertModal('Файл не определён', 'В папке должен быть ровно один .json (карта щита с enrichment_text). Уберите лишние.', '⚠️');
                         return;
                     }
-                    var _baseName = targetName.replace(/\.txt$/i, '');
-                    var _txtName = null;
-                    var _jsonName = null;
-                    for (var _i = 0; _i < names.length; _i++) {
-                        if (names[_i].toLowerCase() === (_baseName + '.txt').toLowerCase()) _txtName = names[_i];
-                        if (names[_i].toLowerCase() === (_baseName + '.json').toLowerCase()) _jsonName = names[_i];
-                    }
-                    if (!_txtName) _txtName = targetName;
                     pendingFiles = [];
-                    var fh1 = await _deployHandles.work.getFileHandle(_txtName);
-                    var file1 = await fh1.getFile();
-                    var text1 = await file1.text();
-                    pendingFiles.push({
-                        name: _txtName,
-                        mime: 'text/plain',
-                        data: btoa(unescape(encodeURIComponent(text1))),
-                        _status: 'ok'
-                    });
-                    if (_jsonName) {
-                        try {
-                            var fh2 = await _deployHandles.work.getFileHandle(_jsonName);
-                            var file2 = await fh2.getFile();
-                            var text2 = await file2.text();
-                            pendingFiles.push({
-                                name: _jsonName,
-                                mime: 'application/json',
-                                data: btoa(unescape(encodeURIComponent(text2))),
-                                _status: 'ok'
-                            });
-                        } catch(e) { console.warn('read shield json failed', e); }
+                    try {
+                        var fh2 = await _deployHandles.work.getFileHandle(targetName);
+                        var file2 = await fh2.getFile();
+                        var text2 = await file2.text();
+                        pendingFiles.push({
+                            name: targetName,
+                            mime: 'application/json',
+                            data: btoa(unescape(encodeURIComponent(text2))),
+                            _status: 'ok'
+                        });
+                    } catch(e) {
+                        console.warn('read shield json failed', e);
+                        showAlertModal('Ошибка чтения', 'Не удалось прочитать ' + targetName, '❌');
+                        return;
                     }
                     updateFileList();
                 } catch(e) {
