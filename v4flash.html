@@ -1539,7 +1539,6 @@
     </div>
 
     <script>
-        // ТЕСТ ПУША
         var autoScroll = true;
         const SERVER_URL = CONFIG.SERVER_URL;
         const ICON_MOON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
@@ -9612,6 +9611,25 @@
                 if (r.ok) {
                     _showGithubPushToast(fileName);
                     return true;
+                }
+                // 409 = устаревшая sha (гонка с предыдущим пушем). Перечитываем sha и пробуем один раз.
+                if (r.status === 409) {
+                    var sha2 = null;
+                    try {
+                        var g2 = await fetch(apiUrl + '?ref=' + encodeURIComponent(s.branch), { headers: headers });
+                        if (g2.ok) {
+                            var gd2 = await g2.json();
+                            if (gd2 && gd2.sha) sha2 = gd2.sha;
+                        }
+                    } catch(e2) {}
+                    if (sha2) {
+                        body.sha = sha2;
+                        var r2 = await fetch(apiUrl, { method: 'PUT', headers: headers, body: JSON.stringify(body) });
+                        if (r2.ok) {
+                            _showGithubPushToast(fileName);
+                            return true;
+                        }
+                    }
                 }
                 return false;
             } catch(e) {
