@@ -8953,38 +8953,24 @@
                 if (_okBtnP) _okBtnP.setAttribute('data-skip-reload', '1');
                 return;
             }
-            var _p;
             try {
-                _p = window.showDirectoryPicker({ id: 'photobot_work', mode: 'readwrite' });
+                window.showDirectoryPicker({ id: 'photobot_work_' + Date.now(), mode: 'readwrite', startIn: 'documents' }).then(function(handle) {
+                    _deployHandles.work = handle;
+                    var inputEl = document.getElementById('deployWorkDir');
+                    if (inputEl) {
+                        inputEl.value = handle.name;
+                        inputEl.title = handle.name;
+                    }
+                    _idbSetHandle('deploy_work', handle);
+                    _showFileInWorkDir();
+                    _markDeployDirty();
+                }).catch(function(e) {
+                    if (e && e.name === 'AbortError') return;
+                    console.warn('pick dir failed', e);
+                });
             } catch(e) {
                 console.warn('pick dir failed (sync)', e);
-                return;
             }
-            _p.then(function(handle) {
-                return handle.queryPermission({ mode: 'readwrite' }).then(function(perm) {
-                    if (perm === 'granted') return handle;
-                    return handle.requestPermission({ mode: 'readwrite' }).then(function(perm2) {
-                        if (perm2 === 'granted') return handle;
-                        return null;
-                    });
-                });
-            }).then(function(handle) {
-                if (!handle) return null;
-                _deployHandles.work = handle;
-                var inputEl = document.getElementById('deployWorkDir');
-                if (inputEl) {
-                    inputEl.value = handle.name;
-                    inputEl.title = handle.name;
-                }
-                return _idbSetHandle('deploy_work', handle).then(function() {
-                    return _showFileInWorkDir();
-                }).then(function() {
-                    _markDeployDirty();
-                });
-            }).catch(function(e) {
-                if (e && e.name === 'AbortError') return;
-                console.warn('pick dir failed', e);
-            });
         }
         async function pickDeployDir(kind) {
             pickDeployDirSync(null, kind);
