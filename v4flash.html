@@ -8894,9 +8894,13 @@
             if (!target) return;
             
             main.style.scrollBehavior = 'auto';
-            var firstChild = target.querySelector('.message-content > :first-child');
-            if (!firstChild) firstChild = target.querySelector('.message-content');
-            if (!firstChild) firstChild = target;
+            var firstChild = null;
+            var _mc = target.querySelector('.message-content');
+            if (_mc && _mc.offsetHeight > 0) {
+                firstChild = _mc.querySelector(':scope > :first-child');
+                if (!firstChild) firstChild = _mc;
+            }
+            if (!firstChild || firstChild.offsetHeight === 0) firstChild = target;
             
             var rect = firstChild.getBoundingClientRect();
             var mainRect = main.getBoundingClientRect();
