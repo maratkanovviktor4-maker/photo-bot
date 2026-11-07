@@ -8783,7 +8783,11 @@
                 var msg = chat.messages[i];
                 if (msg.role === 'user' && msg.content) {
                     var preview = msg.content.substring(0, 80);
-                    html += '<div class="nav-strip" data-msg-index="' + i + '" onclick="scrollToMsg(' + i + ')"><div class="nav-bar"></div><span class="nav-text">' + escapeHtml(preview) + '</span></div>';
+                    var _len = (msg.content || '').length;
+                    var _isBig = _len > 100000;
+                    var _cls = 'nav-strip' + (_isBig ? ' nav-strip-big' : '');
+                    var _title = _isBig ? (' title="' + _len.toLocaleString() + ' символов"') : '';
+                    html += '<div class="' + _cls + '" data-msg-index="' + i + '"' + _title + ' onclick="scrollToMsg(' + i + ')"><div class="nav-bar"></div><span class="nav-text">' + escapeHtml(preview) + '</span></div>';
                 }
             }
             container.innerHTML = html;
