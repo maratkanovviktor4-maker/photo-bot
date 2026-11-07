@@ -9262,47 +9262,26 @@
                         else if (/\.json$/i.test(names[_tj])) _jsonFiles.push(names[_tj]);
                     }
                     var targetName = null;
-                    if (_txtFiles.length === 1) targetName = _txtFiles[0];
-                    if (!targetName && _jsonFiles.length === 1) {
-                        var _baseFromJson = _jsonFiles[0].replace(/\.json$/i, '');
-                        for (var _ti = 0; _ti < _txtFiles.length; _ti++) {
-                            if (_txtFiles[_ti].toLowerCase() === (_baseFromJson + '.txt').toLowerCase()) { targetName = _txtFiles[_ti]; break; }
-                        }
-                    }
+                    if (_jsonFiles.length === 1) targetName = _jsonFiles[0];
                     if (!targetName) {
-                        showAlertModal('Файл не определён', 'В папке должно быть ровно один .txt (список) и один .json (карта). Уберите лишние.', '⚠️');
+                        showAlertModal('Файл не определён', 'В папке должен быть ровно один .json (карта щита с enrichment_text). Уберите лишние.', '⚠️');
                         return;
                     }
-                    var _baseName = targetName.replace(/\.txt$/i, '');
-                    var _txtName = null;
-                    var _jsonName = null;
-                    for (var _i = 0; _i < names.length; _i++) {
-                        if (names[_i].toLowerCase() === (_baseName + '.txt').toLowerCase()) _txtName = names[_i];
-                        if (names[_i].toLowerCase() === (_baseName + '.json').toLowerCase()) _jsonName = names[_i];
-                    }
-                    if (!_txtName) _txtName = targetName;
                     pendingFiles = [];
-                    var fh1 = await _deployHandles.work.getFileHandle(_txtName);
-                    var file1 = await fh1.getFile();
-                    var text1 = await file1.text();
-                    pendingFiles.push({
-                        name: _txtName,
-                        mime: 'text/plain',
-                        data: btoa(unescape(encodeURIComponent(text1))),
-                        _status: 'ok'
-                    });
-                    if (_jsonName) {
-                        try {
-                            var fh2 = await _deployHandles.work.getFileHandle(_jsonName);
-                            var file2 = await fh2.getFile();
-                            var text2 = await file2.text();
-                            pendingFiles.push({
-                                name: _jsonName,
-                                mime: 'application/json',
-                                data: btoa(unescape(encodeURIComponent(text2))),
-                                _status: 'ok'
-                            });
-                        } catch(e) { console.warn('read shield json failed', e); }
+                    try {
+                        var fh2 = await _deployHandles.work.getFileHandle(targetName);
+                        var file2 = await fh2.getFile();
+                        var text2 = await file2.text();
+                        pendingFiles.push({
+                            name: targetName,
+                            mime: 'application/json',
+                            data: btoa(unescape(encodeURIComponent(text2))),
+                            _status: 'ok'
+                        });
+                    } catch(e) {
+                        console.warn('read shield json failed', e);
+                        showAlertModal('Ошибка чтения', 'Не удалось прочитать ' + targetName, '❌');
+                        return;
                     }
                     updateFileList();
                 } catch(e) {
@@ -9638,16 +9617,32 @@
             }
         }
 
+        var _ghToastStack = [];
+        function _relayoutGithubToasts() {
+            for (var _ti = 0; _ti < _ghToastStack.length; _ti++) {
+                var _el = _ghToastStack[_ti];
+                if (!_el || !_el.isConnected) continue;
+                _el.style.top = (60 + _ti * 5) + 'px';
+                _el.style.zIndex = String(100000 + _ti);
+            }
+        }
         function _showGithubPushToast(fileName) {
             var _ghToast = document.createElement('div');
             _ghToast.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="vertical-align:middle;margin-right:6px;color:#fff;"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>' + fileName + ' ✓ запушен';
-            _ghToast.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#27ae60;color:#fff;padding:10px 18px;border-radius:10px;font-family:Inter,sans-serif;font-size:13px;font-weight:500;z-index:100000;box-shadow:0 8px 24px rgba(39,174,96,0.4);animation:modalFadeIn 0.2s ease;';
+            _ghToast.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);background:#27ae60;color:#fff;padding:10px 18px;border-radius:10px;font-family:Inter,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(39,174,96,0.4);animation:modalFadeIn 0.2s ease;';
             document.body.appendChild(_ghToast);
+            _ghToastStack.push(_ghToast);
+            _relayoutGithubToasts();
             setTimeout(function() {
                 _ghToast.style.opacity = '0';
                 _ghToast.style.transition = 'opacity 0.3s ease';
-                setTimeout(function() { _ghToast.remove(); }, 300);
-            }, 1800);
+                setTimeout(function() {
+                    var _idx = _ghToastStack.indexOf(_ghToast);
+                    if (_idx !== -1) _ghToastStack.splice(_idx, 1);
+                    _ghToast.remove();
+                    _relayoutGithubToasts();
+                }, 300);
+            }, 3600);
         }
 
         async function _listWorkFiles(workHandle) {
