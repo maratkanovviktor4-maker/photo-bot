@@ -9077,10 +9077,19 @@
 
         async function _restoreDeployHandles() {
             try {
+                var _selAtStart = _deployHandles.work;
                 var h = await _idbGetHandle('deploy_work');
                 if (!h) return;
                 var perm = await h.queryPermission({ mode: 'readwrite' });
+                if (perm === 'prompt') {
+                    // Не запрашиваем здесь — иначе браузер спросит при открытии модалки без действия пользователя.
+                    return;
+                }
                 if (perm !== 'granted') return;
+                if (_deployHandles.work && _deployHandles.work !== _selAtStart) {
+                    // Пользователь уже выбрал другую папку, пока шло восстановление — не перезатираем.
+                    return;
+                }
                 _deployHandles.work = h;
                 var inputEl = document.getElementById('deployWorkDir');
                 if (inputEl) {
