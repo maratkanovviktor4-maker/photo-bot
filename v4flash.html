@@ -8783,10 +8783,10 @@
                 var msg = chat.messages[i];
                 if (msg.role === 'user' && msg.content) {
                     var preview = msg.content.substring(0, 80);
-                    var _len = (msg.content || '').length;
-                    var _isBig = _len > 100000;
+                    var _tokens = parseInt(msg.tokens || 0);
+                    var _isBig = _tokens > 100000;
                     var _cls = 'nav-strip' + (_isBig ? ' nav-strip-big' : '');
-                    var _title = _isBig ? (' title="' + _len.toLocaleString() + ' символов"') : '';
+                    var _title = _isBig ? (' title="' + _tokens.toLocaleString() + ' токенов"') : '';
                     html += '<div class="' + _cls + '" data-msg-index="' + i + '"' + _title + ' onclick="scrollToMsg(' + i + ')"><div class="nav-bar"></div><span class="nav-text">' + escapeHtml(preview) + '</span></div>';
                 }
             }
