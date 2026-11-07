@@ -8942,11 +8942,7 @@
             } catch(e) {}
         }
 
-        function pickDeployDirSync(ev, kind) {
-            if (ev) {
-                ev.preventDefault();
-                ev.stopPropagation();
-            }
+        async function pickDeployDir(kind) {
             if (!window.showDirectoryPicker) {
                 showAlertModal('Не поддерживается', 'Ваш браузер не поддерживает выбор папок. Используйте Chrome или Edge.', '⚠️');
                 var _okBtnP = document.querySelector('#alertModalOverlay .modal-actions button');
@@ -8954,26 +8950,25 @@
                 return;
             }
             try {
-                window.showDirectoryPicker({ id: 'photobot_work_' + Date.now(), mode: 'readwrite', startIn: 'documents' }).then(function(handle) {
-                    _deployHandles.work = handle;
-                    var inputEl = document.getElementById('deployWorkDir');
-                    if (inputEl) {
-                        inputEl.value = handle.name;
-                        inputEl.title = handle.name;
-                    }
-                    _idbSetHandle('deploy_work', handle);
-                    _showFileInWorkDir();
-                    _markDeployDirty();
-                }).catch(function(e) {
-                    if (e && e.name === 'AbortError') return;
-                    console.warn('pick dir failed', e);
-                });
+                var handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                var perm = await handle.queryPermission({ mode: 'readwrite' });
+                if (perm !== 'granted') {
+                    perm = await handle.requestPermission({ mode: 'readwrite' });
+                }
+                if (perm !== 'granted') return;
+                _deployHandles.work = handle;
+                await _idbSetHandle('deploy_work', handle);
+                var inputEl = document.getElementById('deployWorkDir');
+                if (inputEl) {
+                    inputEl.value = handle.name;
+                    inputEl.title = handle.name;
+                }
+                await _showFileInWorkDir();
+                _markDeployDirty();
             } catch(e) {
-                console.warn('pick dir failed (sync)', e);
+                if (e && e.name === 'AbortError') return;
+                console.warn('pick dir failed', e);
             }
-        }
-        async function pickDeployDir(kind) {
-            pickDeployDirSync(null, kind);
         }
 
         async function _showFileInWorkDir() {
@@ -9082,19 +9077,10 @@
 
         async function _restoreDeployHandles() {
             try {
-                var _selAtStart = _deployHandles.work;
                 var h = await _idbGetHandle('deploy_work');
                 if (!h) return;
                 var perm = await h.queryPermission({ mode: 'readwrite' });
-                if (perm === 'prompt') {
-                    // Не запрашиваем здесь — иначе браузер спросит при открытии модалки без действия пользователя.
-                    return;
-                }
                 if (perm !== 'granted') return;
-                if (_deployHandles.work && _deployHandles.work !== _selAtStart) {
-                    // Пользователь уже выбрал другую папку, пока шло восстановление — не перезатираем.
-                    return;
-                }
                 _deployHandles.work = h;
                 var inputEl = document.getElementById('deployWorkDir');
                 if (inputEl) {
@@ -11574,7 +11560,7 @@
             <div style="margin-top:14px;">
                 <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">РАБОЧАЯ ПАПКА</label>
                 <div style="display:flex;gap:6px;align-items:center;">
-                    <input type="text" id="deployWorkDir" readonly placeholder="Папка не выбрана" style="flex:1;padding:10px 12px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;cursor:pointer;" onclick="pickDeployDirSync(event, 'work')">
+                    <input type="text" id="deployWorkDir" readonly placeholder="Папка не выбрана" style="flex:1;padding:10px 12px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;cursor:pointer;" onclick="pickDeployDir('work')">
                     <button onclick="pickDeployDir('work')" title="Выбрать рабочую папку" style="width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
                 </div>
                 <div id="deployFileInDir" style="font-size:11px;color:#666;font-family:Inter,sans-serif;margin-top:6px;display:none;"></div>
