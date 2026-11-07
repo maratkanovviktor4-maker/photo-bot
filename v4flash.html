@@ -8781,8 +8781,15 @@
             var html = '';
             for (var i = 0; i < chat.messages.length; i++) {
                 var msg = chat.messages[i];
-                if (msg.role === 'user' && msg.content) {
-                    var preview = msg.content.substring(0, 80);
+                if (msg.role === 'user' && (msg.content || msg.tokens || (msg.files_meta && msg.files_meta.length))) {
+                    var preview = (msg.content || '').substring(0, 80);
+                    if (!preview) {
+                        if (msg.files_meta && msg.files_meta.length) {
+                            preview = '📎 ' + msg.files_meta.map(function(f){ return f.name; }).join(', ');
+                        } else {
+                            preview = '(без текста)';
+                        }
+                    }
                     var _tokens = parseInt(msg.tokens || 0);
                     var _isBig = _tokens > 100000;
                     var _cls = 'nav-strip' + (_isBig ? ' nav-strip-big' : '');
