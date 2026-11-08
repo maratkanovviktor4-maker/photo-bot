@@ -4347,7 +4347,14 @@
                     sendBtnArrow();
                 } else {
                     console.error('regenerateAssistantMessage error:', e);
-                    _cleanupAssistantOnError(chat, newMsgIndex);
+                    chat.messages.splice(newMsgIndex, 1);
+                    if (typeof _savedOldAssistant !== 'undefined' && _savedOldAssistant) {
+                        chat.messages.push(_savedOldAssistant);
+                    }
+                    renderMessages();
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
                     showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
                 }
             }
