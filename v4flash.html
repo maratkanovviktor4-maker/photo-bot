@@ -3370,7 +3370,6 @@
                             if (dataStr === '[DONE]') continue;
                             try {
                                 var parsed = JSON.parse(dataStr);
-                                console.log('[BRANCH_SSE]', parsed);
                                 if (parsed.error_type) {
                                     let errorMessage = 'Ошибка сервера.';
                                     if (parsed.error_type === 'bad_request') {
@@ -3413,7 +3412,7 @@
                                             }
                                         }
                                     }
-                                    assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _imgReading: _branchShowImg };
+                                    assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                                     chat.messages.push(assistantMsg);
                                     streamMsgIndex = chat.messages.length - 1;
                                     var streamId = 'branch_stream_' + streamMsgIndex;
@@ -3435,7 +3434,6 @@
                                     }
                                 } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
                                     if (assistantMsg) {
-                                        if (assistantMsg._imgReading) assistantMsg._imgReading = false;
                                         if (parsed.reasoning) {
                                             assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
                                         }
@@ -3452,9 +3450,7 @@
 
                                     }
                                 }
-                            } catch (parseErr) {
-                                console.warn('createBranchFromMessage SSE parse error:', parseErr, dataStr);
-                            }
+                            } catch (parseErr) {}
                         }
                     }
                     if (assistantMsg && !assistantMsg.finished) {
