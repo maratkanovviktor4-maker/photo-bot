@@ -3587,7 +3587,16 @@
                 }
                 playSound('send');
                 
-                var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
+                var _regenHasAnyImage = !!(msg.image_b64 || (msg.display_b64s && msg.display_b64s.length) || (msg.extra_b64s && msg.extra_b64s.length));
+                var _regenHasPdf = false;
+                if (msg.files_meta && msg.files_meta.length) {
+                    for (var _rpf = 0; _rpf < msg.files_meta.length; _rpf++) {
+                        var _rpx = (msg.files_meta[_rpf].ext || '').toLowerCase();
+                        if (_rpx === 'pdf' || _rpx === 'docx' || _rpx === 'xlsx' || _rpx === 'pptx') { _regenHasPdf = true; break; }
+                    }
+                }
+                var _showImgReadingRegen = _regenHasAnyImage && !_regenHasPdf && !(newText || '').trim();
+                var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _imgReading: _showImgReadingRegen };
                 chat.messages.push(assistantMsg);
                 var newMsgIndex = chat.messages.length - 1;
                 var streamId = 'regen_user_stream_' + newMsgIndex;
