@@ -10484,6 +10484,17 @@
 
             // Все файлы применены
             _autoDeployConsecutiveTooMany = 0;
+            // Пуш на GitHub — только для финального состояния (ответ с маркером [COMPLETE]).
+            // Промежуточные правки не пушим: они заведомо устареют следующей правкой в том же цикле.
+            var _isCycleComplete = /\[COMPLETE\]\s*edit cycle closed/i.test(msg.content || '');
+            if (_isCycleComplete) {
+                for (var _pi = 0; _pi < _appliedFiles.length; _pi++) {
+                    var _pfName = _appliedFiles[_pi];
+                    var _pfContent = _appliedFileContents[_pfName];
+                    if (_pfContent == null) continue;
+                    try { await _pushFileToGithub(_pfName, _pfContent); } catch(e) { console.warn('github push error', e); }
+                }
+            }
             var _targetMsgId = msg.msg_id;
             var _chatRef = chat;
             window._markAutodeploy = async function(_mid, _userId) {
