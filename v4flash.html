@@ -10643,21 +10643,6 @@
 
             // Все файлы применены
             _autoDeployConsecutiveTooMany = 0;
-            var _targetMsgId = msg.msg_id;&#8203;`&#8203;`&#8203;`&#8203; ... &#8203;`&#8203;`&#8203;`&#8203;) — метки внутри них не считаются маркером.
-                var _masked = _raw.replace(/&#8203;`&#8203;`&#8203;`&#8203;[\s\S]*?&#8203;`&#8203;`&#8203;`&#8203;/g, '');
-                _isCycleComplete = /\[COMPLETE\]/i.test(_masked);
-            })();
-            if (_isCycleComplete) {
-                for (var _pi = 0; _pi < _appliedFiles.length; _pi++) {
-                    var _pfName = _appliedFiles[_pi];
-                    var _pfContent = _appliedFileContents[_pfName];
-                    if (_pfContent == null) continue;
-                    try { await _pushFileToGithub(_pfName, _pfContent); } catch(e) { console.warn('github push error', e); }
-                }
-                // Цикл закрыт финальной правкой — [OK] слать не нужно.
-                renderMessages();
-                return;
-            }
             var _targetMsgId = msg.msg_id;
             var _chatRef = chat;
             window._markAutodeploy = async function(_mid, _userId) {
@@ -10691,6 +10676,14 @@
             _input.value = '[OK] patch applied · state committed';
             _input.dispatchEvent(new Event('input'));
             sendMessage();
+            setTimeout(function() {
+                for (var _pi = 0; _pi < _appliedFiles.length; _pi++) {
+                    var _pfName = _appliedFiles[_pi];
+                    var _pfContent = _appliedFileContents[_pfName];
+                    if (_pfContent == null) continue;
+                    try { _pushFileToGithub(_pfName, _pfContent).catch(function(e) { console.warn('github push error', e); }); } catch(e) { console.warn('github push error', e); }
+                }
+            }, 0);
             return;
 
             var _eol = _fileContent.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
