@@ -429,6 +429,49 @@
         function acceptCookies() { localStorage.setItem('cookies_accepted', '1'); document.getElementById('cookie-banner').style.display = 'none'; }
         window.addEventListener('focus', function() { if (currentUserId) { checkSubscription(); updateUnviewedCount(); } });
 
+        function startGoogleLogin() {
+            if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+                alert('Google Sign-In не загрузился. Проверьте соединение.');
+                return;
+            }
+            var clientId = (window.CONFIG && CONFIG.GOOGLE_CLIENT_ID) || '';
+            if (!clientId) {
+                alert('Не настроен GOOGLE_CLIENT_ID в config.js');
+                return;
+            }
+            var client = google.accounts.oauth2.initTokenClient({
+                client_id: clientId,
+                scope: 'openid email profile',
+                callback: async function(resp) {
+                    if (!resp || !resp.access_token) return;
+                    try {
+                        var r = await fetch(`${SERVER_URL}/auth/google`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ access_token: resp.access_token })
+                        });
+                        var d = await r.json();
+                        if (!d.success) {
+                            alert(d.error || 'Ошибка входа через Google');
+                            return;
+                        }
+                        currentUserId = d.user_id;
+                        currentUsername = d.email || d.username || '';
+                        sessionToken = d.session_token || '';
+                        localStorage.setItem('photobot_auth', JSON.stringify({ user_id: currentUserId, username: currentUsername, session_token: sessionToken }));
+                        showAuthInfo(currentUsername ? currentUsername : 'ID:' + currentUserId);
+                        document.getElementById('authBlock').style.display = 'none';
+                        checkSubscription();
+                        updateUnviewedCount();
+                        loadGemmaHistory();
+                    } catch(e) {
+                        alert('Ошибка соединения');
+                    }
+                }
+            });
+            client.requestAccessToken();
+        }
+        function handleGoogleSignIn(response) {}
         async function updateUnviewedCount() { if (!currentUserId || !sessionToken) return; try { const resp = await fetch(`${SERVER_URL}/unviewed_count?user_id=${currentUserId}&session_token=${sessionToken}`); if (resp.ok) { const data = await resp.json(); const count = data.count || 0; const el = document.getElementById('storageCount'); if (el) { if (count > 0) { el.textContent = count; el.style.display = 'block'; } else { el.style.display = 'none'; } } } } catch(e) {} }
         function toggleDeepSeekMenu() { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } else { menu.style.display = 'block'; menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; requestAnimationFrame(() => { menu.style.transition = 'opacity 0.15s, transform 0.15s'; menu.style.opacity = '1'; menu.style.transform = 'translateX(-50%) translateY(0)'; }); } }
         document.addEventListener('click', function(e) { if (!e.target.closest('[onclick="toggleDeepSeekMenu()"]')) { const menu = document.getElementById('deepseekMenu'); if (menu.style.display === 'block') { menu.style.opacity = '0'; menu.style.transform = 'translateX(-50%) translateY(-4px)'; setTimeout(() => { menu.style.display = 'none'; }, 150); } } });
