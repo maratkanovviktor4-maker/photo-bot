@@ -3324,16 +3324,7 @@
             playSound('send');
             var isAssistantBranch = (msg.role === 'assistant');
             if (!isAssistantBranch) {
-                var _brHasImg = !!(msg.image_b64 || (msg.display_b64s && msg.display_b64s.length) || (msg.extra_b64s && msg.extra_b64s.length));
-                var _brHasPdf = false;
-                if (msg.files_meta && msg.files_meta.length) {
-                    for (var _bpf2 = 0; _bpf2 < msg.files_meta.length; _bpf2++) {
-                        var _bpx2 = (msg.files_meta[_bpf2].ext || '').toLowerCase();
-                        if (_bpx2 === 'pdf' || _bpx2 === 'docx' || _bpx2 === 'xlsx' || _bpx2 === 'pptx') { _brHasPdf = true; break; }
-                    }
-                }
-                var _brShowImg = _brHasImg && !_brHasPdf && !(msg.content || '').trim();
-                chat.messages.push({ role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _imgReading: _brShowImg });
+                chat.messages.push({ role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null });
                 renderMessages();
                 scrollToBottom();
             } else {
@@ -3348,10 +3339,6 @@
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
-                    hideLoading();
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
@@ -3395,14 +3382,6 @@
                                     else if (parsed.error_type === 'connection_error') {
                                         errorMessage = 'Сервер не дождался ответа от DeepSeek. Попробуйте позже.'
                                     }
-                                    if (branchMetaReceived) {
-                                        _cleanupAssistantOnError(chat, streamMsgIndex);
-                                    } else {
-                                        isSending = false;
-                                        activeStreamId = null;
-                                        sendBtnArrow();
-                                    }
-                                    hideLoading();
                                     showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                     return;
                                 }
@@ -3421,7 +3400,7 @@
                                             }
                                         }
                                     }
-                                    assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _imgReading: _brShowImg };
+                                    assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                                     chat.messages.push(assistantMsg);
                                     streamMsgIndex = chat.messages.length - 1;
                                     var streamId = 'branch_stream_' + streamMsgIndex;
@@ -3443,7 +3422,6 @@
                                     }
                                 } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
                                     if (assistantMsg) {
-                                        if (parsed.content && parsed.content.trim() && assistantMsg._imgReading) assistantMsg._imgReading = false;
                                         if (parsed.reasoning) {
                                             assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
                                         }
@@ -3525,16 +3503,12 @@
                     hideLoading();
                 }
             } catch (e) {
+                if (placeholderId) { var el2 = document.getElementById(placeholderId); if (el2) el2.remove(); }
                 console.error('createBranchFromMessage error:', e);
-                if (typeof branchMetaReceived !== 'undefined' && branchMetaReceived && typeof streamMsgIndex !== 'undefined' && streamMsgIndex !== null) {
-                    _cleanupAssistantOnError(chat, streamMsgIndex);
-                } else {
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
-                }
-                hideLoading();
                 showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
+                isSending = false;
+                sendBtnArrow();
+                hideLoading();
             }
         }
 
@@ -3597,16 +3571,7 @@
                 }
                 playSound('send');
                 
-                var _regenHasAnyImage = !!(msg.image_b64 || (msg.display_b64s && msg.display_b64s.length) || (msg.extra_b64s && msg.extra_b64s.length));
-                var _regenHasPdf = false;
-                if (msg.files_meta && msg.files_meta.length) {
-                    for (var _rpf = 0; _rpf < msg.files_meta.length; _rpf++) {
-                        var _rpx = (msg.files_meta[_rpf].ext || '').toLowerCase();
-                        if (_rpx === 'pdf' || _rpx === 'docx' || _rpx === 'xlsx' || _rpx === 'pptx') { _regenHasPdf = true; break; }
-                    }
-                }
-                var _showImgReadingRegen = _regenHasAnyImage && !_regenHasPdf && !(newText || '').trim();
-                var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _imgReading: _showImgReadingRegen };
+                var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
                 chat.messages.push(assistantMsg);
                 var newMsgIndex = chat.messages.length - 1;
                 var streamId = 'regen_user_stream_' + newMsgIndex;
@@ -3634,7 +3599,6 @@
                     if (!resp.ok) {
                         var errData = await resp.json().catch(() => ({}));
                         let errorMessage = errData.error || 'Ошибка сервера.';
-                        _cleanupAssistantOnError(chat, newMsgIndex);
                         showAlertModal('Ошибка', errorMessage, '❌');
                         return;
                     }
@@ -3651,8 +3615,12 @@
                         } else if (errJson.error_type === 'deepseek_overloaded') {
                             errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                         }
-                        _cleanupAssistantOnError(chat, newMsgIndex);
-                        showAlertModal('Ошибка', errorMessage, '❌');
+                        assistantMsg._error_type = errJson.error_type || null;
+                        assistantMsg.content = errorMessage;
+                        assistantMsg.finished = true;
+                        renderMessages();
+                        isSending = false;
+                        sendBtnArrow();
                         return;
                     }
                     var reader = resp.body.getReader();
@@ -3690,7 +3658,6 @@
                                     else if (parsed.error_type === 'connection_error') {
                                         errorMessage = 'Сервер не дождался ответа от DeepSeek. Попробуйте позже.'
                                     }
-                                    _cleanupAssistantOnError(chat, newMsgIndex);
                                     showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                     return;
                                 }
@@ -3698,7 +3665,6 @@
                                 if (parsed.assistant_msg_id) {
                                     assistantMsg.msg_id = parsed.assistant_msg_id;
                                 } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
-                                    if (assistantMsg._imgReading) assistantMsg._imgReading = false;
                                     if (parsed.reasoning) {
                                         assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
                                     }
@@ -3767,8 +3733,9 @@
                         sendBtnArrow();
                     } else {
                         console.error('regenerateUserMessage error:', e);
-                        _cleanupAssistantOnError(chat, newMsgIndex);
                         showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
+                        isSending = false;
+                        sendBtnArrow();
                     }
                 }
             })();
@@ -4181,23 +4148,9 @@
             var _savedFluxMeta = msg._flux_meta || null;
             var _savedAudioMeta = msg._audio_meta || null;
             var _savedAceMeta = msg._ace_meta || null;
-            var _savedOldAssistant = msg;
             var removeFrom = msgIndex;
             while (chat.messages.length > removeFrom) { chat.messages.pop(); }
-            var _regenAsstPrevUser = null;
-            for (var _rpu = msgIndex - 1; _rpu >= 0; _rpu--) {
-                if (chat.messages[_rpu] && chat.messages[_rpu].role === 'user') { _regenAsstPrevUser = chat.messages[_rpu]; break; }
-            }
-            var _regenAsstHasImg = !!(_regenAsstPrevUser && (_regenAsstPrevUser.image_b64 || (_regenAsstPrevUser.display_b64s && _regenAsstPrevUser.display_b64s.length) || (_regenAsstPrevUser.extra_b64s && _regenAsstPrevUser.extra_b64s.length)));
-            var _regenAsstHasPdf = false;
-            if (_regenAsstPrevUser && _regenAsstPrevUser.files_meta && _regenAsstPrevUser.files_meta.length) {
-                for (var _rpf2 = 0; _rpf2 < _regenAsstPrevUser.files_meta.length; _rpf2++) {
-                    var _rpx2 = (_regenAsstPrevUser.files_meta[_rpf2].ext || '').toLowerCase();
-                    if (_rpx2 === 'pdf' || _rpx2 === 'docx' || _rpx2 === 'xlsx' || _rpx2 === 'pptx') { _regenAsstHasPdf = true; break; }
-                }
-            }
-            var _showImgReadingAsst = _regenAsstHasImg && !_regenAsstHasPdf && !((_regenAsstPrevUser && _regenAsstPrevUser.content) || '').trim();
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _imgReading: _showImgReadingAsst };
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
             if (_savedFluxMeta) assistantMsg._flux_meta = _savedFluxMeta;
             if (_savedAudioMeta) assistantMsg._audio_meta = _savedAudioMeta;
             if (_savedAceMeta) assistantMsg._ace_meta = _savedAceMeta;
@@ -4220,7 +4173,6 @@
                 if (!resp.ok) {
                     var errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
-                    _cleanupAssistantOnError(chat, newMsgIndex);
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
@@ -4280,7 +4232,6 @@
                                 else if (parsed.error_type === 'connection_error') {
                                     errorMessage = 'Сервер не дождался ответа от DeepSeek. Попробуйте позже.'
                                 }
-                                _cleanupAssistantOnError(chat, newMsgIndex);
                                 showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
                             }
@@ -4288,7 +4239,6 @@
                             if (parsed.assistant_msg_id) {
                                 assistantMsg.msg_id = parsed.assistant_msg_id;
                             } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
-                                if (assistantMsg._imgReading) assistantMsg._imgReading = false;
                                 if (parsed.reasoning) {
                                     assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
                                 }
@@ -4347,15 +4297,9 @@
                     sendBtnArrow();
                 } else {
                     console.error('regenerateAssistantMessage error:', e);
-                    chat.messages.splice(newMsgIndex, 1);
-                    if (typeof _savedOldAssistant !== 'undefined' && _savedOldAssistant) {
-                        chat.messages.push(_savedOldAssistant);
-                    }
-                    renderMessages();
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
                     showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
+                    isSending = false;
+                    sendBtnArrow();
                 }
             }
         }
@@ -4851,8 +4795,6 @@
                     contentHtml = '<div class="flux-loading-wrap"><div class="flux-status-label">В очереди...</div><div class="flux-progress-bar"><div class="flux-progress-fill"></div></div></div>';
                 } else if (msg._pdfReading) {
                     contentHtml = '<div class="reasoning-block streaming" style="margin-bottom:0;"><div class="reasoning-header" style="cursor:default;"><span class="reasoning-label">Чтение</span></div></div>';
-                } else if (msg._imgReading) {
-                    contentHtml = '<div class="reasoning-block streaming" style="margin-bottom:0;"><div class="reasoning-header" style="cursor:default;"><span class="reasoning-label">Анализирую изображение</span></div></div>';
                 } else {
                     contentHtml = '<div class="typing-dots"><span></span><span></span><span></span></div>';
                 }
@@ -6567,7 +6509,6 @@
                         if (!resp.ok) {
                             var errData = await resp.json().catch(() => ({}));
                             let errorMessage = errData.error || 'Ошибка сервера.';
-                            _cleanupAssistantOnError(chat, streamMsgIndex);
                             showAlertModal('Ошибка', errorMessage, '❌');
                             return;
                         }
@@ -6613,7 +6554,6 @@
                                                             else if (parsed.error_type === 'connection_error') {
                                                                 errorMessage = 'Сервер не дождался ответа от DeepSeek. Попробуйте позже.'
                                                             }
-                                                    	    _cleanupAssistantOnError(chat, streamMsgIndex);
                                                     	    showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                                     	    return;
                                                 	}
@@ -6686,8 +6626,9 @@
                         sendBtnArrow();
                 } catch(e) {
                         console.error('selfPlay error:', e);
-                        _cleanupAssistantOnError(chat, streamMsgIndex);
                         showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
+                        isSending = false;
+                        sendBtnArrow();
                 }
         }
 
@@ -7751,21 +7692,19 @@
             }
             
             var _hasPdfAttach = false;
-            var _hasImageAttach = false;
             for (var _hpi = 0; _hpi < _sendFilesSnapshot.length; _hpi++) {
                 var _hpf = _sendFilesSnapshot[_hpi];
                 if (!_hpf) continue;
                 var _hpm = (_hpf.mime || '').toLowerCase();
                 var _hpn = (_hpf.name || '').toLowerCase();
-                if (_hpm.indexOf('image/') === 0) { _hasImageAttach = true; continue; }
                 if (_hpm === 'application/pdf' || _hpn.endsWith('.pdf') ||
                     _hpn.endsWith('.docx') || _hpn.endsWith('.xlsx') || _hpn.endsWith('.pptx') ||
                     _hpm.indexOf('wordprocessingml') !== -1 || _hpm.indexOf('spreadsheetml') !== -1 || _hpm.indexOf('presentationml') !== -1) {
                     _hasPdfAttach = true;
+                    break;
                 }
             }
-            var _showImgReading = _hasImageAttach && !_hasPdfAttach && !text;
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _fluxPlaceholder: fluxModeEnabled, _pdfReading: _hasPdfAttach, _imgReading: _showImgReading };
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _fluxPlaceholder: fluxModeEnabled, _pdfReading: _hasPdfAttach };
             chat.messages.push(assistantMsg);
             const msgIndex = chat.messages.length - 1;
             const streamId = 'stream_' + msgIndex;
@@ -7821,24 +7760,12 @@
 
                 if (resp.status === 406) {
                     var errData = await resp.json().catch(() => ({}));
-                    if (chat.messages.length > msgIndex + 1) chat.messages.splice(msgIndex + 1, 1);
-                    if (!chat.messages[msgIndex] || !chat.messages[msgIndex].msg_id) chat.messages.splice(msgIndex, 1);
-                    renderMessages();
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
                     showAlertModal('Слишком длинный текст', errData.error || 'Суммарная длина текста превышает лимит.', '⚠️');
                     return;
                 }
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
-                    if (chat.messages.length > msgIndex + 1) chat.messages.splice(msgIndex + 1, 1);
-                    if (!chat.messages[msgIndex] || !chat.messages[msgIndex].msg_id) chat.messages.splice(msgIndex, 1);
-                    renderMessages();
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
@@ -7856,13 +7783,14 @@
                     } else if (err.error_type === 'deepseek_overloaded') {
                         errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                     }
-                    if (chat.messages.length > msgIndex + 1) chat.messages.splice(msgIndex + 1, 1);
-                    if (!chat.messages[msgIndex] || !chat.messages[msgIndex].msg_id) chat.messages.splice(msgIndex, 1);
+                    chat.messages[msgIndex]._error_type = err.error_type || null;
+                    chat.messages[msgIndex].content = errorMessage;
+                    chat.messages[msgIndex].finished = true;
+                    chat.messages[msgIndex]._streaming = false;
                     renderMessages();
                     isSending = false;
                     activeStreamId = null;
                     sendBtnArrow();
-                    showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
 
@@ -7901,7 +7829,6 @@
                                 else if (parsed.error_type === 'connection_error') {
                                     errorMessage = 'Сервер не дождался ответа от DeepSeek. Попробуйте позже.'
                                 }
-                                _cleanupAssistantOnError(chat, msgIndex);
                                 showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
                             }
@@ -7911,7 +7838,6 @@
                                 streamStarted = true;
                                 assistantMsg._fluxPlaceholder = false;
                                 assistantMsg._pdfReading = false;
-                                assistantMsg._imgReading = false;
                                 sendBtnRef.disabled = false;
                                 sendBtnRef.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
                                 sendBtnRef.onclick = function() { stopTyping(); };
@@ -8055,23 +7981,18 @@
                     sendBtnArrow();
                 } else {
                     console.error('sendMessage error:', e);
-                    _cleanupAssistantOnError(chat, msgIndex);
+                    chat.messages.pop(); // удаляем ассистента
+                    chat.messages.pop(); // удаляем пользователя
+                    renderMessages();
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
                     showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
                 }
 
 
             }
 
-        }
-        function _cleanupAssistantOnError(chat, assistantIndex) {
-            if (!chat || assistantIndex < 0 || assistantIndex >= chat.messages.length) return;
-            var _m = chat.messages[assistantIndex];
-            if (!_m || _m.role !== 'assistant') return;
-            chat.messages.splice(assistantIndex, 1);
-            renderMessages();
-            isSending = false;
-            activeStreamId = null;
-            sendBtnArrow();
         }
 
 
@@ -11002,11 +10923,13 @@
 
         function closeAlertModal() {
    	    var _okBtn = document.querySelector('#alertModalOverlay .modal-actions button');
+   	    var _skipReload = _okBtn && _okBtn.getAttribute('data-skip-reload') === '1';
    	    if (_okBtn) _okBtn.removeAttribute('data-skip-reload');
    	    document.getElementById('alertModalOverlay').classList.remove('active');
     	    isSending = false;
     	    activeStreamId = null;
     	    sendBtnArrow();
+    	    if (!_skipReload) loadChatsFromServer();
 	}
 
 
