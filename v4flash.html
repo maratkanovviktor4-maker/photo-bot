@@ -8052,15 +8052,7 @@
             if (!chat || assistantIndex < 0 || assistantIndex >= chat.messages.length) return;
             var _m = chat.messages[assistantIndex];
             if (!_m || _m.role !== 'assistant') return;
-            var _userNeedsDrop = false;
-            if (assistantIndex > 0) {
-                var _u = chat.messages[assistantIndex - 1];
-                if (_u && _u.role === 'user' && !_u.msg_id) _userNeedsDrop = true;
-            }
             chat.messages.splice(assistantIndex, 1);
-            if (_userNeedsDrop) {
-                chat.messages.splice(assistantIndex - 1, 1);
-            }
             renderMessages();
             isSending = false;
             activeStreamId = null;
