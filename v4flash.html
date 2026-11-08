@@ -7821,14 +7821,24 @@
 
                 if (resp.status === 406) {
                     var errData = await resp.json().catch(() => ({}));
-                    _cleanupAssistantOnError(chat, msgIndex);
+                    if (chat.messages.length > msgIndex + 1) chat.messages.splice(msgIndex + 1, 1);
+                    if (!chat.messages[msgIndex] || !chat.messages[msgIndex].msg_id) chat.messages.splice(msgIndex, 1);
+                    renderMessages();
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
                     showAlertModal('Слишком длинный текст', errData.error || 'Суммарная длина текста превышает лимит.', '⚠️');
                     return;
                 }
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
-                    _cleanupAssistantOnError(chat, msgIndex);
+                    if (chat.messages.length > msgIndex + 1) chat.messages.splice(msgIndex + 1, 1);
+                    if (!chat.messages[msgIndex] || !chat.messages[msgIndex].msg_id) chat.messages.splice(msgIndex, 1);
+                    renderMessages();
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
@@ -7846,7 +7856,12 @@
                     } else if (err.error_type === 'deepseek_overloaded') {
                         errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                     }
-                    _cleanupAssistantOnError(chat, msgIndex);
+                    if (chat.messages.length > msgIndex + 1) chat.messages.splice(msgIndex + 1, 1);
+                    if (!chat.messages[msgIndex] || !chat.messages[msgIndex].msg_id) chat.messages.splice(msgIndex, 1);
+                    renderMessages();
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
