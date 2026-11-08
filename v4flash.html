@@ -11140,6 +11140,46 @@
             for (var i = 0; i < items.length; i++) {
                 items[i].classList.toggle('active', items[i].getAttribute('data-tab') === tab);
             }
+            var panes = document.querySelectorAll('#settingsModal .settings-tab-pane');
+            for (var j = 0; j < panes.length; j++) {
+                panes[j].style.display = (panes[j].getAttribute('data-pane') === tab) ? 'block' : 'none';
+            }
+            if (tab === 'appearance') _syncSettingsAppearance();
+        }
+        function _syncSettingsAppearance() {
+            var hl = document.getElementById('settingsHighlightSelect');
+            var srcHl = document.getElementById('highlightSelect');
+            if (hl && srcHl) {
+                hl.innerHTML = srcHl.innerHTML;
+                hl.value = srcHl.value;
+            }
+            var ss = document.getElementById('settingsSoundSendSelect');
+            var srcSs = document.getElementById('soundSendSelect');
+            if (ss && srcSs) {
+                ss.innerHTML = srcSs.innerHTML;
+                ss.value = srcSs.value;
+            }
+            var sr = document.getElementById('settingsSoundReplySelect');
+            var srcSr = document.getElementById('soundReplySelect');
+            if (sr && srcSr) {
+                sr.innerHTML = srcSr.innerHTML;
+                sr.value = srcSr.value;
+            }
+            var vs = document.getElementById('settingsVoiceSelect');
+            var srcVs = document.getElementById('voiceSelect');
+            if (vs && srcVs) {
+                vs.innerHTML = srcVs.innerHTML;
+                vs.value = srcVs.value;
+            }
+            var bgLbl = document.getElementById('settingsBgLabel');
+            var srcBg = document.getElementById('bgCurrentLabel');
+            if (bgLbl && srcBg) bgLbl.textContent = srcBg.textContent;
+            _syncSettingsTip();
+        }
+        function _syncSettingsTip() {
+            var b = document.getElementById('settingsTipBtn');
+            if (!b) return;
+            b.textContent = tipEnabled ? 'Включены' : 'Выключены';
         }
         function _syncSettingsThemeButtons() {
             var current = localStorage.getItem('photobot_theme_mode') || (document.body.classList.contains('light') ? 'light' : 'dark');
