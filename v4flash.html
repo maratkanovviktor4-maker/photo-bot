@@ -4141,6 +4141,17 @@
             if (!chat) return;
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'assistant') return;
+            var _prevUserHasPdf = false;
+            for (var _pui = msgIndex - 1; _pui >= 0; _pui--) {
+                var _pum = chat.messages[_pui];
+                if (_pum && _pum.role === 'user') {
+                    var _pufm = _pum.files_meta || [];
+                    for (var _pufi = 0; _pufi < _pufm.length; _pufi++) {
+                        if ((_pufm[_pufi].ext || '').toLowerCase() === 'pdf') { _prevUserHasPdf = true; break; }
+                    }
+                    break;
+                }
+            }
             style = style || '';
             isSending = true;
             if (typingInterval) { clearTimeout(typingInterval); typingInterval = null; }
@@ -4150,7 +4161,7 @@
             var _savedAceMeta = msg._ace_meta || null;
             var removeFrom = msgIndex;
             while (chat.messages.length > removeFrom) { chat.messages.pop(); }
-            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
+            var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _pdfReading: _prevUserHasPdf };
             if (_savedFluxMeta) assistantMsg._flux_meta = _savedFluxMeta;
             if (_savedAudioMeta) assistantMsg._audio_meta = _savedAudioMeta;
             if (_savedAceMeta) assistantMsg._ace_meta = _savedAceMeta;
@@ -4236,6 +4247,13 @@
                                 return;
                             }
 
+                            if (parsed.pdf_reading) {
+                                assistantMsg._pdfReading = true;
+                                var _prEl2 = document.getElementById('stream-' + newMsgIndex);
+                                if (_prEl2) {
+                                    _prEl2.innerHTML = '<div class="reasoning-block streaming" style="margin-bottom:0;"><div class="reasoning-header" style="cursor:default;"><span class="reasoning-label">Чтение</span></div></div>';
+                                }
+                            }
                             if (parsed.assistant_msg_id) {
                                 assistantMsg.msg_id = parsed.assistant_msg_id;
                             } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
