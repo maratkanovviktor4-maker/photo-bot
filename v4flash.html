@@ -10266,9 +10266,12 @@
                 var fh = await _deployHandles.work.getFileHandle(targetName);
                 var file = await fh.getFile();
                 var text = await file.text();
-                var ok = await _pushFileToGithub(targetName, text);
-                if (!ok) {
-                    showAlertModal('Пуш не удался', 'GitHub не принял файл. Проверьте токен, репозиторий, ветку и список файлов.', '❌');
+                var okGh = true;
+                var okExtra = true;
+                try { okGh = await _pushFileToGithub(targetName, text); } catch(e) { okGh = false; console.warn('github push error', e); }
+                try { okExtra = await _pushFileToExtraProvider(targetName, text); } catch(e) { okExtra = false; console.warn('extra provider push error', e); }
+                if (!okGh && !okExtra) {
+                    showAlertModal('Пуш не удался', 'Ни GitHub, ни второй сервис не приняли файл. Проверьте токены и настройки.', '❌');
                 }
             } catch (e) {
                 console.warn('pushWorkFileToGithub error', e);
