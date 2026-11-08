@@ -10541,19 +10541,6 @@
                         var cleanName = _stripCopySuffix(data.filename || _realName);
 
                         try {
-                            var oldFileHandle = null;
-                            try { oldFileHandle = await workHandle.getFileHandle(cleanName); } catch(e2) { oldFileHandle = null; }
-                            if (oldFileHandle) {
-                                try {
-                                    var oldFile = await oldFileHandle.getFile();
-                                    var _dotIdx2 = cleanName.lastIndexOf('.');
-                                    var _bkName2 = _dotIdx2 > 0 ? (cleanName.substring(0, _dotIdx2) + '_бэкап' + cleanName.substring(_dotIdx2)) : (cleanName + '_бэкап');
-                                    var bkFH2 = await workHandle.getFileHandle(_bkName2, { create: true });
-                                    var bw2 = await bkFH2.createWritable();
-                                    await bw2.write(oldFile);
-                                    await bw2.close();
-                                } catch(e2) { console.warn('backup failed', e2); }
-                            }
                             var newFH2 = await workHandle.getFileHandle(cleanName, { create: true });
                             var nw2 = await newFH2.createWritable();
                             await nw2.write(newBlob);
