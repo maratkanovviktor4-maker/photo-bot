@@ -5517,7 +5517,7 @@
         function autoNameChat(chat) {
             const lastAssistant = [...chat.messages].reverse().find(m => m.role === 'assistant');
             if (lastAssistant && !lastAssistant.interrupted && (chat.title.startsWith('Чат ') || chat.title === 'Новый чат')) {
-                chat.title = lastAssistant.content.replace(/[#*`>\n]/g, ' ').split(' ').slice(0, 6).join(' ') || 'Новый чат';
+                chat.title = lastAssistant.content.replace(/[#*`>{}\[\]()"\r\n]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').slice(0, 6).join(' ') || 'Новый чат';
                 if (chat.title.length > 40) chat.title = chat.title.substring(0, 40) + '...';
                 if (currentChatId === chat.id) document.title = chat.title;
                 renderChatList();
