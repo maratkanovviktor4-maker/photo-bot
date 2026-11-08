@@ -4170,6 +4170,7 @@
                 if (!resp.ok) {
                     var errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
+                    _cleanupAssistantOnError(chat, newMsgIndex);
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
