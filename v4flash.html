@@ -11529,8 +11529,13 @@
                             showAlertModal('Ошибка', d.error || 'Не удалось привязать Google.', '❌');
                             return;
                         }
+                        try {
+                            var _au = JSON.parse(localStorage.getItem('photobot_auth') || 'null');
+                            if (_au) { _au.picture = d.picture || _au.picture || ''; localStorage.setItem('photobot_auth', JSON.stringify(_au)); }
+                        } catch(e) {}
                         await _refreshGoogleLinkStatus();
                         showAlertModal('Готово', 'Google-аккаунт привязан.', '✅');
+                        _renderSidebarAvatar();
                     } catch(e) {
                         showAlertModal('Ошибка', 'Не удалось связаться с сервером.', '❌');
                     }
