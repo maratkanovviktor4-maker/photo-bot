@@ -7846,6 +7846,13 @@
                             if (parsed.sources && Array.isArray(parsed.sources)) {
                                 assistantMsg._sources = parsed.sources;
                             }
+                            if (parsed.pdf_reading) {
+                                assistantMsg._pdfReading = true;
+                                var _prEl = document.getElementById('stream-' + newMsgIndex);
+                                if (_prEl) {
+                                    _prEl.innerHTML = '<div class="reasoning-block streaming" style="margin-bottom:0;"><div class="reasoning-header" style="cursor:default;"><span class="reasoning-label">Чтение</span></div></div>';
+                                }
+                            }
                             if (parsed.audio_file) {
                                 assistantMsg._audio_meta = { status: 'success', file: parsed.audio_file, downloaded: false };
                                 assistantMsg.content = assistantMsg.content || '';
