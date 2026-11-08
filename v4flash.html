@@ -9606,15 +9606,18 @@
         function _saveGithubSettingsToLS() {
             var s = _readGithubSettings();
             localStorage.setItem('photobot_github', JSON.stringify(s));
+            _saveExtraProviderSettingsToLS();
         }
 
         function _loadGithubSettingsFromLS() {
             try {
                 var raw = localStorage.getItem('photobot_github');
-                if (!raw) return;
-                var s = JSON.parse(raw);
-                _writeGithubSettings(s);
+                if (raw) {
+                    var s = JSON.parse(raw);
+                    _writeGithubSettings(s);
+                }
             } catch(e) {}
+            _loadExtraProviderSettingsFromLS();
         }
 
         function saveDeploySettings() {
