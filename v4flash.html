@@ -3083,11 +3083,16 @@
 
         (function initSidebarSwipe() {
             var _tx0 = null, _ty0 = null, _lock = null, _touching = false;
+            var _startCollapsed = false;
+            var _switching = false;
             document.addEventListener('touchstart', function(e) {
                 if (e.touches.length !== 1) return;
                 var t = e.touches[0];
                 _tx0 = t.clientX; _ty0 = t.clientY; _lock = null;
                 _touching = true;
+                _switching = false;
+                var sidebar = document.querySelector('.sidebar');
+                if (sidebar) _startCollapsed = sidebar.classList.contains('collapsed');
             }, { passive: true });
             document.addEventListener('touchmove', function(e) {
                 if (!_touching || e.touches.length !== 1) return;
@@ -3102,26 +3107,43 @@
                 if (_lock !== 'x') return;
                 var sidebar = document.querySelector('.sidebar');
                 if (!sidebar) return;
-                var isCollapsed = sidebar.classList.contains('collapsed');
                 var innerW = window.innerWidth || 360;
-                if (!isCollapsed && dx < 0 && Math.abs(dx) > innerW * 0.2) {
-                    _touching = false;
-                    sidebar.classList.add('collapsed');
-                    document.body.classList.add('collapsed-sidebar');
-                    var tg = document.getElementById('sidebarToggle');
-                    if (tg) tg.title = 'Развернуть панель';
-                    localStorage.setItem('photobot_sidebar', 'collapsed');
-                } else if (isCollapsed && dx > 0 && Math.abs(dx) > innerW * 0.15 && _tx0 < innerW / 2) {
-                    _touching = false;
-                    sidebar.classList.remove('collapsed');
-                    document.body.classList.remove('collapsed-sidebar');
-                    var tg2 = document.getElementById('sidebarToggle');
-                    if (tg2) tg2.title = 'Свернуть панель';
-                    localStorage.setItem('photobot_sidebar', 'expanded');
+                if (!_startCollapsed) {
+                    if (dx < 0 && Math.abs(dx) > innerW * 0.2 && !_switching) {
+                        sidebar.classList.add('collapsed');
+                        document.body.classList.add('collapsed-sidebar');
+                        var tg = document.getElementById('sidebarToggle');
+                        if (tg) tg.title = 'Развернуть панель';
+                        localStorage.setItem('photobot_sidebar', 'collapsed');
+                        _switching = true;
+                    } else if (dx > 0 && _switching) {
+                        sidebar.classList.remove('collapsed');
+                        document.body.classList.remove('collapsed-sidebar');
+                        var tg2 = document.getElementById('sidebarToggle');
+                        if (tg2) tg2.title = 'Свернуть панель';
+                        localStorage.setItem('photobot_sidebar', 'expanded');
+                        _switching = false;
+                    }
+                } else {
+                    if (dx > 0 && Math.abs(dx) > innerW * 0.15 && !_switching && _tx0 < innerW / 2) {
+                        sidebar.classList.remove('collapsed');
+                        document.body.classList.remove('collapsed-sidebar');
+                        var tg3 = document.getElementById('sidebarToggle');
+                        if (tg3) tg3.title = 'Свернуть панель';
+                        localStorage.setItem('photobot_sidebar', 'expanded');
+                        _switching = true;
+                    } else if (dx < 0 && _switching) {
+                        sidebar.classList.add('collapsed');
+                        document.body.classList.add('collapsed-sidebar');
+                        var tg4 = document.getElementById('sidebarToggle');
+                        if (tg4) tg4.title = 'Развернуть панель';
+                        localStorage.setItem('photobot_sidebar', 'collapsed');
+                        _switching = false;
+                    }
                 }
             }, { passive: true });
-            document.addEventListener('touchend', function() { _touching = false; _lock = null; }, { passive: true });
-            document.addEventListener('touchcancel', function() { _touching = false; _lock = null; }, { passive: true });
+            document.addEventListener('touchend', function() { _touching = false; _lock = null; _switching = false; }, { passive: true });
+            document.addEventListener('touchcancel', function() { _touching = false; _lock = null; _switching = false; }, { passive: true });
         })();
 
         function toggleSidebar() {
