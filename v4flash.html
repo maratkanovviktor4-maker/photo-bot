@@ -9489,6 +9489,86 @@
             }
         }
 
+        function _readExtraProviderSettings() {
+            return {
+                kind: (document.getElementById('extraProviderKind') || {}).value || '',
+                token: (document.getElementById('extraProviderToken') || {}).value || '',
+                target: (document.getElementById('extraProviderTarget') || {}).value || '',
+                branch: (document.getElementById('extraProviderBranch') || {}).value || '',
+                folder: (document.getElementById('extraProviderFolder') || {}).value || '',
+                files: (document.getElementById('extraProviderFiles') || {}).value || ''
+            };
+        }
+        function _writeExtraProviderSettings(s) {
+            if (!s) return;
+            var _vt = document.getElementById('extraProviderToggle');
+            var _blk = document.getElementById('extraProviderBlock');
+            var _any = !!(s.kind || s.token || s.target);
+            if (_vt) _vt.checked = _any;
+            if (_blk) _blk.style.display = _any ? 'block' : 'none';
+            if (document.getElementById('extraProviderKind')) document.getElementById('extraProviderKind').value = s.kind || '';
+            if (document.getElementById('extraProviderToken')) document.getElementById('extraProviderToken').value = s.token || '';
+            if (document.getElementById('extraProviderTarget')) document.getElementById('extraProviderTarget').value = s.target || '';
+            if (document.getElementById('extraProviderBranch')) document.getElementById('extraProviderBranch').value = s.branch || '';
+            if (document.getElementById('extraProviderFolder')) document.getElementById('extraProviderFolder').value = s.folder || '';
+            if (document.getElementById('extraProviderFiles')) document.getElementById('extraProviderFiles').value = s.files || '';
+        }
+        function _saveExtraProviderSettingsToLS() {
+            localStorage.setItem('photobot_extra_provider', JSON.stringify(_readExtraProviderSettings()));
+        }
+        function _loadExtraProviderSettingsFromLS() {
+            try {
+                var raw = localStorage.getItem('photobot_extra_provider');
+                if (!raw) return;
+                _writeExtraProviderSettings(JSON.parse(raw));
+            } catch(e) {}
+        }
+        // Диспетчер второго сервиса. Если поля пустые — молча выходим (не пушим).
+        async function _pushFileToExtraProvider(fileName, content) {
+            var s = null;
+            try { s = JSON.parse(localStorage.getItem('photobot_extra_provider') || 'null'); } catch(e) { s = null; }
+            if (!s) s = _readExtraProviderSettings();
+            if (!s || !s.kind || !s.token || !s.target) return false;
+            var allow = String(s.files || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+            if (allow.length && allow.indexOf(fileName) === -1) return false;
+            var kind = String(s.kind).toLowerCase().trim();
+            if (kind === 'yandex') return _pushToYandexDisk(s, fileName, content);
+            if (kind === 'mailru') return _pushToMailru(s, fileName, content);
+            if (kind === 'gitlab') return _pushToGitlab(s, fileName, content);
+            console.warn('extra provider: unknown kind "' + kind + '"');
+            return false;
+        }
+        async function _pushToYandexDisk(s, fileName, content) {
+            try {
+                var folder = String(s.folder || '').replace(/^\/+|\/+$/g, '');
+                var path = '/' + (folder ? folder + '/' : '') + fileName;
+                var api = 'https://cloud-api.yandex.net/v1/disk/resources/upload?overwrite=true&path=' + encodeURIComponent(path);
+                var r = await fetch(api, { headers: { 'Authorization': 'OAuth ' + s.token } });
+                if (!r.ok) return false;
+                var d = await r.json();
+                if (!d.href) return false;
+                var up = await fetch(d.href, { method: 'PUT', body: content });
+                return up.ok;
+            } catch(e) { console.warn('yandex push failed', e); return false; }
+        }
+        async function _pushToMailru(s, fileName, content) {
+            console.warn('mailru push: not implemented');
+            return false;
+        }
+        async function _pushToGitlab(s, fileName, content) {
+            try {
+                var folder = String(s.folder || '').replace(/^\/+|\/+$/g, '');
+                var path = (folder ? folder + '/' : '') + fileName;
+                var api = 'https://gitlab.com/api/v4/projects/' + encodeURIComponent(s.target) + '/repository/files/' + encodeURIComponent(path);
+                var branch = s.branch || 'main';
+                var g = await fetch(api + '?ref=' + encodeURIComponent(branch), { headers: { 'PRIVATE-TOKEN': s.token } });
+                var body = { branch: branch, content: content, encoding: 'text', commit_message: 'deploy: ' + fileName + ' via PhotoBot' };
+                var method = 'POST';
+                if (g.ok) method = 'PUT';
+                var put = await fetch(api, { method: method, headers: { 'PRIVATE-TOKEN': s.token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                return put.ok;
+            } catch(e) { console.warn('gitlab push failed', e); return false; }
+        }
         function _readGithubSettings() {
             return {
                 token: (document.getElementById('githubToken') || {}).value || '',
