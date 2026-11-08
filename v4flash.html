@@ -9803,6 +9803,7 @@
             return name.replace(/(\.[^./\\]+)(?:\s*\(\d+\))+$/, '$1');
         }
 
+        var _ghPushChain = Promise.resolve();
         async function _pushFileToGithub(fileName, content) {
             var s = null;
             try { s = JSON.parse(localStorage.getItem('photobot_github') || 'null'); } catch(e) { s = null; }
@@ -9816,49 +9817,51 @@
             var path = folder ? (folder + '/' + fileName) : fileName;
             var apiUrl = 'https://api.github.com/repos/' + s.repo + '/contents/' + encodeURI(path);
             var headers = { 'Authorization': 'token ' + s.token, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' };
-            var sha = null;
+            // Сериализуем пуши: каждый следующий ждёт завершения предыдущего.
+            var _prev = _ghPushChain;
+            var _done;
+            _ghPushChain = new Promise(function(res) { _done = res; });
             try {
-                var g = await fetch(apiUrl + '?ref=' + encodeURIComponent(s.branch), { headers: headers });
-                if (g.ok) {
-                    var gd = await g.json();
-                    if (gd && gd.sha) sha = gd.sha;
-                }
+                await _prev;
             } catch(e) {}
-            var body = {
-                message: 'deploy: ' + fileName + ' via PhotoBot',
-                content: btoa(unescape(encodeURIComponent(content))),
-                branch: s.branch
-            };
-            if (sha) body.sha = sha;
             try {
-                var r = await fetch(apiUrl, { method: 'PUT', headers: headers, body: JSON.stringify(body) });
-                if (r.ok) {
-                    _showGithubPushToast(fileName);
-                    return true;
-                }
-                // 409 = устаревшая sha (гонка с предыдущим пушем). Перечитываем sha и пробуем один раз.
-                if (r.status === 409) {
-                    var sha2 = null;
+                var MAX_RETRIES = 5;
+                for (var attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                    var sha = null;
                     try {
-                        var g2 = await fetch(apiUrl + '?ref=' + encodeURIComponent(s.branch), { headers: headers });
-                        if (g2.ok) {
-                            var gd2 = await g2.json();
-                            if (gd2 && gd2.sha) sha2 = gd2.sha;
+                        var g = await fetch(apiUrl + '?ref=' + encodeURIComponent(s.branch) + '&t=' + Date.now(), { headers: headers, cache: 'no-store' });
+                        if (g.ok) {
+                            var gd = await g.json();
+                            if (gd && gd.sha) sha = gd.sha;
                         }
-                    } catch(e2) {}
-                    if (sha2) {
-                        body.sha = sha2;
-                        var r2 = await fetch(apiUrl, { method: 'PUT', headers: headers, body: JSON.stringify(body) });
-                        if (r2.ok) {
+                    } catch(e) {}
+                    var body = {
+                        message: 'deploy: ' + fileName + ' via PhotoBot',
+                        content: btoa(unescape(encodeURIComponent(content))),
+                        branch: s.branch
+                    };
+                    if (sha) body.sha = sha;
+                    try {
+                        var r = await fetch(apiUrl, { method: 'PUT', headers: headers, body: JSON.stringify(body) });
+                        if (r.ok) {
                             _showGithubPushToast(fileName);
                             return true;
                         }
+                        // 409 / 422 = устаревшая sha (гонка). Ждём и повторяем.
+                        if (r.status === 409 || r.status === 422) {
+                            await new Promise(function(res) { setTimeout(res, 300 * (attempt + 1)); });
+                            continue;
+                        }
+                        // прочие ошибки — не ретраим
+                        return false;
+                    } catch(e) {
+                        console.warn('github push failed', e);
+                        return false;
                     }
                 }
                 return false;
-            } catch(e) {
-                console.warn('github push failed', e);
-                return false;
+            } finally {
+                _done();
             }
         }
 
