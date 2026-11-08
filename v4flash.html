@@ -10149,6 +10149,51 @@
         }
 
 
+        async function pushWorkFileToGithub() {
+            var btn = document.getElementById('deployPushBtn');
+            var _origText = btn ? btn.textContent : '';
+            if (btn) { btn.disabled = true; btn.textContent = '...'; }
+            try {
+                if (!_deployHandles.work) {
+                    await _restoreDeployHandles();
+                }
+                if (!_deployHandles.work) {
+                    showAlertModal('Папка не выбрана', 'Сначала выберите рабочую папку.', '⚠️');
+                    return;
+                }
+                var names = await _listWorkFiles(_deployHandles.work);
+                if (!names.length) {
+                    showAlertModal('Нет файлов', 'В рабочей папке нет файлов для пуша.', '⚠️');
+                    return;
+                }
+                var targetName = null;
+                if (names.length === 1) {
+                    targetName = names[0];
+                } else {
+                    var _cfg = _readGithubSettings();
+                    var _allow = String(_cfg.files || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+                    for (var _i = 0; _i < names.length; _i++) {
+                        if (_allow.indexOf(names[_i]) !== -1) { targetName = names[_i]; break; }
+                    }
+                    if (!targetName) {
+                        showAlertModal('Не выбран файл', 'В папке несколько файлов. Укажите нужный в поле «файлы через запятую» в настройках GitHub.', '⚠️');
+                        return;
+                    }
+                }
+                var fh = await _deployHandles.work.getFileHandle(targetName);
+                var file = await fh.getFile();
+                var text = await file.text();
+                var ok = await _pushFileToGithub(targetName, text);
+                if (!ok) {
+                    showAlertModal('Пуш не удался', 'GitHub не принял файл. Проверьте токен, репозиторий, ветку и список файлов.', '❌');
+                }
+            } catch (e) {
+                console.warn('pushWorkFileToGithub error', e);
+                showAlertModal('Ошибка', 'Не удалось запушить файл.', '❌');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = _origText; }
+            }
+        }
         async function confirmDeploy() {
             if (!_deployFileContent || !_deployEdits.length) return;
             var btn = document.getElementById('deployConfirmBtn');
