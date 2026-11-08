@@ -9202,9 +9202,6 @@
                 var h = await _idbGetHandle('deploy_work');
                 if (!h) return;
                 var perm = await h.queryPermission({ mode: 'readwrite' });
-                if (perm !== 'granted') {
-                    try { perm = await h.requestPermission({ mode: 'readwrite' }); } catch(_e) { perm = 'denied'; }
-                }
                 if (perm !== 'granted') return;
                 _deployHandles.work = h;
                 var inputEl = document.getElementById('deployWorkDir');
