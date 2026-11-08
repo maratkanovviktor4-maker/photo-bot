@@ -10356,6 +10356,26 @@
                     }
                     renderMessages();
                 }
+                // [COMPLETE] без пар в этом ответе — пушим финальные версии файлов из рабочей папки.
+                try {
+                    if (_deployHandles.work) {
+                        var _ghCfgFinal = _readGithubSettings();
+                        var _allowPush = String(_ghCfgFinal.files || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+                        if (_ghCfgFinal.enabled && _ghCfgFinal.token && _ghCfgFinal.repo && _allowPush.length) {
+                            for (var _pi = 0; _pi < _allowPush.length; _pi++) {
+                                var _pfName = _allowPush[_pi];
+                                var _pfContent = null;
+                                try {
+                                    var _fh = await _deployHandles.work.getFileHandle(_pfName);
+                                    var _ff = await _fh.getFile();
+                                    _pfContent = await _ff.text();
+                                } catch(e) { _pfContent = null; }
+                                if (_pfContent == null) continue;
+                                try { await _pushFileToGithub(_pfName, _pfContent); } catch(e) { console.warn('github push error', e); }
+                            }
+                        }
+                    }
+                } catch(e) { console.warn('github push on complete failed', e); }
                 return;
             }
 
