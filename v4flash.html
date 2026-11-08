@@ -7175,6 +7175,17 @@
         function toggleGenModesPopover(e) {
             e.stopPropagation();
             if (_genModesPopover) { _closeGenModesPopover(); return; }
+            // Если какой-то режим уже выбран — клик по его иконке выключает режим,
+            // поповер не открываем. Открыть поповер можно только когда режим не выбран.
+            var _activeItem = null;
+            var _items = _genModesItems();
+            for (var _gi = 0; _gi < _items.length; _gi++) {
+                if (_items[_gi].active()) { _activeItem = _items[_gi]; break; }
+            }
+            if (_activeItem) {
+                _activeItem.toggle();
+                return;
+            }
             var pop = _buildGenModesPopover();
             var btn = document.getElementById('genModesBtn');
             var rect = btn.getBoundingClientRect();
@@ -7191,11 +7202,24 @@
             btn.classList.add('active');
             setTimeout(function() { document.addEventListener('click', _genModesOutsideClick); }, 0);
         }
+        var _GEN_PLUS_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
         function _syncGenModesBtn() {
             var btn = document.getElementById('genModesBtn');
             if (!btn) return;
-            var any = fluxModeEnabled || audioModeEnabled || aceModeEnabled;
-            if (any) btn.classList.add('active'); else btn.classList.remove('active');
+            var items = _genModesItems();
+            var found = null;
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].active()) { found = items[i]; break; }
+            }
+            if (found) {
+                btn.classList.add('active');
+                btn.innerHTML = found.icon;
+                btn.title = found.label + ' · ' + found.sub + ' — нажмите, чтобы выключить';
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = _GEN_PLUS_ICON;
+                btn.title = 'Режимы генерации';
+            }
         }
         // ===== END GENERATION MODES POPOVER =====
         function toggleFluxMode() {
