@@ -431,6 +431,19 @@
         body.light .flux-param-chip { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); color: #555; }
         body.light .flux-param-chip:hover { background: rgba(0,203,245,0.1); border-color: rgba(0,203,245,0.4); color: #111; }
         body.light .flux-param-chip.selected { background: rgba(0,203,245,0.15); border-color: #00CBF5; color: #005f7a; }
+        /* ===== GENERATION MODES POPOVER ===== */
+        .gen-modes-popover { position: fixed; background: #2c2c2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 4px; z-index: 10002; min-width: 220px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: none; }
+        body.light .gen-modes-popover { background: #ffffff; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        .gen-modes-popover button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: none; background: transparent; color: #e0e0e0; font-size: 13px; cursor: pointer; text-align: left; border-radius: 8px; font-family: 'Inter', sans-serif; transition: background 0.15s; }
+        body.light .gen-modes-popover button { color: #333; }
+        .gen-modes-popover button:hover { background: rgba(0,203,245,0.12); }
+        .gen-modes-popover button.active { background: rgba(0,203,245,0.15); color: #00CBF5; }
+        .gen-modes-popover button svg { flex-shrink: 0; }
+        .gen-modes-popover .gen-modes-label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .gen-modes-popover .gen-modes-title { font-weight: 600; font-size: 13px; }
+        .gen-modes-popover .gen-modes-sub { font-size: 11px; color: #888; }
+        #genModesBtn.active { color: #00CBF5 !important; background: rgba(0,203,245,0.15) !important; }
+        /* ===== END GENERATION MODES POPOVER ===== */
         .nav-container { position: fixed; right: 0; top: 50%; transform: translateY(-50%); width: 220px; max-height: 300px; overflow-y: auto; z-index: 100; padding: 8px 0; pointer-events: auto; }
         .nav-container:hover { overflow-y: auto; background: #1b1b1c; backdrop-filter: blur(10px); border: none; border-radius: 12px 0 0 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
         body.light .nav-container:hover { background: rgba(255,255,255,0.9); border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
@@ -1681,14 +1694,8 @@
                             <button id="micBtn" class="attach-btn" onclick="toggleVoiceInput()" title="Голосовой ввод" style="color:#888;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                             </button>
-                            <button id="fluxBtn" class="attach-btn" onclick="toggleFluxMode()" title="Генерация изображения (Flux 2)" style="color:#888;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"/></svg>
-                            </button>
-                            <button id="audioBtn" class="attach-btn" onclick="toggleAudioMode()" title="Генерация аудио (Stable Audio 3)" style="color:#888;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                            </button>
-                            <button id="aceBtn" class="attach-btn" onclick="toggleAceMode()" title="Генерация песни (Ace Step 1.5)" style="color:#888;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4"/></svg>
+                            <button id="genModesBtn" class="attach-btn" onclick="toggleGenModesPopover(event)" title="Режимы генерации" style="color:#888;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             </button>
                             <button id="sendBtn" onclick="sendMessage()" title="Отправить"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
                         </div>
@@ -6939,6 +6946,7 @@
             }
             renderAceParams();
             updateSendBtn();
+            _syncGenModesBtn();
         }
 
         var audioModeEnabled = false;
@@ -7089,6 +7097,7 @@
             }
             renderAudioParams();
             updateSendBtn();
+            _syncGenModesBtn();
         }
 
         function getFluxSelectedResolution() {
@@ -7121,6 +7130,74 @@
             });
         }
 
+        // ===== GENERATION MODES POPOVER =====
+        var _genModesPopover = null;
+        function _genModesItems() {
+            return [
+                { key: 'flux', label: 'Изображение', sub: 'Flux 2', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"/></svg>', active: function() { return fluxModeEnabled; }, toggle: function() { toggleFluxMode(); } },
+                { key: 'audio', label: 'Аудио', sub: 'Stable Audio 3', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>', active: function() { return audioModeEnabled; }, toggle: function() { toggleAudioMode(); } },
+                { key: 'ace', label: 'Песня', sub: 'Ace Step 1.5', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4"/></svg>', active: function() { return aceModeEnabled; }, toggle: function() { toggleAceMode(); } }
+            ];
+        }
+        function _buildGenModesPopover() {
+            if (_genModesPopover) _genModesPopover.remove();
+            var pop = document.createElement('div');
+            pop.className = 'gen-modes-popover';
+            var items = _genModesItems();
+            for (var i = 0; i < items.length; i++) {
+                (function(it) {
+                    var b = document.createElement('button');
+                    if (it.active()) b.classList.add('active');
+                    b.innerHTML = it.icon + '<span class="gen-modes-label"><span class="gen-modes-title">' + it.label + '</span><span class="gen-modes-sub">' + it.sub + '</span></span>';
+                    b.onclick = function(e) {
+                        e.stopPropagation();
+                        it.toggle();
+                        _closeGenModesPopover();
+                    };
+                    pop.appendChild(b);
+                })(items[i]);
+            }
+            document.body.appendChild(pop);
+            _genModesPopover = pop;
+            return pop;
+        }
+        function _closeGenModesPopover() {
+            if (_genModesPopover) { _genModesPopover.remove(); _genModesPopover = null; }
+            var btn = document.getElementById('genModesBtn');
+            if (btn) btn.classList.remove('active');
+            document.removeEventListener('click', _genModesOutsideClick);
+        }
+        function _genModesOutsideClick(e) {
+            if (_genModesPopover && !_genModesPopover.contains(e.target) && e.target.id !== 'genModesBtn' && !e.target.closest('#genModesBtn')) {
+                _closeGenModesPopover();
+            }
+        }
+        function toggleGenModesPopover(e) {
+            e.stopPropagation();
+            if (_genModesPopover) { _closeGenModesPopover(); return; }
+            var pop = _buildGenModesPopover();
+            var btn = document.getElementById('genModesBtn');
+            var rect = btn.getBoundingClientRect();
+            pop.style.display = 'block';
+            var popW = pop.offsetWidth || 220;
+            var popH = pop.offsetHeight || 150;
+            var left = rect.left;
+            if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+            if (left < 8) left = 8;
+            var top = rect.top - popH - 6;
+            if (top < 8) top = rect.bottom + 6;
+            pop.style.left = left + 'px';
+            pop.style.top = top + 'px';
+            btn.classList.add('active');
+            setTimeout(function() { document.addEventListener('click', _genModesOutsideClick); }, 0);
+        }
+        function _syncGenModesBtn() {
+            var btn = document.getElementById('genModesBtn');
+            if (!btn) return;
+            var any = fluxModeEnabled || audioModeEnabled || aceModeEnabled;
+            if (any) btn.classList.add('active'); else btn.classList.remove('active');
+        }
+        // ===== END GENERATION MODES POPOVER =====
         function toggleFluxMode() {
             fluxModeEnabled = !fluxModeEnabled;
             var btn = document.getElementById('fluxBtn');
@@ -7185,6 +7262,7 @@
                 if (inputEl) inputEl.placeholder = 'Введите сообщение...';
             }
             renderFluxParamsRow();
+            _syncGenModesBtn();
         }
 
         async function runFluxGeneration(prompt, inputFile) {
