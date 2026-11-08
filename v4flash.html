@@ -10356,26 +10356,6 @@
                     }
                     renderMessages();
                 }
-                // [COMPLETE] без пар в этом ответе — пушим финальные версии файлов из рабочей папки.
-                try {
-                    if (_deployHandles.work) {
-                        var _ghCfgFinal = _readGithubSettings();
-                        var _allowPush = String(_ghCfgFinal.files || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
-                        if (_ghCfgFinal.enabled && _ghCfgFinal.token && _ghCfgFinal.repo && _allowPush.length) {
-                            for (var _pi = 0; _pi < _allowPush.length; _pi++) {
-                                var _pfName = _allowPush[_pi];
-                                var _pfContent = null;
-                                try {
-                                    var _fh = await _deployHandles.work.getFileHandle(_pfName);
-                                    var _ff = await _fh.getFile();
-                                    _pfContent = await _ff.text();
-                                } catch(e) { _pfContent = null; }
-                                if (_pfContent == null) continue;
-                                try { await _pushFileToGithub(_pfName, _pfContent); } catch(e) { console.warn('github push error', e); }
-                            }
-                        }
-                    }
-                } catch(e) { console.warn('github push on complete failed', e); }
                 return;
             }
 
@@ -10666,39 +10646,11 @@
             // Промежуточные правки не пушим: они заведомо устареют следующей правкой в том же цикле.
             var _isCycleComplete = /\[COMPLETE\]\s*edit cycle closed/i.test(msg.content || '');
             if (_isCycleComplete) {
-                // Пуш финального состояния. В ответе с [COMPLETE] правок обычно уже нет,
-                // поэтому берём актуальные версии файлов из рабочей папки по списку photobot_github.files.
-                var _ghCfgFinal = _readGithubSettings();
-                var _allowPush = String(_ghCfgFinal.files || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
-                var _pushedAny = false;
-                if (_ghCfgFinal.enabled && _ghCfgFinal.token && _ghCfgFinal.repo && _allowPush.length) {
-                    for (var _pi = 0; _pi < _allowPush.length; _pi++) {
-                        var _pfName = _allowPush[_pi];
-                        var _pfContent = null;
-                        if (_appliedFileContents[_pfName] != null) {
-                            _pfContent = _appliedFileContents[_pfName];
-                        } else {
-                            try {
-                                var _fh = await workHandle.getFileHandle(_pfName);
-                                var _ff = await _fh.getFile();
-                                _pfContent = await _ff.text();
-                            } catch(e) { _pfContent = null; }
-                        }
-                        if (_pfContent == null) continue;
-                        try {
-                            var _ok = await _pushFileToGithub(_pfName, _pfContent);
-                            if (_ok) _pushedAny = true;
-                        } catch(e) { console.warn('github push error', e); }
-                    }
-                }
-                if (!_pushedAny) {
-                    // фолбэк: если по списку не удалось — пробуем то, что применили в этом ответе
-                    for (var _pj = 0; _pj < _appliedFiles.length; _pj++) {
-                        var _pfName2 = _appliedFiles[_pj];
-                        var _pfContent2 = _appliedFileContents[_pfName2];
-                        if (_pfContent2 == null) continue;
-                        try { await _pushFileToGithub(_pfName2, _pfContent2); } catch(e) { console.warn('github push error', e); }
-                    }
+                for (var _pi = 0; _pi < _appliedFiles.length; _pi++) {
+                    var _pfName = _appliedFiles[_pi];
+                    var _pfContent = _appliedFileContents[_pfName];
+                    if (_pfContent == null) continue;
+                    try { await _pushFileToGithub(_pfName, _pfContent); } catch(e) { console.warn('github push error', e); }
                 }
             }
             var _targetMsgId = msg.msg_id;
