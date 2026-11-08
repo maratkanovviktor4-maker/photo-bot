@@ -6569,6 +6569,7 @@
                                                             else if (parsed.error_type === 'connection_error') {
                                                                 errorMessage = 'Сервер не дождался ответа от DeepSeek. Попробуйте позже.'
                                                             }
+                                                    	    _cleanupAssistantOnError(chat, streamMsgIndex);
                                                     	    showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                                     	    return;
                                                 	}
@@ -6641,9 +6642,8 @@
                         sendBtnArrow();
                 } catch(e) {
                         console.error('selfPlay error:', e);
+                        _cleanupAssistantOnError(chat, streamMsgIndex);
                         showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
-                        isSending = false;
-                        sendBtnArrow();
                 }
         }
 
