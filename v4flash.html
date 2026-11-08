@@ -3412,7 +3412,16 @@
                                             }
                                         }
                                     }
-                                    assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null };
+                                    var _branchHasImg = !!(msg.image_b64 || (msg.display_b64s && msg.display_b64s.length) || (msg.extra_b64s && msg.extra_b64s.length));
+                                    var _branchHasPdf = false;
+                                    if (msg.files_meta && msg.files_meta.length) {
+                                        for (var _bpf = 0; _bpf < msg.files_meta.length; _bpf++) {
+                                            var _bpx = (msg.files_meta[_bpf].ext || '').toLowerCase();
+                                            if (_bpx === 'pdf' || _bpx === 'docx' || _bpx === 'xlsx' || _bpx === 'pptx') { _branchHasPdf = true; break; }
+                                        }
+                                    }
+                                    var _branchShowImg = msg.role === 'user' && _branchHasImg && !_branchHasPdf && !(msg.content || '').trim();
+                                    assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _imgReading: _branchShowImg };
                                     chat.messages.push(assistantMsg);
                                     streamMsgIndex = chat.messages.length - 1;
                                     var streamId = 'branch_stream_' + streamMsgIndex;
@@ -3434,6 +3443,7 @@
                                     }
                                 } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
                                     if (assistantMsg) {
+                                        if (assistantMsg._imgReading) assistantMsg._imgReading = false;
                                         if (parsed.reasoning) {
                                             assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
                                         }
@@ -4277,6 +4287,7 @@
                             if (parsed.assistant_msg_id) {
                                 assistantMsg.msg_id = parsed.assistant_msg_id;
                             } else if (parsed.content !== undefined || parsed.reasoning !== undefined) {
+                                if (assistantMsg._imgReading) assistantMsg._imgReading = false;
                                 if (parsed.reasoning) {
                                     assistantMsg._reasoningBuffer = (assistantMsg._reasoningBuffer || '') + parsed.reasoning;
                                 }
