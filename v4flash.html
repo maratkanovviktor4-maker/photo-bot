@@ -11471,7 +11471,74 @@
                 panes[j].style.display = (panes[j].getAttribute('data-pane') === tab) ? 'block' : 'none';
             }
             if (tab === 'appearance') _syncSettingsAppearance();
-            if (tab === 'profile') _syncSettingsProfile();
+            if (tab === 'profile') { _syncSettingsProfile(); _refreshGoogleLinkStatus(); }
+        }
+        async function _refreshGoogleLinkStatus() {
+            var btn = document.getElementById('settingsGoogleBtn');
+            var emailEl = document.getElementById('settingsProfileEmail');
+            if (!btn || !emailEl) return;
+            try {
+                var r = await fetch(SERVER_URL + '/get_google_link?session_token=' + sessionToken);
+                if (!r.ok) return;
+                var d = await r.json();
+                if (d.linked) {
+                    emailEl.textContent = d.email || '—';
+                    btn.textContent = 'Отвязать';
+                    btn.classList.add('danger');
+                    btn.onclick = function() { settingsGoogleUnlink(); };
+                } else {
+                    emailEl.textContent = '—';
+                    btn.textContent = 'Привязать Google';
+                    btn.classList.remove('danger');
+                    btn.onclick = function() { settingsGoogleLink(); };
+                }
+            } catch(e) {}
+        }
+        function settingsGoogleLink() {
+            if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+                showAlertModal('Ошибка', 'Google Sign-In не загрузился.', '❌');
+                return;
+            }
+            var clientId = (typeof CONFIG !== 'undefined' && CONFIG.GOOGLE_CLIENT_ID) || '';
+            if (!clientId) {
+                showAlertModal('Ошибка', 'Не настроен GOOGLE_CLIENT_ID.', '❌');
+                return;
+            }
+            var client = google.accounts.oauth2.initTokenClient({
+                client_id: clientId,
+                scope: 'openid email profile',
+                callback: async function(resp) {
+                    if (!resp || !resp.access_token) return;
+                    try {
+                        var r = await fetch(SERVER_URL + '/link/google', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                            body: JSON.stringify({ access_token: resp.access_token })
+                        });
+                        var d = await r.json();
+                        if (!d.success) {
+                            showAlertModal('Ошибка', d.error || 'Не удалось привязать Google.', '❌');
+                            return;
+                        }
+                        await _refreshGoogleLinkStatus();
+                        showAlertModal('Готово', 'Google-аккаунт привязан.', '✅');
+                    } catch(e) {
+                        showAlertModal('Ошибка', 'Не удалось связаться с сервером.', '❌');
+                    }
+                }
+            });
+            client.requestAccessToken();
+        }
+        async function settingsGoogleUnlink() {
+            showConfirmModal('Отвязать Google', 'Отвязать Google-аккаунт от профиля? Вход через Google перестанет работать.', ICON_WARNING, 'Отвязать', 'Отмена', 'modal-btn-danger', async function() {
+                try {
+                    var r = await fetch(SERVER_URL + '/unlink/google', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken }
+                    });
+                    if (r.ok) await _refreshGoogleLinkStatus();
+                } catch(e) {}
+            });
         }
         function _syncSettingsProfile() {
             var auth = null;
