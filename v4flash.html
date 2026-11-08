@@ -4045,7 +4045,16 @@
             } else {
                 popup.style.top = Math.max(8, rect.top - popupHeight) + 'px';
             }
-            popup.style.left = rect.left + 'px';
+            var _popupWinW = window.innerWidth || document.documentElement.clientWidth;
+            var _popupMaxW = Math.min(280, _popupWinW - 16);
+            popup.style.maxWidth = _popupMaxW + 'px';
+            popup.style.boxSizing = 'border-box';
+            var _popupLeft = rect.left;
+            if (_popupLeft + _popupMaxW > _popupWinW - 8) {
+                _popupLeft = _popupWinW - _popupMaxW - 8;
+            }
+            if (_popupLeft < 8) _popupLeft = 8;
+            popup.style.left = _popupLeft + 'px';
 
             var prompts = [
                 'Да, далее',
