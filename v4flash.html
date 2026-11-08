@@ -11458,6 +11458,57 @@
             }
             if (tab === 'appearance') _syncSettingsAppearance();
         }
+        function _syncSettingsProfile() {
+            var auth = null;
+            try { auth = JSON.parse(localStorage.getItem('photobot_auth') || 'null'); } catch(e) { auth = null; }
+            var nameEl = document.getElementById('settingsProfileName');
+            var emailEl = document.getElementById('settingsProfileEmail');
+            var phoneEl = document.getElementById('settingsProfilePhone');
+            var username = auth && auth.username ? auth.username : '';
+            var userId = auth && auth.user_id ? String(auth.user_id) : '';
+            if (nameEl) nameEl.textContent = username || (userId ? 'ID: ' + userId : '—');
+            if (emailEl) {
+                if (username && username.indexOf('@') !== -1) {
+                    var _parts = username.split('@');
+                    var _local = _parts[0] || '';
+                    var _domain = _parts[1] || '';
+                    var _masked = _local.length <= 4 ? _local : _local.substring(0, 4) + '********' + _local.slice(-4);
+                    emailEl.textContent = _masked + '@' + _domain;
+                } else {
+                    emailEl.textContent = '—';
+                }
+            }
+            if (phoneEl) phoneEl.textContent = '—';
+        }
+        function settingsProfileDevices() {
+            showAlertModal('Устройства', 'Раздел управления устройствами в разработке.', 'ℹ️');
+        }
+        function settingsProfileLogoutAll() {
+            showConfirmModal('Выйти со всех устройств', 'Выйти со всех сессий этого аккаунта?', ICON_WARNING, 'Выйти', 'Отмена', 'modal-btn-danger', async function() {
+                try {
+                    await fetch(SERVER_URL + '/logout_all', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({ user_id: currentUserId })
+                    });
+                } catch(e) {}
+                localStorage.removeItem('photobot_auth');
+                window.location.href = 'index.html';
+            });
+        }
+        function settingsProfileDelete() {
+            showConfirmModal('Удалить аккаунт', 'Удалить аккаунт и все данные безвозвратно?', ICON_WARNING, 'Удалить', 'Отмена', 'modal-btn-danger', async function() {
+                try {
+                    await fetch(SERVER_URL + '/delete_account', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({ user_id: currentUserId })
+                    });
+                } catch(e) {}
+                localStorage.removeItem('photobot_auth');
+                window.location.href = 'index.html';
+            });
+        }
         function _syncSettingsAppearance() {
             var hl = document.getElementById('settingsHighlightSelect');
             var srcHl = document.getElementById('highlightSelect');
