@@ -3472,6 +3472,14 @@
                     updateContextBattery();
                     activeStreamId = null;
                     sendBtnArrow();
+                    _autoDeployAfterAssistant(chat.messages.length - 1);
+                    _autoSaveShieldMap(chat.messages[chat.messages.length - 1]);
+                    setTimeout(_resumeProjectorAfterReply, 1000);
+                    if (typeof window._pdfRenderAfterAssistant === 'function') {
+                        var _pdfFn = window._pdfRenderAfterAssistant;
+                        window._pdfRenderAfterAssistant = null;
+                        try { _pdfFn(); } catch(e) { console.warn('pdf render hook failed', e); }
+                    }
                 } else {
                     var data = await resp.json();
                     if (data.success) {
