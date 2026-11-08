@@ -11483,6 +11483,21 @@
             if (tab === 'appearance') _syncSettingsAppearance();
             if (tab === 'profile') { _syncSettingsProfile(); _refreshGoogleLinkStatus(); }
         }
+        function _renderSidebarAvatar() {
+            var img = document.getElementById('sidebarUserAvatar');
+            if (!img) return;
+            var auth = null;
+            try { auth = JSON.parse(localStorage.getItem('photobot_auth') || 'null'); } catch(e) { auth = null; }
+            var pic = auth && auth.picture ? auth.picture : '';
+            if (pic) {
+                img.src = pic;
+                img.style.display = 'inline-block';
+                img.referrerPolicy = 'no-referrer';
+            } else {
+                img.src = '';
+                img.style.display = 'none';
+            }
+        }
         async function _refreshGoogleLinkStatus() {
             var btn = document.getElementById('settingsGoogleBtn');
             var emailEl = document.getElementById('settingsProfileEmail');
