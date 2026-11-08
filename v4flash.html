@@ -3357,6 +3357,15 @@
                     var branchMetaReceived = false;
                     var assistantMsg = null;
                     var streamMsgIndex = null;
+                    var _branchHasImg = !!(msg.image_b64 || (msg.display_b64s && msg.display_b64s.length) || (msg.extra_b64s && msg.extra_b64s.length));
+                    var _branchHasPdf = false;
+                    if (msg.files_meta && msg.files_meta.length) {
+                        for (var _bpf = 0; _bpf < msg.files_meta.length; _bpf++) {
+                            var _bpx = (msg.files_meta[_bpf].ext || '').toLowerCase();
+                            if (_bpx === 'pdf' || _bpx === 'docx' || _bpx === 'xlsx' || _bpx === 'pptx') { _branchHasPdf = true; break; }
+                        }
+                    }
+                    var _branchShowImg = msg.role === 'user' && _branchHasImg && !_branchHasPdf && !(msg.content || '').trim();
                     while (true) {
                         var readResult = await reader.read();
                         if (readResult.done) break;
