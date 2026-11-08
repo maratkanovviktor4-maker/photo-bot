@@ -9026,26 +9026,50 @@
                 if (_okBtnP) _okBtnP.setAttribute('data-skip-reload', '1');
                 return;
             }
+            // Сбрасываем старый битый handle, чтобы не тянуть denied-состояние
+            try { await _idbDelHandle('deploy_work'); } catch(_eD) {}
+            _deployHandles.work = null;
+            var handle = null;
             try {
-                var handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-                var perm = await handle.queryPermission({ mode: 'readwrite' });
+                handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+            } catch(e) {
+                if (e && e.name === 'AbortError') {
+                    // Второй шанс: разрываем микрозадачу и дёргаем пикер заново
+                    await new Promise(function(r) { setTimeout(r, 0); });
+                    try {
+                        handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                    } catch(e2) {
+                        console.warn('picker retry failed', e2);
+                        showAlertModal('Выбор папки не сработал', 'Chrome вернул AbortError, хотя папка не была отменена. Попробуй выбрать ещё раз или перезагрузи вкладку (Ctrl+F5) и выбери папку до других операций.', '⚠️');
+                        var _okBtnA = document.querySelector('#alertModalOverlay .modal-actions button');
+                        if (_okBtnA) _okBtnA.setAttribute('data-skip-reload', '1');
+                        return;
+                    }
+                } else {
+                    console.warn('pick dir failed', e);
+                    return;
+                }
+            }
+            if (!handle) return;
+            var perm = 'granted';
+            try {
+                perm = await handle.queryPermission({ mode: 'readwrite' });
                 if (perm !== 'granted') {
                     perm = await handle.requestPermission({ mode: 'readwrite' });
                 }
-                if (perm !== 'granted') return;
-                _deployHandles.work = handle;
-                await _idbSetHandle('deploy_work', handle);
-                var inputEl = document.getElementById('deployWorkDir');
-                if (inputEl) {
-                    inputEl.value = handle.name;
-                    inputEl.title = handle.name;
-                }
-                await _showFileInWorkDir();
-                _markDeployDirty();
             } catch(e) {
-                if (e && e.name === 'AbortError') return;
-                console.warn('pick dir failed', e);
+                console.warn('permission check failed', e);
             }
+            // Даже если requestPermission не вернул granted, handle уже реальный — сохраняем его.
+            _deployHandles.work = handle;
+            await _idbSetHandle('deploy_work', handle);
+            var inputEl = document.getElementById('deployWorkDir');
+            if (inputEl) {
+                inputEl.value = handle.name;
+                inputEl.title = handle.name;
+            }
+            await _showFileInWorkDir();
+            _markDeployDirty();
         }
 
         async function _showFileInWorkDir() {
