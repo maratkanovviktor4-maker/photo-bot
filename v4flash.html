@@ -10790,12 +10790,36 @@
             _input.dispatchEvent(new Event('input'));
             sendMessage();
             setTimeout(function() {
+                var _ghCfg = _readGithubSettings();
+                var _ghFiles = String(_ghCfg.files || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+                var _extraCfg = _readExtraProviderSettings();
+                var _extraOn = !!(_extraCfg.kind || _extraCfg.token || _extraCfg.target);
+                var _extraFiles = String(_extraCfg.files || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+                var _missingGh = _ghCfg.enabled && _ghFiles.length === 0;
+                var _missingExtra = _extraOn && _extraFiles.length === 0;
+                if (_missingGh || _missingExtra) {
+                    if (typeof openDeployModalSettings === 'function') openDeployModalSettings();
+                    if (_missingGh) {
+                        var _gf = document.getElementById('githubFiles');
+                        if (_gf) { _gf.style.outline = '2px solid #e74c3c'; _gf.style.outlineOffset = '1px'; }
+                    }
+                    if (_missingExtra) {
+                        var _ef = document.getElementById('extraProviderFiles');
+                        if (_ef) { _ef.style.outline = '2px solid #e74c3c'; _ef.style.outlineOffset = '1px'; }
+                    }
+                    showAlertModal('Не заполнены файлы', 'Указан сервис для пуша, но не указано, какие файлы туда пушить. Заполните поле «файлы через запятую».', '⚠️');
+                    return;
+                }
                 for (var _pi = 0; _pi < _appliedFiles.length; _pi++) {
                     var _pfName = _appliedFiles[_pi];
                     var _pfContent = _appliedFileContents[_pfName];
                     if (_pfContent == null) continue;
-                    try { _pushFileToGithub(_pfName, _pfContent).catch(function(e) { console.warn('github push error', e); }); } catch(e) { console.warn('github push error', e); }
-                    try { _pushFileToExtraProvider(_pfName, _pfContent).catch(function(e) { console.warn('extra provider push error', e); }); } catch(e) { console.warn('extra provider push error', e); }
+                    if (_ghCfg.enabled && _ghFiles.indexOf(_pfName) !== -1) {
+                        try { _pushFileToGithub(_pfName, _pfContent).catch(function(e) { console.warn('github push error', e); }); } catch(e) { console.warn('github push error', e); }
+                    }
+                    if (_extraOn && _extraFiles.indexOf(_pfName) !== -1) {
+                        try { _pushFileToExtraProvider(_pfName, _pfContent).catch(function(e) { console.warn('extra provider push error', e); }); } catch(e) { console.warn('extra provider push error', e); }
+                    }
                 }
             }, 0);
             return;
