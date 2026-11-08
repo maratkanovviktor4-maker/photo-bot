@@ -3339,6 +3339,10 @@
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                    hideLoading();
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
@@ -3382,6 +3386,14 @@
                                     else if (parsed.error_type === 'connection_error') {
                                         errorMessage = 'Сервер не дождался ответа от DeepSeek. Попробуйте позже.'
                                     }
+                                    if (branchMetaReceived) {
+                                        _cleanupAssistantOnError(chat, streamMsgIndex);
+                                    } else {
+                                        isSending = false;
+                                        activeStreamId = null;
+                                        sendBtnArrow();
+                                    }
+                                    hideLoading();
                                     showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                     return;
                                 }
@@ -3503,12 +3515,16 @@
                     hideLoading();
                 }
             } catch (e) {
-                if (placeholderId) { var el2 = document.getElementById(placeholderId); if (el2) el2.remove(); }
                 console.error('createBranchFromMessage error:', e);
-                showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
-                isSending = false;
-                sendBtnArrow();
+                if (typeof branchMetaReceived !== 'undefined' && branchMetaReceived && typeof streamMsgIndex !== 'undefined' && streamMsgIndex !== null) {
+                    _cleanupAssistantOnError(chat, streamMsgIndex);
+                } else {
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnArrow();
+                }
                 hideLoading();
+                showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
             }
         }
 
@@ -4296,9 +4312,8 @@
                     sendBtnArrow();
                 } else {
                     console.error('regenerateAssistantMessage error:', e);
+                    _cleanupAssistantOnError(chat, newMsgIndex);
                     showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
-                    isSending = false;
-                    sendBtnArrow();
                 }
             }
         }
@@ -6508,6 +6523,7 @@
                         if (!resp.ok) {
                             var errData = await resp.json().catch(() => ({}));
                             let errorMessage = errData.error || 'Ошибка сервера.';
+                            _cleanupAssistantOnError(chat, streamMsgIndex);
                             showAlertModal('Ошибка', errorMessage, '❌');
                             return;
                         }
