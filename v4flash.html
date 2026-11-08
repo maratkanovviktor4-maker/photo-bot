@@ -3081,6 +3081,49 @@
             setTimeout(tryScroll, 100);
         }
 
+        (function initSidebarSwipe() {
+            var _tx0 = null, _ty0 = null, _lock = null, _touching = false;
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches.length !== 1) return;
+                var t = e.touches[0];
+                _tx0 = t.clientX; _ty0 = t.clientY; _lock = null;
+                _touching = true;
+            }, { passive: true });
+            document.addEventListener('touchmove', function(e) {
+                if (!_touching || e.touches.length !== 1) return;
+                var t = e.touches[0];
+                var dx = t.clientX - _tx0;
+                var dy = t.clientY - _ty0;
+                if (_lock === null) {
+                    if (Math.abs(dx) > 12 || Math.abs(dy) > 12) {
+                        _lock = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+                    }
+                }
+                if (_lock !== 'x') return;
+                var sidebar = document.querySelector('.sidebar');
+                if (!sidebar) return;
+                var isCollapsed = sidebar.classList.contains('collapsed');
+                var innerW = window.innerWidth || 360;
+                if (!isCollapsed && dx < 0 && Math.abs(dx) > innerW * 0.2) {
+                    _touching = false;
+                    sidebar.classList.add('collapsed');
+                    document.body.classList.add('collapsed-sidebar');
+                    var tg = document.getElementById('sidebarToggle');
+                    if (tg) tg.title = 'Развернуть панель';
+                    localStorage.setItem('photobot_sidebar', 'collapsed');
+                } else if (isCollapsed && dx > 0 && Math.abs(dx) > innerW * 0.2 && _tx0 < 40) {
+                    _touching = false;
+                    sidebar.classList.remove('collapsed');
+                    document.body.classList.remove('collapsed-sidebar');
+                    var tg2 = document.getElementById('sidebarToggle');
+                    if (tg2) tg2.title = 'Свернуть панель';
+                    localStorage.setItem('photobot_sidebar', 'expanded');
+                }
+            }, { passive: true });
+            document.addEventListener('touchend', function() { _touching = false; _lock = null; }, { passive: true });
+            document.addEventListener('touchcancel', function() { _touching = false; _lock = null; }, { passive: true });
+        })();
+
         function toggleSidebar() {
             var sidebar = document.querySelector('.sidebar');
             var toggle = document.getElementById('sidebarToggle');
