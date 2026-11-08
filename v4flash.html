@@ -8044,15 +8044,16 @@
             if (!chat || assistantIndex < 0 || assistantIndex >= chat.messages.length) return;
             var _m = chat.messages[assistantIndex];
             if (!_m || _m.role !== 'assistant') return;
-            if (_m.msg_id) {
-                chat.messages.splice(assistantIndex, 1);
-                var _row = document.querySelector('.message-row[data-msg-index="' + assistantIndex + '"]');
-                if (_row && _row.parentNode) _row.parentNode.removeChild(_row);
-            } else {
-                chat.messages.splice(assistantIndex, 1);
-                var _row2 = document.querySelector('.message-row[data-msg-index="' + assistantIndex + '"]');
-                if (_row2 && _row2.parentNode) _row2.parentNode.removeChild(_row2);
+            var _userNeedsDrop = false;
+            if (assistantIndex > 0) {
+                var _u = chat.messages[assistantIndex - 1];
+                if (_u && _u.role === 'user' && !_u.msg_id) _userNeedsDrop = true;
             }
+            chat.messages.splice(assistantIndex, 1);
+            if (_userNeedsDrop) {
+                chat.messages.splice(assistantIndex - 1, 1);
+            }
+            renderMessages();
             isSending = false;
             activeStreamId = null;
             sendBtnArrow();
