@@ -3599,6 +3599,7 @@
                     if (!resp.ok) {
                         var errData = await resp.json().catch(() => ({}));
                         let errorMessage = errData.error || 'Ошибка сервера.';
+                        _cleanupAssistantOnError(chat, newMsgIndex);
                         showAlertModal('Ошибка', errorMessage, '❌');
                         return;
                     }
@@ -3615,12 +3616,8 @@
                         } else if (errJson.error_type === 'deepseek_overloaded') {
                             errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                         }
-                        assistantMsg._error_type = errJson.error_type || null;
-                        assistantMsg.content = errorMessage;
-                        assistantMsg.finished = true;
-                        renderMessages();
-                        isSending = false;
-                        sendBtnArrow();
+                        _cleanupAssistantOnError(chat, newMsgIndex);
+                        showAlertModal('Ошибка', errorMessage, '❌');
                         return;
                     }
                     var reader = resp.body.getReader();
@@ -7760,12 +7757,14 @@
 
                 if (resp.status === 406) {
                     var errData = await resp.json().catch(() => ({}));
+                    _cleanupAssistantOnError(chat, msgIndex);
                     showAlertModal('Слишком длинный текст', errData.error || 'Суммарная длина текста превышает лимит.', '⚠️');
                     return;
                 }
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
+                    _cleanupAssistantOnError(chat, msgIndex);
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
@@ -7783,14 +7782,8 @@
                     } else if (err.error_type === 'deepseek_overloaded') {
                         errorMessage = 'DeepSeek перегружен. Причина: Сервер перегружен из-за большого трафика. Решение: Пожалуйста, повторите запрос после непродолжительного ожидания.';
                     }
-                    chat.messages[msgIndex]._error_type = err.error_type || null;
-                    chat.messages[msgIndex].content = errorMessage;
-                    chat.messages[msgIndex].finished = true;
-                    chat.messages[msgIndex]._streaming = false;
-                    renderMessages();
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
+                    _cleanupAssistantOnError(chat, msgIndex);
+                    showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
 
@@ -7829,6 +7822,7 @@
                                 else if (parsed.error_type === 'connection_error') {
                                     errorMessage = 'Сервер не дождался ответа от DeepSeek. Попробуйте позже.'
                                 }
+                                _cleanupAssistantOnError(chat, msgIndex);
                                 showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
                             }
@@ -7981,18 +7975,30 @@
                     sendBtnArrow();
                 } else {
                     console.error('sendMessage error:', e);
-                    chat.messages.pop(); // удаляем ассистента
-                    chat.messages.pop(); // удаляем пользователя
-                    renderMessages();
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnArrow();
+                    _cleanupAssistantOnError(chat, msgIndex);
                     showAlertModal('Ошибка соединения', 'Отсутствует подключение к интернету 000100.', '❌');
                 }
 
 
             }
 
+        }
+        function _cleanupAssistantOnError(chat, assistantIndex) {
+            if (!chat || assistantIndex < 0 || assistantIndex >= chat.messages.length) return;
+            var _m = chat.messages[assistantIndex];
+            if (!_m || _m.role !== 'assistant') return;
+            if (_m.msg_id) {
+                chat.messages.splice(assistantIndex, 1);
+                var _row = document.querySelector('.message-row[data-msg-index="' + assistantIndex + '"]');
+                if (_row && _row.parentNode) _row.parentNode.removeChild(_row);
+            } else {
+                chat.messages.splice(assistantIndex, 1);
+                var _row2 = document.querySelector('.message-row[data-msg-index="' + assistantIndex + '"]');
+                if (_row2 && _row2.parentNode) _row2.parentNode.removeChild(_row2);
+            }
+            isSending = false;
+            activeStreamId = null;
+            sendBtnArrow();
         }
 
 
