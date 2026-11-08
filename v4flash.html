@@ -11112,6 +11112,46 @@
         </div>
     </div>
     <script>
+        // ===== SETTINGS MODAL =====
+        function openSettingsModal() {
+            var overlay = document.getElementById('settingsModal');
+            if (!overlay) return;
+            _syncSettingsThemeButtons();
+            overlay.classList.add('active');
+        }
+        function closeSettingsModal() {
+            var overlay = document.getElementById('settingsModal');
+            if (overlay) overlay.classList.remove('active');
+        }
+        function switchSettingsTab(tab) {
+            var items = document.querySelectorAll('#settingsModal .settings-nav-item');
+            for (var i = 0; i < items.length; i++) {
+                items[i].classList.toggle('active', items[i].getAttribute('data-tab') === tab);
+            }
+        }
+        function _syncSettingsThemeButtons() {
+            var current = localStorage.getItem('photobot_theme_mode') || (document.body.classList.contains('light') ? 'light' : 'dark');
+            var btns = document.querySelectorAll('#settingsModal .settings-theme-btn');
+            for (var i = 0; i < btns.length; i++) {
+                btns[i].classList.toggle('active', btns[i].getAttribute('data-theme') === current);
+            }
+        }
+        function applySettingsTheme(mode) {
+            var isLight = document.body.classList.contains('light');
+            var targetLight = (mode === 'light') || (mode === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+            if (targetLight !== isLight) {
+                toggleTheme();
+            }
+            localStorage.setItem('photobot_theme_mode', mode);
+            _syncSettingsThemeButtons();
+        }
+        (function initSettingsSystemTheme() {
+            var mode = localStorage.getItem('photobot_theme_mode');
+            if (mode !== 'system' || !window.matchMedia) return;
+            var mq = window.matchMedia('(prefers-color-scheme: light)');
+            var isLight = document.body.classList.contains('light');
+            if (mq.matches !== isLight) toggleTheme();
+        })();
         // Edit message modal
         var editMessageCallback = null;
 
