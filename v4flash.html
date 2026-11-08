@@ -3324,7 +3324,16 @@
             playSound('send');
             var isAssistantBranch = (msg.role === 'assistant');
             if (!isAssistantBranch) {
-                chat.messages.push({ role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null });
+                var _brHasImg = !!(msg.image_b64 || (msg.display_b64s && msg.display_b64s.length) || (msg.extra_b64s && msg.extra_b64s.length));
+                var _brHasPdf = false;
+                if (msg.files_meta && msg.files_meta.length) {
+                    for (var _bpf2 = 0; _bpf2 < msg.files_meta.length; _bpf2++) {
+                        var _bpx2 = (msg.files_meta[_bpf2].ext || '').toLowerCase();
+                        if (_bpx2 === 'pdf' || _bpx2 === 'docx' || _bpx2 === 'xlsx' || _bpx2 === 'pptx') { _brHasPdf = true; break; }
+                    }
+                }
+                var _brShowImg = _brHasImg && !_brHasPdf && !(msg.content || '').trim();
+                chat.messages.push({ role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _imgReading: _brShowImg });
                 renderMessages();
                 scrollToBottom();
             } else {
