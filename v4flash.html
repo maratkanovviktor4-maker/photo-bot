@@ -7867,6 +7867,25 @@
                 }
             }
             var _isSysUser = (text === '[OK] patch applied · state committed') || (text === '[FAIL] patch failed');
+            // Если пользователь прислал финальный маркер цикла — пушим накопленные файлы.
+            if (/^\[COMPLETE\]/i.test(text)) {
+                var _pfNames = Object.keys(_githubPushPendingFiles);
+                if (_pfNames.length) {
+                    var _pfSnap = {};
+                    for (var _pfi = 0; _pfi < _pfNames.length; _pfi++) {
+                        _pfSnap[_pfNames[_pfi]] = _githubPushPendingFiles[_pfNames[_pfi]];
+                    }
+                    _githubPushPendingFiles = {};
+                    (function(snap) {
+                        var names = Object.keys(snap);
+                        (function next(i) {
+                            if (i >= names.length) return;
+                            var n = names[i];
+                            _pushFileToGithub(n, snap[n]).catch(function(e) { console.warn('github push error', e); }).then(function() { next(i + 1); });
+                        })(0);
+                    })(_pfSnap);
+                }
+            }
             chat.messages.push({
                 role: 'user',
                 content: displayText,
@@ -10273,6 +10292,7 @@
         var _autoDeployInFlight = false;
         var _autoDeployConsecutiveTooMany = 0;
         var _fileNotFoundStreak = 0;
+        var _githubPushPendingFiles = {};
 
         async function _sendDeployErrorLog(msg, chat, info) {
             var _lines = [];
@@ -10642,16 +10662,13 @@
 
             // Все файлы применены
             _autoDeployConsecutiveTooMany = 0;
-            // Пуш на GitHub — только для финального состояния (ответ с маркером [COMPLETE]).
-            // Промежуточные правки не пушим: они заведомо устареют следующей правкой в том же цикле.
-            var _isCycleComplete = /\[COMPLETE\]\s*edit cycle closed/i.test(msg.content || '');
-            if (_isCycleComplete) {
-                for (var _pi = 0; _pi < _appliedFiles.length; _pi++) {
-                    var _pfName = _appliedFiles[_pi];
-                    var _pfContent = _appliedFileContents[_pfName];
-                    if (_pfContent == null) continue;
-                    try { await _pushFileToGithub(_pfName, _pfContent); } catch(e) { console.warn('github push error', e); }
-                }
+            // Запоминаем применённые файлы — пуш произойдёт, когда пользователь
+            // пришлёт сообщение [COMPLETE] ... (см. _githubPushPendingFiles).
+            for (var _pi = 0; _pi < _appliedFiles.length; _pi++) {
+                var _pfName = _appliedFiles[_pi];
+                var _pfContent = _appliedFileContents[_pfName];
+                if (_pfContent == null) continue;
+                _githubPushPendingFiles[_pfName] = _pfContent;
             }
             var _targetMsgId = msg.msg_id;
             var _chatRef = chat;
