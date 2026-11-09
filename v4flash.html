@@ -12048,6 +12048,63 @@
             if (!b) return;
             b.textContent = tipEnabled ? 'Включены' : 'Выключены';
         }
+        var TOPBAR_ITEMS = {
+            bg: '[title="Фон чата"]',
+            highlight: '#highlightCustom',
+            soundSend: '#soundSendCustom',
+            soundReply: '#soundReplyCustom',
+            voice: '#voiceCustom',
+            tip: '#tipToggleBtn'
+        };
+        function _getTopBarHidden() {
+            try { return JSON.parse(localStorage.getItem('photobot_topbar_hidden') || '[]'); } catch(e) { return []; }
+        }
+        function _saveTopBarHidden(arr) {
+            localStorage.setItem('photobot_topbar_hidden', JSON.stringify(arr));
+        }
+        function _applyTopBarVisibility() {
+            var hidden = _getTopBarHidden();
+            var topBar = document.querySelector('.top-bar');
+            var keys = Object.keys(TOPBAR_ITEMS);
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                var sel = TOPBAR_ITEMS[key];
+                var els = topBar ? topBar.querySelectorAll(sel) : [];
+                for (var j = 0; j < els.length; j++) {
+                    els[j].setAttribute('data-topbar-hidden', hidden.indexOf(key) !== -1 ? '1' : '0');
+                    if (hidden.indexOf(key) !== -1) {
+                        els[j].style.setProperty('display', 'none', 'important');
+                    } else {
+                        els[j].style.removeProperty('display');
+                    }
+                }
+            }
+            _syncTopBarToggleBtns();
+        }
+        function _syncTopBarToggleBtns() {
+            var hidden = _getTopBarHidden();
+            var btns = document.querySelectorAll('[data-topbar-toggle]');
+            for (var i = 0; i < btns.length; i++) {
+                var key = btns[i].getAttribute('data-topbar-toggle');
+                var isHidden = hidden.indexOf(key) !== -1;
+                btns[i].textContent = isHidden ? 'Показать в топбаре' : 'Скрыть из топбара';
+                btns[i].style.background = isHidden ? 'rgba(0,203,245,0.15)' : '';
+                btns[i].style.borderColor = isHidden ? 'rgba(0,203,245,0.4)' : '';
+                btns[i].style.color = isHidden ? '#00CBF5' : '';
+            }
+        }
+        function _toggleTopBarItem(key) {
+            var hidden = _getTopBarHidden();
+            var idx = hidden.indexOf(key);
+            if (idx === -1) hidden.push(key); else hidden.splice(idx, 1);
+            _saveTopBarHidden(hidden);
+            _applyTopBarVisibility();
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', _applyTopBarVisibility);
+        } else {
+            setTimeout(_applyTopBarVisibility, 0);
+        }
         function _syncSettingsThemeButtons() {
             var current = localStorage.getItem('photobot_theme_mode') || (document.body.classList.contains('light') ? 'light' : 'dark');
             var btns = document.querySelectorAll('#settingsModal .settings-theme-btn');
