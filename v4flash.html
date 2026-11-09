@@ -13461,26 +13461,40 @@
                 _timer = setTimeout(_poll, data ? POLL_INTERVAL : 3000);
             }
 
+            var _loopRunning = false;
+
+            function _ensureLoop() {
+                if (_loopRunning) return;
+                _loopRunning = true;
+                _loop();
+            }
+
+            async function _loop() {
+                _loopRunning = true;
+                var data = await _fetchStatus(0);
+                if (data) _render(data);
+                if (document.getElementById('deployToast')) {
+                    _timer = setTimeout(_loop, 5000);
+                } else {
+                    _loopRunning = false;
+                    _timer = null;
+                }
+            }
+
             window.startDeployPolling = function() {
-                _gen++;
-                if (_timer) clearTimeout(_timer);
-                _attempts = 0;
-                _since = 0;
-                var _existing = document.getElementById('deployToast');
-                if (_existing) _existing.remove();
-                _render({ status: 'checking', conclusion: null, sha: '', started: new Date().toISOString(), updated: new Date().toISOString(), jobs: [] });
-                _poll();
+                var existing = document.getElementById('deployToast');
+                if (!existing) {
+                    var toast = document.createElement('div');
+                    toast.id = 'deployToast';
+                    toast.className = 'deploy-toast';
+                    document.body.appendChild(toast);
+                    requestAnimationFrame(function() { toast.classList.add('show'); });
+                }
+                _ensureLoop();
             };
 
             window._startDeployPollingAfterPush = function() {
-                _gen++;
-                if (_timer) clearTimeout(_timer);
-                _attempts = 0;
-                _since = Date.now() - 5000;
-                var _existing = document.getElementById('deployToast');
-                if (_existing) _existing.remove();
-                _render({ status: 'checking', conclusion: null, sha: '', started: new Date().toISOString(), updated: new Date().toISOString(), jobs: [] });
-                _poll();
+                window.startDeployPolling();
             };
         })();
     </script>
