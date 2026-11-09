@@ -12105,6 +12105,38 @@
                 }
             }
             if (phoneEl) phoneEl.textContent = '—';
+            var tgEl = document.getElementById('settingsProfileTgId');
+            var tgBtn = document.getElementById('settingsTgBtn');
+            if (tgEl && tgBtn) {
+                fetch(SERVER_URL + '/get_telegram_link?session_token=' + sessionToken)
+                    .then(function(r) { return r.json(); })
+                    .then(function(d) {
+                        if (d.linked) {
+                            tgEl.textContent = d.telegram_id || '—';
+                            tgBtn.textContent = 'Отвязать';
+                            tgBtn.classList.add('danger');
+                            tgBtn.onclick = function() { settingsTgUnlink(); };
+                        } else {
+                            tgEl.textContent = '—';
+                            tgBtn.textContent = 'Привязать';
+                            tgBtn.classList.remove('danger');
+                            tgBtn.onclick = function() { settingsTgLink(); };
+                        }
+                    })
+                    .catch(function() {});
+            }
+        }
+
+        function settingsTgUnlink() {
+            showConfirmModal('Отвязать Telegram', 'Отвязать Telegram ID от профиля?', ICON_WARNING, 'Отвязать', 'Отмена', 'modal-btn-danger', async function() {
+                try {
+                    var r = await fetch(SERVER_URL + '/unlink/telegram', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken }
+                    });
+                    if (r.ok) _syncSettingsProfile();
+                } catch(e) {}
+            });
         }
         function settingsTgLink() {
             showRenameModal('Привязка Telegram', '', function(newName) {
