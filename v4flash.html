@@ -2495,21 +2495,18 @@
             var codeEl = document.getElementById('settingsHighlightPreviewCode');
             var wrapEl = document.getElementById('settingsHighlightPreview');
             if (!codeEl || !wrapEl) return;
-            var oldLinks = wrapEl.querySelectorAll('link[data-hl-preview]');
-            for (var i = 0; i < oldLinks.length; i++) oldLinks[i].remove();
-            var link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.setAttribute('data-hl-preview', '1');
-            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/' + themeName + '.min.css';
-            wrapEl.insertBefore(link, wrapEl.firstChild);
+            if (!wrapEl._shadowRoot) {
+                wrapEl._shadowRoot = wrapEl.attachShadow({ mode: 'open' });
+            }
+            var sr = wrapEl._shadowRoot;
+            sr.innerHTML = '<link data-hl-preview="1" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/' + themeName + '.min.css">' +
+                '<style>.hljs{background:transparent !important;}</style>' +
+                '<pre style="margin:0;padding:10px 12px;font-family:\'Courier New\',monospace;font-size:12px;overflow-x:auto;"><code class="hljs language-python" id="settingsHighlightPreviewCodeInner"></code></pre>';
+            var codeInner = sr.getElementById('settingsHighlightPreviewCodeInner');
             var sampleCode = 'def hello():\n    print("Preview")\n\nclass Demo:\n    pass';
-            codeEl.textContent = sampleCode;
-            codeEl.className = 'hljs language-python';
+            codeInner.textContent = sampleCode;
             try {
-                if (typeof hljs !== 'undefined') {
-                    codeEl.removeAttribute('data-highlighted');
-                    hljs.highlightElement(codeEl);
-                }
+                if (typeof hljs !== 'undefined') hljs.highlightElement(codeInner);
             } catch(e) { console.warn('preview hljs error', e); }
         }
         function _syncHighlightApplyBtn(themeName) {
