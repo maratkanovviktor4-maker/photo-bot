@@ -8190,6 +8190,10 @@
                     assistantMsg.msg_id = finalMeta.assistant_msg_id;
                     chat.messages[chat.messages.length - 2].msg_id = finalMeta.user_msg_id;
                 }
+                if (assistantMsg._autodeployPending && assistantMsg.msg_id) {
+                    assistantMsg._autodeployPending = false;
+                    try { _autoDeployAfterAssistant(chat.messages.length - 1); } catch(e) { console.warn('autodeploy resume failed', e); }
+                }
                 if (fluxModeEnabled) {
                     fluxModeEnabled = false;
                     var _fb = document.getElementById('fluxBtn');
