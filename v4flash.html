@@ -13445,8 +13445,10 @@
             }
 
             async function _poll() {
+                var _myGen = _gen;
                 _attempts++;
                 var data = await _fetchStatus(_since);
+                if (_myGen !== _gen) return;
                 if (data) _render(data);
                 if (data && data.status === 'completed') return;
                 if (_attempts >= MAX_ATTEMPTS) {
