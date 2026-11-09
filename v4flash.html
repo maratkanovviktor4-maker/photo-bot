@@ -13383,12 +13383,14 @@
                     if (r2.ok) {
                         var d2 = await r2.json();
                         jobs = (d2.jobs || []).map(function(j) { return { name: j.name, status: j.status, conclusion: j.conclusion }; });
-                        var _jobOrder = { 'build': 1, 'deploy': 2, 'report-build-status': 3 };
-                        jobs.sort(function(a, b) {
-                            var ao = _jobOrder[a.name] || 99;
-                            var bo = _jobOrder[b.name] || 99;
-                            return ao - bo;
-                        });
+                        var _jobOrder = function(n) {
+                            var _n = String(n || '').toLowerCase();
+                            if (_n.indexOf('report-build-status') !== -1) return 3;
+                            if (_n.indexOf('deploy') !== -1) return 2;
+                            if (_n.indexOf('build') !== -1) return 1;
+                            return 99;
+                        };
+                        jobs.sort(function(a, b) { return _jobOrder(a.name) - _jobOrder(b.name); });
                     }
                     return {
                         status: run.status,
