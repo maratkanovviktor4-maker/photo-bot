@@ -2491,6 +2491,35 @@
             document.getElementById('highlightTheme').href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/' + theme + '.min.css';
             localStorage.setItem('photobot_highlight_theme', theme);
         }
+        function _updateHighlightPreview(themeName) {
+            var codeEl = document.getElementById('settingsHighlightPreviewCode');
+            var wrapEl = document.getElementById('settingsHighlightPreview');
+            if (!codeEl || !wrapEl) return;
+            var oldLinks = wrapEl.querySelectorAll('link[data-hl-preview]');
+            for (var i = 0; i < oldLinks.length; i++) oldLinks[i].remove();
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.setAttribute('data-hl-preview', '1');
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/' + themeName + '.min.css';
+            wrapEl.insertBefore(link, wrapEl.firstChild);
+            var sampleCode = 'def hello():\n    print("Preview")\n\nclass Demo:\n    pass';
+            codeEl.textContent = sampleCode;
+            codeEl.className = 'hljs language-python';
+            try {
+                if (typeof hljs !== 'undefined') {
+                    codeEl.removeAttribute('data-highlighted');
+                    hljs.highlightElement(codeEl);
+                }
+            } catch(e) { console.warn('preview hljs error', e); }
+        }
+        (function() {
+            var _initPrev = function() {
+                var sel = document.getElementById('settingsHighlightSelect');
+                if (sel) _updateHighlightPreview(sel.value || localStorage.getItem('photobot_highlight_theme') || 'atom-one-dark');
+            };
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _initPrev);
+            else setTimeout(_initPrev, 0);
+        })();
 
         (function() {
             var saved = localStorage.getItem('photobot_theme');
