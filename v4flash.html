@@ -11951,6 +11951,70 @@
                 } catch(e) {}
             });
         }
+        function _syncTopbarSettingsUI() {
+            var topbarHidden = localStorage.getItem('photobot_topbar_hidden') === 'true';
+            var apiHidden = localStorage.getItem('photobot_topbar_api_hidden') === 'true';
+            var usageHidden = localStorage.getItem('photobot_topbar_usage_hidden') === 'true';
+            var tbBtn = document.getElementById('settingsTopbarToggleBtn');
+            if (tbBtn) tbBtn.textContent = topbarHidden ? 'Нет' : 'Да';
+            var apiBtn = document.getElementById('settingsApiToggleBtn');
+            if (apiBtn) apiBtn.textContent = apiHidden ? 'Показать' : 'Скрыть';
+            var usageBtn = document.getElementById('settingsUsageToggleBtn');
+            if (usageBtn) usageBtn.textContent = usageHidden ? 'Показать' : 'Скрыть';
+            var apiBtnEl = document.querySelector('.top-bar > button[onclick*="api-docs.html"]');
+            if (apiBtnEl) apiBtnEl.style.display = (topbarHidden || apiHidden) ? 'none' : '';
+            var usageBtnEl = document.querySelector('.top-bar > button[onclick*="usage.html"]');
+            if (usageBtnEl) usageBtnEl.style.display = (topbarHidden || usageHidden) ? 'none' : '';
+            var pp = document.getElementById('personalityPrompt');
+            if (pp) pp.style.display = 'none';
+        }
+        function _toggleTopbarVisible() {
+            var cur = localStorage.getItem('photobot_topbar_hidden') === 'true';
+            localStorage.setItem('photobot_topbar_hidden', cur ? 'false' : 'true');
+            _applyTopbarVisibility();
+            _syncTopbarSettingsUI();
+        }
+        function _toggleTopbarSetting(kind) {
+            var key = 'photobot_topbar_' + kind + '_hidden';
+            var cur = localStorage.getItem(key) === 'true';
+            localStorage.setItem(key, cur ? 'false' : 'true');
+            _syncTopbarSettingsUI();
+        }
+        function _applyTopbarVisibility() {
+            var topbarHidden = localStorage.getItem('photobot_topbar_hidden') === 'true';
+            var apiHidden = localStorage.getItem('photobot_topbar_api_hidden') === 'true';
+            var usageHidden = localStorage.getItem('photobot_topbar_usage_hidden') === 'true';
+            var tb = document.querySelector('.top-bar');
+            if (!tb) return;
+            if (topbarHidden) { tb.classList.add('collapsed'); }
+            // Все элементы, которые должны всегда оставаться
+            var alwaysKeep = ['contextBattery','balanceDisplay','topBarToggle','personalityCustom','personalityBtn','themeToggle'];
+            var children = tb.children;
+            for (var i = 0; i < children.length; i++) {
+                var el = children[i];
+                var id = el.id || '';
+                var keep = false;
+                if (alwaysKeep.indexOf(id) !== -1) keep = true;
+                if (el.querySelector && el.querySelector('#personalityBtn')) keep = true;
+                if (el.querySelector && el.querySelector('#themeToggle')) keep = true;
+                if (id === 'personalityPrompt') { el.style.display = 'none'; continue; }
+                if (id === 'branchIndicatorTop') { continue; }
+                if (topbarHidden) {
+                    el.style.display = (id === 'topBarToggle' || id === 'contextBattery' || id === 'balanceDisplay') ? '' : 'none';
+                } else {
+                    el.style.display = '';
+                }
+            }
+            var apiBtnEl = tb.querySelector('button[onclick*="api-docs.html"]');
+            if (apiBtnEl) apiBtnEl.style.display = (topbarHidden || apiHidden) ? 'none' : '';
+            var usageBtnEl = tb.querySelector('button[onclick*="usage.html"]');
+            if (usageBtnEl) usageBtnEl.style.display = (topbarHidden || usageHidden) ? 'none' : '';
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function(){ try { _applyTopbarVisibility(); _syncTopbarSettingsUI(); } catch(e){} });
+        } else {
+            setTimeout(function(){ try { _applyTopbarVisibility(); _syncTopbarSettingsUI(); } catch(e){} }, 0);
+        }
         function _syncSettingsProfile() {
             var auth = null;
             try { auth = JSON.parse(localStorage.getItem('photobot_auth') || 'null'); } catch(e) { auth = null; }
