@@ -13448,8 +13448,14 @@
                 var data = await _fetchStatus(_since);
                 if (data) _render(data);
                 if (data && data.status === 'completed') return;
-                if (_attempts >= MAX_ATTEMPTS) return;
-                _timer = setTimeout(_poll, POLL_INTERVAL);
+                if (_attempts >= MAX_ATTEMPTS) {
+                    if (!data) {
+                        var _t = document.getElementById('deployToast');
+                        if (_t) _t.remove();
+                    }
+                    return;
+                }
+                _timer = setTimeout(_poll, data ? POLL_INTERVAL : 3000);
             }
 
             window.startDeployPolling = function() {
