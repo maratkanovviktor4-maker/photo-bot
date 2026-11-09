@@ -13225,7 +13225,7 @@
                 }
             }
 
-            async function _fetchStatus() {
+            async function _fetchStatus(since) {
                 try {
                     var cfg = null;
                     try { cfg = JSON.parse(localStorage.getItem('photobot_github') || 'null'); } catch(e) { cfg = null; }
@@ -13234,10 +13234,21 @@
                     var _branch = cfg.branch || 'main';
                     var _hdrs = { 'Accept': 'application/vnd.github+json' };
                     if (cfg.token) _hdrs['Authorization'] = 'token ' + cfg.token.trim();
-                    var r1 = await fetch('https://api.github.com/repos/' + _repo + '/actions/runs?branch=' + encodeURIComponent(_branch) + '&per_page=1', { headers: _hdrs, cache: 'no-store' });
+                    var r1 = await fetch('https://api.github.com/repos/' + _repo + '/actions/runs?branch=' + encodeURIComponent(_branch) + '&per_page=5', { headers: _hdrs, cache: 'no-store' });
                     if (!r1.ok) return null;
                     var d1 = await r1.json();
-                    var run = d1.workflow_runs && d1.workflow_runs[0];
+                    var _runs = (d1.workflow_runs || []);
+                    var run = null;
+                    if (since) {
+                        // Берём самый свежий ран, который создан НЕ РАНЬШЕ момента пуша.
+                        // Старые (уже завершённые) раны игнорируем — ждём новый.
+                        for (var _ri = 0; _ri < _runs.length; _ri++) {
+                            var _cr = _runs[_ri].created_at ? new Date(_runs[_ri].created_at).getTime() : 0;
+                            if (_cr >= since) { run = _runs[_ri]; break; }
+                        }
+                    } else {
+                        run = _runs[0] || null;
+                    }
                     if (!run) return null;
                     var r2 = await fetch('https://api.github.com/repos/' + _repo + '/actions/runs/' + run.id + '/jobs', { headers: _hdrs, cache: 'no-store' });
                     var jobs = [];
