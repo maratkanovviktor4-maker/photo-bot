@@ -1660,23 +1660,35 @@
                 <div id="personalityDropdown" style="position:absolute;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:200px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
             </div>
             <button onclick="showCustomPersonalityModal()" id="editCustomBtn" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;padding:6px 8px;border-radius:8px;font-family:Inter,sans-serif;transition:background 0.15s;line-height:1;" title="Редактировать кастомную"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-	    <span id="personalityPrompt" style="display:none;"></span>
-            <div id="highlightCustom" style="display:none;">
+	    <span id="personalityPrompt" style="font-size:12px;color:#888;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:4px;"></span>
+            <div id="highlightCustom" style="position:relative;display:inline-block;">
                 <select id="highlightSelect" onchange="changeHighlight()" style="display:none;"></select>
+                <button class="theme-btn" onclick="toggleHighlightDropdown(event)" id="highlightDropdownBtn" title="Тема подсветки" style="padding:6px 10px;border-radius:16px;font-size:11px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:1px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <span id="highlightCurrentLabel">atom-one-dark</span>
+                </button>
+                <div id="highlightDropdown" style="position:absolute;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:220px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
             </div>
-            <div id="highlightCustom" style="display:none;">
-                <select id="highlightSelect" onchange="changeHighlight()" style="display:none;"></select>
-            </div>
-            <div id="soundSendCustom" style="display:none;">
+            <button class="theme-btn" onclick="showBgModal()" title="Фон чата" style="margin-left:4px;display:inline-flex;align-items:center;gap:4px;"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z"/></svg> <span id="bgCurrentLabel">Стандарт</span></button>
+            <div id="soundSendCustom" style="position:relative;display:inline-block;">
                 <select id="soundSendSelect" onchange="saveSoundSettings()" style="display:none;"></select>
+                <button class="theme-btn" onclick="toggleSoundDropdown(event, 'send')" id="soundSendBtn" title="Звук отправки" style="display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;">🔇</button>
+                <div id="soundSendDropdown" style="position:absolute;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:160px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
             </div>
-            <div id="soundReplyCustom" style="display:none;">
+            <div id="soundReplyCustom" style="position:relative;display:inline-block;">
                 <select id="soundReplySelect" onchange="saveSoundSettings()" style="display:none;"></select>
+                <button class="theme-btn" onclick="toggleSoundDropdown(event, 'reply')" id="soundReplyBtn" title="Звук ответа" style="display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;">🔇</button>
+                <div id="soundReplyDropdown" style="position:absolute;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:160px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
             </div>
-            <div id="voiceCustom" style="display:none;">
+            <div id="voiceCustom" style="position:relative;display:inline-block;">
                 <select id="voiceSelect" onchange="changeVoice()" style="display:none;"></select>
+                <button class="theme-btn" onclick="toggleVoiceDropdown(event)" id="voiceBtn" title="Голос и интонация" style="display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;padding:8px 14px;border-radius:24px;font-size:12px;font-family:Inter,sans-serif;background:rgba(34,34,34,0.8);color:#aaa;border:2px solid rgba(255,255,255,0.08);cursor:pointer;outline:none;font-weight:500;backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(0,0,0,0.2);">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" /></svg>
+                    <span id="voiceCurrentLabel">ermil good</span>
+                </button>
+                <div id="voiceDropdown" style="position:absolute;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:10001;min-width:220px;max-height:300px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;opacity:0;transform:translateY(-8px);transition:opacity 0.2s ease, transform 0.2s ease;"></div>
             </div>
-
+            <button class="theme-btn" onclick="toggleTips()" id="tipToggleBtn" title="Подсказки" style="display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;"></button>
 	    <button class="theme-btn" onclick="window.open('api-docs.html','_blank')" title="API документация" style="display:inline-flex;align-items:center;gap:4px;height:36px;line-height:1;">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"/></svg> API
 </button>
@@ -11939,71 +11951,6 @@
                 } catch(e) {}
             });
         }
-        function _syncTopbarSettingsUI() {
-            var topbarHidden = localStorage.getItem('photobot_topbar_hidden') === 'true';
-            var apiHidden = localStorage.getItem('photobot_topbar_api_hidden') === 'true';
-            var usageHidden = localStorage.getItem('photobot_topbar_usage_hidden') === 'true';
-            var tbBtn = document.getElementById('settingsTopbarToggleBtn');
-            if (tbBtn) tbBtn.textContent = topbarHidden ? 'Нет' : 'Да';
-            var apiBtn = document.getElementById('settingsApiToggleBtn');
-            if (apiBtn) apiBtn.textContent = apiHidden ? 'Показать' : 'Скрыть';
-            var usageBtn = document.getElementById('settingsUsageToggleBtn');
-            if (usageBtn) usageBtn.textContent = usageHidden ? 'Показать' : 'Скрыть';
-            var apiBtnEl = document.querySelector('.top-bar > button[onclick*="api-docs.html"]');
-            if (apiBtnEl) apiBtnEl.style.display = (topbarHidden || apiHidden) ? 'none' : '';
-            var usageBtnEl = document.querySelector('.top-bar > button[onclick*="usage.html"]');
-            if (usageBtnEl) usageBtnEl.style.display = (topbarHidden || usageHidden) ? 'none' : '';
-            var pp = document.getElementById('personalityPrompt');
-            if (pp) pp.style.display = 'none';
-        }
-        function _toggleTopbarVisible() {
-            var cur = localStorage.getItem('photobot_topbar_hidden') === 'true';
-            localStorage.setItem('photobot_topbar_hidden', cur ? 'false' : 'true');
-            _applyTopbarVisibility();
-            _syncTopbarSettingsUI();
-        }
-        function _toggleTopbarSetting(kind) {
-            var key = 'photobot_topbar_' + kind + '_hidden';
-            var cur = localStorage.getItem(key) === 'true';
-            localStorage.setItem(key, cur ? 'false' : 'true');
-            _applyTopbarVisibility();
-            _syncTopbarSettingsUI();
-        }
-        function _applyTopbarVisibility() {
-            var topbarHidden = localStorage.getItem('photobot_topbar_hidden') === 'true';
-            var apiHidden = localStorage.getItem('photobot_topbar_api_hidden') === 'true';
-            var usageHidden = localStorage.getItem('photobot_topbar_usage_hidden') === 'true';
-            var tb = document.querySelector('.top-bar');
-            if (!tb) return;
-            if (topbarHidden) { tb.classList.add('collapsed'); }
-            // Все элементы, которые должны всегда оставаться
-            var alwaysKeep = ['contextBattery','balanceDisplay','topBarToggle','personalityCustom','personalityBtn','themeToggle'];
-            var children = tb.children;
-            for (var i = 0; i < children.length; i++) {
-                var el = children[i];
-                var id = el.id || '';
-                var keep = false;
-                if (alwaysKeep.indexOf(id) !== -1) keep = true;
-                if (el.querySelector && el.querySelector('#personalityBtn')) keep = true;
-                if (el.querySelector && el.querySelector('#themeToggle')) keep = true;
-                if (id === 'personalityPrompt') { el.style.display = 'none'; continue; }
-                if (id === 'branchIndicatorTop') { continue; }
-                if (topbarHidden) {
-                    el.style.display = (id === 'topBarToggle' || id === 'contextBattery' || id === 'balanceDisplay') ? '' : 'none';
-                } else {
-                    el.style.display = '';
-                }
-            }
-            var apiBtnEl = tb.querySelector('button[onclick*="api-docs.html"]');
-            if (apiBtnEl) apiBtnEl.style.display = (topbarHidden || apiHidden) ? 'none' : '';
-            var usageBtnEl = tb.querySelector('button[onclick*="usage.html"]');
-            if (usageBtnEl) usageBtnEl.style.display = (topbarHidden || usageHidden) ? 'none' : '';
-        }
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function(){ try { _applyTopbarVisibility(); _syncTopbarSettingsUI(); } catch(e){} });
-        } else {
-            setTimeout(function(){ try { _applyTopbarVisibility(); _syncTopbarSettingsUI(); } catch(e){} }, 0);
-        }
         function _syncSettingsProfile() {
             var auth = null;
             try { auth = JSON.parse(localStorage.getItem('photobot_auth') || 'null'); } catch(e) { auth = null; }
@@ -12958,10 +12905,6 @@
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8Z"/><circle cx="7.5" cy="10.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="16.5" cy="10.5" r="1.2" fill="currentColor" stroke="none"/></svg>
                         Внешний вид
                     </button>
-                    <button class="settings-nav-item" data-tab="stats" onclick="switchSettingsTab('stats')">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 4 4 5-6"/></svg>
-                        Статистика
-                    </button>
                     <button class="settings-nav-item" data-tab="about" onclick="switchSettingsTab('about')">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                         О программе
@@ -12969,16 +12912,6 @@
                 </div>
                 <div class="settings-pane">
                     <div class="settings-tab-pane" data-pane="general">
-                        <div class="settings-row">
-                            <div class="settings-profile-list">
-                                <div class="settings-profile-row">
-                                    <div class="settings-profile-label">Показывать в топбаре</div>
-                                    <div class="settings-profile-value">
-                                        <button class="settings-profile-btn" id="settingsTopbarToggleBtn" onclick="_toggleTopbarVisible()">Да</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         <div class="settings-row">
                             <div class="settings-label">Тема</div>
                             <div class="settings-theme-grid">
@@ -13041,14 +12974,14 @@
                         </div>
                         <div class="settings-row">
                             <div class="settings-label">Тема подсветки кода</div>
-                            <div style="display:flex;gap:8px;align-items:flex-start;">
+                            <div style="display:flex;gap:16px;align-items:flex-start;">
                                 <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;position:relative;">
                                     <select id="settingsHighlightSelect" style="display:none;"></select>
                                     <button id="settingsHighlightBtn" class="theme-btn" onclick="_toggleSettingsHighlightDropdown(event)" style="display:inline-flex;align-items:center;gap:6px;justify-content:flex-start;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><span id="settingsHighlightBtnLabel">atom-one-dark</span></button>
                                     <div id="settingsHighlightDropdown" style="position:absolute;top:44px;left:0;min-width:220px;max-height:260px;overflow-y:auto;background:#2c2c2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:4px;z-index:100200;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;"></div>
                                     <button id="settingsHighlightApplyBtn" onclick="_applyHighlightTheme()" class="theme-btn" style="background:rgba(0,203,245,0.15) !important;border-color:rgba(0,203,245,0.4) !important;color:#00CBF5 !important;justify-content:center;">Применить</button>
                                 </div>
-                                <div id="settingsHighlightPreviewBox" style="width:260px;align-self:stretch;border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;font-size:12px;line-height:1.4;background:#1b1b1c;">
+                                <div id="settingsHighlightPreviewBox" style="flex:1;align-self:stretch;border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;font-size:12px;line-height:1.4;background:#1b1b1c;">
                                     <div id="settingsHighlightPreview" style="height:100%;min-height:110px;"></div>
                                 </div>
                             </div>
@@ -13080,24 +13013,6 @@
                         <div class="settings-row">
                             <div class="settings-label">Подсказки</div>
                             <button class="theme-btn" id="settingsTipBtn" onclick="toggleTips();_syncSettingsTip();" style="display:inline-flex;align-items:center;gap:6px;">Подсказки</button>
-                        </div>
-                    </div>
-                    <div class="settings-tab-pane" data-pane="stats" style="display:none;">
-                        <div class="settings-row">
-                            <div class="settings-profile-list">
-                                <div class="settings-profile-row">
-                                    <div class="settings-profile-label">API документация</div>
-                                    <div class="settings-profile-value">
-                                        <button class="settings-profile-btn" id="settingsApiToggleBtn" onclick="_toggleTopbarSetting('api')">Скрыть</button>
-                                    </div>
-                                </div>
-                                <div class="settings-profile-row">
-                                    <div class="settings-profile-label">USAGE</div>
-                                    <div class="settings-profile-value">
-                                        <button class="settings-profile-btn" id="settingsUsageToggleBtn" onclick="_toggleTopbarSetting('usage')">Скрыть</button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                     <div class="settings-tab-pane" data-pane="about" style="display:none;">
