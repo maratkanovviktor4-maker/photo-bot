@@ -13246,7 +13246,11 @@
                 }
                 if (!data) return;
 
-                var isNeutral = data.status === 'neutral';
+                var isNeutral = data.status === 'neutral' || data.status === 'neuteready';
+                if (data.status === 'neuteready') {
+                    title = 'Проверка статуса';
+                    sub = '';
+                }
                 var isRunning = !isNeutral && (data.status === 'in_progress' || data.status === 'queued');
                 var isSuccess = !isNeutral && data.conclusion === 'success';
                 var isFailed = !isNeutral && (data.conclusion === 'failure' || data.conclusion === 'cancelled');
