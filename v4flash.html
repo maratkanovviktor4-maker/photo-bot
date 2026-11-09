@@ -9820,96 +9820,64 @@
             }
         }
 
-        function runPdfRender() {
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) { showAlertModal('Нет чата', 'Откройте чат проектировщика.', '⚠️'); return; }
-            var _doSend = function() {
-                webSearchEnabled = false;
-                localStorage.setItem('photobot_web_search', 'false');
-                var _wb = document.getElementById('webSearchToggle');
-                if (_wb) _wb.classList.remove('active');
-                var input = document.getElementById('userInput');
-                input.value = 'рендер pdf';
-                input.dispatchEvent(new Event('input'));
-                sendMessage();
-            };
-            (async function() {
-                try {
-                    if (!_deployHandles.work) {
-                        await _restoreDeployHandles();
-                    }
-                    if (!_deployHandles.work) {
-                        showAlertModal('Папка не выбрана', 'Выберите рабочую папку с обогащённым файлом.', '⚠️');
-                        return;
-                    }
-                    var names = await _listWorkFiles(_deployHandles.work);
-                    var _txtFiles = [];
-                    var _jsonFiles = [];
-                    for (var _tj = 0; _tj < names.length; _tj++) {
-                        if (/\.txt$/i.test(names[_tj])) _txtFiles.push(names[_tj]);
-                        else if (/\.json$/i.test(names[_tj])) _jsonFiles.push(names[_tj]);
-                    }
-                    var targetName = null;
-                    if (_jsonFiles.length === 1) targetName = _jsonFiles[0];
-                    if (!targetName) {
-                        showAlertModal('Файл не определён', 'В папке должен быть ровно один .json (карта щита с enrichment_text). Уберите лишние.', '⚠️');
-                        return;
-                    }
-                    pendingFiles = [];
-                    try {
-                        var fh2 = await _deployHandles.work.getFileHandle(targetName);
-                        var file2 = await fh2.getFile();
-                        var text2 = await file2.text();
-                        pendingFiles.push({
-                            name: targetName,
-                            mime: 'application/json',
-                            data: btoa(unescape(encodeURIComponent(text2))),
-                            _status: 'ok'
-                        });
-                    } catch(e) {
-                        console.warn('read shield json failed', e);
-                        showAlertModal('Ошибка чтения', 'Не удалось прочитать ' + targetName, '❌');
-                        return;
-                    }
-                    updateFileList();
-                } catch(e) {
-                    console.warn('read target file failed', e);
-                    showAlertModal('Ошибка чтения', 'Не удалось прочитать обогащённый файл.', '❌');
+        async function runPdfRender() {
+            try {
+                if (!_deployHandles.work) {
+                    await _restoreDeployHandles();
+                }
+                if (!_deployHandles.work) {
+                    showAlertModal('Папка не выбрана', 'Выберите рабочую папку с картой щита (.json).', '⚠️');
                     return;
                 }
-                _doSend();
-            })();
-            var _origOnDone = window._pdfRenderAfterAssistant;
-            window._pdfRenderAfterAssistant = function() {
-                var c = chats.find(function(x) { return x.id === currentChatId; });
-                if (!c) return;
-                var last = c.messages[c.messages.length - 1];
-                if (!last || last.role !== 'assistant') return;
-                var json = _extractJsonBlock(last.content || '');
-                if (!json) {
-                    showAlertModal('HTML не найден', 'Ассистент не вернул JSON для рендера PDF.', '⚠️');
+                var names = await _listWorkFiles(_deployHandles.work);
+                var _jsonFiles = [];
+                for (var _tj = 0; _tj < names.length; _tj++) {
+                    if (/\.json$/i.test(names[_tj])) _jsonFiles.push(names[_tj]);
+                }
+                if (_jsonFiles.length !== 1) {
+                    showAlertModal('Файл не определён', 'В папке должен быть ровно один .json (карта щита). Сейчас: ' + _jsonFiles.length + '.', '⚠️');
+                    return;
+                }
+                var targetName = _jsonFiles[0];
+                var text2 = '';
+                try {
+                    var fh2 = await _deployHandles.work.getFileHandle(targetName);
+                    var file2 = await fh2.getFile();
+                    text2 = await file2.text();
+                } catch(e) {
+                    console.warn('read shield json failed', e);
+                    showAlertModal('Ошибка чтения', 'Не удалось прочитать ' + targetName, '❌');
+                    return;
+                }
+                var json = null;
+                try { json = JSON.parse(text2); } catch(e) {
+                    showAlertModal('Неверный JSON', 'Файл ' + targetName + ' содержит некорректный JSON.', '❌');
                     return;
                 }
                 showLoading();
-                fetch(SERVER_URL + '/render_pdf', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify(json)
-                }).then(function(r) {
+                try {
+                    var r = await fetch(SERVER_URL + '/render_pdf', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify(json)
+                    });
                     if (!r.ok) throw new Error('render_failed');
-                    return r.blob();
-                }).then(function(blob) {
+                    var blob = await r.blob();
                     var a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
                     a.download = (json.filename || 'shield.pdf');
                     a.click();
                     setTimeout(function() { URL.revokeObjectURL(a.href); }, 2000);
-                    hideLoading();
-                }).catch(function(e) {
-                    hideLoading();
+                } catch(e) {
+                    console.warn('render pdf failed', e);
                     showAlertModal('Ошибка рендера', 'Не удалось сформировать PDF.', '❌');
-                });
-            };
+                } finally {
+                    hideLoading();
+                }
+            } catch(e) {
+                console.warn('runPdfRender failed', e);
+                showAlertModal('Ошибка', 'Не удалось выполнить рендер PDF.', '❌');
+            }
         }
 
         function _parsePassportList(text) {
