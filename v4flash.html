@@ -7535,6 +7535,29 @@
             localStorage.setItem('photobot_sound_send', document.getElementById('soundSendSelect').value);
             localStorage.setItem('photobot_sound_reply', document.getElementById('soundReplySelect').value);
         }
+        var _soundPreviewCache = {};
+        var _soundPreviewLast = {};
+        function _previewSoundHover(e, type) {
+            try {
+                var sel = e.target;
+                if (!sel || sel.tagName !== 'SELECT') return;
+                var val = sel.value;
+                if (!val) return;
+                var now = Date.now();
+                var key = type + ':' + val;
+                if (_soundPreviewLast[key] && now - _soundPreviewLast[key] < 400) return;
+                _soundPreviewLast[key] = now;
+                var audio = _soundPreviewCache[key];
+                if (!audio) {
+                    audio = new Audio('sounds/' + val + '.mp3');
+                    audio.volume = 0.5;
+                    _soundPreviewCache[key] = audio;
+                } else {
+                    try { audio.currentTime = 0; } catch(err) {}
+                }
+                audio.play().catch(function(){});
+            } catch(err) {}
+        }
         var recognition = null;
 
 
