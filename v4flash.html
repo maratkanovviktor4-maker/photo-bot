@@ -7751,7 +7751,10 @@
             ['send','reply'].forEach(function(type) {
                 var sel = document.getElementById('settingsSound' + (type === 'send' ? 'Send' : 'Reply') + 'Select');
                 var btn = document.getElementById('settingsSound' + (type === 'send' ? 'Send' : 'Reply') + 'Btn');
-                if (sel && btn) btn.textContent = _soundLabelByVal(sel.value);
+                if (sel && btn) {
+                    var icon = sel.value === '' ? ICON_MUTE : ICON_SOUND;
+                    btn.innerHTML = icon + ' <span>' + _soundLabelByVal(sel.value) + '</span>';
+                }
             });
         }
 
