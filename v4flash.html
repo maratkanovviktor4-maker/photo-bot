@@ -7704,9 +7704,10 @@
             dd.innerHTML = '';
             SOUND_OPTIONS.forEach(function(opt) {
                 var item = document.createElement('div');
-                item.textContent = opt.label;
+                var _icon = opt.value === '' ? ICON_MUTE : ICON_SOUND;
+                item.innerHTML = _icon + ' <span>' + opt.label + '</span>';
                 item.setAttribute('data-sound-val', opt.value);
-                item.style.cssText = 'padding:8px 12px;font-size:13px;color:' + (isLight ? '#333' : '#e0e0e0') + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;' + (opt.value === sel.value ? 'background:rgba(0,203,245,0.15);' : '');
+                item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + (isLight ? '#333' : '#e0e0e0') + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;display:flex;align-items:center;gap:6px;' + (opt.value === sel.value ? 'background:rgba(0,203,245,0.15);' : '');
                 item.addEventListener('mouseenter', function() {
                     item.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
                     if (opt.value) _previewSoundHover({ target: { tagName: 'SELECT', value: opt.value } }, type);
