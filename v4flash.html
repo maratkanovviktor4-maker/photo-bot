@@ -7563,6 +7563,74 @@
             localStorage.setItem('photobot_sound_send', document.getElementById('soundSendSelect').value);
             localStorage.setItem('photobot_sound_reply', document.getElementById('soundReplySelect').value);
         }
+        var _settingsSoundOpen = null;
+        function _soundLabelByVal(val) {
+            for (var i = 0; i < SOUND_OPTIONS.length; i++) {
+                if (SOUND_OPTIONS[i].value === val) return SOUND_OPTIONS[i].label;
+            }
+            return 'Без звука';
+        }
+        function _buildSettingsSoundDropdown(type) {
+            var sel = document.getElementById('settingsSound' + (type === 'send' ? 'Send' : 'Reply') + 'Select');
+            var dd  = document.getElementById('settingsSound' + (type === 'send' ? 'Send' : 'Reply') + 'Dropdown');
+            if (!sel || !dd) return;
+            var isLight = document.body.classList.contains('light');
+            dd.style.background = isLight ? '#ffffff' : '#1a1a2e';
+            dd.style.border = '1px solid ' + (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)');
+            dd.innerHTML = '';
+            SOUND_OPTIONS.forEach(function(opt) {
+                var item = document.createElement('div');
+                item.textContent = opt.label;
+                item.setAttribute('data-sound-val', opt.value);
+                item.style.cssText = 'padding:8px 12px;font-size:13px;color:' + (isLight ? '#333' : '#e0e0e0') + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;' + (opt.value === sel.value ? 'background:rgba(0,203,245,0.15);' : '');
+                item.addEventListener('mouseenter', function() {
+                    item.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
+                    if (opt.value) _previewSoundHover({ target: { tagName: 'SELECT', value: opt.value } }, type);
+                });
+                item.addEventListener('mouseleave', function() {
+                    item.style.background = (opt.value === sel.value) ? 'rgba(0,203,245,0.15)' : '';
+                });
+                item.addEventListener('click', function() {
+                    sel.value = opt.value;
+                    var mainSel = document.getElementById('sound' + (type === 'send' ? 'Send' : 'Reply') + 'Select');
+                    if (mainSel) mainSel.value = opt.value;
+                    saveSoundSettings();
+                    _syncSettingsSoundLabels();
+                    _closeSettingsSoundDropdown();
+                });
+                dd.appendChild(item);
+            });
+        }
+        function _toggleSettingsSoundDropdown(e, type) {
+            if (e) e.stopPropagation();
+            var dd = document.getElementById('settingsSound' + (type === 'send' ? 'Send' : 'Reply') + 'Dropdown');
+            if (!dd) return;
+            if (_settingsSoundOpen === type) { _closeSettingsSoundDropdown(); return; }
+            _closeSettingsSoundDropdown();
+            _settingsSoundOpen = type;
+            _buildSettingsSoundDropdown(type);
+            dd.style.display = 'block';
+            document.addEventListener('click', _settingsSoundOutsideClick);
+        }
+        function _closeSettingsSoundDropdown() {
+            _settingsSoundOpen = null;
+            ['Send','Reply'].forEach(function(k) {
+                var dd = document.getElementById('settingsSound' + k + 'Dropdown');
+                if (dd) dd.style.display = 'none';
+            });
+            document.removeEventListener('click', _settingsSoundOutsideClick);
+        }
+        function _settingsSoundOutsideClick(e) {
+            if (!e.target.closest('[id^="settingsSound"]')) _closeSettingsSoundDropdown();
+        }
+        function _syncSettingsSoundLabels() {
+            ['send','reply'].forEach(function(type) {
+                var sel = document.getElementById('settingsSound' + (type === 'send' ? 'Send' : 'Reply') + 'Select');
+                var btn = document.getElementById('settingsSound' + (type === 'send' ? 'Send' : 'Reply') + 'Btn');
+                if (sel && btn) btn.textContent = _soundLabelByVal(sel.value);
+            });
+        }
+
         var _soundPreviewCache = {};
         var _soundPreviewLast = {};
         function _previewSoundHover(e, type) {
