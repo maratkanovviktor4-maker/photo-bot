@@ -12001,8 +12001,15 @@
                 vs.value = srcVs.value;
             }
             _syncSettingsVoiceLabel();
-            var hlLbl = document.getElementById('settingsHighlightBtn');
+            var hlLbl = document.getElementById('settingsHighlightBtnLabel');
             if (hlLbl && srcHl) hlLbl.textContent = srcHl.value;
+            var hlBtn = document.getElementById('settingsHighlightBtn');
+            if (hlBtn && srcHl) {
+                var _isDarkTh = (typeof HIGHLIGHT_THEMES_DARK !== 'undefined') && HIGHLIGHT_THEMES_DARK.indexOf(srcHl.value) !== -1;
+                var _iconHtml = _isDarkTh ? ICON_MOON : ICON_SUN;
+                var _labelHtml = '<span id="settingsHighlightBtnLabel">' + (srcHl.value || 'atom-one-dark') + '</span>';
+                hlBtn.innerHTML = _iconHtml + _labelHtml;
+            }
             var bgLbl = document.getElementById('settingsBgLabel');
             var srcBg = document.getElementById('bgCurrentLabel');
             if (bgLbl && srcBg) bgLbl.textContent = srcBg.textContent;
