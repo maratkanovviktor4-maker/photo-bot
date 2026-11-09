@@ -12056,7 +12056,10 @@
             var all = document.querySelectorAll('[data-topbar]');
             for (var i = 0; i < all.length; i++) {
                 var id = all[i].getAttribute('data-topbar');
-                all[i].style.display = hidden.indexOf(id) !== -1 ? 'none' : '';
+                var isHidden = hidden.indexOf(id) !== -1;
+                all[i].style.display = isHidden ? 'none' : '';
+                if (!isHidden) all[i].setAttribute('data-topbar-shown', '1');
+                else all[i].removeAttribute('data-topbar-shown');
             }
             var cbs = document.querySelectorAll('.topbar-visibility-cb');
             for (var j = 0; j < cbs.length; j++) {
