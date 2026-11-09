@@ -7681,11 +7681,14 @@
         }
         function _syncSettingsVoiceLabel() {
             var sel = document.getElementById('settingsVoiceSelect');
+            var lbl = document.getElementById('settingsVoiceBtnLabel');
             var btn = document.getElementById('settingsVoiceBtn');
-            if (!sel || !btn) return;
+            if (!sel) return;
+            var label = '';
             for (var i = 0; i < VOICE_OPTIONS.length; i++) {
-                if (VOICE_OPTIONS[i].value === sel.value) { btn.textContent = VOICE_OPTIONS[i].label; return; }
+                if (VOICE_OPTIONS[i].value === sel.value) { label = VOICE_OPTIONS[i].label; break; }
             }
+            if (lbl) lbl.textContent = label || 'ermil good';
         }
 
         var _settingsSoundOpen = null;
