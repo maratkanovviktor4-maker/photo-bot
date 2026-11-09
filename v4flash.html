@@ -4808,6 +4808,116 @@
                 }
             });
         }        
+        var _summaryFlow = { active: false, chatId: null, branchId: null };
+
+        async function _summaryReadWorkDirFiles() {
+            if (!_deployHandles.work) {
+                try { await _restoreDeployHandles(); } catch(e) {}
+            }
+            if (!_deployHandles.work) return [];
+            var names = [];
+            try { names = await _listWorkFiles(_deployHandles.work); } catch(e) { names = []; }
+            var out = [];
+            for (var i = 0; i < names.length; i++) {
+                try {
+                    var fh = await _deployHandles.work.getFileHandle(names[i]);
+                    var f = await fh.getFile();
+                    var txt = await f.text();
+                    var b64 = btoa(unescape(encodeURIComponent(txt)));
+                    var ext = (names[i].split('.').pop() || '').toLowerCase();
+                    var mime = 'text/plain';
+                    if (ext === 'json') mime = 'application/json';
+                    else if (ext === 'html' || ext === 'htm') mime = 'text/html';
+                    else if (ext === 'js') mime = 'application/javascript';
+                    else if (ext === 'css') mime = 'text/css';
+                    else if (ext === 'py') mime = 'text/x-python';
+                    out.push({ name: names[i], mime: mime, data: b64, _status: 'ok' });
+                } catch(e) { console.warn('summary read file failed', names[i], e); }
+            }
+            return out;
+        }
+
+        async function startSummaryFlow() {
+            if (isSending) return;
+            if (!currentChatId) { showAlertModal('Нет чата', 'Откройте чат с историей.', '⚠️'); return; }
+            var _menu = document.querySelector('.message-menu');
+            if (_menu) _menu.remove();
+            _summaryFlow.active = true;
+            _summaryFlow.chatId = currentChatId;
+            _summaryFlow.branchId = currentBranchId;
+            window._summaryPromptDone = null;
+            var input = document.getElementById('userInput');
+            input.value = 'выдай выжимку проделанной работы';
+            input.dispatchEvent(new Event('input'));
+            sendMessage();
+        }
+
+        async function _summaryAfterReply() {
+            if (!_summaryFlow.active) return;
+            var _chatId = _summaryFlow.chatId;
+            if (currentChatId !== _chatId) { _summaryFlow.active = false; return; }
+            var chat = chats.find(function(c) { return c.id === _chatId; });
+            if (!chat) { _summaryFlow.active = false; return; }
+            var lastA = null;
+            for (var i = chat.messages.length - 1; i >= 0; i--) {
+                if (chat.messages[i].role === 'assistant') { lastA = chat.messages[i]; break; }
+            }
+            if (!lastA) { _summaryFlow.active = false; return; }
+            var summaryText = lastA.content || '';
+            if (!summaryText.trim()) { _summaryFlow.active = false; return; }
+
+            showLoading();
+            try {
+                var msgIdsToDelete = [];
+                var _branchMsgs = get_branchMsgIdsSafe ? [] : [];
+                var treeResp = await fetch(SERVER_URL + '/get_chat_tree?user_id=' + currentUserId + '&model=flash&chat_id=' + _chatId + '&session_token=' + sessionToken);
+                if (!treeResp.ok) { hideLoading(); _summaryFlow.active = false; return; }
+                var tree = await treeResp.json();
+                var branch = (tree.branches || {})[_summaryFlow.branchId] || {};
+                var ids = branch.msg_ids || [];
+                var lastAIdx = -1;
+                for (var bi = ids.length - 1; bi >= 0; bi--) {
+                    var m = (tree.messages || {})[ids[bi]];
+                    if (m && m.role === 'assistant') { lastAIdx = bi; break; }
+                }
+                var userIdx = lastAIdx - 1;
+                if (userIdx >= 0 && lastAIdx >= 0) {
+                    for (var di = 0; di < userIdx; di++) msgIdsToDelete.push(ids[di]);
+                }
+                if (msgIdsToDelete.length) {
+                    await fetch(SERVER_URL + '/delete_messages', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({
+                            user_id: currentUserId, model: 'flash', chat_id: _chatId,
+                            branch_id: _summaryFlow.branchId, msg_ids: msgIdsToDelete
+                        })
+                    });
+                }
+                var files = await _summaryReadWorkDirFiles();
+                await loadChatMessages(_chatId);
+                fullRender();
+                hideLoading();
+                _summaryFlow.active = false;
+                if (!files || !files.length) {
+                    showAlertModal('Папка пуста', 'В рабочей папке нет файлов — выжимка готова, но файлы для актуализации отсутствуют.', '⚠️');
+                    return;
+                }
+                for (var fi = 0; fi < files.length; fi++) {
+                    pendingFiles.push(files[fi]);
+                }
+                updateFileList();
+                var input2 = document.getElementById('userInput');
+                input2.value = 'актуализация текущего состояния';
+                input2.dispatchEvent(new Event('input'));
+                sendMessage();
+            } catch(e) {
+                console.warn('summary flow failed', e);
+                hideLoading();
+                _summaryFlow.active = false;
+            }
+        }
+
         function showMessageMenu(event, index) {
             event.stopPropagation();
             var existing = document.querySelector('.message-menu');
