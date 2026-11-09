@@ -7566,6 +7566,127 @@
             localStorage.setItem('photobot_sound_send', document.getElementById('soundSendSelect').value);
             localStorage.setItem('photobot_sound_reply', document.getElementById('soundReplySelect').value);
         }
+        var _settingsHlOpen = false;
+        function _buildSettingsHighlightDropdown() {
+            var dd = document.getElementById('settingsHighlightDropdown');
+            var sel = document.getElementById('settingsHighlightSelect');
+            var btn = document.getElementById('settingsHighlightBtn');
+            if (!dd || !sel) return;
+            var isLight = document.body.classList.contains('light');
+            dd.style.background = isLight ? '#ffffff' : '#1a1a2e';
+            dd.style.border = '1px solid ' + (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)');
+            dd.innerHTML = '';
+            function addHeader(text) {
+                var h = document.createElement('div');
+                h.textContent = text;
+                h.style.cssText = 'padding:6px 10px;font-size:11px;color:#888;font-family:Inter,sans-serif;font-weight:600;';
+                dd.appendChild(h);
+            }
+            function addItem(theme) {
+                var item = document.createElement('div');
+                item.textContent = theme;
+                item.setAttribute('data-hl-val', theme);
+                item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + (isLight ? '#333' : '#e0e0e0') + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;' + (theme === sel.value ? 'background:rgba(0,203,245,0.15);' : '');
+                item.addEventListener('mouseenter', function() { item.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; });
+                item.addEventListener('mouseleave', function() { item.style.background = (theme === sel.value) ? 'rgba(0,203,245,0.15)' : ''; });
+                item.addEventListener('click', function() {
+                    sel.value = theme;
+                    if (btn) btn.textContent = theme;
+                    _updateHighlightPreview(theme);
+                    _syncHighlightApplyBtn(theme);
+                    _closeSettingsHighlightDropdown();
+                });
+                dd.appendChild(item);
+            }
+            if (typeof HIGHLIGHT_THEMES_DARK !== 'undefined') {
+                addHeader('Для тёмной темы');
+                HIGHLIGHT_THEMES_DARK.forEach(addItem);
+            }
+            if (typeof HIGHLIGHT_THEMES_LIGHT !== 'undefined') {
+                addHeader('Для светлой темы');
+                HIGHLIGHT_THEMES_LIGHT.forEach(addItem);
+            }
+        }
+        function _toggleSettingsHighlightDropdown(e) {
+            if (e) e.stopPropagation();
+            var dd = document.getElementById('settingsHighlightDropdown');
+            if (!dd) return;
+            if (_settingsHlOpen) { _closeSettingsHighlightDropdown(); return; }
+            _closeSettingsHighlightDropdown();
+            _settingsHlOpen = true;
+            _buildSettingsHighlightDropdown();
+            dd.style.display = 'block';
+            document.addEventListener('click', _settingsHlOutsideClick);
+        }
+        function _closeSettingsHighlightDropdown() {
+            _settingsHlOpen = false;
+            var dd = document.getElementById('settingsHighlightDropdown');
+            if (dd) dd.style.display = 'none';
+            document.removeEventListener('click', _settingsHlOutsideClick);
+        }
+        function _settingsHlOutsideClick(e) {
+            if (!e.target.closest('[id^="settingsHighlight"]')) _closeSettingsHighlightDropdown();
+        }
+        var _settingsVoiceOpen = false;
+        function _buildSettingsVoiceDropdown() {
+            var dd = document.getElementById('settingsVoiceDropdown');
+            var sel = document.getElementById('settingsVoiceSelect');
+            if (!dd || !sel) return;
+            var isLight = document.body.classList.contains('light');
+            dd.style.background = isLight ? '#ffffff' : '#1a1a2e';
+            dd.style.border = '1px solid ' + (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)');
+            dd.innerHTML = '';
+            if (typeof VOICE_OPTIONS === 'undefined') return;
+            VOICE_OPTIONS.forEach(function(opt) {
+                var item = document.createElement('div');
+                item.textContent = opt.label;
+                item.setAttribute('data-voice-val', opt.value);
+                item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + (isLight ? '#333' : '#e0e0e0') + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;' + (opt.value === sel.value ? 'background:rgba(0,203,245,0.15);' : '');
+                item.addEventListener('mouseenter', function() { item.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; });
+                item.addEventListener('mouseleave', function() { item.style.background = (opt.value === sel.value) ? 'rgba(0,203,245,0.15)' : ''; });
+                item.addEventListener('click', function() {
+                    sel.value = opt.value;
+                    var mainSel = document.getElementById('voiceSelect');
+                    if (mainSel) mainSel.value = opt.value;
+                    changeVoice();
+                    var lbl = document.getElementById('voiceCurrentLabel');
+                    if (lbl) lbl.textContent = opt.label;
+                    var btn = document.getElementById('settingsVoiceBtn');
+                    if (btn) btn.textContent = opt.label;
+                    _closeSettingsVoiceDropdown();
+                });
+                dd.appendChild(item);
+            });
+        }
+        function _toggleSettingsVoiceDropdown(e) {
+            if (e) e.stopPropagation();
+            var dd = document.getElementById('settingsVoiceDropdown');
+            if (!dd) return;
+            if (_settingsVoiceOpen) { _closeSettingsVoiceDropdown(); return; }
+            _closeSettingsVoiceDropdown();
+            _settingsVoiceOpen = true;
+            _buildSettingsVoiceDropdown();
+            dd.style.display = 'block';
+            document.addEventListener('click', _settingsVoiceOutsideClick);
+        }
+        function _closeSettingsVoiceDropdown() {
+            _settingsVoiceOpen = false;
+            var dd = document.getElementById('settingsVoiceDropdown');
+            if (dd) dd.style.display = 'none';
+            document.removeEventListener('click', _settingsVoiceOutsideClick);
+        }
+        function _settingsVoiceOutsideClick(e) {
+            if (!e.target.closest('[id^="settingsVoice"]')) _closeSettingsVoiceDropdown();
+        }
+        function _syncSettingsVoiceLabel() {
+            var sel = document.getElementById('settingsVoiceSelect');
+            var btn = document.getElementById('settingsVoiceBtn');
+            if (!sel || !btn) return;
+            for (var i = 0; i < VOICE_OPTIONS.length; i++) {
+                if (VOICE_OPTIONS[i].value === sel.value) { btn.textContent = VOICE_OPTIONS[i].label; return; }
+            }
+        }
+
         var _settingsSoundOpen = null;
         function _soundLabelByVal(val) {
             for (var i = 0; i < SOUND_OPTIONS.length; i++) {
