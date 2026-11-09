@@ -13246,12 +13246,13 @@
                 }
                 if (!data) return;
 
-                var isRunning = data.status === 'in_progress' || data.status === 'queued';
-                var isSuccess = data.conclusion === 'success';
-                var isFailed = data.conclusion === 'failure' || data.conclusion === 'cancelled';
-                var headIcon = isRunning ? ICONS.running : (isSuccess ? ICONS.success : ICONS.failed);
-                var headColor = isRunning ? 'st-running' : (isSuccess ? 'st-success' : 'st-failed');
-                var title = isRunning ? (data.status === 'queued' ? 'В очереди' : 'Деплой идёт') : (isSuccess ? 'Задеплоено' : 'Ошибка деплоя');
+                var isNeutral = data.status === 'neutral';
+                var isRunning = !isNeutral && (data.status === 'in_progress' || data.status === 'queued');
+                var isSuccess = !isNeutral && data.conclusion === 'success';
+                var isFailed = !isNeutral && (data.conclusion === 'failure' || data.conclusion === 'cancelled');
+                var headIcon = isNeutral ? ICONS.queued : (isRunning ? ICONS.running : (isSuccess ? ICONS.success : ICONS.failed));
+                var headColor = isNeutral ? '' : (isRunning ? 'st-running' : (isSuccess ? 'st-success' : 'st-failed'));
+                var title = isNeutral ? 'Статус неизвестен' : (isRunning ? (data.status === 'queued' ? 'В очереди' : 'Деплой идёт') : (isSuccess ? 'Задеплоено' : 'Ошибка деплоя'));
 
                 var elapsed = 0;
                 if (data.started) {
