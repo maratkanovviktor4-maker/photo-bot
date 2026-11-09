@@ -13462,10 +13462,21 @@
             }
 
             window.startDeployPolling = function() {
-                if (_timer) clearTimeout(_timer);
                 _gen++;
+                if (_timer) clearTimeout(_timer);
                 _attempts = 0;
                 _since = 0;
+                var _existing = document.getElementById('deployToast');
+                if (_existing) _existing.remove();
+                _render({ status: 'checking', conclusion: null, sha: '', started: new Date().toISOString(), updated: new Date().toISOString(), jobs: [] });
+                _poll();
+            };
+
+            window._startDeployPollingAfterPush = function() {
+                _gen++;
+                if (_timer) clearTimeout(_timer);
+                _attempts = 0;
+                _since = Date.now() - 5000;
                 var _existing = document.getElementById('deployToast');
                 if (_existing) _existing.remove();
                 _render({ status: 'checking', conclusion: null, sha: '', started: new Date().toISOString(), updated: new Date().toISOString(), jobs: [] });
