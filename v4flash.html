@@ -10444,6 +10444,14 @@
         var _githubPushPendingFiles = {};
 
         async function _sendDeployErrorLog(msg, chat, info) {
+            var _lastUser = null;
+            for (var _lu = chat.messages.length - 1; _lu >= 0; _lu--) {
+                if (chat.messages[_lu].role === 'user') { _lastUser = chat.messages[_lu]; break; }
+            }
+            if (_lastUser && _lastUser._autodeploy && _lastUser._autodeployOk && (info.error_type === 'patch_failed' || info.error_type === 'apply_error')) {
+                console.warn('[AUTODEPLOY] suppress stale error log after OK', info.error_type);
+                return;
+            }
             var _lines = [];
             _lines.push('=== DEPLOY ERROR LOG ===');
             _lines.push('error_type: ' + (info.error_type || 'unknown'));
