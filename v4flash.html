@@ -7570,28 +7570,28 @@
         function _buildSettingsHighlightDropdown() {
             var dd = document.getElementById('settingsHighlightDropdown');
             var sel = document.getElementById('settingsHighlightSelect');
-            var btn = document.getElementById('settingsHighlightBtn');
+            var lbl = document.getElementById('settingsHighlightBtnLabel');
             if (!dd || !sel) return;
             var isLight = document.body.classList.contains('light');
-            dd.style.background = isLight ? '#ffffff' : '#1a1a2e';
+            dd.style.background = isLight ? '#ffffff' : '#2c2c2e';
             dd.style.border = '1px solid ' + (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)');
             dd.innerHTML = '';
-            function addHeader(text) {
+            function addHeader(text, isDark) {
                 var h = document.createElement('div');
-                h.textContent = text;
-                h.style.cssText = 'padding:6px 10px;font-size:11px;color:#888;font-family:Inter,sans-serif;font-weight:600;';
+                h.style.cssText = 'padding:6px 10px;font-size:11px;color:#888;font-family:Inter,sans-serif;font-weight:600;display:flex;align-items:center;gap:6px;';
+                h.innerHTML = (isDark ? ICON_MOON : ICON_SUN) + ' ' + text;
                 dd.appendChild(h);
             }
-            function addItem(theme) {
+            function addItem(theme, isDark) {
                 var item = document.createElement('div');
-                item.textContent = theme;
+                item.innerHTML = (isDark ? ICON_MOON : ICON_SUN) + ' ' + theme;
                 item.setAttribute('data-hl-val', theme);
-                item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + (isLight ? '#333' : '#e0e0e0') + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;' + (theme === sel.value ? 'background:rgba(0,203,245,0.15);' : '');
-                item.addEventListener('mouseenter', function() { item.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; });
+                item.style.cssText = 'padding:6px 10px;font-size:12px;color:' + (isLight ? '#333' : '#e0e0e0') + ';cursor:pointer;border-radius:6px;font-family:Inter,sans-serif;display:flex;align-items:center;gap:6px;' + (theme === sel.value ? 'background:rgba(0,203,245,0.15);' : '');
+                item.addEventListener('mouseenter', function() { item.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'; if (theme === sel.value) item.style.background = 'rgba(0,203,245,0.2)'; });
                 item.addEventListener('mouseleave', function() { item.style.background = (theme === sel.value) ? 'rgba(0,203,245,0.15)' : ''; });
                 item.addEventListener('click', function() {
                     sel.value = theme;
-                    if (btn) btn.textContent = theme;
+                    if (lbl) lbl.textContent = theme;
                     _updateHighlightPreview(theme);
                     _syncHighlightApplyBtn(theme);
                     _closeSettingsHighlightDropdown();
@@ -7599,12 +7599,12 @@
                 dd.appendChild(item);
             }
             if (typeof HIGHLIGHT_THEMES_DARK !== 'undefined') {
-                addHeader('Для тёмной темы');
-                HIGHLIGHT_THEMES_DARK.forEach(addItem);
+                addHeader('Для тёмной темы', true);
+                HIGHLIGHT_THEMES_DARK.forEach(function(t) { addItem(t, true); });
             }
             if (typeof HIGHLIGHT_THEMES_LIGHT !== 'undefined') {
-                addHeader('Для светлой темы');
-                HIGHLIGHT_THEMES_LIGHT.forEach(addItem);
+                addHeader('Для светлой темы', false);
+                HIGHLIGHT_THEMES_LIGHT.forEach(function(t) { addItem(t, false); });
             }
         }
         function _toggleSettingsHighlightDropdown(e) {
