@@ -13412,8 +13412,11 @@
                 _timer = setTimeout(_poll, POLL_INTERVAL);
             }
 
-            window.startDeployPolling = function() {
+            window.startDeployPolling = function(forceRestart) {
                 var existing = document.getElementById('deployToast');
+                if (forceRestart) {
+                    if (_timer) { clearTimeout(_timer); _timer = null; }
+                }
                 if (!_timer) {
                     _attempts = 0;
                     _since = 0;
