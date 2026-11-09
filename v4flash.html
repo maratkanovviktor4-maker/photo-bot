@@ -13274,6 +13274,9 @@
                 var toast = document.createElement('div');
                 toast.id = 'deployToast';
                 toast.className = 'deploy-toast';
+                if (isNeutral) {
+                    jobsHtml = '<div class="dt-job"><span class="dt-job-icon st-queued">' + ICONS.queued + '</span><span class="dt-job-name">Данные о сборке не получены</span><span class="dt-job-status st-queued">—</span></div>';
+                }
                 toast.innerHTML =
                     (isRunning ? '<div class="dt-progress"><div class="dt-progress-fill"></div></div>' : '') +
                     '<div class="dt-head">' +
@@ -13288,7 +13291,7 @@
                     '</div>' +
                     '<div class="dt-jobs">' + jobsHtml + '</div>' +
                     '<div class="dt-foot">' +
-                        '<span>' + (isRunning ? 'обновляется...' : 'завершено') + '</span>' +
+                        '<span>' + (isRunning ? 'обновляется...' : (isNeutral ? 'нет данных' : 'завершено')) + '</span>' +
                         '<a href="' + (data.url || '#') + '" target="_blank" rel="noopener">Открыть на GitHub ↗</a>' +
                     '</div>';
                 document.body.appendChild(toast);
