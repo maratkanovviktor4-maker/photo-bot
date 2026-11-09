@@ -12192,27 +12192,66 @@
             });
         }
         function settingsTgLink() {
-            showRenameModal('Привязка Telegram', '', function(newName) {
-                var tgId = (newName || '').trim();
-                if (!tgId || !/^\d+$/.test(tgId)) {
-                    showAlertModal('Ошибка', 'Telegram ID должен состоять только из цифр.', '❌');
+            showTgCodeModal();
+        }
+
+        function showTgCodeModal() {
+            var existing = document.getElementById('tgCodeModal');
+            if (existing) existing.remove();
+            var overlay = document.createElement('div');
+            overlay.id = 'tgCodeModal';
+            overlay.className = 'modal-overlay';
+            overlay.style.display = 'flex';
+            overlay.innerHTML =
+                '<div class="modal-box" style="max-width:420px;">' +
+                    '<div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;">✈️</div>' +
+                    '<div class="modal-title" style="margin-bottom:12px;">Привязка Telegram</div>' +
+                    '<div style="font-size:13px;color:#aaa;line-height:1.5;margin-bottom:14px;">Откройте бота, получите код и введите его ниже.</div>' +
+                    '<button class="modal-btn-primary" style="width:100%;margin-bottom:14px;" onclick="window.open(\'https://t.me/PhotoDocumentsBot_bot?start=site\', \'_blank\')">Открыть бота</button>' +
+                    '<input type="text" id="tgCodeInput" maxlength="4" placeholder="0000" style="width:100%;padding:12px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:18px;text-align:center;letter-spacing:8px;outline:none;margin-bottom:14px;">' +
+                    '<div class="modal-actions" style="gap:12px;">' +
+                        '<button class="modal-btn-secondary" onclick="document.getElementById(\'tgCodeModal\').remove()">Отмена</button>' +
+                        '<button class="modal-btn-primary" onclick="confirmTgCode()">Привязать</button>' +
+                    '</div>' +
+                '</div>';
+            document.body.appendChild(overlay);
+            overlay.addEventListener('click', function(e) { if (e.target === this) this.remove(); });
+        }
+
+        async function confirmTgCode() {
+            var code = (document.getElementById('tgCodeInput').value || '').trim();
+            if (code.length !== 4) {
+                showAlertModal('Ошибка', 'Введите 4-значный код.', '❌');
+                return;
+            }
+            try {
+                var r = await fetch(SERVER_URL + '/verify_code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code })
+                });
+                var d = await r.json();
+                if (!d.success || !d.user_id) {
+                    showAlertModal('Ошибка', d.error || 'Неверный код.', '❌');
                     return;
                 }
-                fetch(SERVER_URL + '/link/telegram', {
+                var r2 = await fetch(SERVER_URL + '/link/telegram', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                    body: JSON.stringify({ telegram_id: tgId })
-                }).then(function(r) { return r.json(); }).then(function(d) {
-                    if (d.success) {
-                        showAlertModal('Готово', 'Telegram привязан.', '✅');
-                        _syncSettingsProfile();
-                    } else {
-                        showAlertModal('Ошибка', d.error || 'Не удалось привязать.', '❌');
-                    }
-                }).catch(function() {
-                    showAlertModal('Ошибка', 'Сервер недоступен.', '❌');
+                    body: JSON.stringify({ telegram_id: String(d.user_id) })
                 });
-            });
+                var d2 = await r2.json();
+                if (d2.success) {
+                    var m = document.getElementById('tgCodeModal');
+                    if (m) m.remove();
+                    showAlertModal('Готово', 'Telegram привязан.', '✅');
+                    _syncSettingsProfile();
+                } else {
+                    showAlertModal('Ошибка', d2.error || 'Не удалось привязать.', '❌');
+                }
+            } catch(e) {
+                showAlertModal('Ошибка', 'Сервер недоступен.', '❌');
+            }
         }
 
         function settingsProfileDevices() {
