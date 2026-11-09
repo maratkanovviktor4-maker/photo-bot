@@ -10116,6 +10116,59 @@
             _restoreDeployHandles();
         }
 
+        async function cleanDeployErrors() {
+            var btn = document.getElementById('deployCleanErrorsBtn');
+            if (!btn) return;
+            var _orig = btn.innerHTML;
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+            btn.style.cursor = 'wait';
+            btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;"></span>Чищу...</span>';
+            try {
+                var resp = await fetch(SERVER_URL + '/cleanup_deploy_errors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: currentChatId, branch_id: currentBranchId })
+                });
+                var data = await resp.json();
+                if (data.success) {
+                    btn.innerHTML = '✅ Удалено: ' + (data.removed || 0);
+                    btn.style.color = '#27ae60';
+                    if (currentChatId) {
+                        await loadChatMessages(currentChatId);
+                        renderMessages();
+                    }
+                    setTimeout(function() {
+                        btn.innerHTML = _orig;
+                        btn.style.color = '';
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.style.cursor = 'pointer';
+                    }, 2000);
+                } else {
+                    btn.innerHTML = '❌ Ошибка';
+                    btn.style.color = '#e74c3c';
+                    setTimeout(function() {
+                        btn.innerHTML = _orig;
+                        btn.style.color = '';
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.style.cursor = 'pointer';
+                    }, 2500);
+                }
+            } catch(e) {
+                btn.innerHTML = '❌ Сбой';
+                btn.style.color = '#e74c3c';
+                setTimeout(function() {
+                    btn.innerHTML = _orig;
+                    btn.style.color = '';
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }, 2500);
+            }
+        }
+
         function closeDeployModal() {
             document.getElementById('deployModal').classList.remove('active');
             _deployMsgIndex = -1;
