@@ -13402,15 +13402,36 @@
                 } catch(e) { console.warn('gh status', e); return null; }
             }
 
+            var _startWaitTime = 0;
+
             async function _poll() {
                 _attempts++;
                 var data = await _fetchStatus(_since);
+                if (!data && _since === 0) {
+                    data = await _fetchStatus(0);
+                }
+                if (data && data.status === 'completed' && _startWaitTime) {
+                    if (!data.started || new Date(data.started).getTime() < _startWaitTime) {
+                        data = null;
+                    }
+                }
                 if (data) {
                     _render(data);
-                    if (data.status === 'completed') return;
-                } else if (_attempts >= 3) {
-                    _render({ status: 'neutral', conclusion: null, sha: '', started: null, updated: new Date().toISOString(), jobs: [], url: '' });
-                    return;
+                    if (data.status === 'completed') {
+                        _startWaitTime = 0;
+                        return;
+                    }
+                } else {
+                    var _elapsed = Date.now() - _startWaitTime;
+                    if (_startWaitTime > 0 && _elapsed > 120000) {
+                        _render({ status: 'neutral', conclusion: null, sha: '', started: null, updated: new Date().toISOString(), jobs: [], url: '' });
+                        _startWaitTime = 0;
+                        return;
+                    }
+                    if (!_startWaitTime) {
+                        _render({ status: 'neutral', conclusion: null, sha: '', started: null, updated: new Date().toISOString(), jobs: [], url: '' });
+                        return;
+                    }
                 }
                 if (_attempts >= MAX_ATTEMPTS) return;
                 _timer = setTimeout(_poll, POLL_INTERVAL);
@@ -13420,6 +13441,7 @@
                 var existing = document.getElementById('deployToast');
                 if (forceRestart) {
                     if (_timer) { clearTimeout(_timer); _timer = null; }
+                    _startWaitTime = Date.now();
                 }
                 if (!_timer) {
                     _attempts = 0;
