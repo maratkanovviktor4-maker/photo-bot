@@ -13270,7 +13270,11 @@
 
             function _render(data) {
                 var old = document.getElementById('deployToast');
-                if (!data) { if (old) old.remove(); return; }
+                if (!old) return;
+                if (old._isEmptyPlaceholder) {
+                    if (!data) return;
+                    old._isEmptyPlaceholder = false;
+                }
                 var _savedPos = null;
                 if (old) {
                     if (old.style.left && old.style.top) {
