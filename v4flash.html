@@ -7723,6 +7723,12 @@
                     var mainSel = document.getElementById('sound' + (type === 'send' ? 'Send' : 'Reply') + 'Select');
                     if (mainSel) mainSel.value = opt.value;
                     saveSoundSettings();
+                    var mainBtn = document.getElementById('sound' + (type === 'send' ? 'Send' : 'Reply') + 'Btn');
+                    if (mainBtn) {
+                        var prefix = type === 'send' ? 'отправки' : 'ответа';
+                        mainBtn.innerHTML = (opt.value === '' ? ICON_MUTE : ICON_SOUND) + ' ' + opt.label + ' ' + prefix;
+                    }
+                    if (typeof window['closeSoundDropdown_' + type] === 'function') window['closeSoundDropdown_' + type]();
                     _syncSettingsSoundLabels();
                     _closeSettingsSoundDropdown();
                 });
