@@ -10008,7 +10008,6 @@
         function _updateAutoDeployFloat() {
             var b = document.getElementById('autoDeployFloatBtn');
             if (!b) return;
-            if (typeof _applyTopBarVisibility === 'function') { try { _applyTopBarVisibility(); } catch(e) {} }
             if (_autoDeployEnabled) {
                 b.style.color = '#FFA500';
                 b.style.background = 'rgba(255,140,0,0.15)';
@@ -11837,7 +11836,7 @@
             var overlay = document.getElementById('settingsModal');
             if (!overlay) return;
             _syncSettingsThemeButtons();
-            _syncTopBarToggleBtns();
+            overlay.classList.add('active');
             setTimeout(function() {
                 try {
                     _syncSettingsAppearance();
@@ -12048,63 +12047,6 @@
             var b = document.getElementById('settingsTipBtn');
             if (!b) return;
             b.textContent = tipEnabled ? 'Включены' : 'Выключены';
-        }
-        var TOPBAR_ITEMS = {
-            bg: '[title="Фон чата"]',
-            highlight: '#highlightCustom',
-            soundSend: '#soundSendCustom',
-            soundReply: '#soundReplyCustom',
-            voice: '#voiceCustom',
-            tip: '#tipToggleBtn'
-        };
-        function _getTopBarHidden() {
-            try { return JSON.parse(localStorage.getItem('photobot_topbar_hidden') || '[]'); } catch(e) { return []; }
-        }
-        function _saveTopBarHidden(arr) {
-            localStorage.setItem('photobot_topbar_hidden', JSON.stringify(arr));
-        }
-        function _applyTopBarVisibility() {
-            var hidden = _getTopBarHidden();
-            var topBar = document.querySelector('.top-bar');
-            var keys = Object.keys(TOPBAR_ITEMS);
-            for (var i = 0; i < keys.length; i++) {
-                var key = keys[i];
-                var sel = TOPBAR_ITEMS[key];
-                var els = topBar ? topBar.querySelectorAll(sel) : [];
-                for (var j = 0; j < els.length; j++) {
-                    els[j].setAttribute('data-topbar-hidden', hidden.indexOf(key) !== -1 ? '1' : '0');
-                    if (hidden.indexOf(key) !== -1) {
-                        els[j].style.setProperty('display', 'none', 'important');
-                    } else {
-                        els[j].style.removeProperty('display');
-                    }
-                }
-            }
-            _syncTopBarToggleBtns();
-        }
-        function _syncTopBarToggleBtns() {
-            var hidden = _getTopBarHidden();
-            var btns = document.querySelectorAll('[data-topbar-toggle]');
-            for (var i = 0; i < btns.length; i++) {
-                var key = btns[i].getAttribute('data-topbar-toggle');
-                var isHidden = hidden.indexOf(key) !== -1;
-                btns[i].textContent = isHidden ? 'Показать в топбаре' : 'Скрыть из топбара';
-                btns[i].style.background = isHidden ? 'rgba(0,203,245,0.15)' : '';
-                btns[i].style.borderColor = isHidden ? 'rgba(0,203,245,0.4)' : '';
-                btns[i].style.color = isHidden ? '#00CBF5' : '';
-            }
-        }
-        function _toggleTopBarItem(key) {
-            var hidden = _getTopBarHidden();
-            var idx = hidden.indexOf(key);
-            if (idx === -1) hidden.push(key); else hidden.splice(idx, 1);
-            _saveTopBarHidden(hidden);
-            _applyTopBarVisibility();
-        }
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', _applyTopBarVisibility);
-        } else {
-            setTimeout(_applyTopBarVisibility, 0);
         }
         function _syncSettingsThemeButtons() {
             var current = localStorage.getItem('photobot_theme_mode') || (document.body.classList.contains('light') ? 'light' : 'dark');
@@ -13028,16 +12970,10 @@
                     <div class="settings-tab-pane" data-pane="appearance" style="display:none;">
                         <div class="settings-row">
                             <div class="settings-label">Фон чата</div>
-                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <button class="theme-btn" onclick="showBgModal()" style="display:inline-flex;align-items:center;gap:6px;">🎨 <span id="settingsBgLabel">Стандарт</span></button>
-                                <button class="theme-btn" data-topbar-toggle="bg" onclick="_toggleTopBarItem('bg')" style="display:inline-flex;align-items:center;gap:6px;" title="Скрыть/показать в топбаре">Показать в топбаре</button>
-                            </div>
+                            <button class="theme-btn" onclick="showBgModal()" style="display:inline-flex;align-items:center;gap:6px;">🎨 <span id="settingsBgLabel">Стандарт</span></button>
                         </div>
                         <div class="settings-row">
                             <div class="settings-label">Тема подсветки кода</div>
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
-                                <button class="theme-btn" data-topbar-toggle="highlight" onclick="_toggleTopBarItem('highlight')" style="display:inline-flex;align-items:center;gap:6px;" title="Скрыть/показать в топбаре">Показать в топбаре</button>
-                            </div>
                             <div style="display:flex;gap:16px;align-items:flex-start;">
                                 <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;position:relative;">
                                     <select id="settingsHighlightSelect" style="display:none;"></select>
@@ -13052,9 +12988,6 @@
                         </div>
                         <div class="settings-row">
                             <div class="settings-label">Звук отправки</div>
-                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <button class="theme-btn" data-topbar-toggle="soundSend" onclick="_toggleTopBarItem('soundSend')" style="display:inline-flex;align-items:center;gap:6px;" title="Скрыть/показать в топбаре">Показать в топбаре</button>
-                            </div>
                             <div style="position:relative;display:inline-block;">
                                 <select id="settingsSoundSendSelect" style="display:none;"></select>
                                 <button id="settingsSoundSendBtn" class="theme-btn" onclick="_toggleSettingsSoundDropdown(event, 'send')" style="display:inline-flex;align-items:center;gap:6px;justify-content:flex-start;">🔇 <span>Без звука</span></button>
@@ -13063,9 +12996,6 @@
                         </div>
                         <div class="settings-row">
                             <div class="settings-label">Звук ответа</div>
-                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <button class="theme-btn" data-topbar-toggle="soundReply" onclick="_toggleTopBarItem('soundReply')" style="display:inline-flex;align-items:center;gap:6px;" title="Скрыть/показать в топбаре">Показать в топбаре</button>
-                            </div>
                             <div style="position:relative;display:inline-block;">
                                 <select id="settingsSoundReplySelect" style="display:none;"></select>
                                 <button id="settingsSoundReplyBtn" class="theme-btn" onclick="_toggleSettingsSoundDropdown(event, 'reply')" style="display:inline-flex;align-items:center;gap:6px;justify-content:flex-start;">🔇 <span>Без звука</span></button>
@@ -13074,9 +13004,6 @@
                         </div>
                         <div class="settings-row">
                             <div class="settings-label">Голос озвучки</div>
-                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <button class="theme-btn" data-topbar-toggle="voice" onclick="_toggleTopBarItem('voice')" style="display:inline-flex;align-items:center;gap:6px;" title="Скрыть/показать в топбаре">Показать в топбаре</button>
-                            </div>
                             <div style="position:relative;display:inline-block;">
                                 <select id="settingsVoiceSelect" style="display:none;"></select>
                                 <button id="settingsVoiceBtn" class="theme-btn" onclick="_toggleSettingsVoiceDropdown(event)" style="display:inline-flex;align-items:center;gap:6px;justify-content:flex-start;"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" /></svg><span id="settingsVoiceBtnLabel">ermil good</span></button>
@@ -13085,10 +13012,7 @@
                         </div>
                         <div class="settings-row">
                             <div class="settings-label">Подсказки</div>
-                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <button class="theme-btn" id="settingsTipBtn" onclick="toggleTips();_syncSettingsTip();" style="display:inline-flex;align-items:center;gap:6px;">Подсказки</button>
-                                <button class="theme-btn" data-topbar-toggle="tip" onclick="_toggleTopBarItem('tip')" style="display:inline-flex;align-items:center;gap:6px;" title="Скрыть/показать в топбаре">Показать в топбаре</button>
-                            </div>
+                            <button class="theme-btn" id="settingsTipBtn" onclick="toggleTips();_syncSettingsTip();" style="display:inline-flex;align-items:center;gap:6px;">Подсказки</button>
                         </div>
                     </div>
                     <div class="settings-tab-pane" data-pane="about" style="display:none;">
