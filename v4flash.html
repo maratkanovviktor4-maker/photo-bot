@@ -13380,6 +13380,12 @@
                     if (r2.ok) {
                         var d2 = await r2.json();
                         jobs = (d2.jobs || []).map(function(j) { return { name: j.name, status: j.status, conclusion: j.conclusion }; });
+                        var _jobOrder = { 'build': 1, 'deploy': 2, 'report-build-status': 3 };
+                        jobs.sort(function(a, b) {
+                            var ao = _jobOrder[a.name] || 99;
+                            var bo = _jobOrder[b.name] || 99;
+                            return ao - bo;
+                        });
                     }
                     return {
                         status: run.status,
