@@ -4898,19 +4898,25 @@
             showLoading();
             try {
                 var msgIdsToDelete = [];
-                var _branchMsgs = get_branchMsgIdsSafe ? [] : [];
-                var treeResp = await fetch(SERVER_URL + '/get_chat_tree?user_id=' + currentUserId + '&model=flash&chat_id=' + _chatId + '&session_token=' + sessionToken);
-                if (!treeResp.ok) { hideLoading(); _summaryFlow.active = false; return; }
-                var tree = await treeResp.json();
-                var branch = (tree.branches || {})[_summaryFlow.branchId] || {};
-                var ids = branch.msg_ids || [];
+                var tree = null;
+                var ids = [];
                 var lastAIdx = -1;
-                for (var bi = ids.length - 1; bi >= 0; bi--) {
-                    var m = (tree.messages || {})[ids[bi]];
-                    if (m && m.role === 'assistant') { lastAIdx = bi; break; }
+                for (var _attempt = 0; _attempt < 15; _attempt++) {
+                    var treeResp = await fetch(SERVER_URL + '/get_chat_tree?user_id=' + currentUserId + '&model=flash&chat_id=' + _chatId + '&session_token=' + sessionToken + '&t=' + Date.now());
+                    if (!treeResp.ok) { await new Promise(function(r){setTimeout(r,300);}); continue; }
+                    tree = await treeResp.json();
+                    var branch = (tree.branches || {})[_summaryFlow.branchId] || {};
+                    ids = branch.msg_ids || [];
+                    lastAIdx = -1;
+                    for (var bi = ids.length - 1; bi >= 0; bi--) {
+                        var m = (tree.messages || {})[ids[bi]];
+                        if (m && m.role === 'assistant' && (m.content || '').trim()) { lastAIdx = bi; break; }
+                    }
+                    if (lastAIdx > 0 && ids.length > 2) break;
+                    await new Promise(function(r){setTimeout(r,300);});
                 }
                 var userIdx = lastAIdx - 1;
-                if (userIdx >= 0 && lastAIdx >= 0) {
+                if (userIdx >= 1 && lastAIdx >= 1) {
                     for (var di = 0; di < userIdx; di++) msgIdsToDelete.push(ids[di]);
                 }
                 if (msgIdsToDelete.length) {
