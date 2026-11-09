@@ -13301,9 +13301,13 @@
                     return '<div class="dt-job"><span class="dt-job-icon ' + cls + spin + '">' + icon + '</span><span class="dt-job-name">' + j.name + '</span><span class="dt-job-status ' + cls + '">' + label + '</span></div>';
                 }).join('');
 
-                var toast = document.createElement('div');
-                toast.id = 'deployToast';
-                toast.className = 'deploy-toast';
+                var toast = old;
+                if (!toast) {
+                    toast = document.createElement('div');
+                    toast.id = 'deployToast';
+                    toast.className = 'deploy-toast';
+                    document.body.appendChild(toast);
+                }
                 toast.innerHTML =
                     (isRunning ? '<div class="dt-progress"><div class="dt-progress-fill"></div></div>' : '') +
                     '<div class="dt-head">' +
