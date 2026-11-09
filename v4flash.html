@@ -2512,10 +2512,41 @@
                 }
             } catch(e) { console.warn('preview hljs error', e); }
         }
+        function _syncHighlightApplyBtn(themeName) {
+            var btn = document.getElementById('settingsHighlightApplyBtn');
+            var sel = document.getElementById('settingsHighlightSelect');
+            if (!btn || !sel) return;
+            var current = localStorage.getItem('photobot_highlight_theme') || 'atom-one-dark';
+            if (themeName === current) {
+                btn.style.opacity = '0.4';
+                btn.style.cursor = 'not-allowed';
+                btn.disabled = true;
+                btn.textContent = 'Применено';
+            } else {
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+                btn.disabled = false;
+                btn.textContent = 'Применить';
+            }
+        }
+        function _applyHighlightTheme() {
+            var sel = document.getElementById('settingsHighlightSelect');
+            if (!sel) return;
+            var themeName = sel.value;
+            var mainSel = document.getElementById('highlightSelect');
+            if (mainSel) mainSel.value = themeName;
+            changeHighlight();
+            updateHighlightBtnIcon(themeName);
+            _syncHighlightApplyBtn(themeName);
+        }
         (function() {
             var _initPrev = function() {
                 var sel = document.getElementById('settingsHighlightSelect');
-                if (sel) _updateHighlightPreview(sel.value || localStorage.getItem('photobot_highlight_theme') || 'atom-one-dark');
+                if (sel) {
+                    var cur = localStorage.getItem('photobot_highlight_theme') || 'atom-one-dark';
+                    _updateHighlightPreview(cur);
+                    _syncHighlightApplyBtn(cur);
+                }
             };
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _initPrev);
             else setTimeout(_initPrev, 0);
