@@ -13397,8 +13397,13 @@
             async function _poll() {
                 _attempts++;
                 var data = await _fetchStatus(_since);
-                if (data) _render(data);
-                if (data && data.status === 'completed') return;
+                if (data) {
+                    _render(data);
+                    if (data.status === 'completed') return;
+                } else if (_attempts >= 3) {
+                    _render({ status: 'neutral', conclusion: null, sha: '', started: null, updated: new Date().toISOString(), jobs: [], url: '' });
+                    return;
+                }
                 if (_attempts >= MAX_ATTEMPTS) return;
                 _timer = setTimeout(_poll, POLL_INTERVAL);
             }
@@ -13406,8 +13411,7 @@
             window.startDeployPolling = function() {
                 if (_timer) clearTimeout(_timer);
                 _attempts = 0;
-                _since = Date.now() - 5000;
-                _render({ status: 'queued', conclusion: null, sha: '', started: new Date().toISOString(), updated: new Date().toISOString(), jobs: [] });
+                _since = 0;
                 _timer = setTimeout(_poll, 1000);
             };
         })();
