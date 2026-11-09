@@ -13270,7 +13270,7 @@
 
             async function _poll() {
                 _attempts++;
-                var data = await _fetchStatus();
+                var data = await _fetchStatus(_since);
                 if (data) _render(data);
                 if (data && data.status === 'completed') return;
                 if (_attempts >= MAX_ATTEMPTS) return;
@@ -13280,6 +13280,7 @@
             window.startDeployPolling = function() {
                 if (_timer) clearTimeout(_timer);
                 _attempts = 0;
+                _since = Date.now() - 5000;
                 _poll();
             };
         })();
