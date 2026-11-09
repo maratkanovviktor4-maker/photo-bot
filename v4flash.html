@@ -2478,6 +2478,16 @@
             updateFloatingButtons();
             updateOpenEditorStyles();
             updateMermaidTheme();
+            _syncSettingsThemeButtons();
+            _syncSettingsAppearance();
+            try {
+                var _hlCur = localStorage.getItem('photobot_highlight_theme') || 'atom-one-dark';
+                _updateHighlightPreview(_hlCur);
+                _syncHighlightApplyBtn(_hlCur);
+            } catch(e) {}
+            if (_settingsHlOpen) { _buildSettingsHighlightDropdown(); }
+            if (_settingsVoiceOpen) { _buildSettingsVoiceDropdown(); }
+            if (_settingsSoundOpen) { _buildSettingsSoundDropdown(_settingsSoundOpen); }
             document.querySelectorAll('.mermaid-block').forEach(function(block) {
                 var chart = block.querySelector('.mermaid-chart');
                 if (chart) {
