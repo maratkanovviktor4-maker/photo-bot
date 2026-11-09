@@ -12043,6 +12043,45 @@
             if (bgLbl && srcBg) bgLbl.textContent = srcBg.textContent;
             _syncSettingsTip();
         }
+        function _getTopBarHidden() {
+            try {
+                return JSON.parse(localStorage.getItem('photobot_topbar_hidden') || '[]');
+            } catch(e) { return []; }
+        }
+        function _setTopBarHidden(arr) {
+            localStorage.setItem('photobot_topbar_hidden', JSON.stringify(arr));
+        }
+        function applyTopBarVisibility() {
+            var hidden = _getTopBarHidden();
+            var all = document.querySelectorAll('[data-topbar]');
+            for (var i = 0; i < all.length; i++) {
+                var id = all[i].getAttribute('data-topbar');
+                all[i].style.display = hidden.indexOf(id) !== -1 ? 'none' : '';
+            }
+            var cbs = document.querySelectorAll('.topbar-visibility-cb');
+            for (var j = 0; j < cbs.length; j++) {
+                var t = cbs[j].getAttribute('data-target');
+                cbs[j].checked = hidden.indexOf(t) === -1;
+            }
+        }
+        function toggleTopBarItem(id, show) {
+            var hidden = _getTopBarHidden();
+            var idx = hidden.indexOf(id);
+            if (show && idx !== -1) hidden.splice(idx, 1);
+            else if (!show && idx === -1) hidden.push(id);
+            _setTopBarHidden(hidden);
+            applyTopBarVisibility();
+        }
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('topbar-visibility-cb')) {
+                toggleTopBarItem(e.target.getAttribute('data-target'), e.target.checked);
+            }
+        });
+        (function initTopBarVisibility() {
+            var run = function() { applyTopBarVisibility(); };
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+            else setTimeout(run, 0);
+        })();
         function _syncSettingsTip() {
             var b = document.getElementById('settingsTipBtn');
             if (!b) return;
