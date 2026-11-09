@@ -2505,11 +2505,18 @@
                 iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
                 wrapEl.appendChild(iframe);
             }
+            var isLight = document.body.classList.contains('light');
+            var boxEl = document.getElementById('settingsHighlightPreviewBox');
+            if (boxEl) {
+                boxEl.style.background = isLight ? '#ffffff' : '#1b1b1c';
+                boxEl.style.borderColor = isLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.08)';
+            }
+            var bgColor = isLight ? '#ffffff' : '#1b1b1c';
             var sampleCode = 'def hello():\n    print("Preview")\n\nclass Demo:\n    pass';
             var escaped = sampleCode.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
             var html = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
                 '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/' + themeName + '.min.css">' +
-                '<style>html,body{margin:0;background:transparent;overflow:hidden;}pre.hljs,pre code.hljs{margin:0;padding:10px 12px;font-family:\'Courier New\',monospace;font-size:12px;line-height:1.4;background:transparent !important;overflow:visible;}</style>' +
+                '<style>html,body{margin:0;background:' + bgColor + ';overflow:hidden;}pre.hljs,pre code.hljs{margin:0;padding:10px 12px;font-family:\'Courier New\',monospace;font-size:12px;line-height:1.4;background:' + bgColor + ' !important;overflow:visible;}</style>' +
                 '<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" onload="hljs.highlightAll()"><\/script>' +
                 '</head><body><pre><code class="language-python">' + escaped + '</code></pre></body></html>';
             iframe.srcdoc = html;
