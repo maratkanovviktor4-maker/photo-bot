@@ -13427,6 +13427,9 @@
                             return 99;
                         };
                         jobs.sort(function(a, b) { return _jobOrder(a.name) - _jobOrder(b.name); });
+                        if (old && old._jobsOrder && old._jobsOrder.join('|') === jobs.map(function(j){return j.name;}).join('|')) {
+                            toast._skipJobs = true;
+                        }
                     }
                     return {
                         status: run.status,
