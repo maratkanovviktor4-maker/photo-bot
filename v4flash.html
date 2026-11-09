@@ -13047,6 +13047,171 @@
             <div class="chat-search-results" id="chatSearchResults"></div>
         </div>
     </div>
+    <style>
+        .deploy-toast {
+            position: fixed; top: 16px; right: 16px; width: 300px;
+            background: #1b1b1c; border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+            font-family: Inter, sans-serif; font-size: 13px; color: #e0e0e0;
+            overflow: hidden; opacity: 0; transform: translateY(-8px);
+            transition: opacity 0.25s ease, transform 0.25s ease; z-index: 99999;
+        }
+        .deploy-toast.show { opacity: 1; transform: translateY(0); }
+        body.light .deploy-toast { background: #ffffff; border-color: rgba(0,0,0,0.1); color: #111; box-shadow: 0 12px 32px rgba(0,0,0,0.12); }
+        .dt-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        body.light .dt-head { border-bottom-color: rgba(0,0,0,0.08); }
+        .dt-icon { width: 22px; height: 22px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+        .dt-icon.spin svg { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .dt-title { flex: 1; font-weight: 600; font-size: 13px; line-height: 1.2; }
+        .dt-sub { font-size: 11px; color: #888; font-weight: 400; margin-top: 2px; }
+        .dt-close { background: transparent; border: none; color: #666; cursor: pointer; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s, color 0.15s; }
+        .dt-close:hover { background: rgba(255,255,255,0.08); color: #e0e0e0; }
+        body.light .dt-close:hover { background: rgba(0,0,0,0.06); color: #111; }
+        .dt-jobs { padding: 6px 0; }
+        .dt-job { display: flex; align-items: center; gap: 8px; padding: 6px 14px; font-size: 12px; line-height: 1.3; }
+        .dt-job-icon { width: 14px; height: 14px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+        .dt-job-icon.spin svg { animation: spin 1s linear infinite; }
+        .dt-job-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #cfd3d6; }
+        body.light .dt-job-name { color: #333; }
+        .dt-job-status { font-size: 11px; color: #888; flex-shrink: 0; }
+        .st-success { color: #22c55e; }
+        .st-running { color: #00CBF5; }
+        .st-queued  { color: #eab308; }
+        .st-failed  { color: #ef4444; }
+        .dt-foot { padding: 8px 14px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #666; }
+        body.light .dt-foot { border-top-color: rgba(0,0,0,0.08); }
+        .dt-foot a { color: #00CBF5; text-decoration: none; font-weight: 500; }
+        .dt-foot a:hover { text-decoration: underline; }
+        .dt-progress { height: 2px; background: rgba(255,255,255,0.06); overflow: hidden; }
+        .dt-progress-fill { height: 100%; width: 30%; background: linear-gradient(90deg, transparent, #00CBF5, transparent); animation: slide 1.4s ease-in-out infinite; }
+        @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
+    </style>
+    <script>
+        (function() {
+            const GH_OWNER = 'ВАШ_ЛОГИН';
+            const GH_REPO  = 'ВАШ_РЕПО';
+            const GH_WORKFLOW = 'deploy.yml';
+            const POLL_INTERVAL = 30000;
+            const MAX_ATTEMPTS = 10;
+            let _attempts = 0;
+            let _timer = null;
+
+            const ICONS = {
+                success: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+                running: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',
+                queued:  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>',
+                failed:  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+            };
+
+            function _fmtTime(sec) {
+                if (sec < 60) return sec + ' сек';
+                var m = Math.floor(sec / 60);
+                var s = sec % 60;
+                return m + ' мин ' + s + ' сек';
+            }
+
+            function _render(data) {
+                var old = document.getElementById('deployToast');
+                if (old) old.remove();
+                if (!data) return;
+
+                var isRunning = data.status === 'in_progress' || data.status === 'queued';
+                var isSuccess = data.conclusion === 'success';
+                var isFailed = data.conclusion === 'failure' || data.conclusion === 'cancelled';
+                var headIcon = isRunning ? ICONS.running : (isSuccess ? ICONS.success : ICONS.failed);
+                var headColor = isRunning ? 'st-running' : (isSuccess ? 'st-success' : 'st-failed');
+                var title = isRunning ? (data.status === 'queued' ? 'В очереди' : 'Деплой идёт') : (isSuccess ? 'Задеплоено' : 'Ошибка деплоя');
+
+                var elapsed = 0;
+                if (data.started) {
+                    var start = new Date(data.started).getTime();
+                    var end = data.status === 'completed' ? new Date(data.updated).getTime() : Date.now();
+                    elapsed = Math.max(0, Math.round((end - start) / 1000));
+                }
+                var sub = (data.sha || '') + (elapsed ? ' · ' + _fmtTime(elapsed) : '');
+
+                var jobsHtml = (data.jobs || []).map(function(j) {
+                    var st = j.status === 'completed' ? (j.conclusion === 'success' ? 'success' : 'failed') : (j.status === 'in_progress' ? 'running' : 'queued');
+                    var label = st === 'success' ? 'готово' : (st === 'running' ? 'идёт...' : (st === 'failed' ? 'ошибка' : 'в очереди'));
+                    var icon = ICONS[st] || ICONS.queued;
+                    var cls = 'st-' + st;
+                    var spin = st === 'running' ? ' spin' : '';
+                    return '<div class="dt-job"><span class="dt-job-icon ' + cls + spin + '">' + icon + '</span><span class="dt-job-name">' + j.name + '</span><span class="dt-job-status ' + cls + '">' + label + '</span></div>';
+                }).join('');
+
+                var toast = document.createElement('div');
+                toast.id = 'deployToast';
+                toast.className = 'deploy-toast';
+                toast.innerHTML =
+                    (isRunning ? '<div class="dt-progress"><div class="dt-progress-fill"></div></div>' : '') +
+                    '<div class="dt-head">' +
+                        '<span class="dt-icon ' + headColor + (isRunning ? ' spin' : '') + '">' + headIcon + '</span>' +
+                        '<div style="flex:1;min-width:0;">' +
+                            '<div class="dt-title ' + headColor + '">' + title + '</div>' +
+                            '<div class="dt-sub">' + sub + '</div>' +
+                        '</div>' +
+                        '<button class="dt-close" onclick="document.getElementById(\'deployToast\').remove()" title="Закрыть">' +
+                            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>' +
+                        '</button>' +
+                    '</div>' +
+                    '<div class="dt-jobs">' + jobsHtml + '</div>' +
+                    '<div class="dt-foot">' +
+                        '<span>' + (isRunning ? 'обновляется...' : 'завершено') + '</span>' +
+                        '<a href="' + (data.url || '#') + '" target="_blank" rel="noopener">Открыть на GitHub ↗</a>' +
+                    '</div>';
+                document.body.appendChild(toast);
+                requestAnimationFrame(function() { toast.classList.add('show'); });
+
+                if (!isRunning) {
+                    setTimeout(function() {
+                        var t = document.getElementById('deployToast');
+                        if (t) { t.classList.remove('show'); setTimeout(function() { t.remove(); }, 300); }
+                    }, 6000);
+                }
+            }
+
+            async function _fetchStatus() {
+                try {
+                    var r1 = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/actions/workflows/' + GH_WORKFLOW + '/runs?per_page=1', { headers: { 'Accept': 'application/vnd.github+json' } });
+                    if (!r1.ok) return null;
+                    var d1 = await r1.json();
+                    var run = d1.workflow_runs && d1.workflow_runs[0];
+                    if (!run) return null;
+                    var r2 = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/actions/runs/' + run.id + '/jobs', { headers: { 'Accept': 'application/vnd.github+json' } });
+                    var jobs = [];
+                    if (r2.ok) {
+                        var d2 = await r2.json();
+                        jobs = (d2.jobs || []).map(function(j) { return { name: j.name, status: j.status, conclusion: j.conclusion }; });
+                    }
+                    return {
+                        status: run.status,
+                        conclusion: run.conclusion,
+                        url: run.html_url,
+                        sha: run.head_sha ? run.head_sha.slice(0, 7) : '',
+                        started: run.run_started_at,
+                        updated: run.updated_at,
+                        jobs: jobs
+                    };
+                } catch(e) { console.warn('gh status', e); return null; }
+            }
+
+            async function _poll() {
+                _attempts++;
+                var data = await _fetchStatus();
+                if (data) _render(data);
+                if (data && data.status === 'completed') return;
+                if (_attempts >= MAX_ATTEMPTS) return;
+                _timer = setTimeout(_poll, POLL_INTERVAL);
+            }
+
+            window.startDeployPolling = function() {
+                if (_timer) clearTimeout(_timer);
+                _attempts = 0;
+                _poll();
+            };
+        })();
+    </script>
     <div id="paymentModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z"/></svg></div>
