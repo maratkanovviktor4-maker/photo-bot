@@ -13407,18 +13407,9 @@
             async function _poll() {
                 _attempts++;
                 var data = await _fetchStatus(_since);
-                if (data) {
-                    _lastData = data;
-                    _render(data);
-                }
+                if (data) _render(data);
                 if (data && data.status === 'completed') return;
-                if (_attempts >= MAX_ATTEMPTS) {
-                    if (_lastData && _lastData.status !== 'completed') {
-                        _lastData = Object.assign({}, _lastData, { timedOut: true });
-                        _render(_lastData);
-                    }
-                    return;
-                }
+                if (_attempts >= MAX_ATTEMPTS) return;
                 _timer = setTimeout(_poll, POLL_INTERVAL);
             }
 
