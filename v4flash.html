@@ -12061,10 +12061,11 @@
                 if (!isHidden) all[i].setAttribute('data-topbar-shown', '1');
                 else all[i].removeAttribute('data-topbar-shown');
             }
-            var cbs = document.querySelectorAll('.topbar-visibility-cb');
-            for (var j = 0; j < cbs.length; j++) {
-                var t = cbs[j].getAttribute('data-target');
-                cbs[j].checked = hidden.indexOf(t) === -1;
+            var eyes = document.querySelectorAll('.topbar-eye-btn');
+            for (var j = 0; j < eyes.length; j++) {
+                var t = eyes[j].getAttribute('data-target');
+                if (hidden.indexOf(t) === -1) eyes[j].classList.add('active');
+                else eyes[j].classList.remove('active');
             }
         }
         function toggleTopBarItem(id, show) {
@@ -12075,11 +12076,6 @@
             _setTopBarHidden(hidden);
             applyTopBarVisibility();
         }
-        document.addEventListener('change', function(e) {
-            if (e.target && e.target.classList && e.target.classList.contains('topbar-visibility-cb')) {
-                toggleTopBarItem(e.target.getAttribute('data-target'), e.target.checked);
-            }
-        });
         (function initTopBarVisibility() {
             var run = function() { applyTopBarVisibility(); };
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
