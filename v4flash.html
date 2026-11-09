@@ -10496,6 +10496,59 @@
             sendMessage();
         }
 
+        async function sendWorkFolderToTelegram() {
+            if (!_deployHandles.work) {
+                await _restoreDeployHandles();
+            }
+            if (!_deployHandles.work) {
+                showAlertModal('Папка не выбрана', 'Выберите рабочую папку с файлами.', '⚠️');
+                return;
+            }
+            var names = await _listWorkFiles(_deployHandles.work);
+            if (!names.length) {
+                showAlertModal('Пусто', 'В рабочей папке нет файлов.', '⚠️');
+                return;
+            }
+            var files = [];
+            for (var i = 0; i < names.length; i++) {
+                try {
+                    var fh = await _deployHandles.work.getFileHandle(names[i]);
+                    var f = await fh.getFile();
+                    var buf = await f.arrayBuffer();
+                    var bytes = new Uint8Array(buf);
+                    var bin = '';
+                    for (var j = 0; j < bytes.length; j++) bin += String.fromCharCode(bytes[j]);
+                    files.push({ name: names[i], data: btoa(bin) });
+                } catch(e) {
+                    console.warn('read file for tg failed', names[i], e);
+                }
+            }
+            if (!files.length) {
+                showAlertModal('Ошибка', 'Не удалось прочитать файлы.', '❌');
+                return;
+            }
+            showLoading();
+            try {
+                var resp = await fetch(SERVER_URL + '/send_to_telegram', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ files: files })
+                });
+                var data = await resp.json();
+                hideLoading();
+                if (data.success) {
+                    showAlertModal('Отправлено', 'Файлов: ' + data.sent + (data.failed ? ', ошибок: ' + data.failed : ''), '✅');
+                } else if (data.error === 'telegram_not_linked') {
+                    showAlertModal('Telegram не привязан', 'Привяжите Telegram ID в Настройки → Профиль.', '⚠️');
+                } else {
+                    showAlertModal('Ошибка', 'Не удалось отправить.', '❌');
+                }
+            } catch(e) {
+                hideLoading();
+                showAlertModal('Ошибка соединения', 'Сервер недоступен.', '❌');
+            }
+        }
+
         function openDeployModalSettings() {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             var _modalTitle = document.querySelector('#deployModal .modal-title');
