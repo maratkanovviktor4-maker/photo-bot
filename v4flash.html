@@ -12106,6 +12106,30 @@
             }
             if (phoneEl) phoneEl.textContent = '—';
         }
+        function settingsTgLink() {
+            showRenameModal('Привязка Telegram', '', function(newName) {
+                var tgId = (newName || '').trim();
+                if (!tgId || !/^\d+$/.test(tgId)) {
+                    showAlertModal('Ошибка', 'Telegram ID должен состоять только из цифр.', '❌');
+                    return;
+                }
+                fetch(SERVER_URL + '/link/telegram', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify({ telegram_id: tgId })
+                }).then(function(r) { return r.json(); }).then(function(d) {
+                    if (d.success) {
+                        showAlertModal('Готово', 'Telegram привязан.', '✅');
+                        _syncSettingsProfile();
+                    } else {
+                        showAlertModal('Ошибка', d.error || 'Не удалось привязать.', '❌');
+                    }
+                }).catch(function() {
+                    showAlertModal('Ошибка', 'Сервер недоступен.', '❌');
+                });
+            });
+        }
+
         function settingsProfileDevices() {
             showAlertModal('Устройства', 'Раздел управления устройствами в разработке.', 'ℹ️');
         }
