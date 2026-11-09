@@ -2492,22 +2492,24 @@
             localStorage.setItem('photobot_highlight_theme', theme);
         }
         function _updateHighlightPreview(themeName) {
-            var codeEl = document.getElementById('settingsHighlightPreviewCode');
             var wrapEl = document.getElementById('settingsHighlightPreview');
-            if (!codeEl || !wrapEl) return;
-            if (!wrapEl._shadowRoot) {
-                wrapEl._shadowRoot = wrapEl.attachShadow({ mode: 'open' });
+            if (!wrapEl) return;
+            var iframe = wrapEl.querySelector('iframe[data-hl-preview]');
+            if (!iframe) {
+                wrapEl.innerHTML = '';
+                iframe = document.createElement('iframe');
+                iframe.setAttribute('data-hl-preview', '1');
+                iframe.style.cssText = 'width:100%;height:80px;border:none;display:block;background:transparent;';
+                iframe.setAttribute('sandbox', 'allow-same-origin');
+                wrapEl.appendChild(iframe);
             }
-            var sr = wrapEl._shadowRoot;
-            sr.innerHTML = '<link data-hl-preview="1" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/' + themeName + '.min.css">' +
-                '<style>.hljs{background:transparent !important;}</style>' +
-                '<pre style="margin:0;padding:10px 12px;font-family:\'Courier New\',monospace;font-size:12px;overflow-x:auto;"><code class="hljs language-python" id="settingsHighlightPreviewCodeInner"></code></pre>';
-            var codeInner = sr.getElementById('settingsHighlightPreviewCodeInner');
             var sampleCode = 'def hello():\n    print("Preview")\n\nclass Demo:\n    pass';
-            codeInner.textContent = sampleCode;
-            try {
-                if (typeof hljs !== 'undefined') hljs.highlightElement(codeInner);
-            } catch(e) { console.warn('preview hljs error', e); }
+            var escaped = sampleCode.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            var html = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+                '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/' + themeName + '.min.css">' +
+                '<style>html,body{margin:0;background:transparent;}pre.hljs{margin:0;padding:10px 12px;font-family:\'Courier New\',monospace;font-size:12px;line-height:1.4;overflow-x:auto;background:transparent !important;}</style>' +
+                '</head><body><pre class="hljs"><code class="language-python">' + escaped + '</code></pre></body></html>';
+            iframe.srcdoc = html;
         }
         function _syncHighlightApplyBtn(themeName) {
             var btn = document.getElementById('settingsHighlightApplyBtn');
