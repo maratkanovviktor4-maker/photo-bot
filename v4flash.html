@@ -13247,16 +13247,12 @@
                 if (!data) return;
 
                 var isNeutral = data.status === 'neutral' || data.status === 'neuteready';
-                if (data.status === 'neuteready') {
-                    title = 'Проверка статуса';
-                    sub = '';
-                }
                 var isRunning = !isNeutral && (data.status === 'in_progress' || data.status === 'queued');
                 var isSuccess = !isNeutral && data.conclusion === 'success';
                 var isFailed = !isNeutral && (data.conclusion === 'failure' || data.conclusion === 'cancelled');
                 var headIcon = isNeutral ? ICONS.queued : (isRunning ? ICONS.running : (isSuccess ? ICONS.success : ICONS.failed));
                 var headColor = isNeutral ? '' : (isRunning ? 'st-running' : (isSuccess ? 'st-success' : 'st-failed'));
-                var title = isNeutral ? 'Статус неизвестен' : (isRunning ? (data.status === 'queued' ? 'В очереди' : 'Деплой идёт') : (isSuccess ? 'Задеплоено' : 'Ошибка деплоя'));
+                var title = (data.status === 'neuteready') ? 'Проверка статуса' : (isNeutral ? 'Статус неизвестен' : (isRunning ? (data.status === 'queued' ? 'В очереди' : 'Деплой идёт') : (isSuccess ? 'Задеплоено' : 'Ошибка деплоя')));
 
                 var elapsed = 0;
                 if (data.started) {
