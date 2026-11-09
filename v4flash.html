@@ -13248,10 +13248,11 @@
 
                 var isRunning = data.status === 'in_progress' || data.status === 'queued';
                 var isSuccess = data.conclusion === 'success';
-                var isFailed = data.conclusion === 'failure' || data.conclusion === 'cancelled';
-                var headIcon = isRunning ? ICONS.running : (isSuccess ? ICONS.success : ICONS.failed);
-                var headColor = isRunning ? 'st-running' : (isSuccess ? 'st-success' : 'st-failed');
-                var title = isRunning ? (data.status === 'queued' ? 'В очереди' : 'Деплой идёт') : (isSuccess ? 'Задеплоено' : 'Ошибка деплоя');
+                var isUnknown = data.status === 'unknown';
+                var isFailed = !isUnknown && (data.conclusion === 'failure' || data.conclusion === 'cancelled');
+                var headIcon = isUnknown ? ICONS.failed : (isRunning ? ICONS.running : (isSuccess ? ICONS.success : ICONS.failed));
+                var headColor = isUnknown ? 'st-failed' : (isRunning ? 'st-running' : (isSuccess ? 'st-success' : 'st-failed'));
+                var title = isUnknown ? 'Статус недоступен' : (isRunning ? (data.status === 'queued' ? 'В очереди' : 'Деплой идёт') : (isSuccess ? 'Задеплоено' : 'Ошибка деплоя'));
 
                 var elapsed = 0;
                 if (data.started) {
