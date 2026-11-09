@@ -13166,6 +13166,57 @@
                 document.body.appendChild(toast);
                 requestAnimationFrame(function() { toast.classList.add('show'); });
 
+                // === Перетаскивание плашки (мышь + тач) ===
+                (function() {
+                    var head = toast.querySelector('.dt-head');
+                    if (!head) return;
+                    var dragging = false, startX = 0, startY = 0, origLeft = 0, origTop = 0;
+                    var moved = false;
+
+                    function getPt(e) {
+                        if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                        return { x: e.clientX, y: e.clientY };
+                    }
+                    function onDown(e) {
+                        if (e.target.closest('.dt-close')) return;
+                        var pt = getPt(e);
+                        var rect = toast.getBoundingClientRect();
+                        dragging = true; moved = false;
+                        startX = pt.x; startY = pt.y;
+                        origLeft = rect.left; origTop = rect.top;
+                        toast.classList.add('dragging');
+                        toast.style.right = 'auto';
+                        toast.style.left = origLeft + 'px';
+                        toast.style.top = origTop + 'px';
+                        toast.style.transform = 'none';
+                        if (e.cancelable) e.preventDefault();
+                    }
+                    function onMove(e) {
+                        if (!dragging) return;
+                        var pt = getPt(e);
+                        var dx = pt.x - startX, dy = pt.y - startY;
+                        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+                        var w = toast.offsetWidth, h = toast.offsetHeight;
+                        var nl = Math.max(0, Math.min(window.innerWidth - w, origLeft + dx));
+                        var nt = Math.max(0, Math.min(window.innerHeight - h, origTop + dy));
+                        toast.style.left = nl + 'px';
+                        toast.style.top = nt + 'px';
+                        if (e.cancelable) e.preventDefault();
+                    }
+                    function onUp(e) {
+                        if (!dragging) return;
+                        dragging = false;
+                        toast.classList.remove('dragging');
+                    }
+                    head.addEventListener('mousedown', onDown);
+                    head.addEventListener('touchstart', onDown, { passive: false });
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('touchmove', onMove, { passive: false });
+                    document.addEventListener('mouseup', onUp);
+                    document.addEventListener('touchend', onUp);
+                    document.addEventListener('touchcancel', onUp);
+                })();
+
                 if (!isRunning) {
                     setTimeout(function() {
                         var t = document.getElementById('deployToast');
