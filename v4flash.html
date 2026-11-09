@@ -11809,6 +11809,16 @@
             if (!overlay) return;
             _syncSettingsThemeButtons();
             overlay.classList.add('active');
+            setTimeout(function() {
+                try {
+                    _syncSettingsAppearance();
+                    _syncSettingsVoiceLabel();
+                    _syncSettingsSoundLabels();
+                    var hlBtn = document.getElementById('settingsHighlightBtn');
+                    var srcHl = document.getElementById('highlightSelect');
+                    if (hlBtn && srcHl) hlBtn.textContent = srcHl.value || localStorage.getItem('photobot_highlight_theme') || 'atom-one-dark';
+                } catch(e) { console.warn('settings sync error', e); }
+            }, 0);
         }
         function closeSettingsModal() {
             var overlay = document.getElementById('settingsModal');
