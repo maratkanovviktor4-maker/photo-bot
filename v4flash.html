@@ -13269,14 +13269,13 @@
 
             function _render(data) {
                 var old = document.getElementById('deployToast');
+                if (!data) { if (old) old.remove(); return; }
                 var _savedPos = null;
                 if (old) {
                     if (old.style.left && old.style.top) {
                         _savedPos = { left: old.style.left, top: old.style.top };
                     }
-                    old.remove();
                 }
-                if (!data) return;
 
                 var isRunning = data.status === 'in_progress' || data.status === 'queued';
                 var isSuccess = data.conclusion === 'success';
