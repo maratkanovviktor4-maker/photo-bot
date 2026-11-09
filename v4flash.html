@@ -13442,10 +13442,13 @@
                 if (!_timer) {
                     _attempts = 0;
                     _since = 0;
+                    _startWaitTime = Date.now();
                     _render({ status: 'neuteready', conclusion: null, sha: '', started: null, updated: new Date().toISOString(), jobs: [], url: '' });
                     _timer = setTimeout(_poll, 1000);
                 } else if (existing) {
                     requestAnimationFrame(function() { existing.classList.add('show'); });
+                } else {
+                    _render({ status: 'neuteready', conclusion: null, sha: '', started: null, updated: new Date().toISOString(), jobs: [], url: '' });
                 }
             };
         })();
