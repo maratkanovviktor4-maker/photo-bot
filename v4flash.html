@@ -12200,33 +12200,7 @@
                     if (opt.value === saved) option.selected = true;
                     select.appendChild(option);
                 });
-                // Превью звука только при наведении на опции открытого селекта.
-                // Нативный <select> не отдаёт события на option в большинстве браузеров,
-                // поэтому ловим на самом select через option elements + подстраховка mousemove.
-                (function bindSoundPreview(sel, type) {
-                    var _lastHoverVal = null;
-                    function tryPlay(val) {
-                        if (!val || val === _lastHoverVal) return;
-                        _lastHoverVal = val;
-                        _previewSoundHover({ target: { tagName: 'SELECT', value: val } }, type);
-                    }
-                    sel.addEventListener('mouseover', function(e) {
-                        var t = e.target;
-                        if (t && t.tagName === 'OPTION' && t.value) tryPlay(t.value);
-                    });
-                    sel.addEventListener('mousemove', function(e) {
-                        if (sel.matches(':focus')) {
-                            var t = e.target;
-                            if (t && t.tagName === 'OPTION' && t.value) tryPlay(t.value);
-                        }
-                    });
-                    sel.addEventListener('change', function() {
-                        _lastHoverVal = null;
-                    });
-                    sel.addEventListener('blur', function() {
-                        _lastHoverVal = null;
-                    });
-                })(select, type);
+
 
                 // Set initial button text
                 const initialOpt = SOUND_OPTIONS.find(function(o) { return o.value === saved; });
