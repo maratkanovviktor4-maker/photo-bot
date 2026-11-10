@@ -9791,6 +9791,15 @@
             _t = _t.replace(/\[INSTRUCTION\][\s\S]*?\[\/INSTRUCTION\]/gi, '');
             return _t.replace(/\n{3,}/g, '\n\n').trim();
         }
+        function _stripOrchMetaFromHtml(html) {
+            if (!html) return html;
+            return String(html)
+                .replace(/\[LOCATION\][\s\S]*?\[\/LOCATION\]/gi, '')
+                .replace(/\[VALIDATION\][\s\S]*?\[\/VALIDATION\]/gi, '')
+                .replace(/\[INSTRUCTION\][\s\S]*?\[\/INSTRUCTION\]/gi, '')
+                .replace(/(?:\s*<br>\s*){3,}/g, '<br><br>')
+                .trim();
+        }
         function parseEditPairs(content) {
             var edits = [];
             if (!content) return edits;
