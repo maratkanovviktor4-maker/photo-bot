@@ -1857,6 +1857,15 @@
         var tipIndex = parseInt(localStorage.getItem('photobot_tip_index') || '0');
         var tipEnabled = localStorage.getItem('photobot_tip_enabled') !== 'false';
         var tipInterval = null;
+        // ===== ORCHESTRATOR STEP PARSER =====
+        function _orchestratorStepInfo(msg) {
+            if (!msg || !msg.content) return null;
+            var _c = String(msg.content);
+            if (_c.indexOf('(we here right now)') === -1 && !msg._orchestrator_step) return null;
+            var _m = _c.match(/\(we here right now\)(?:\s*\n\s*Задача:\s*([\s\S]*?))?(?:\n|$)/i);
+            var _task = _m && _m[1] ? _m[1].trim() : '';
+            return { marker: '(we here right now)', task: _task };
+        }
         // ===== VOICE DROPDOWN =====
         const VOICE_OPTIONS = [
             // Русские (ru-RU)
