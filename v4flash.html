@@ -10739,29 +10739,6 @@
             }
         }
 
-        function _showAppliedToast(files) {
-            if (!files || !files.length) return;
-            var _isLight = document.body.classList.contains('light');
-            var _wrap = document.createElement('div');
-            _wrap.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:60px;z-index:100000;background:' + (_isLight ? '#ffffff' : '#1b1b1c') + ';border:1px solid ' + (_isLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.08)') + ';border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.35);font-family:Inter,sans-serif;font-size:13px;color:' + (_isLight ? '#111' : '#e0e0e0') + ';padding:10px 14px;min-width:220px;max-width:90vw;opacity:0;transition:opacity 0.25s ease;';
-            var _title = document.createElement('div');
-            _title.style.cssText = 'display:flex;align-items:center;gap:8px;font-weight:600;color:#27ae60;margin-bottom:6px;';
-            _title.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Правки применены';
-            _wrap.appendChild(_title);
-            for (var _i = 0; _i < files.length; _i++) {
-                var _row = document.createElement('div');
-                _row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12px;';
-                _row.innerHTML = '<span style="color:#27ae60;flex-shrink:0;">✓</span><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(files[_i]) + '</span>';
-                _wrap.appendChild(_row);
-            }
-            document.body.appendChild(_wrap);
-            requestAnimationFrame(function() { _wrap.style.opacity = '1'; });
-            setTimeout(function() {
-                _wrap.style.opacity = '0';
-                setTimeout(function() { _wrap.remove(); }, 300);
-            }, 4000);
-        }
-
         var _ghToastStack = [];
         function _relayoutGithubToasts() {
             for (var _ti = 0; _ti < _ghToastStack.length; _ti++) {
