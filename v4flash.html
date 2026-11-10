@@ -4898,23 +4898,10 @@
                         })
                     });
                 }
-                var files = await _summaryReadWorkDirFiles();
                 await loadChatMessages(_chatId);
                 fullRender();
                 hideLoading();
                 _summaryFlow.active = false;
-                if (!files || !files.length) {
-                    showAlertModal('Папка пуста', 'В рабочей папке нет файлов — выжимка готова, но файлы для актуализации отсутствуют.', '⚠️');
-                    return;
-                }
-                for (var fi = 0; fi < files.length; fi++) {
-                    pendingFiles.push(files[fi]);
-                }
-                updateFileList();
-                var input2 = document.getElementById('userInput');
-                input2.value = 'актуализация текущего состояния';
-                input2.dispatchEvent(new Event('input'));
-                sendMessage();
             } catch(e) {
                 console.warn('summary flow failed', e);
                 hideLoading();
