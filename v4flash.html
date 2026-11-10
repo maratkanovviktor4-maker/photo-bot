@@ -8731,6 +8731,10 @@
                                 assistantMsg.content = assistantMsg.content || '';
                             }
                             if (parsed.flux_job_id) {
+                                // Кнопку держим спиннером до assistant_msg_id
+                                sendBtnRef.disabled = true;
+                                sendBtnRef.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(245,158,11,0.4);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
+                                sendBtnRef.onclick = null;
                                 assistantMsg._flux_meta = { status: 'success', job_id: parsed.flux_job_id, downloaded: false };
                                 var _fluxImgFile = 'web_' + currentUserId + '_' + parsed.flux_job_id + '.jpg';
                                 var _fluxImgUrl = SERVER_URL + '/history_file?user_id=' + currentUserId + '&file=' + encodeURIComponent(_fluxImgFile) + '&session_token=' + sessionToken;
@@ -8760,6 +8764,11 @@
                                         }
                                     }
                                 }
+                            }
+                            if (parsed.audio_file || parsed.ace_file) {
+                                sendBtnRef.disabled = true;
+                                sendBtnRef.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(245,158,11,0.4);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
+                                sendBtnRef.onclick = null;
                             }
                             if (parsed.assistant_msg_id) {
                                 finalMeta = parsed;
