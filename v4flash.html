@@ -8656,6 +8656,59 @@
                                 return;
                             }
                             
+                            // Детект тега [GEN:*] креатора: прячем из DOM, заменяем на «Генерирую: …», кнопку держим спиннером
+                            if (parsed.content && !assistantMsg._creativeGenActive && !assistantMsg._creativeGenTagDone) {
+                                assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '');
+                                var _buf = assistantMsg._fullBuffer;
+                                var _genIdx = _buf.indexOf('[GEN:');
+                                if (_genIdx !== -1) {
+                                    assistantMsg._creativeGenActive = true;
+                                    var _before = _buf.substring(0, _genIdx);
+                                    assistantMsg._fullBuffer = _before;
+                                    assistantMsg.content = assistantMsg._fullBuffer;
+                                    var _msgElPre = document.getElementById('stream-' + msgIndex);
+                                    if (_msgElPre) {
+                                        requestAnimationFrame(function() { streamUpdateDOM(_msgElPre, assistantMsg); });
+                                    }
+                                    sendBtnRef.disabled = true;
+                                    sendBtnRef.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(245,158,11,0.4);border-top-color:#00CBF5;border-radius:50%;animation:spin 0.8s linear infinite;"></div>';
+                                    sendBtnRef.onclick = null;
+                                    return;
+                                }
+                            }
+                            if (assistantMsg._creativeGenActive && !assistantMsg._creativeGenTagDone) {
+                                // Пассивно копим хвост, ждём закрывающую }
+                                assistantMsg._genTagBuffer = (assistantMsg._genTagBuffer || '') + (parsed.content || '');
+                                var _tagTail = assistantMsg._genTagBuffer;
+                                var _closeIdx = _tagTail.indexOf('}');
+                                if (_closeIdx !== -1) {
+                                    var _fullTag = _tagTail.substring(0, _closeIdx + 1);
+                                    var _rest = _tagTail.substring(_closeIdx + 1);
+                                    var _kindM = _fullTag.match(/\[GEN:(image|audio|ace)\]/i);
+                                    var _kind = _kindM ? _kindM[1].toLowerCase() : 'image';
+                                    var _label = '🎨';
+                                    var _promptShow = '';
+                                    try {
+                                        var _jsonPart = _fullTag.substring(_fullTag.indexOf('{'));
+                                        var _obj = JSON.parse(_jsonPart);
+                                        _promptShow = _obj.prompt || _obj.caption || '';
+                                    } catch (e) {}
+                                    if (_kind === 'audio') _label = '🎵';
+                                    else if (_kind === 'ace') _label = '🎤';
+                                    var _humanTag = _label + ' Генерирую: ' + (_promptShow || '...');
+                                    assistantMsg._fullBuffer = (assistantMsg._fullBuffer || '') + _humanTag + _rest;
+                                    assistantMsg.content = assistantMsg._fullBuffer;
+                                    assistantMsg._creativeGenTagDone = true;
+                                    assistantMsg._creativeGenActive = false;
+                                    var _msgElMid = document.getElementById('stream-' + msgIndex);
+                                    if (_msgElMid) {
+                                        requestAnimationFrame(function() { streamUpdateDOM(_msgElMid, assistantMsg); });
+                                    }
+                                    return;
+                                }
+                                // Тег ещё не закрыт — не рисуем ничего (оставляем «Генерирую…» будет после закрытия)
+                                return;
+                            }
                             // Первый контент — активируем кнопку с квадратом
                             if ((parsed.content || parsed.reasoning) && !streamStarted) {
                                 streamStarted = true;
