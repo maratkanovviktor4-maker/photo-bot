@@ -10578,9 +10578,10 @@
             if (!d.image_b64) return;
             _agentBusy = true;
             try {
-                pendingFiles = [{ name: 'screenshot.jpg', mime: 'image/jpeg', data: d.image_b64, _status: 'ok' }];
+                pendingFiles = [{ name: 'screenshot.jpg', mime: 'image/jpeg', data: d.image_b64, _status: 'ok', _orchestrator_step: true }];
             } catch (err) { _agentBusy = false; return; }
             var inputEl = document.getElementById('userInput');
+            window._orchestratorStepCounter = (window._orchestratorStepCounter || 0) + 1;
             var _msgText = '(we here right now)';
             if (d.text && String(d.text).trim()) {
                 _msgText = _msgText + '\n\nЗадача: ' + String(d.text).trim();
