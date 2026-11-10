@@ -10537,6 +10537,19 @@
             }
         }
 
+        function startAgentFromModal() {
+            var task = (document.getElementById('agentTaskInput') || {}).value || '';
+            var url = (document.getElementById('agentUrlInput') || {}).value || '';
+            task = task.trim();
+            url = url.trim();
+            if (!task) {
+                showAlertModal('Нет задачи', 'Введите задачу для агента.', '⚠️');
+                return;
+            }
+            window.postMessage({ type: 'agent_start', task: task, url: url }, '*');
+            closeDeployModal();
+        }
+
         function openDeployModalSettings() {
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             var _modalTitle = document.querySelector('#deployModal .modal-title');
