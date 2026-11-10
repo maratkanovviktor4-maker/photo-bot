@@ -7810,6 +7810,7 @@
                 var jobId = enqData.job_id;
 
                 var result = null;
+                var _unknownStreak = 0;
                 for (var i = 0; i < 150; i++) {
                     await new Promise(function(res) { setTimeout(res, 2000); });
                     var pdResp = await fetch(SERVER_URL + '/pending?user_id=' + currentUserId + '&session_token=' + sessionToken);
@@ -7823,12 +7824,28 @@
                         }
                         if (result) break;
                     }
+                    // Проверяем, жив ли ComfyUI: если /flux_status долго unknown — считаем провалом.
+                    try {
+                        var stResp = await fetch(SERVER_URL + '/flux_status?user_id=' + encodeURIComponent(currentUserId) + '&chat_id=' + encodeURIComponent(_fluxChatId) + '&session_token=' + encodeURIComponent(sessionToken));
+                        var stData = await stResp.json();
+                        if (stData && stData.status === 'unknown') {
+                            _unknownStreak++;
+                            if (_unknownStreak >= 5) {
+                                assistantRow.remove();
+                                chat.messages.pop();
+                                showAlertModal('ComfyUI недоступен', 'Сервис генерации не отвечает. Проверьте, запущен ли ComfyUI, и попробуйте снова.', '❌');
+                                return;
+                            }
+                        } else {
+                            _unknownStreak = 0;
+                        }
+                    } catch (e) { /* сеть — не считаем */ }
                 }
 
                 if (!result) {
                     assistantRow.remove();
                     chat.messages.pop();
-                    showAlertModal('Таймаут', 'Генерация не завершилась. Попробуйте позже.', '⏱');
+                    showAlertModal('Таймаут', 'Генерация не завершилась за 5 минут. Проверьте ComfyUI и попробуйте снова.', '⏱');
                     return;
                 }
 
