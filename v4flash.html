@@ -10537,6 +10537,17 @@
             }
         }
 
+        (function initAgentRefreshListener() {
+            window.addEventListener('message', function (e) {
+                if (e.source !== window) return;
+                if (!e.data || e.data.type !== 'agent_refresh') return;
+                if (!currentChatId) return;
+                loadChatMessages(currentChatId).then(function () {
+                    fullRender();
+                }).catch(function () {});
+            });
+        })();
+
         function startAgentFromModal() {
             var task = (document.getElementById('agentTaskInput') || {}).value || '';
             var url = (document.getElementById('agentUrlInput') || {}).value || '';
