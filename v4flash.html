@@ -8302,6 +8302,10 @@
                 }
                 if (msg.role === 'assistant') {
                     contentHtml = _stripOrchMetaFromHtml(contentHtml);
+                    contentHtml = String(contentHtml)
+                        .replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
+                        .replace(/(?:\s*<br>\s*){3,}/g, '<br><br>')
+                        .trim();
                 }
                 contentDiv.innerHTML = contentHtml;
                 renderMathInChat(contentDiv);                
