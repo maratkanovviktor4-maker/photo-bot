@@ -8887,7 +8887,10 @@
                     var _creativeLast = chat.messages[chat.messages.length - 1];
                     var _fluxParsed = _creativeLast && _creativeLast.role === 'assistant' ? _parseFluxTag(_creativeLast.content || '') : null;
                     if (_fluxParsed) {
-                        _runFluxAction(_fluxParsed, _targetChatId);
+                        var _fw = parseInt(_fluxParsed.width) || 1024;
+                        var _fh = parseInt(_fluxParsed.height) || 1024;
+                        localStorage.setItem('photobot_flux_resolution', _fw + '×' + _fh);
+                        runFluxGeneration(_fluxParsed.prompt, null);
                     }
                 }
             } catch (e) {
