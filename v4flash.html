@@ -3025,8 +3025,8 @@
         }
         function _cleanZwsp(text) {
             if (!text) return text;
-            return String(text).replace(/\u200b/g, '').replace(/&#8203;/g, '');
-        }
+            // Чистим только реальные ZWSP символы, но НЕ &#8203; — они нужны formatMessage
+            // как защита от парсинга 
 
         function newChat() {
             if (selectionMode) toggleSelectionMode();
