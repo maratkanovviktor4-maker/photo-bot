@@ -9609,6 +9609,10 @@
         }
 
         var _floatingHeaders = [];
+        var _stripAgentTagsForRender = function(text) {
+            if (!text) return text;
+            return String(text).replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '').replace(/\n{3,}/g, '\n\n').trim();
+        };
 
         function _collectFloatingHeaders() {
             _floatingHeaders = [];
