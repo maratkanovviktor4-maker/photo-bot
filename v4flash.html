@@ -9776,6 +9776,15 @@
             if (activeStrip) activeStrip.classList.add('active');
         }
 
+        var _originalSendMessage = null;
+        function _stripOrchMeta(text) {
+            if (!text) return text;
+            var _t = String(text);
+            _t = _t.replace(/\[LOCATION\][\s\S]*?\[\/LOCATION\]/gi, '');
+            _t = _t.replace(/\[VALIDATION\][\s\S]*?\[\/VALIDATION\]/gi, '');
+            _t = _t.replace(/\[INSTRUCTION\][\s\S]*?\[\/INSTRUCTION\]/gi, '');
+            return _t.replace(/\n{3,}/g, '\n\n').trim();
+        }
         function parseEditPairs(content) {
             var edits = [];
             if (!content) return edits;
