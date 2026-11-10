@@ -2765,6 +2765,15 @@
                         renderChatList();
                         renderMessages();
                         scrollToBottom();
+                        // Кладём скрин в pendingFiles — иначе /chat не получит image_b64,
+                        // и сообщение не сохранится в Redis с картинкой.
+                        pendingFiles = [{
+                            name: 'screenshot.jpg',
+                            mime: 'image/jpeg',
+                            data: _lastImage,
+                            _status: 'ok',
+                            _orchestrator_step: true
+                        }];
                         setTimeout(function() {
                             _agentAwaitingChat = false;
                             console.log('[AGENT] calling sendMessage');
