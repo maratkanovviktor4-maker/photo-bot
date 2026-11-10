@@ -9615,7 +9615,18 @@
         var _floatingHeaders = [];
         var _stripAgentTagsForRender = function(text) {
             if (!text) return text;
-            return String(text).replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '').replace(/\n{3,}/g, '\n\n').trim();
+            var _s = String(text);
+            var _keep = [];
+            _s = _s.replace(/<code[\s\S]*?<\/code>/gi, function(m) {
+                _keep.push(m);
+                return '\u0000CODEC' + (_keep.length - 1) + '\u0000';
+            });
+            _s = _s
+                .replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+            _s = _s.replace(/\u0000CODEC(\d+)\u0000/g, function(_, i) { return _keep[parseInt(i)]; });
+            return _s;
         };
 
         function _collectFloatingHeaders() {
