@@ -2753,20 +2753,8 @@
                         var chat = chats.find(function(c) { return c.id === (chatIdAtCall || currentChatId); });
                         console.log('[AGENT] push screenshot, chat?', !!chat, 'chatIdAtCall=', chatIdAtCall, 'currentChatId=', currentChatId);
                         if (!chat) { _agentAwaitingChat = false; return; }
-                        chat.messages.push({
-                            role: 'user',
-                            content: '',
-                            image_b64: _lastImage,
-                            image_mime: 'image/jpeg',
-                            _orchestrator_step: true
-                        });
-                        chat.lastMessageTime = Date.now();
-                        chats.sort(function(a, b) { return (b.lastMessageTime || 0) - (a.lastMessageTime || 0); });
-                        renderChatList();
-                        renderMessages();
-                        scrollToBottom();
-                        // Кладём скрин в pendingFiles — иначе /chat не получит image_b64,
-                        // и сообщение не сохранится в Redis с картинкой.
+                        // Заполняем pendingFiles — sendMessage сам отрисует user со скрином
+                        // и отправит image_b64 в /chat (сохранится в Redis).
                         pendingFiles = [{
                             name: 'screenshot.jpg',
                             mime: 'image/jpeg',
