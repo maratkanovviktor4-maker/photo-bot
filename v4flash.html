@@ -7863,6 +7863,26 @@
                 startFluxPolling(currentUserId, _fluxChatId, withImage ? 'svoboda_male' : 'text2img');
                 await sendMessage(_fluxChatId, _fluxBranchId, _previewForSend);
                 stopFluxPolling();
+                // Дописываем _flux_meta в последнее assistant-сообщение — иначе не будет превью.
+                try {
+                    var _c2 = chats.find(function(c) { return c.id === _fluxChatId; });
+                    if (_c2 && _c2.messages.length) {
+                        var _lastA = null;
+                        for (var _li = _c2.messages.length - 1; _li >= 0; _li--) {
+                            if (_c2.messages[_li].role === 'assistant') { _lastA = _c2.messages[_li]; break; }
+                        }
+                        if (_lastA) {
+                            _lastA._flux_meta = {
+                                status: 'success',
+                                job_id: jobId,
+                                mode: withImage ? 'svoboda_male' : 'text2img',
+                                size: withImage ? '832×1152' : '1024×1024',
+                                downloaded: false
+                            };
+                        }
+                    }
+                } catch(e) { console.warn('flux meta attach failed', e); }
+                renderMessages();
                 if (savedFlux) {
                     fluxModeEnabled = true;
                     if (fb) fb.classList.add('active');
