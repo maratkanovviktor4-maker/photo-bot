@@ -2737,80 +2737,6 @@
             return String(text).replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '').replace(/\n{3,}/g, '\n\n').trim();
         }
 
-        function _parseFluxTag(text) {
-            if (!text) return null;
-            var m = String(text).match(/\[FLUX:gen\]\s*(\{[\s\S]*?\})/i);
-            if (!m) return null;
-            try {
-                var o = JSON.parse(m[1]);
-                if (!o.prompt) return null;
-                return o;
-            } catch (e) { return null; }
-        }
-
-        function _stripFluxTag(text) {
-            if (!text) return text;
-            return String(text).replace(/\[FLUX:gen\]\s*\{[\s\S]*?\}/gi, '').replace(/\n{3,}/g, '\n\n').trim();
-        }
-
-        function _runFluxAction(args, chatIdAtCall) {
-            if (!args || !args.prompt) return;
-            var _prompt = String(args.prompt).trim();
-            var _w = parseInt(args.width) || 1024;
-            var _h = parseInt(args.height) || 1024;
-            var _form = new FormData();
-            _form.append('user_id', currentUserId);
-            _form.append('caption', _prompt);
-            _form.append('mode', 'text2img');
-            _form.append('width', String(_w));
-            _form.append('height', String(_h));
-            fetch(SERVER_URL + '/enqueue', {
-                method: 'POST',
-                headers: { 'X-Session-Token': sessionToken },
-                body: _form
-            }).then(function(r) { return r.json(); }).then(function(d) {
-                if (!d.success || !d.job_id) {
-                    console.warn('[FLUX] enqueue failed', d);
-                    return;
-                }
-                var _jobId = d.job_id;
-                var _checks = 0;
-                var _poll = setInterval(function() {
-                    _checks++;
-                    if (_checks > 150) { clearInterval(_poll); return; }
-                    fetch(SERVER_URL + '/pending?user_id=' + currentUserId + '&session_token=' + sessionToken)
-                        .then(function(r) { return r.json(); })
-                        .then(function(resp) {
-                            var found = null;
-                            if (resp.results) {
-                                for (var i = 0; i < resp.results.length; i++) {
-                                    if (resp.results[i].job_id === _jobId) { found = resp.results[i]; break; }
-                                }
-                            }
-                            if (!found) return;
-                            clearInterval(_poll);
-                            var chat = chats.find(function(c) { return c.id === (chatIdAtCall || currentChatId); });
-                            if (!chat) return;
-                            var _imgB64 = found.data;
-                            var _fluxMeta = { status: 'success', job_id: _jobId, mode: 'text2img', size: _w + '×' + _h };
-                            chat.messages.push({
-                                role: 'assistant',
-                                content: '',
-                                image_b64: _imgB64,
-                                image_mime: 'image/jpeg',
-                                _flux_meta: _fluxMeta
-                            });
-                            chat.lastMessageTime = Date.now();
-                            chats.sort(function(a, b) { return (b.lastMessageTime || 0) - (a.lastMessageTime || 0); });
-                            renderChatList();
-                            renderMessages();
-                            scrollToBottom();
-                            setTimeout(function() { sendMessage(); }, 50);
-                        }).catch(function(e) { console.warn('[FLUX] poll err', e); });
-                }, 2000);
-            }).catch(function(e) { console.warn('[FLUX] enqueue err', e); });
-        }
-
         function _runAgentActions(actions, completeFlag, chatIdAtCall) {
             if (!actions || !actions.length) {
                 if (completeFlag) _agentModeEnabled = false;
@@ -3023,10 +2949,6 @@
         function escapeHtml(text) {
             return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
-        function _cleanZwsp(text) {
-            if (!text) return text;
-            // Чистим только реальные ZWSP символы, но НЕ &#8203; — они нужны formatMessage
-            // как защита от парсинга 
 
         function newChat() {
             if (selectionMode) toggleSelectionMode();
@@ -5206,7 +5128,7 @@
                 actionsHtml += '<button onclick="showMessageMenu(event, ' + index + ')" title="Ещё"><svg fill="currentColor" viewBox="0 0 16 16" width="14" height="14"><path d="M8 2.5a1.22 1.22 0 0 1 1.25 1.17A1.21 1.21 0 0 1 8 4.84a1.21 1.21 0 0 1-1.25-1.17A1.22 1.22 0 0 1 8 2.5zm0 8.66a1.17 1.17 0 1 1-1.25 1.17A1.21 1.21 0 0 1 8 11.16zm0-4.33a1.17 1.17 0 1 1 0 2.34 1.17 1.17 0 1 1 0-2.34z"/></svg></button>';
             }
             var reasoningHtml = '';
-            var contentToShow = _cleanZwsp(msg.content || '');
+            var contentToShow = msg.content || '';
             var hasReasoning = false;
             var reasoningText = '';
             if (msg._reasoningBuffer) {
@@ -7779,11 +7701,8 @@
                 var form = new FormData();
                 form.append('user_id', currentUserId);
                 form.append('caption', trimmedPrompt);
-                var _resParts = String(getFluxSelectedResolution() || '1024×1024').split('×');
-                var _fW = parseInt(_resParts[0]) || 1024;
-                var _fH = parseInt(_resParts[1]) || 1024;
-                form.append('width', String(_fW));
-                form.append('height', String(_fH));
+                form.append('width', '1024');
+                form.append('height', '1024');
                 if (withImage) {
                     form.append('mode', 'svoboda_male');
                     var bin = atob(inputFile.data);
@@ -7814,7 +7733,6 @@
                 var jobId = enqData.job_id;
 
                 var result = null;
-                var _unknownStreak = 0;
                 for (var i = 0; i < 150; i++) {
                     await new Promise(function(res) { setTimeout(res, 2000); });
                     var pdResp = await fetch(SERVER_URL + '/pending?user_id=' + currentUserId + '&session_token=' + sessionToken);
@@ -7828,28 +7746,12 @@
                         }
                         if (result) break;
                     }
-                    // Проверяем, жив ли ComfyUI: если /flux_status долго unknown — считаем провалом.
-                    try {
-                        var stResp = await fetch(SERVER_URL + '/flux_status?user_id=' + encodeURIComponent(currentUserId) + '&chat_id=' + encodeURIComponent(_fluxChatId) + '&session_token=' + encodeURIComponent(sessionToken));
-                        var stData = await stResp.json();
-                        if (stData && stData.status === 'unknown') {
-                            _unknownStreak++;
-                            if (_unknownStreak >= 5) {
-                                assistantRow.remove();
-                                chat.messages.pop();
-                                showAlertModal('ComfyUI недоступен', 'Сервис генерации не отвечает. Проверьте, запущен ли ComfyUI, и попробуйте снова.', '❌');
-                                return;
-                            }
-                        } else {
-                            _unknownStreak = 0;
-                        }
-                    } catch (e) { /* сеть — не считаем */ }
                 }
 
                 if (!result) {
                     assistantRow.remove();
                     chat.messages.pop();
-                    showAlertModal('Таймаут', 'Генерация не завершилась за 5 минут. Проверьте ComfyUI и попробуйте снова.', '⏱');
+                    showAlertModal('Таймаут', 'Генерация не завершилась. Попробуйте позже.', '⏱');
                     return;
                 }
 
@@ -8907,16 +8809,6 @@
                         _runAgentActions(_agentParsed.actions, _agentParsed.complete, _targetChatId);
                     }
                 }
-                if (currentPersonality === 'creative') {
-                    var _creativeLast = chat.messages[chat.messages.length - 1];
-                    var _fluxParsed = _creativeLast && _creativeLast.role === 'assistant' ? _parseFluxTag(_creativeLast.content || '') : null;
-                    if (_fluxParsed) {
-                        var _fw = parseInt(_fluxParsed.width) || 1024;
-                        var _fh = parseInt(_fluxParsed.height) || 1024;
-                        localStorage.setItem('photobot_flux_resolution', _fw + '×' + _fh);
-                        runFluxGeneration(_fluxParsed.prompt, null);
-                    }
-                }
             } catch (e) {
                 if (e.name === 'AbortError') {
                     assistantMsg.interrupted = true;
@@ -8974,17 +8866,13 @@
                 if (openCode && openCode[3] !== undefined && openCode[3] !== '') {
                     if (openCode[1]) parts.push({type: 'text', content: openCode[1]});
                     parts.push({type: 'code', lang: openCode[2], content: openCode[3]});
-                } else {
-                    parts.push({type: 'text', content: remaining});
-                }
+                } else { parts.push({type: 'text', content: remaining}); }
             }
-            // Inline-code применяется ПОСЛЕ всех markdown-правил: иначе `...` внутри
-            // текста попадает в *.+?* и рвёт HTML разметкой.
-            var _INLINE_CODE_RULE = [/`([^`]+)`/g, function(match, content) {
-                if (!content.trim()) return match;
-                return '<code>' + content + '</code>';
-            }];
             var _inlineRules = [
+                [/`([^`]+)`/g, function(match, content) {
+                    if (!content.trim()) return match;
+                    return '<code>' + content + '</code>';
+                }],
                 [/\*\*(.+?)\*\*/g, '<strong>$1</strong>'],
                 [/\*(.+?)\*/g, '<em>$1</em>'],
                 [/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>'],
@@ -9042,14 +8930,13 @@
                 [/\[\^(\d+)\]:\s(.+)$/gm, '<div style="font-size:12px;color:#888;margin-top:4px;">[^$1]: $2</div>'],
                 [/\[\^(\d+)\]/g, '<sup style="color:#00CBF5;cursor:help;" title="Сноска $1">[$1]</sup>'],
                 [/(<mark>)(.*?)(<\/mark>)/g, '<span style="background:#ffeb3b;color:#000;padding:0 4px;border-radius:3px;">$2</span>'],
-                _INLINE_CODE_RULE,
                 [/\n/g, '<br>']
             ];
             var result = '';
             for (var p = 0; p < parts.length; p++) {
                 var part = parts[p];
                 if (part.type === 'code') {
-                    var lang = (part.lang === undefined || part.lang === null) ? '' : String(part.lang);
+                    var lang = part.lang || '';
                     if (lang === 'mermaid') {
                         result += '<div class="msg-code-block mermaid-block"><pre class="mermaid-source"><code class="language-mermaid">' + escapeHtml(part.content) + '</code></pre></div>';
                     } else {
@@ -9738,7 +9625,6 @@
             });
             _s = _s
                 .replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
-                .replace(/\[FLUX:gen\][\s\S]*?\}(?=\s*$|\s*\n)/gi, '')
                 .replace(/\n{3,}/g, '\n\n')
                 .trim();
             _s = _s.replace(/\u0000CODEC(\d+)\u0000/g, function(_, i) { return _keep[parseInt(i)]; });
