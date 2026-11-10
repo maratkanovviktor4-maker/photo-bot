@@ -2773,11 +2773,13 @@
                 var a = actions[_idx++];
                 var callId = 'tool_' + (++_agentToolCallCounter);
                 _agentPendingCalls[callId] = function(res) {
+                    console.log('[AGENT] result', callId, res);
                     if (res && res.result && res.result.image_b64) {
                         _lastImage = res.result.image_b64;
                     }
                     _next();
                 };
+                console.log('[AGENT] call', callId, a.tool, a.args);
                 window.postMessage({ type: 'agent_tool_call', tool: a.tool, args: a.args, call_id: callId }, '*');
             }
             _next();
