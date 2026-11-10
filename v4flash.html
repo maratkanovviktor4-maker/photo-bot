@@ -7775,8 +7775,11 @@
                 var form = new FormData();
                 form.append('user_id', currentUserId);
                 form.append('caption', trimmedPrompt);
-                form.append('width', '1024');
-                form.append('height', '1024');
+                var _resParts = String(getFluxSelectedResolution() || '1024×1024').split('×');
+                var _fW = parseInt(_resParts[0]) || 1024;
+                var _fH = parseInt(_resParts[1]) || 1024;
+                form.append('width', String(_fW));
+                form.append('height', String(_fH));
                 if (withImage) {
                     form.append('mode', 'svoboda_male');
                     var bin = atob(inputFile.data);
