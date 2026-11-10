@@ -4847,7 +4847,8 @@
             if (_menu) _menu.remove();
             _summaryFlow.active = true;
             _summaryFlow.chatId = currentChatId;
-            _summaryFlow.branchId = currentBranchId;
+            var _sc = chats.find(function(c) { return c.id === currentChatId; });
+            _summaryFlow.branchId = currentBranchId || (_sc && _sc.activeBranch) || 'main';
             window._summaryPromptDone = null;
             var input = document.getElementById('userInput');
             input.value = 'выдай выжимку проделанной работы';
