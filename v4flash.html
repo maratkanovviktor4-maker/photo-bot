@@ -2709,6 +2709,90 @@
 
         var _defaultTitle = 'PhotoBot — DeepSeek V4 Flash';
         window._orchestratorStepCounter = 0;
+        var _agentModeEnabled = false;
+        var _agentToolCallCounter = 0;
+        var _agentPendingCalls = {};
+        var _agentAwaitingChat = false;
+
+        function _parseAgentTags(text) {
+            if (!text) return null;
+            var _t = String(text);
+            var _actions = [];
+            var _complete = false;
+            var _re = /\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*(\{[^\n]*\}))?/gi;
+            var _m;
+            while ((_m = _re.exec(_t)) !== null) {
+                var _kind = _m[1].toLowerCase();
+                if (_kind === 'complete') { _complete = true; continue; }
+                var _args = {};
+                if (_m[2]) { try { _args = JSON.parse(_m[2]); } catch (e) { _args = {}; } }
+                _actions.push({ tool: _kind, args: _args });
+            }
+            if (!_actions.length && !_complete) return null;
+            return { actions: _actions, complete: _complete };
+        }
+
+        function _stripAgentTags(text) {
+            if (!text) return text;
+            return String(text).replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '').replace(/\n{3,}/g, '\n\n').trim();
+        }
+
+        function _runAgentActions(actions, completeFlag, chatIdAtCall) {
+            if (!actions || !actions.length) {
+                if (completeFlag) _agentModeEnabled = false;
+                return;
+            }
+            var _idx = 0;
+            var _lastImage = null;
+            function _next() {
+                if (_idx >= actions.length) {
+                    if (completeFlag) _agentModeEnabled = false;
+                    if (_lastImage && !_agentAwaitingChat) {
+                        _agentAwaitingChat = true;
+                        var chat = chats.find(function(c) { return c.id === (chatIdAtCall || currentChatId); });
+                        if (!chat) { _agentAwaitingChat = false; return; }
+                        chat.messages.push({
+                            role: 'user',
+                            content: '',
+                            image_b64: _lastImage,
+                            image_mime: 'image/jpeg',
+                            _orchestrator_step: true
+                        });
+                        chat.lastMessageTime = Date.now();
+                        chats.sort(function(a, b) { return (b.lastMessageTime || 0) - (a.lastMessageTime || 0); });
+                        renderChatList();
+                        renderMessages();
+                        scrollToBottom();
+                        setTimeout(function() {
+                            _agentAwaitingChat = false;
+                            sendMessage();
+                        }, 50);
+                    }
+                    return;
+                }
+                var a = actions[_idx++];
+                var callId = 'tool_' + (++_agentToolCallCounter);
+                _agentPendingCalls[callId] = function(res) {
+                    if (res && res.result && res.result.image_b64) {
+                        _lastImage = res.result.image_b64;
+                    }
+                    _next();
+                };
+                window.postMessage({ type: 'agent_tool_call', tool: a.tool, args: a.args, call_id: callId }, '*');
+            }
+            _next();
+        }
+
+        window.addEventListener('message', function(e) {
+            if (e.source !== window) return;
+            var d = e.data || {};
+            if (d.type !== 'agent_tool_result') return;
+            var cb = _agentPendingCalls[d.call_id];
+            if (cb) {
+                delete _agentPendingCalls[d.call_id];
+                cb(d);
+            }
+        });
 
         async function loadChatsFromServer() {
             showLoading();
