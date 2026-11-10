@@ -9896,12 +9896,20 @@
         }
         function _stripOrchMetaFromHtml(html) {
             if (!html) return html;
-            return String(html)
+            var _s = String(html);
+            var _keep = [];
+            _s = _s.replace(/<code[\s\S]*?<\/code>/gi, function(m) {
+                _keep.push(m);
+                return '\u0000CODE' + (_keep.length - 1) + '\u0000';
+            });
+            _s = _s
                 .replace(/\[LOCATION\][\s\S]*?\[\/LOCATION\]/gi, '')
                 .replace(/\[VALIDATION\][\s\S]*?\[\/VALIDATION\]/gi, '')
                 .replace(/\[INSTRUCTION\][\s\S]*?\[\/INSTRUCTION\]/gi, '')
                 .replace(/(?:\s*<br>\s*){3,}/g, '<br><br>')
                 .trim();
+            _s = _s.replace(/\u0000CODE(\d+)\u0000/g, function(_, i) { return _keep[parseInt(i)]; });
+            return _s;
         }
         function parseEditPairs(content) {
             var edits = [];
