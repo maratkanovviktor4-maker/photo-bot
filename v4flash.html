@@ -8974,11 +8974,13 @@
                     parts.push({type: 'text', content: remaining});
                 }
             }
+            // Inline-code применяется ПОСЛЕ всех markdown-правил: иначе `...` внутри
+            // текста попадает в *.+?* и рвёт HTML разметкой.
+            var _INLINE_CODE_RULE = [/`([^`]+)`/g, function(match, content) {
+                if (!content.trim()) return match;
+                return '<code>' + content + '</code>';
+            }];
             var _inlineRules = [
-                [/`([^`]+)`/g, function(match, content) {
-                    if (!content.trim()) return match;
-                    return '<code>' + content + '</code>';
-                }],
                 [/\*\*(.+?)\*\*/g, '<strong>$1</strong>'],
                 [/\*(.+?)\*/g, '<em>$1</em>'],
                 [/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>'],
