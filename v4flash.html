@@ -5077,6 +5077,28 @@
                     _userHtml = _userHtml.replace(/(\n\n)?📎[^\n<]*/g, '').trim();
                 }
             }
+            var _isOrchStep = (msg.role === 'user') && (msg._orchestrator_step || (msg.content && msg.content.indexOf('(we here right now)') !== -1));
+            if (_isOrchStep) {
+                var _orchStep = _orchestratorStepInfo(msg);
+                var _stepBadge = '<div style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(0,203,245,0.1);border:1px solid rgba(0,203,245,0.25);border-radius:12px;font-size:13px;color:#00CBF5;font-family:Inter,sans-serif;font-weight:500;">' +
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>' +
+                    'шаг агента</div>';
+                var _orchImgsBlock = '';
+                if (msg.image_b64) {
+                    _orchImgsBlock = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;justify-content:flex-end;">' +
+                        '<img src="data:' + (msg.image_mime || 'image/jpeg') + ';base64,' + msg.image_b64 + '" style="max-width:200px;max-height:140px;border-radius:8px;object-fit:contain;cursor:pointer;" onclick="toggleFullPreview(this)">' +
+                        '</div>';
+                }
+                var _orchTaskBlock = (_orchStep && _orchStep.task)
+                    ? '<div style="font-size:12px;color:#888;font-family:Inter,sans-serif;margin-top:4px;">' + escapeHtml(_orchStep.task) + '</div>'
+                    : '';
+                return '<div class="message-row ' + msg.role + ' autodeploy-row" data-msg-index="' + index + '"><div>' +
+                    _orchImgsBlock +
+                    '<div style="display:flex;flex-direction:column;align-items:flex-end;">' + _stepBadge + _orchTaskBlock + '</div>' +
+                    formatTimestampHtml(msg) +
+                    '<div class="message-actions" id="actions-' + index + '">' + actionsHtml + '</div>' +
+                    '</div></div>';
+            }
             var contentHtml = (msg.role === 'user') ? _userHtml : formatMessage(contentToShow);
             if (msg.role === 'assistant' && msg._flux_meta && msg._flux_meta.status === 'success' && msg._flux_meta.job_id) {
                 var _fluxImgFile = 'web_' + currentUserId + '_' + msg._flux_meta.job_id + '.jpg';
