@@ -2742,6 +2742,7 @@
                 if (d.call_id !== callId) return;
                 window.removeEventListener('message', handler);
                 _agentActionInFlight = false;
+                console.log('[AGENT] tool result =', JSON.stringify(d && d.result ? d.result : d).slice(0, 500));
                 var imgB64 = d && d.result && d.result.image_b64 ? d.result.image_b64 : '';
                 var isComplete = !!(d && d.result && d.result.complete);
                 if (isComplete) {
