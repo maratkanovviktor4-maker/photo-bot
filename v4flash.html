@@ -10347,6 +10347,11 @@
             _updateAutoDeployFloat();
             if (_autoDeployEnabled) {
                 openDeployModalSettings();
+            } else {
+                // Отжали кнопку автодеплоя — гасим агент немедленно.
+                _agentModeEnabled = false;
+                window._pendingAgentAction = null;
+                window.postMessage({ type: 'agent_stop_intent' }, '*');
             }
         }
 
