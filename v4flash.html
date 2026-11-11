@@ -2773,6 +2773,12 @@
                     return;
                 }
                 var a = actions[_idx++];
+                if (a.tool === 'wait') {
+                    var _ms = Math.max(100, Math.min(5000, parseInt(a.args && a.args.ms, 10) || 500));
+                    console.log('[AGENT] wait', _ms, 'ms');
+                    setTimeout(_next, _ms);
+                    return;
+                }
                 var callId = 'tool_' + (++_agentToolCallCounter);
                 _agentPendingCalls[callId] = function(res) {
                     console.log('[AGENT] result', callId, res);
