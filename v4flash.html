@@ -2750,11 +2750,26 @@
             }
             var _idx = 0;
             var _lastImage = null;
+            var _lastFind = null;
             function _next() {
-                console.log('[AGENT] _next idx=', _idx, 'actions=', actions.length, 'hasImg=', !!_lastImage, 'awaiting=', _agentAwaitingChat);
+                console.log('[AGENT] _next idx=', _idx, 'actions=', actions.length, 'hasImg=', !!_lastImage, 'hasFind=', !!_lastFind, 'awaiting=', _agentAwaitingChat);
                 if (_idx >= actions.length) {
                     if (completeFlag) _agentModeEnabled = false;
-                    if (_lastImage && !_agentAwaitingChat) {
+                    if (_agentAwaitingChat) return;
+                    if (_lastFind && !_lastImage) {
+                        _agentAwaitingChat = true;
+                        var chatF = chats.find(function(c) { return c.id === (chatIdAtCall || currentChatId); });
+                        if (!chatF) { _agentAwaitingChat = false; return; }
+                        pendingFiles = [];
+                        var inputF = document.getElementById('userInput');
+                        if (inputF) inputF.value = '[AGENT_FIND_RESULT]\n' + _lastFind + '\n[/AGENT_FIND_RESULT]\n\n(we here right now — список найденных интерактивных элементов страницы)';
+                        setTimeout(function() {
+                            _agentAwaitingChat = false;
+                            sendMessage();
+                        }, 200);
+                        return;
+                    }
+                    if (_lastImage) {
                         _agentAwaitingChat = true;
                         var chat = chats.find(function(c) { return c.id === (chatIdAtCall || currentChatId); });
                         console.log('[AGENT] push screenshot, chat?', !!chat, 'chatIdAtCall=', chatIdAtCall, 'currentChatId=', currentChatId);
