@@ -2737,11 +2737,17 @@
             return String(text).replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '').replace(/\n{3,}/g, '\n\n').trim();
         }
 
+        var _agentRunning = false;
         function _runAgentActions(actions, completeFlag, chatIdAtCall) {
+            if (_agentRunning) {
+                console.warn('[AGENT] _runAgentActions skipped: previous run in progress');
+                return;
+            }
             if (!actions || !actions.length) {
                 if (completeFlag) _agentModeEnabled = false;
                 return;
             }
+            _agentRunning = true;
             // Один [AGENT:*] за ответ: берём только первое действие,
             // чтобы модель гарантированно получала свежий скриншот после него.
             if (actions.length > 1) {
