@@ -8845,22 +8845,7 @@
                         : '';
                     var _agentParsed = _parseAgentTags(_agentFinalText);
                     if (_agentParsed) {
-                        _agentModeEnabled = true;
                         _runAgentActions(_agentParsed.actions, _agentParsed.complete, _targetChatId);
-                    } else if (_agentModeEnabled) {
-                        // Модель забыла тег, но пишет «подожду / проверю / посмотрю загрузку».
-                        // Принудительно делаем look, чтобы цикл не умер.
-                        var _lcText = String(_agentFinalText).toLowerCase();
-                        var _isWaiting = /подожд|проверю|проверить|посмотр|жду загрузк|через пауз|через сек|через момент|дождусь|дождаться/.test(_lcText);
-                        if (_isWaiting) {
-                            console.log('[AGENT] auto-look after waiting phrase');
-                            var _waitMs = 2500;
-                            _agentAwaitingChat = true;
-                            setTimeout(function() {
-                                _agentAwaitingChat = false;
-                                _runAgentActions([{ tool: 'look', args: {} }], false, _targetChatId);
-                            }, _waitMs);
-                        }
                     }
                 }
             } catch (e) {
