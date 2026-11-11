@@ -2719,7 +2719,7 @@
             var _t = String(text);
             var _actions = [];
             var _complete = false;
-            var _re = /\[AGENT:(look|click|type|key|scroll|navigate|wait|complete)\](?:\s*(\{[^\n]*\}))?/gi;
+            var _re = /\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*(\{[^\n]*\}))?/gi;
             var _m;
             while ((_m = _re.exec(_t)) !== null) {
                 var _kind = _m[1].toLowerCase();
@@ -2741,12 +2741,6 @@
             if (!actions || !actions.length) {
                 if (completeFlag) _agentModeEnabled = false;
                 return;
-            }
-            // Один [AGENT:*] за ответ: берём только первое действие,
-            // чтобы модель гарантированно получала свежий скриншот после него.
-            if (actions.length > 1) {
-                console.warn('[AGENT] more than one action in one turn, using only the first:', actions.map(function(a){ return a.tool; }).join(','));
-                actions = [actions[0]];
             }
             var _idx = 0;
             var _lastImage = null;
@@ -2772,19 +2766,13 @@
                             _agentAwaitingChat = false;
                             console.log('[AGENT] calling sendMessage');
                             sendMessage();
-                        }, 500);
+                        }, 50);
                     } else {
                         console.log('[AGENT] nothing to push: lastImage=', !!_lastImage, 'awaiting=', _agentAwaitingChat);
                     }
                     return;
                 }
                 var a = actions[_idx++];
-                if (a.tool === 'wait') {
-                    var _ms = Math.max(100, Math.min(5000, parseInt(a.args && a.args.ms, 10) || 500));
-                    console.log('[AGENT] wait', _ms, 'ms');
-                    setTimeout(_next, _ms);
-                    return;
-                }
                 var callId = 'tool_' + (++_agentToolCallCounter);
                 _agentPendingCalls[callId] = function(res) {
                     console.log('[AGENT] result', callId, res);
@@ -9640,7 +9628,7 @@
                 return '\u0000CODEC' + (_keep.length - 1) + '\u0000';
             });
             _s = _s
-                .replace(/\[AGENT:(look|click|type|key|scroll|navigate|wait|complete)\](?:\s*\{[^\n]*\})?/gi, '')
+                .replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
                 .replace(/\n{3,}/g, '\n\n')
                 .trim();
             _s = _s.replace(/\u0000CODEC(\d+)\u0000/g, function(_, i) { return _keep[parseInt(i)]; });
