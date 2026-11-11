@@ -2719,7 +2719,7 @@
             var _t = String(text);
             var _actions = [];
             var _complete = false;
-            var _re = /\[AGENT:(look|click|type|key|scroll|navigate|wait|select|complete)\](?:\s*(\{[^\n]*\}))?/gi;
+            var _re = /\[AGENT:(look|click|type|key|scroll|navigate|wait|complete)\](?:\s*(\{[^\n]*\}))?/gi;
             var _m;
             while ((_m = _re.exec(_t)) !== null) {
                 var _kind = _m[1].toLowerCase();
@@ -2737,17 +2737,11 @@
             return String(text).replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '').replace(/\n{3,}/g, '\n\n').trim();
         }
 
-        var _agentRunning = false;
         function _runAgentActions(actions, completeFlag, chatIdAtCall) {
-            if (_agentRunning) {
-                console.warn('[AGENT] _runAgentActions skipped: previous run in progress');
-                return;
-            }
             if (!actions || !actions.length) {
                 if (completeFlag) _agentModeEnabled = false;
                 return;
             }
-            _agentRunning = true;
             // Один [AGENT:*] за ответ: берём только первое действие,
             // чтобы модель гарантированно получала свежий скриншот после него.
             if (actions.length > 1) {
@@ -2756,23 +2750,15 @@
             }
             var _idx = 0;
             var _lastImage = null;
-            var _lastFind = null;
             function _next() {
-                console.log('[AGENT] _next idx=', _idx, 'actions=', actions.length, 'hasImg=', !!_lastImage, 'hasFind=', !!_lastFind, 'awaiting=', _agentAwaitingChat);
+                console.log('[AGENT] _next idx=', _idx, 'actions=', actions.length, 'hasImg=', !!_lastImage, 'awaiting=', _agentAwaitingChat);
                 if (_idx >= actions.length) {
                     if (completeFlag) _agentModeEnabled = false;
-                    if (_agentAwaitingChat) return;
-                    if (_lastFind && !_lastImage) {
-                        // JSON find-результат в user-сообщения больше не шлём — токены впустую.
-                        // Модель должна работать по скриншоту.
-                        _agentRunning = false;
-                        return;
-                    }
-                    if (_lastImage) {
+                    if (_lastImage && !_agentAwaitingChat) {
                         _agentAwaitingChat = true;
                         var chat = chats.find(function(c) { return c.id === (chatIdAtCall || currentChatId); });
                         console.log('[AGENT] push screenshot, chat?', !!chat, 'chatIdAtCall=', chatIdAtCall, 'currentChatId=', currentChatId);
-                        if (!chat) { _agentAwaitingChat = false; _agentRunning = false; return; }
+                        if (!chat) { _agentAwaitingChat = false; return; }
                         // Заполняем pendingFiles — sendMessage сам отрисует user со скрином
                         // и отправит image_b64 в /chat (сохранится в Redis).
                         pendingFiles = [{
@@ -2783,18 +2769,12 @@
                             _orchestrator_step: true
                         }];
                         setTimeout(function() {
-                            var _tryStart = function() {
-                                if (isSending) { setTimeout(_tryStart, 200); return; }
-                                _agentAwaitingChat = false;
-                                _agentRunning = false;
-                                console.log('[AGENT] calling sendMessage');
-                                sendMessage();
-                            };
-                            _tryStart();
+                            _agentAwaitingChat = false;
+                            console.log('[AGENT] calling sendMessage');
+                            sendMessage();
                         }, 500);
                     } else {
                         console.log('[AGENT] nothing to push: lastImage=', !!_lastImage, 'awaiting=', _agentAwaitingChat);
-                        _agentRunning = false;
                     }
                     return;
                 }
@@ -2811,10 +2791,6 @@
                     if (res && res.result && res.result.image_b64) {
                         _lastImage = res.result.image_b64;
                         console.log('[AGENT] lastImage saved, len=', _lastImage.length);
-                    }
-                    if (res && res.result && res.result.elements) {
-                        _lastFind = res.result.elements;
-                        console.log('[AGENT] find result saved, len=', _lastFind.length);
                     }
                     _next();
                 };
@@ -8845,6 +8821,7 @@
                         : '';
                     var _agentParsed = _parseAgentTags(_agentFinalText);
                     if (_agentParsed) {
+                        _agentModeEnabled = true;
                         _runAgentActions(_agentParsed.actions, _agentParsed.complete, _targetChatId);
                     }
                 }
@@ -9663,7 +9640,7 @@
                 return '\u0000CODEC' + (_keep.length - 1) + '\u0000';
             });
             _s = _s
-                .replace(/\[AGENT:(look|click|type|key|scroll|navigate|wait|select|complete)\](?:\s*\{[^\n]*\})?/gi, '')
+                .replace(/\[AGENT:(look|click|type|key|scroll|navigate|wait|complete)\](?:\s*\{[^\n]*\})?/gi, '')
                 .replace(/\n{3,}/g, '\n\n')
                 .trim();
             _s = _s.replace(/\u0000CODEC(\d+)\u0000/g, function(_, i) { return _keep[parseInt(i)]; });
@@ -10778,6 +10755,44 @@
                 showAlertModal('Ошибка соединения', 'Сервер недоступен.', '❌');
             }
         }
+
+        var _agentBusy = false;
+        window.addEventListener('message', function (e) {
+            if (e.source !== window) return;
+            var d = e.data || {};
+            if (d.type !== 'agent_turn') return;
+            if (_agentBusy) return;
+            if (!d.image_b64) return;
+            _agentBusy = true;
+            try {
+                pendingFiles = [{ name: 'screenshot.jpg', mime: 'image/jpeg', data: d.image_b64, _status: 'ok', _orchestrator_step: true }];
+            } catch (err) { _agentBusy = false; return; }
+            var inputEl = document.getElementById('userInput');
+            window._orchestratorStepCounter = (window._orchestratorStepCounter || 0) + 1;
+            var _msgText = '(we here right now)';
+            if (d.text && String(d.text).trim()) {
+                _msgText = _msgText + '\n\nЗадача: ' + String(d.text).trim();
+            }
+            if (inputEl) inputEl.value = _msgText;
+            updateFileList();
+            updateSendBtn();
+            var _waitStart = Date.now();
+            var _wait = setInterval(function () {
+                var done = (!isSending && !activeStreamId) || (Date.now() - _waitStart > 170000);
+                if (!done) return;
+                clearInterval(_wait);
+                pendingFiles = [];
+                updateFileList();
+                updateSendBtn();
+                var chat = chats.find(function (c) { return c.id === currentChatId; });
+                var last = chat && chat.messages ? chat.messages[chat.messages.length - 1] : null;
+                var content = last && last.role === 'assistant' ? (last.content || '') : '';
+                window.postMessage({ type: 'agent_turn_done', content: content }, '*');
+                _agentBusy = false;
+            }, 200);
+            // ждём кадр, потом дёргаем обычный sendMessage
+            setTimeout(function () { sendMessage(); }, 50);
+        });
 
         function startAgentFromModal() {
             var task = (document.getElementById('agentTaskInput') || {}).value || '';
