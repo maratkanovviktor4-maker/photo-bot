@@ -8358,6 +8358,8 @@
 
             if (!text && !pendingFiles.length && !previewFile) return;
             if (!currentUserId) { showAlertModal('Ошибка', 'Авторизуйтесь на главной странице', '❌'); return; }
+            // Новое сообщение пользователя = новая сессия агента. Сбрасываем флаг стопа.
+            window.postMessage({ type: 'agent_start' }, '*');
             var _targetChatId = overrideChatId || currentChatId;
             var _targetBranchId = overrideBranchId || currentBranchId;
             if (!_targetChatId) {
