@@ -10316,6 +10316,12 @@
             }
             _autoDeployEnabled = cb.checked;
             localStorage.setItem('photobot_autodeploy', _autoDeployEnabled ? 'true' : 'false');
+            if (!_autoDeployEnabled) {
+                // Отжали кнопку автодеплоя — гасим агент немедленно.
+                _agentModeEnabled = false;
+                window._pendingAgentAction = null;
+                window.postMessage({ type: 'agent_stop_intent' }, '*');
+            }
         }
 
         function _updateAutoDeployCheckbox() {
