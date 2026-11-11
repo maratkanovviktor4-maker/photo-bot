@@ -10357,6 +10357,8 @@
             _updateAutoDeployCheckbox();
             _updateAutoDeployFloat();
             if (_autoDeployEnabled) {
+                // Включили автодеплой — снимаем флаг стопа в background, агент снова живой.
+                window.postMessage({ type: 'agent_start' }, '*');
                 openDeployModalSettings();
             } else {
                 // Отжали кнопку автодеплоя — гасим агент немедленно.
