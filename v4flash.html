@@ -8374,6 +8374,27 @@
             const input = document.getElementById('userInput');
             const text = input.value.trim();
 
+            // Остановка агента: если последнее сообщение — стоп-слово и агент активен,
+            // гасим цикл и не отправляем запрос в /chat.
+            if (_agentModeEnabled && text && /^(стоп|stop|отмена|хватит)[.!]?$/i.test(text)) {
+                _agentModeEnabled = false;
+                window.postMessage({ type: 'agent_stop_request' }, '*');
+                try { window.postMessage({ type: 'agent_refresh' }, '*'); } catch (e) {}
+                var chatForStop = chats.find(function(c) { return c.id === (overrideChatId || currentChatId); });
+                if (chatForStop) {
+                    chatForStop.messages.push({ role: 'user', content: text });
+                    chatForStop.messages.push({ role: 'assistant', content: 'Остановил.' });
+                    chatForStop.lastMessageTime = Date.now();
+                    chats.sort(function(a,b){ return (b.lastMessageTime||0) - (a.lastMessageTime||0); });
+                    renderChatList();
+                    renderMessages();
+                }
+                input.value = '';
+                input.style.height = 'auto';
+                updateSendBtn();
+                return;
+            }
+
             if (!text && !pendingFiles.length && !previewFile) return;
             if (!currentUserId) { showAlertModal('Ошибка', 'Авторизуйтесь на главной странице', '❌'); return; }
             var _targetChatId = overrideChatId || currentChatId;
