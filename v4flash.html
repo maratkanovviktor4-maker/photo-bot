@@ -8789,7 +8789,16 @@
                     var _agentParsed = _parseAgentTag(_agentFinalText);
                     if (_agentParsed) {
                         _agentModeEnabled = _agentParsed.tool !== 'complete';
-                        _runAgentAction(_agentParsed.tool, _agentParsed.args);
+                        // Пауза перед запуском действия: если за это время юзер прислал «стоп»,
+                        // агент уже выключен — действие не стартует.
+                        var _agentDelayToken = {};
+                        window._pendingAgentAction = _agentDelayToken;
+                        setTimeout(function() {
+                            if (window._pendingAgentAction !== _agentDelayToken) return;
+                            window._pendingAgentAction = null;
+                            if (!_agentModeEnabled) return;
+                            _runAgentAction(_agentParsed.tool, _agentParsed.args);
+                        }, 1200);
                     }
                 }
             } catch (e) {
