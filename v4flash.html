@@ -8346,15 +8346,6 @@
 
             // Стоп-интент: пользователь просит остановить агента — гасим флаг в background
             // и не отправляем это сообщение в /chat (иначе модель успевает выдать ещё один [AGENT:*]).
-            var _stopWordNorm = text.toLowerCase().replace(/[^a-zа-яё]/gi, '');
-            if (_stopWordNorm === 'стоп' || _stopWordNorm === 'stop' || _stopWordNorm === 'отмена' || _stopWordNorm === 'хватит' || _stopWordNorm === 'cancel') {
-                window.postMessage({ type: 'agent_stop_intent' }, '*');
-                // Отменяем отложенный запуск следующего действия агента.
-                window._pendingAgentAction = null;
-                _agentModeEnabled = false;
-                input.value = ''; input.style.height = 'auto'; input._init = false;
-                return;
-            }
 
             if (!text && !pendingFiles.length && !previewFile) return;
             if (!currentUserId) { showAlertModal('Ошибка', 'Авторизуйтесь на главной странице', '❌'); return; }
