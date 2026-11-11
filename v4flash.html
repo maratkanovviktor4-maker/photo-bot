@@ -8782,14 +8782,14 @@
                     try { _pdfFn(); } catch(e) { console.warn('pdf render hook failed', e); }
                 }
                 if (_summaryFlow.active) { setTimeout(_summaryAfterReply, 300); }
-                if (currentPersonality === 'orchestrator' && !_agentAwaitingChat) {
+                if (currentPersonality === 'orchestrator') {
                     var _agentFinalText = chat.messages[chat.messages.length - 1] && chat.messages[chat.messages.length - 1].role === 'assistant'
                         ? (chat.messages[chat.messages.length - 1].content || '')
                         : '';
-                    var _agentParsed = _parseAgentTags(_agentFinalText);
+                    var _agentParsed = _parseAgentTag(_agentFinalText);
                     if (_agentParsed) {
-                        _agentModeEnabled = true;
-                        _runAgentActions(_agentParsed.actions, _agentParsed.complete, _targetChatId);
+                        _agentModeEnabled = _agentParsed.tool !== 'complete';
+                        _runAgentAction(_agentParsed.tool, _agentParsed.args);
                     }
                 }
             } catch (e) {
