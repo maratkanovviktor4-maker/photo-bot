@@ -2784,9 +2784,13 @@
                             _orchestrator_step: true
                         }];
                         setTimeout(function() {
-                            _agentAwaitingChat = false;
-                            console.log('[AGENT] calling sendMessage');
-                            sendMessage();
+                            var _tryStart = function() {
+                                if (isSending) { setTimeout(_tryStart, 200); return; }
+                                _agentAwaitingChat = false;
+                                console.log('[AGENT] calling sendMessage');
+                                sendMessage();
+                            };
+                            _tryStart();
                         }, 500);
                     } else {
                         console.log('[AGENT] nothing to push: lastImage=', !!_lastImage, 'awaiting=', _agentAwaitingChat);
