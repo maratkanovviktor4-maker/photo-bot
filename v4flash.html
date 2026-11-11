@@ -2742,6 +2742,12 @@
                 if (completeFlag) _agentModeEnabled = false;
                 return;
             }
+            // Один [AGENT:*] за ответ: берём только первое действие,
+            // чтобы модель гарантированно получала свежий скриншот после него.
+            if (actions.length > 1) {
+                console.warn('[AGENT] more than one action in one turn, using only the first:', actions.map(function(a){ return a.tool; }).join(','));
+                actions = [actions[0]];
+            }
             var _idx = 0;
             var _lastImage = null;
             function _next() {
