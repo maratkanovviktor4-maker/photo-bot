@@ -8789,7 +8789,9 @@
                     var _agentFinalText = chat.messages[chat.messages.length - 1] && chat.messages[chat.messages.length - 1].role === 'assistant'
                         ? (chat.messages[chat.messages.length - 1].content || '')
                         : '';
+                    console.log('[AGENT] finalText=', JSON.stringify(_agentFinalText.slice(-300)));
                     var _agentParsed = _parseAgentTag(_agentFinalText);
+                    console.log('[AGENT] parsed=', _agentParsed, 'autoDeploy=', _autoDeployEnabled);
                     if (_agentParsed) {
                         _agentModeEnabled = _agentParsed.tool !== 'complete';
                         // Пауза перед запуском действия. Агент стартует только если:
