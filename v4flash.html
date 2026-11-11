@@ -8374,24 +8374,12 @@
             const input = document.getElementById('userInput');
             const text = input.value.trim();
 
-            // Остановка агента: если последнее сообщение — стоп-слово и агент активен,
-            // гасим цикл и не отправляем запрос в /chat.
-            if (_agentModeEnabled && text && /^(стоп|stop|отмена|хватит)[.!]?$/i.test(text)) {
-                _agentModeEnabled = false;
-                window.postMessage({ type: 'agent_stop_request' }, '*');
-                try { window.postMessage({ type: 'agent_refresh' }, '*'); } catch (e) {}
-                var chatForStop = chats.find(function(c) { return c.id === (overrideChatId || currentChatId); });
-                if (chatForStop) {
-                    chatForStop.messages.push({ role: 'user', content: text });
-                    chatForStop.messages.push({ role: 'assistant', content: 'Остановил.' });
-                    chatForStop.lastMessageTime = Date.now();
-                    chats.sort(function(a,b){ return (b.lastMessageTime||0) - (a.lastMessageTime||0); });
-                    renderChatList();
-                    renderMessages();
-                }
-                input.value = '';
-                input.style.height = 'auto';
-                updateSendBtn();
+            // Стоп-интент: пользователь просит остановить агента — гасим флаг в background
+            // и не отправляем это сообщение в /chat (иначе модель успевает выдать ещё один [AGENT:*]).
+            var _stopWordNorm = text.toLowerCase().replace(/[^a-zа-яё]/gi, '');
+            if (_stopWordNorm === 'стоп' || _stopWordNorm === 'stop' || _stopWordNorm === 'отмена' || _stopWordNorm === 'хватит' || _stopWordNorm === 'cancel') {
+                window.postMessage({ type: 'agent_stop_intent' }, '*');
+                input.value = ''; input.style.height = 'auto'; input._init = false;
                 return;
             }
 
@@ -11311,14 +11299,6 @@
             if (!chat) return;
             var msg = chat.messages[msgIndex];
             if (!msg || msg.role !== 'assistant') return;
-            // Если пользователь прислал стоп-слово — не запускаем новый виток.
-            for (var _si = chat.messages.length - 1; _si >= 0; _si--) {
-                var _sm = chat.messages[_si];
-                if (_sm.role === 'user' && _sm.content && /^(стоп|stop|отмена|хватит)[.!]?$/i.test(_sm.content.trim())) {
-                    return;
-                }
-                if (_sm.role === 'assistant') break;
-            }
             if (!msg.msg_id) {
                 console.warn('[AUTODEPLOY] assistant msg_id отсутствует — цикл отложен, повторная правка не запускается');
                 msg._autodeployPending = true;
