@@ -8908,9 +8908,9 @@
                 } else { parts.push({type: 'text', content: remaining}); }
             }
             var _inlineRules = [
-                [/`([\s\S]{1,400}?)`/g, function(match, content) {
+                [/`([^`\n]{1,400})`/g, function(match, content) {
                     if (!content.trim()) return match;
-                    return '<code>' + content.replace(/\n/g, '⏎') + '</code>';
+                    return '<code>' + content + '</code>';
                 }],
                 [/\*\*(.+?)\*\*/g, '<strong>$1</strong>'],
                 [/\*(.+?)\*/g, '<em>$1</em>'],
