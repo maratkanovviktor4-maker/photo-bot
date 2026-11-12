@@ -8982,6 +8982,25 @@
                         ? (chat.messages[chat.messages.length - 1].content || '')
                         : '';
                     console.log('[AGENT] finalText=', JSON.stringify(_agentFinalText.slice(-300)));
+                    // Локальные тулы: [TOOL:extract] / [TOOL:map] — выполняются на странице,
+                    // не уходят в background и не запускают CDP. Приоритет над [AGENT:*].
+                    var _toolParsed = _parseToolTag(_agentFinalText);
+                    if (_toolParsed) {
+                        console.log('[TOOL] parsed=', _toolParsed);
+                        _runLocalTool(_toolParsed).then(function(_tr) {
+                            console.log('[TOOL] result=', _tr);
+                            if (!_tr || !_tr.ok) {
+                                var _err = (_tr && _tr.error) ? _tr.error : 'unknown';
+                                setTimeout(function() {
+                                    var _inp = document.getElementById('userInput');
+                                    _inp.value = '[FAIL] tool failed: ' + _err;
+                                    _inp.dispatchEvent(new Event('input'));
+                                    sendMessage();
+                                }, 100);
+                            }
+                        });
+                        return;
+                    }
                     var _agentParsed = _parseAgentTag(_agentFinalText);
                     console.log('[AGENT] parsed=', _agentParsed, 'autoDeploy=', _autoDeployEnabled);
                     if (_agentParsed) {
