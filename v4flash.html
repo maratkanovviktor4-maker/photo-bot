@@ -11450,18 +11450,41 @@
                     setTimeout(function() { sendMessage(); }, 50);
                     return;
                 }
-                pendingFiles = [{
-                    name: res.outName,
-                    mime: 'text/plain',
-                    data: _b64FromUtf8(res.chunk),
-                    _status: 'ok'
-                }];
-                updateFileList();
-                updateSendBtn();
-                var _inp2 = document.getElementById('userInput');
-                _inp2.value = '[EXTRACT_DELIVERED] file=' + payload.file + ' block=' + payload.block;
-                _inp2.dispatchEvent(new Event('input'));
-                setTimeout(function() { sendMessage(); }, 50);
+                if (!_deployHandles.work) {
+                    try { await _restoreDeployHandles(); } catch(e) {}
+                }
+                if (!_deployHandles.work) {
+                    var _inp0 = document.getElementById('userInput');
+                    _inp0.value = '[TOOL-EXTRACT-ERROR] Рабочая папка не выбрана.';
+                    _inp0.dispatchEvent(new Event('input'));
+                    setTimeout(function() { sendMessage(); }, 50);
+                    return;
+                }
+                try {
+                    var _outFH = await _deployHandles.work.getFileHandle(res.outName, { create: true });
+                    var _outW = await _outFH.createWritable();
+                    await _outW.write(res.chunk);
+                    await _outW.close();
+                } catch(_we) {
+                    var _inpE = document.getElementById('userInput');
+                    _inpE.value = '[TOOL-EXTRACT-ERROR] Не удалось сохранить файл: ' + _we;
+                    _inpE.dispatchEvent(new Event('input'));
+                    setTimeout(function() { sendMessage(); }, 50);
+                    return;
+                }
+                var _outFile = await (await _deployHandles.work.getFileHandle(res.outName)).getFile();
+                _fileQueue.push(_outFile);
+                if (!_isProcessing) processFileQueue();
+                var _waitStaged = setInterval(function() {
+                    var _found = pendingFiles.some(function(f) { return f.name === res.outName; });
+                    if (!_found) return;
+                    clearInterval(_waitStaged);
+                    var _inp2 = document.getElementById('userInput');
+                    _inp2.value = '[EXTRACT_DELIVERED] file=' + payload.file + ' block=' + payload.block;
+                    _inp2.dispatchEvent(new Event('input'));
+                    setTimeout(function() { sendMessage(); }, 50);
+                }, 100);
+                setTimeout(function() { clearInterval(_waitStaged); }, 15000);
             } finally {
                 setTimeout(function() { _extractInFlight = false; }, 500);
             }
