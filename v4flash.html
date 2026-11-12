@@ -2794,6 +2794,13 @@
         // режет [start .. начало следующей]. Результат пишет в <имя>.txt в ту же
         // папку и отправляет владением в чат через sendMessage().
 
+        // Отступ строки в пробелах: используется для отличения «функция верхнего
+        // уровня» от вложенных лямбд (`const x = function` внутри чужого тела).
+        function _fnIndent(line) {
+            var m = String(line || '').match(/^\s*/);
+            return m ? m[0].length : 0;
+        }
+
         function _scanFnNames(src) {
             var out = [];
             if (!src) return out;
