@@ -8232,16 +8232,11 @@
                 var reasoningText = msg._reasoningBuffer || '';
                 // Убираем [GEN:*]{...} и [AGENT:*]{...} ДО formatMessage — иначе {}/кавычки
                 // экранируются в HTML-сущности и регексп не совпадёт.
-                var _fullText = String(msg.content || '');
-                // 1) Полное вырезание закрытых тегов.
-                _fullText = _fullText
-                    .replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\]\s*\{[^\n]*\}/gi, '')
-                    .replace(/\[GEN:(image|audio|ace)\]\s*\{[\s\S]*?\}/gi, '');
-                // 2) Отрезаем "подозрительный хвост" — любой незакрытый префикс
-                //    системного тега в конце строки. Он будет доигран в следующий чанк.
-                _fullText = _fullText.replace(/\[(?:A|AG|AGE|AGEN|AGENT|G|GE|GEN)?:?(?:l|lo|loo|look|c|cl|cli|clic|click|t|te|tex|text|cl|cle|clea|clear|k|ke|key|s|sc|scr|scro|scrol|scroll|n|na|nav|navi|navig|naviga|navigat|navigate|co|com|comp|compl|comple|complet|complete|image|audio|ace)?(?:\]|\{)?(?:\s*\{[^\n]*)?$/i, '');
-                _fullText = _fullText.replace(/\n{3,}/g, '\n\n').trim();
-                var _rawContent = _fullText;
+                var _rawContent = String(msg.content || '')
+                    .replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
+                    .replace(/\[GEN:(image|audio|ace)\]\s*\{[\s\S]*?\}/gi, '')
+                    .replace(/\n{3,}/g, '\n\n')
+                    .trim();
                 var contentHtml = formatMessage(_rawContent);
                 
                 var parentEl = el.parentElement;
