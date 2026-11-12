@@ -11492,6 +11492,26 @@
         var _autoDeployConsecutiveTooMany = 0;
         var _fileNotFoundStreak = 0;
         var _githubPushPendingFiles = {};
+        // Счётчик подряд идущих [FAIL] patch failed. На 2-м — сами, без запроса
+        // пользователя, вытаскиваем функцию из упавшего [BEFORE] и шлём файлом.
+        var _failStreak = 0;
+        var _lastFailedFn = null;
+
+        function _extractFnNameFromFail(text) {
+            if (!text) return null;
+            var body = String(text);
+            var res = [
+                /(?:^|\n)\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/,
+                /(?:^|\n)\s*var\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?function\b/,
+                /(?:^|\n)\s*(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?(?:function\b|\()/,
+                /(?:^|\n)\s*([A-Za-z_$][\w$]*)\s*[:=]\s*(?:async\s+)?function\b/
+            ];
+            for (var i = 0; i < res.length; i++) {
+                var r = body.match(res[i]);
+                if (r && r[1]) return r[1];
+            }
+            return null;
+        }
 
         async function _sendDeployErrorLog(msg, chat, info) {
             var _lines = [];
