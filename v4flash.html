@@ -2713,16 +2713,15 @@
         // Снимок последнего действия агента (один тег = одно действие).
         function _parseAgentTag(text) {
             if (!text) return null;
+            // Маскируем блоки кода и инлайн-код: пример тега в тексте ответа не должен
+            // запускать действие. Длина сохраняется, индексы не сдвигаются.
             var _t = String(text);
-            var _re = /\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*(\{[^\n]*\}))?/gi;
-            var _m = _re.exec(_t);
-            if (!_m) return null;
-            var _kind = _m[1].toLowerCase();
-            if (_kind === 'complete') return { tool: 'complete', args: {} };
-            var _args = {};
-            if (_m[2]) { try { _args = JSON.parse(_m[2]); } catch (e) { _args = {}; } }
-            return { tool: _kind, args: _args };
-        }
+            var _keep = [];
+            _t = _t.replace(/<code[\s\S]*?<\/code>/gi, function(m) {
+                _keep.push(m);
+                return m.replace(/[^\n]/g, ' ');
+            });
+            _t = _t.replace(/
 
         function _stripAgentTags(text) {
             if (!text) return text;
