@@ -8362,6 +8362,19 @@
             if (!currentUserId) { showAlertModal('Ошибка', 'Авторизуйтесь на главной странице', '❌'); return; }
             // Новое сообщение пользователя = новая сессия агента. Сбрасываем флаг стопа.
             window.postMessage({ type: 'agent_start' }, '*');
+            // Пробрасываем список «Мои сайты» в текст user-сообщения, чтобы модель
+            // могла выбирать URL по тегам задачи.
+            var _favUrls = (localStorage.getItem('photobot_favorite_urls') || '').trim();
+            if (_favUrls && currentPersonality === 'orchestrator') {
+                var _favBlock = '[MY_SITES]\n' + _favUrls + '\n[/MY_SITES]';
+                if (text) {
+                    input.value = _favBlock + '\n\n' + input.value;
+                    input.dispatchEvent(new Event('input'));
+                } else {
+                    input.value = _favBlock;
+                    input.dispatchEvent(new Event('input'));
+                }
+            }
             var _targetChatId = overrideChatId || currentChatId;
             var _targetBranchId = overrideBranchId || currentBranchId;
             if (!_targetChatId) {
