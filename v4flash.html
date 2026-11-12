@@ -8627,6 +8627,10 @@
             }
             var _isSysUser = (text === '[OK] patch applied · state committed') || (text === '[FAIL] patch failed');
             var _isOrchTurn = pendingFiles && pendingFiles.some(function(f){ return f && f._orchestrator_step; });
+            // Не оркестраторский шаг — вьюпорт-подсказка не нужна. Сбрасываем,
+            // чтобы в extra_context.viewport_hint не уехал «скриншот … px» из
+            // прошлого прогона агента.
+            if (!_isOrchTurn) window._agentViewportHint = "";
             chat.messages.push({
                 role: 'user',
                 content: displayText,
