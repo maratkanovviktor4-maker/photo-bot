@@ -11468,7 +11468,21 @@
                     if (_cxMsg._extractHandled) {
                         return;
                     }
+                    var _prevUser = null;
+                    for (var _pi = msgIndex - 1; _pi >= 0; _pi--) {
+                        if (_cxChat.messages[_pi] && _cxChat.messages[_pi].role === 'user') {
+                            _prevUser = _cxChat.messages[_pi];
+                            break;
+                        }
+                    }
+                    var _prevIsExtractResult = !!(_prevUser && _prevUser.content && _prevUser.content.indexOf('[EXTRACT_DELIVERED]') === 0);
                     var _cxPayload = _parseExtractTag(_cxMsg.content || '');
+                    if (_cxPayload && _prevIsExtractResult) {
+                        _cxMsg._extractHandled = true;
+                        _cxMsg.content = _stripExtractTag(_cxMsg.content || '');
+                        renderMessages();
+                        return;
+                    }
                     if (_cxPayload) {
                         _cxMsg._extractHandled = true;
                         _cxMsg.content = _stripExtractTag(_cxMsg.content || '');
