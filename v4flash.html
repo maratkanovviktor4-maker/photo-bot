@@ -8646,6 +8646,9 @@
             }
             var _isSysUser = (text === '[OK] patch applied · state committed') || (text === '[FAIL] patch failed');
             var _isOrchTurn = pendingFiles && pendingFiles.some(function(f){ return f && f._orchestrator_step; });
+            // Отправка результата тулза: user-сообщение с файлом нужно,
+            // а ответ модели и пустой assistant-пузырь — нет.
+            var _isToolResult = pendingFiles && pendingFiles.some(function(f){ return f && f._tool_result; });
             chat.messages.push({
                 role: 'user',
                 content: displayText,
