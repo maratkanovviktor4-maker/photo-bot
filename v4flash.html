@@ -11424,7 +11424,15 @@
             var chunk = _norm.substring(iFrom, iTo).replace(/\s+$/, '') + '\n';
             var ext = (fileName.lastIndexOf('.') > 0) ? fileName.substring(fileName.lastIndexOf('.')) : '.txt';
             var baseName = (fileName.lastIndexOf('.') > 0) ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
-            var outName = baseName + '_block' + blockNum + ext;
+            var _code = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            var _seed = (fileName + ':' + blockNum).split('').reduce(function(a, c) { return (a * 31 + c.charCodeAt(0)) >>> 0; }, 5381);
+            var _tag = '';
+            var _tmp = _seed;
+            for (var _ti = 0; _ti < 8; _ti++) {
+                _tag += _code.charAt(_tmp % _code.length);
+                _tmp = Math.floor(_tmp / _code.length) + 7;
+            }
+            var outName = 'frag_' + _tag + ext;
             return { ok: true, chunk: chunk, outName: outName };
         }
         function _b64FromUtf8(str) {
