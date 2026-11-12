@@ -10580,6 +10580,9 @@
                 // Отжали кнопку автодеплоя — гасим агент немедленно.
                 _agentModeEnabled = false;
                 window._pendingAgentAction = null;
+                // Сбрасываем подсказку о вьюпорте: следующее обычное сообщение
+                // Оркестратору не должно видеть «скриншот … px», которого нет.
+                window._agentViewportHint = "";
                 window.postMessage({ type: 'agent_stop_intent' }, '*');
             } else {
                 // Включили автодеплой — снимаем флаг стопа в background, агент снова живой.
