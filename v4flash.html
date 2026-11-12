@@ -11438,15 +11438,8 @@
         function _b64FromUtf8(str) {
             try { return btoa(unescape(encodeURIComponent(str))); } catch(e) { return ''; }
         }
-        var _extractLastKey = '';
-        var _extractLastAt = 0;
         async function _runExtractTool(payload) {
-            var _key = payload.file + '|' + payload.block;
-            var _now = Date.now();
             if (_extractInFlight) return;
-            if (_key === _extractLastKey && (_now - _extractLastAt) < 10000) return;
-            _extractLastKey = _key;
-            _extractLastAt = _now;
             _extractInFlight = true;
             try {
                 var res = await _extractBlockFromWorkDir(payload.file, payload.block);
