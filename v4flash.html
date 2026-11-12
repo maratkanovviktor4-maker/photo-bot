@@ -8995,29 +8995,17 @@
                     ? (chat.messages[chat.messages.length - 1].content || '')
                     : '';
                 var _toolParsed = _parseToolTag(_agentFinalTextForTool);
-                if (_toolParsed) {
+                if (_toolParsed && _toolParsed.args && _toolParsed.args.name) {
                     console.log('[TOOL] parsed=', _toolParsed);
-                    // Если имя не распарсилось — молча выходим, не спамим в чат.
-                    // Модель могла показать тег в примере объяснения — это не вызов.
-                    if (!_toolParsed.args || !_toolParsed.args.name) {
-                        console.warn('[TOOL] name пустой — игнорируем, в чат ничего не шлём');
-                    } else {
-                        _runLocalTool(_toolParsed).then(function(_tr) {
-                            console.log('[TOOL] result=', _tr);
-                            if (!_tr || !_tr.ok) {
-                                var _err = (_tr && _tr.error) ? _tr.error : 'unknown';
-                                console.warn('[TOOL] failed:', _err);
-                                // В чат шлём только если это реальная ошибка извлечения,
-                                // а не парсинга (no_name уже отсечён выше).
-                                setTimeout(function() {
-                                    var _inp = document.getElementById('userInput');
-                                    _inp.value = '[FAIL] tool failed: ' + _err;
-                                    _inp.dispatchEvent(new Event('input'));
-                                    sendMessage();
-                                }, 100);
-                            }
-                        });
-                    }
+                    _runLocalTool(_toolParsed).then(function(_tr) {
+                        console.log('[TOOL] result=', _tr);
+                        if (!_tr || !_tr.ok) {
+                            // В чат ничего не шлём. Ошибка тулза — только в консоль.
+                            // Иначе получаем петлю: [FAIL] уходит модели, модель
+                            // отвечает, парсер снова ловит упоминание тега — и так по кругу.
+                            console.warn('[TOOL] failed:', (_tr && _tr.error) ? _tr.error : 'unknown');
+                        }
+                    });
                     return;
                 }
                 if (currentPersonality === 'orchestrator') {
