@@ -8728,6 +8728,17 @@
                     break;
                 }
             }
+            // Результат тулза: user-сообщение с вложением уже добавлено выше.
+            // Ответ модели здесь не нужен — выходим, не создавая assistant-пузырь.
+            if (_isToolResult) {
+                pendingFiles = [];
+                updateFileList();
+                isSending = false;
+                activeStreamId = null;
+                sendBtnArrow();
+                if (currentChatId) renderChatList();
+                return;
+            }
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _fluxPlaceholder: fluxModeEnabled, _pdfReading: _hasPdfAttach };
             chat.messages.push(assistantMsg);
             const msgIndex = chat.messages.length - 1;
