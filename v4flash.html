@@ -11346,8 +11346,136 @@
             }, 100);
         }
 
+        var _extractInFlight = false;
+        function _parseExtractTag(text) {
+            if (!text) return null;
+            var _m = String(text).match(/\[TOOL:extract\]\s*(\{[\s\S]*?\})/i);
+            if (!_m) return null;
+            try {
+                var _p = JSON.parse(_m[1]);
+            } catch (e) { return null; }
+            if (!_p || !_p.file || _p.block === undefined) return null;
+            return { file: String(_p.file).trim(), block: String(_p.block).trim() };
+        }
+        function _stripExtractTag(text) {
+            if (!text) return text;
+            return String(text).replace(/\[TOOL:extract\]\s*\{[\s\S]*?\}/gi, '').replace(/\n{3,}/g, '\n\n').trim();
+        }
+        function _parseSummaryBlocks(txt) {
+            var map = {};
+            if (!txt) return map;
+            var lines = String(txt).split('\n');
+            for (var i = 0; i < lines.length; i++) {
+                var ln = lines[i].replace(/\r$/, '');
+                if (!ln.trim()) continue;
+                var parts = ln.split('|');
+                if (parts.length < 2) continue;
+                var num = parts[0].trim().replace(/^#/, '');
+                if (!/^\d+$/.test(num)) continue;
+                var anchor = parts[parts.length - 1].trim();
+                if (!anchor) continue;
+                map[num] = anchor;
+            }
+            return map;
+        }
+        async function _extractBlockFromWorkDir(fileName, blockNum) {
+            if (!_deployHandles.work) {
+                try { await _restoreDeployHandles(); } catch(e) {}
+            }
+            if (!_deployHandles.work) return { ok: false, error: 'Рабочая папка не выбрана.' };
+            var summaryTxt = '';
+            try {
+                var sh = await _deployHandles.work.getFileHandle('summary.txt');
+                var sf = await sh.getFile();
+                summaryTxt = await sf.text();
+            } catch(e) {
+                return { ok: false, error: 'summary.txt не найден в рабочей папке.' };
+            }
+            var map = _parseSummaryBlocks(summaryTxt);
+            if (!map[blockNum]) {
+                return { ok: false, error: 'Блок ' + blockNum + ' отсутствует в summary.txt.' };
+            }
+            var numsSorted = Object.keys(map).map(function(n) { return parseInt(n, 10); }).sort(function(a, b) { return a - b; });
+            var nextNum = null;
+            for (var _i = 0; _i < numsSorted.length; _i++) {
+                if (numsSorted[_i] > parseInt(blockNum, 10)) { nextNum = String(numsSorted[_i]); break; }
+            }
+            var anchorStart = map[blockNum];
+            var anchorEnd = nextNum ? map[nextNum] : null;
+            var srcTxt = '';
+            try {
+                var fh = await _deployHandles.work.getFileHandle(fileName);
+                var ff = await fh.getFile();
+                srcTxt = await ff.text();
+            } catch(e) {
+                return { ok: false, error: 'Файл ' + fileName + ' не найден в рабочей папке.' };
+            }
+            var _norm = srcTxt.replace(/\r\n/g, '\n');
+            var iFrom = _norm.indexOf(anchorStart);
+            if (iFrom === -1) {
+                return { ok: false, error: 'Якорь блока ' + blockNum + ' не найден в ' + fileName + '.' };
+            }
+            var iTo = _norm.length;
+            if (anchorEnd) {
+                var iEndCandidate = _norm.indexOf(anchorEnd, iFrom + anchorStart.length);
+                if (iEndCandidate !== -1) iTo = iEndCandidate;
+            }
+            var chunk = _norm.substring(iFrom, iTo).replace(/\s+$/, '') + '\n';
+            var ext = (fileName.lastIndexOf('.') > 0) ? fileName.substring(fileName.lastIndexOf('.')) : '.txt';
+            var baseName = (fileName.lastIndexOf('.') > 0) ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
+            var outName = baseName + '_block' + blockNum + ext;
+            try {
+                var br = chunk.match(/\[BEFORE\]\s*[\s\S]*?\[AFTER\]/) ? '!' : '';
+            } catch(e) {}
+            return { ok: true, chunk: chunk, outName: outName };
+        }
+        function _b64FromUtf8(str) {
+            try { return btoa(unescape(encodeURIComponent(str))); } catch(e) { return ''; }
+        }
+        async function _runExtractTool(payload) {
+            if (_extractInFlight) return;
+            _extractInFlight = true;
+            try {
+                var res = await _extractBlockFromWorkDir(payload.file, payload.block);
+                if (!res.ok) {
+                    var _inp = document.getElementById('userInput');
+                    _inp.value = '[TOOL-EXTRACT-ERROR] ' + res.error;
+                    _inp.dispatchEvent(new Event('input'));
+                    setTimeout(function() { sendMessage(); }, 50);
+                    return;
+                }
+                pendingFiles = [{
+                    name: res.outName,
+                    mime: 'text/plain',
+                    data: _b64FromUtf8(res.chunk),
+                    _status: 'ok'
+                }];
+                updateFileList();
+                updateSendBtn();
+                var _inp2 = document.getElementById('userInput');
+                _inp2.value = 'кусок ' + payload.file + ' block ' + payload.block;
+                _inp2.dispatchEvent(new Event('input'));
+                setTimeout(function() { sendMessage(); }, 50);
+            } finally {
+                setTimeout(function() { _extractInFlight = false; }, 500);
+            }
+        }
+
         async function _autoDeployAfterAssistant(msgIndex) {
-            if (_autoDeployInFlight) return;
+            if (_extractInFlight) return;
+            if (currentPersonality === 'developer') {
+                var _cxChat = chats.find(function(c) { return c.id === currentChatId; });
+                var _cxMsg = _cxChat ? _cxChat.messages[msgIndex] : null;
+                if (_cxMsg && _cxMsg.role === 'assistant') {
+                    var _cxPayload = _parseExtractTag(_cxMsg.content || '');
+                    if (_cxPayload) {
+                        _cxMsg.content = _stripExtractTag(_cxMsg.content || '');
+                        renderMessages();
+                        _runExtractTool(_cxPayload);
+                        return;
+                    }
+                }
+            }
             if (!_autoDeployEnabled) return;
             var chat = chats.find(function(c) { return c.id === currentChatId; });
             if (!chat) return;
