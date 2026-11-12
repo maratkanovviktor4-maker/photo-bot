@@ -8230,7 +8230,14 @@
                 }
                 
                 var reasoningText = msg._reasoningBuffer || '';
-                var contentHtml = formatMessage(msg.content || '');
+                // Убираем [GEN:*]{...} и [AGENT:*]{...} ДО formatMessage — иначе {}/кавычки
+                // экранируются в HTML-сущности и регексп не совпадёт.
+                var _rawContent = String(msg.content || '')
+                    .replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
+                    .replace(/\[GEN:(image|audio|ace)\]\s*\{[\s\S]*?\}/gi, '')
+                    .replace(/\n{3,}/g, '\n\n')
+                    .trim();
+                var contentHtml = formatMessage(_rawContent);
                 
                 var parentEl = el.parentElement;
                 var prevHeight = parentEl.offsetHeight;
