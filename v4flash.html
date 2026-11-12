@@ -10494,10 +10494,22 @@
             };
         }
 
+        var _favUrlsSaveTimer = null;
         document.addEventListener('input', function(e) {
             if (!e.target) return;
             if (['githubToken','githubRepo','githubBranch','githubFolder','githubFiles','extraProviderKind','extraProviderToken','extraProviderTarget','extraProviderBranch','extraProviderFolder','extraProviderFiles','favoriteUrlsInput'].indexOf(e.target.id) !== -1) {
                 _markDeployDirty();
+            }
+            // «Мои сайты» сохраняем в localStorage сразу с дебаунсом:
+            // пользователь часто вписывает URL и закрывает модалку крестиком,
+            // не нажимая «Сохранить». Без этого sendMessage отправит пустой
+            // my_sites, и Оркестратор не увидит сайтов.
+            if (e.target.id === 'favoriteUrlsInput') {
+                if (_favUrlsSaveTimer) clearTimeout(_favUrlsSaveTimer);
+                _favUrlsSaveTimer = setTimeout(function() {
+                    _favUrlsSaveTimer = null;
+                    _saveFavoriteUrlsToLS();
+                }, 400);
             }
         });
         document.addEventListener('change', function(e) {
