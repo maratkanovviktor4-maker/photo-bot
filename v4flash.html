@@ -2713,13 +2713,21 @@
         // Снимок последнего действия агента (один тег = одно действие).
         function _parseAgentTag(text) {
             if (!text) return null;
-            // Маскируем блоки кода и инлайн-код: пример тега в тексте ответа не должен
-            // запускать действие. Длина сохраняется, индексы не сдвигаются.
             var _t = String(text);
-            _t = _t.replace(/<code[\s\S]*?<\/code>/gi, function(m) {
-                return m.replace(/[^\n]/g, ' ');
-            });
-            _t = _t.replace(/
+            var _re = /\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*(\{[^\n]*\}))?/gi;
+            var _m = _re.exec(_t);
+            if (!_m) return null;
+            var _kind = _m[1].toLowerCase();
+            if (_kind === 'complete') return { tool: 'complete', args: {} };
+            var _args = {};
+            if (_m[2]) { try { _args = JSON.parse(_m[2]); } catch (e) { _args = {}; } }
+            return { tool: _kind, args: _args };
+        }
+
+        function _stripAgentTags(text) {
+            if (!text) return text;
+            return String(text).replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '').replace(/\n{3,}/g, '\n\n').trim();
+        }
 
         // Одно действие за виток: послать тег в background, дождаться скрина, отправить скрин в чат.
         var _agentActionInFlight = false;
@@ -2747,9 +2755,6 @@
                 window._agentViewportHint = _vpSize ? ("скриншот " + _vpSize.w + "×" + _vpSize.h + " px (координаты — в пикселях этой картинки)") : "";
                 if (isComplete) {
                     _agentModeEnabled = false;
-                    // Сбрасываем подсказку о вьюпорте: следующее обычное сообщение
-                    // Оркестратору не должно видеть скриншот, которого уже нет.
-                    window._agentViewportHint = "";
                     return;
                 }
                 if (!imgB64) return;
@@ -2779,164 +2784,6 @@
                 _agentActionInFlight = false;
             }, 120000);
         }
-
-        // ===== TOOL: страничные тулы (extract / map) =====
-        // Работают с рабочей папкой деплоя. Не уходят в background.
-        // Вызов из консоли:  await _toolExtract('sendMessage')
-        // Вызов моделью:     [TOOL:extract]{"name":"sendMessage"}
-
-        // Эвристический сканер границ функций. Возвращает [{name, line}] — начальные
-        // строки объявлений в порядке появления. Работает по строкам, не по AST.
-        function _scanFnNames(src) {
-            var out = [];
-            if (!src) return out;
-            var lines = src.split('\n');
-            var res = [
-                /^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/,
-                /^\s*var\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?function\b/,
-                /^\s*(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?(?:function\b|\()/,
-                /^\s*(?:[\w.$]+)\s*[=:]\s*(?:async\s+)?function\b/,
-                /^\s*class\s+([A-Za-z_$][\w$]*)/
-            ];
-            for (var i = 0; i < lines.length; i++) {
-                for (var r = 0; r < res.length; r++) {
-                    var m = lines[i].match(res[r]);
-                    if (m && m[1]) { out.push({ name: m[1], line: i }); break; }
-                }
-            }
-            return out;
-        }
-
-        // Карта блоков: end = start следующей функции - 1 (первая строка следующей
-        // идёт хвостом, чтобы «включая первую строчку следующей функции» работало).
-        function _mapBlocks(src) {
-            var fns = _scanFnNames(src);
-            var total = src ? src.split('\n').length : 0;
-            var blocks = [];
-            for (var i = 0; i < fns.length; i++) {
-                var start = fns[i].line;
-                var end = (i + 1 < fns.length) ? fns[i + 1].line : total - 1;
-                blocks.push({ id: fns[i].name, start: start, end: end });
-            }
-            return blocks;
-        }
-
-        // Вырезать функцию по имени. Возвращает { name, start, end, text } (1-based).
-        function _extractBlockByName(src, name) {
-            if (!src || !name) return null;
-            var lines = src.split('\n');
-            var blocks = _mapBlocks(src);
-            var t = null;
-            for (var i = 0; i < blocks.length; i++) {
-                if (blocks[i].id === name) { t = blocks[i]; break; }
-            }
-            if (!t) return null;
-            return { name: name, start: t.start + 1, end: t.end + 1, text: lines.slice(t.start, t.end + 1).join('\n') };
-        }
-
-        // Взять файл из рабочей папки. Если имя не задано — v4flash.html или единственный файл.
-        async function _readWorkFileByName(fileName) {
-            if (!_deployHandles.work) {
-                try { await _restoreDeployHandles(); } catch(e) {}
-            }
-            if (!_deployHandles.work) return null;
-            var names = [];
-            try { names = await _listWorkFiles(_deployHandles.work); } catch(e) { names = []; }
-            if (!names.length) return null;
-            var real = fileName || null;
-            if (!real && names.length === 1) real = names[0];
-            if (!real) {
-                for (var i = 0; i < names.length; i++) {
-                    if (/v4flash\.html$/i.test(names[i])) { real = names[i]; break; }
-                }
-            }
-            if (!real) return null;
-            try {
-                var fh = await _deployHandles.work.getFileHandle(real);
-                var f = await fh.getFile();
-                return { name: real, text: await f.text() };
-            } catch(e) { return null; }
-        }
-
-        // Записать текст в файл рабочей папки. Вернуть base64 или null.
-        async function _writeWorkFileText(name, text) {
-            if (!_deployHandles.work) return null;
-            try {
-                var fh = await _deployHandles.work.getFileHandle(name, { create: true });
-                var w = await fh.createWritable();
-                await w.write(text);
-                await w.close();
-                return btoa(unescape(encodeURIComponent(text)));
-            } catch(e) { return null; }
-        }
-
-        // Отправить файл в чат вложением (user-сообщение).
-        async function _sendToolFileToChat(outName, b64, caption) {
-            pendingFiles = [{ name: outName, mime: 'text/plain', data: b64, _status: 'ok' }];
-            updateFileList();
-            var input = document.getElementById('userInput');
-            input.value = caption;
-            input.dispatchEvent(new Event('input'));
-            try { await sendMessage(); return true; } catch(e) { return false; }
-        }
-
-        // Публичный тулз: [TOOL:extract]{"name":"sendMessage"}
-        async function _toolExtract(fnName, opts) {
-            opts = opts || {};
-            if (!fnName) return { ok: false, error: 'no_name' };
-            var src = await _readWorkFileByName(opts.file || '');
-            if (!src) return { ok: false, error: 'no_work_file' };
-            var ext = _extractBlockByName(src.text, fnName);
-            if (!ext) return { ok: false, error: 'function_not_found: ' + fnName };
-            var outName = (opts.outName || fnName) + '.txt';
-            var header = '// ' + src.name + ' :: ' + fnName + ' [' + ext.start + '-' + ext.end + ']\n';
-            var b64 = await _writeWorkFileText(outName, header + ext.text);
-            if (!b64) return { ok: false, error: 'write_failed' };
-            var ok = await _sendToolFileToChat(outName, b64,
-                '[TOOL:extract] ' + fnName + ' — файл ' + outName + ' во вложении');
-            if (!ok) return { ok: false, error: 'send_failed' };
-            return { ok: true, name: fnName, file: outName, start: ext.start, end: ext.end, bytes: ext.text.length };
-        }
-
-        // Публичный тулз: [TOOL:map]{"file":"v4flash.html"}
-        async function _toolMapBlocks(opts) {
-            opts = opts || {};
-            var src = await _readWorkFileByName(opts.file || '');
-            if (!src) return { ok: false, error: 'no_work_file' };
-            var blocks = _mapBlocks(src.text);
-            var text = blocks.map(function(b) {
-                return b.id + '\t' + (b.start + 1) + '-' + (b.end + 1);
-            }).join('\n');
-            var outName = 'blocks_' + src.name.replace(/\.[^.]+$/, '') + '.txt';
-            var b64 = await _writeWorkFileText(outName, text);
-            if (!b64) return { ok: false, error: 'write_failed' };
-            var ok = await _sendToolFileToChat(outName, b64,
-                '[TOOL:map] ' + blocks.length + ' функций, файл ' + outName + ' во вложении');
-            if (!ok) return { ok: false, error: 'send_failed' };
-            return { ok: true, file: outName, count: blocks.length };
-        }
-
-        // Разбор тега модели. Работает со сбалансированным простым JSON без вложенных {}.
-        function _parseToolTag(text) {
-            if (!text) return null;
-            var _t = String(text);
-            // Маскируем блоки кода и инлайн-код: пример тега в тексте ответа не должен
-            // запускать тул.
-            _t = _t.replace(/<code[\s\S]*?<\/code>/gi, function(m) {
-                return m.replace(/[^\n]/g, ' ');
-            });
-            _t = _t.replace(/
-        async function _runLocalTool(parsed) {
-            if (!parsed) return null;
-            try {
-                if (parsed.tool === 'extract') return await _toolExtract(String(parsed.args.name || ''), parsed.args);
-                if (parsed.tool === 'map') return await _toolMapBlocks(parsed.args);
-            } catch(e) {
-                return { ok: false, error: String(e && e.message ? e.message : e) };
-            }
-            return null;
-        }
-        // ===== END TOOL =====
 
         async function loadChatsFromServer() {
             showLoading();
@@ -5818,7 +5665,6 @@
             // Убираем служебные теги агента и прочую мету из озвучки.
             text = String(text)
                 .replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
-                .replace(/\[TOOL:(extract|map)\](?:\s*\{[^\n]*\})?/gi, '')
                 .replace(/\[LOCATION\][\s\S]*?\[\/LOCATION\]/gi, '')
                 .replace(/\[VALIDATION\][\s\S]*?\[\/VALIDATION\]/gi, '')
                 .replace(/\[INSTRUCTION\][\s\S]*?\[\/INSTRUCTION\]/gi, '')
@@ -8550,6 +8396,9 @@
             }
             const chat = chats.find(c => c.id === _targetChatId);
             if (!chat) return;
+            const _sendChatId = currentChatId;
+            const _stillHere = function() { return currentChatId === _sendChatId; };
+            
             let displayText = text;
             // Ace: добавляем lyrics в displayText
             if (aceModeEnabled) {
@@ -8612,10 +8461,6 @@
             }
             var _isSysUser = (text === '[OK] patch applied · state committed') || (text === '[FAIL] patch failed');
             var _isOrchTurn = pendingFiles && pendingFiles.some(function(f){ return f && f._orchestrator_step; });
-            // Не оркестраторский шаг — вьюпорт-подсказка не нужна. Сбрасываем,
-            // чтобы в extra_context.viewport_hint не уехал «скриншот … px» из
-            // прошлого прогона агента.
-            if (!_isOrchTurn) window._agentViewportHint = "";
             chat.messages.push({
                 role: 'user',
                 content: displayText,
@@ -8755,25 +8600,12 @@
 
                 if (resp.status === 406) {
                     var errData = await resp.json().catch(() => ({}));
-                    // Сбрасываем «пустой» assistant до показа модалки, иначе спиннер
-                    // висит до того, как пользователь закроет OK (а тот ещё и перезагру-
-                    // жает все чаты в loadChatsFromServer).
-                    try { chat.messages.pop(); renderMessages(); } catch(_e) {}
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnRef.disabled = false;
-                    sendBtnArrow();
                     showAlertModal('Слишком длинный текст', errData.error || 'Суммарная длина текста превышает лимит.', '⚠️');
                     return;
                 }
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
-                    try { chat.messages.pop(); renderMessages(); } catch(_e) {}
-                    isSending = false;
-                    activeStreamId = null;
-                    sendBtnRef.disabled = false;
-                    sendBtnArrow();
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
@@ -8837,13 +8669,6 @@
                                 else if (parsed.error_type === 'connection_error') {
                                     errorMessage = 'Сервер не дождался ответа от DeepSeek. Попробуйте позже.'
                                 }
-                                // Сбрасываем isSending/спиннер до показа модалки: иначе
-                                // closeAlertModal() будет единственным путём сброса, а он
-                                // вдобавок перезагружает все чаты.
-                                isSending = false;
-                                activeStreamId = null;
-                                if (sendBtnRef) { sendBtnRef.disabled = false; }
-                                sendBtnArrow();
                                 showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
                             }
@@ -8992,65 +8817,28 @@
                     try { _pdfFn(); } catch(e) { console.warn('pdf render hook failed', e); }
                 }
                 if (_summaryFlow.active) { setTimeout(_summaryAfterReply, 300); }
-                // Ручной вызов тула: пользователь шлёт текстом [TOOL:extract]{...} или
-                // [TOOL:map]{...}. Не зависит от личности модели — работает всегда.
-                (function _maybeRunUserTool(userText) {
-                    if (!userText) return;
-                    var _p = _parseToolTag(String(userText));
-                    if (!_p) return;
-                    console.log('[TOOL/user] parsed=', _p);
-                    _runLocalTool(_p).then(function(_r) {
-                        console.log('[TOOL/user] result=', _r);
-                    });
-                })(text);
                 if (currentPersonality === 'orchestrator') {
                     var _agentFinalText = chat.messages[chat.messages.length - 1] && chat.messages[chat.messages.length - 1].role === 'assistant'
                         ? (chat.messages[chat.messages.length - 1].content || '')
                         : '';
                     console.log('[AGENT] finalText=', JSON.stringify(_agentFinalText.slice(-300)));
-                    // Локальные тулы: [TOOL:extract] / [TOOL:map] — выполняются на странице,
-                    // не уходят в background и не запускают CDP. Приоритет над [AGENT:*].
-                    var _toolParsed = _parseToolTag(_agentFinalText);
-                    if (_toolParsed) {
-                        console.log('[TOOL] parsed=', _toolParsed);
-                        _runLocalTool(_toolParsed).then(function(_tr) {
-                            console.log('[TOOL] result=', _tr);
-                            if (!_tr || !_tr.ok) {
-                                var _err = (_tr && _tr.error) ? _tr.error : 'unknown';
-                                setTimeout(function() {
-                                    var _inp = document.getElementById('userInput');
-                                    _inp.value = '[FAIL] tool failed: ' + _err;
-                                    _inp.dispatchEvent(new Event('input'));
-                                    sendMessage();
-                                }, 100);
-                            }
-                        });
-                        return;
-                    }
                     var _agentParsed = _parseAgentTag(_agentFinalText);
                     console.log('[AGENT] parsed=', _agentParsed, 'autoDeploy=', _autoDeployEnabled);
                     if (_agentParsed) {
                         _agentModeEnabled = _agentParsed.tool !== 'complete';
-                        // complete отправляется в background безусловно: он должен
-                        // отпустить debugger и выставить stopped=true. Иначе дебаггер-бар
-                        // висит на вкладке и следующий прогон стартует с чужим состоянием.
-                        if (_agentParsed.tool === 'complete') {
-                            _runAgentAction('complete', {});
-                        } else {
-                            // Пауза перед запуском действия. Агент стартует только если:
-                            // 1) тег есть (проверено выше),
-                            // 2) автодеплой включён (_autoDeployEnabled),
-                            // 3) в паузу не пришёл стоп (_agentModeEnabled !== false).
-                            var _agentDelayToken = {};
-                            window._pendingAgentAction = _agentDelayToken;
-                            setTimeout(function() {
-                                if (window._pendingAgentAction !== _agentDelayToken) return;
-                                window._pendingAgentAction = null;
-                                if (!_agentModeEnabled) return;
-                                if (!_autoDeployEnabled) { _agentModeEnabled = false; return; }
-                                _runAgentAction(_agentParsed.tool, _agentParsed.args);
-                            }, 1200);
-                        }
+                        // Пауза перед запуском действия. Агент стартует только если:
+                        // 1) тег есть (проверено выше),
+                        // 2) автодеплой включён (_autoDeployEnabled),
+                        // 3) в паузу не пришёл стоп (_agentModeEnabled !== false).
+                        var _agentDelayToken = {};
+                        window._pendingAgentAction = _agentDelayToken;
+                        setTimeout(function() {
+                            if (window._pendingAgentAction !== _agentDelayToken) return;
+                            window._pendingAgentAction = null;
+                            if (!_agentModeEnabled) return;
+                            if (!_autoDeployEnabled) { _agentModeEnabled = false; return; }
+                            _runAgentAction(_agentParsed.tool, _agentParsed.args);
+                        }, 1200);
                     }
                 }
             } catch (e) {
@@ -9867,7 +9655,15 @@
                 _keep.push(m);
                 return '\u0000CODEC' + (_keep.length - 1) + '\u0000';
             });
-            _s = _s.replace(/
+            _s = _s
+                .replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+            _s = _s.replace(/\u0000CODEC(\d+)\u0000/g, function(_, i) { return _keep[parseInt(i)]; });
+            return _s;
+        };
+
+        var _stripCreativeTags = function(text) {
             if (!text) return text;
             var _s = String(text);
             var _keep = [];
@@ -10481,22 +10277,10 @@
             };
         }
 
-        var _favUrlsSaveTimer = null;
         document.addEventListener('input', function(e) {
             if (!e.target) return;
             if (['githubToken','githubRepo','githubBranch','githubFolder','githubFiles','extraProviderKind','extraProviderToken','extraProviderTarget','extraProviderBranch','extraProviderFolder','extraProviderFiles','favoriteUrlsInput'].indexOf(e.target.id) !== -1) {
                 _markDeployDirty();
-            }
-            // «Мои сайты» сохраняем в localStorage сразу с дебаунсом:
-            // пользователь часто вписывает URL и закрывает модалку крестиком,
-            // не нажимая «Сохранить». Без этого sendMessage отправит пустой
-            // my_sites, и Оркестратор не увидит сайтов.
-            if (e.target.id === 'favoriteUrlsInput') {
-                if (_favUrlsSaveTimer) clearTimeout(_favUrlsSaveTimer);
-                _favUrlsSaveTimer = setTimeout(function() {
-                    _favUrlsSaveTimer = null;
-                    _saveFavoriteUrlsToLS();
-                }, 400);
             }
         });
         document.addEventListener('change', function(e) {
@@ -10583,9 +10367,6 @@
                 // Отжали кнопку автодеплоя — гасим агент немедленно.
                 _agentModeEnabled = false;
                 window._pendingAgentAction = null;
-                // Сбрасываем подсказку о вьюпорте: следующее обычное сообщение
-                // Оркестратору не должно видеть «скриншот … px», которого нет.
-                window._agentViewportHint = "";
                 window.postMessage({ type: 'agent_stop_intent' }, '*');
             } else {
                 // Включили автодеплой — снимаем флаг стопа в background, агент снова живой.
@@ -10628,9 +10409,6 @@
                 // Отжали кнопку автодеплоя — гасим агент немедленно.
                 _agentModeEnabled = false;
                 window._pendingAgentAction = null;
-                // Сбрасываем подсказку о вьюпорте: в следующем обычном сообщении
-                // Оркестратору не должно быть «скриншот 1920×1080 px».
-                window._agentViewportHint = "";
                 window.postMessage({ type: 'agent_stop_intent' }, '*');
             }
         }
@@ -11495,32 +11273,6 @@
         var _autoDeployConsecutiveTooMany = 0;
         var _fileNotFoundStreak = 0;
         var _githubPushPendingFiles = {};
-        // Счётчик подряд идущих [FAIL] patch failed. На третьем — принудительно
-        // выкидываем [TOOL:extract] для функции из последнего упавшего [BEFORE],
-        // не полагаясь на дисциплину модели. Сбрасывается на [OK] и на complete.
-        var _failStreak = 0;
-        var _lastFailedFn = null;
-
-        // Пытается вытащить имя функции из упавшего [BEFORE]-блока.
-        // Ищет первую строку вида "function NAME(" / "async function NAME(" /
-        // "var NAME = function" / "NAME = function" / "NAME: function".
-        function _extractFnNameFromFail(logText) {
-            if (!logText) return null;
-            var tpl = String.fromCharCode(96, 96, 96);
-            var m = String(logText).match(new RegExp(tpl + "\\w*[\\s\\S]*?" + tpl, 'i'));
-            var body = m ? m[0] : String(logText);
-            var res = [
-                /(?:^|\n)\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/,
-                /(?:^|\n)\s*var\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?function\b/,
-                /(?:^|\n)\s*(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?(?:function\b|\()/,
-                /(?:^|\n)\s*([A-Za-z_$][\w$]*)\s*[:=]\s*(?:async\s+)?function\b/
-            ];
-            for (var i = 0; i < res.length; i++) {
-                var r = body.match(res[i]);
-                if (r && r[1]) return r[1];
-            }
-            return null;
-        }
 
         async function _sendDeployErrorLog(msg, chat, info) {
             var _lines = [];
@@ -11866,26 +11618,6 @@
                     _ar = 'правка не применена из-за сбоя применения — перевыдай ту же пару заново без изменений';
                 }
 
-                // Счётчик подряд идущих FAIL. На третьем подряд — не шлём обычный
-                // [FAIL] в чат, а принудительно вытаскиваем функцию из последнего
-                // упавшего [BEFORE] через [TOOL:extract]. Делаем один раз на серию.
-                _failStreak++;
-                if (_et === 'patch_failed' || _et === 'patch_ambiguous') {
-                    var _fn = _extractFnNameFromFail(msg.content || '');
-                    if (_fn) _lastFailedFn = _fn;
-                }
-                if (_failStreak >= 3 && _lastFailedFn) {
-                    var _fnToExtract = _lastFailedFn;
-                    _failStreak = 0;
-                    try {
-                        var _ex = await _toolExtract(_fnToExtract, {});
-                        console.log('[TOOL/auto] extract result=', _ex);
-                    } catch (e) {
-                        console.warn('[TOOL/auto] extract failed', e);
-                    }
-                    return;
-                }
-
                 await _sendDeployErrorLog(msg, chat, {
                     error_type: _et,
                     action_required: _ar,
@@ -11901,9 +11633,6 @@
 
             // Все файлы применены
             _autoDeployConsecutiveTooMany = 0;
-            // Успешный деплой — счётчик подряд идущих FAIL сбрасываем.
-            _failStreak = 0;
-            _lastFailedFn = null;
             var _targetMsgId = msg.msg_id;
             var _chatRef = chat;
             window._markAutodeploy = async function(_mid, _userId) {
@@ -11971,6 +11700,136 @@
                 }
             }, 0);
             return;
+
+            var _eol = _fileContent.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+            var _fileNorm = _fileContent.replace(/\r\n/g, '\n');
+
+            var payload = {
+                user_id: currentUserId,
+                file_name: _fileName,
+                file_content: _fileNorm,
+                edits: edits.map(function(e) { return { old: e.old, new: e.new }; }),
+                eol: _eol
+            };
+
+            try {
+                var resp = await fetch(SERVER_URL + '/apply_edit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                    body: JSON.stringify(payload)
+                });
+                var data = await resp.json();
+
+                if (data.success) {
+                    var fileResp = await fetch(SERVER_URL + data.file_url);
+                    var _newText = await fileResp.text();
+                    if (_eol === '\r\n') _newText = _newText.replace(/\n/g, '\r\n');
+                    var newBlob = new Blob([_newText], { type: 'text/plain;charset=utf-8' });
+                    var cleanName = _stripCopySuffix(data.filename || _fileName);
+
+                    try {
+                        var oldFileHandle = null;
+                        try { oldFileHandle = await _deployHandles.work.getFileHandle(cleanName); } catch(e) { oldFileHandle = null; }
+                        if (oldFileHandle) {
+                            try {
+                                var oldFile = await oldFileHandle.getFile();
+                                var _dotIdx2 = cleanName.lastIndexOf('.');
+                                var _bkName2 = _dotIdx2 > 0 ? (cleanName.substring(0, _dotIdx2) + '_бэкап' + cleanName.substring(_dotIdx2)) : (cleanName + '_бэкап');
+                                var bkFH2 = await _deployHandles.work.getFileHandle(_bkName2, { create: true });
+                                var bw2 = await bkFH2.createWritable();
+                                await bw2.write(oldFile);
+                                await bw2.close();
+                            } catch(e) { console.warn('backup failed', e); }
+                        }
+                        var newFH2 = await _deployHandles.work.getFileHandle(cleanName, { create: true });
+                        var nw2 = await newFH2.createWritable();
+                        await nw2.write(newBlob);
+                        await nw2.close();
+                    } catch(e) {
+                        console.warn('autodeploy save failed', e);
+                        _autoDeployInFlight = false;
+                        return;
+                    }
+
+                    _autoDeployInFlight = false;
+                    _fileNotFoundStreak = 0;
+                    var _targetMsgId = msg.msg_id;
+                    var _chatRef = chat;
+                    window._markAutodeploy = async function(_mid, _userId) {
+                        var _c = chats.find(function(c) { return c.id === _chatRef.id; });
+                        if (!_c) return;
+                        var _ids = [];
+                        for (var _i = 0; _i < _c.messages.length; _i++) {
+                            if (_c.messages[_i].msg_id === _mid) { _c.messages[_i]._autodeploy = true; _ids.push(_mid); }
+                            if (_userId && _c.messages[_i].msg_id === _userId) { _c.messages[_i]._autodeploy = true; _ids.push(_userId); }
+                        }
+                        if (_ids.length) {
+                            try {
+                                await fetch(SERVER_URL + '/mark_autodeploy', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                                    body: JSON.stringify({ user_id: currentUserId, model: 'flash', chat_id: _chatRef.id, msg_ids: _ids })
+                                });
+                            } catch(e) {}
+                        }
+                        renderMessages();
+                    };
+                    if (_targetMsgId) window._markAutodeploy(_targetMsgId, null);
+                    renderMessages();
+                    var _input = document.getElementById('userInput');
+                    _input.value = '[OK] patch applied · state committed';
+                    _input.dispatchEvent(new Event('input'));
+                    sendMessage();
+                    return;
+                }
+
+                if (data.error_url) {
+                    var er = await fetch(SERVER_URL + data.error_url);
+                    var errText = await er.text();
+                    var errBlob = new Blob([errText], { type: 'text/plain;charset=utf-8' });
+
+                    try {
+                        var _dotIdxErr = _fileName.lastIndexOf('.');
+                        var _errName = _dotIdxErr > 0 ? (_fileName.substring(0, _dotIdxErr) + '_ошибка.txt') : (_fileName + '_ошибка.txt');
+                        var eFH = await _deployHandles.work.getFileHandle(_errName, { create: true });
+                        var ew = await eFH.createWritable();
+                        await ew.write(errText);
+                        await ew.close();
+                    } catch(e) { console.warn('error log save failed', e); }
+
+                    var _errBase64 = await new Promise(function(resolve) {
+                        var rdr = new FileReader();
+                        rdr.onload = function(ev) { resolve(ev.target.result.split(',')[1]); };
+                        rdr.readAsDataURL(errBlob);
+                    });
+
+                    pendingFiles.push({
+                        name: 'deploy_error.txt',
+                        mime: 'text/plain',
+                        data: _errBase64,
+                        _status: 'ok'
+                    });
+
+                    _autoDeployInFlight = false;
+                    msg._autodeploy = true;
+                    renderMessages();
+                    var _input2 = document.getElementById('userInput');
+                    _input2.value = '[FAIL] patch failed';
+                    _input2.dispatchEvent(new Event('input'));
+                    updateFileList();
+                    sendMessage();
+                    setTimeout(function() {
+                        var _last2 = chat.messages[chat.messages.length - 1];
+                        if (_last2 && _last2.role === 'user') _last2._autodeploy = true;
+                    }, 100);
+                    return;
+                }
+
+                _autoDeployInFlight = false;
+            } catch(e) {
+                console.warn('autodeploy critical', e);
+                _autoDeployInFlight = false;
+            }
         }
 
         function openHtmlPreview(code) {
