@@ -2726,11 +2726,7 @@
 
         function _stripAgentTags(text) {
             if (!text) return text;
-            return String(text)
-                .replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
-                .replace(/\[TOOL:extract\](?:\s*\{[^\n]*\})?/gi, '')
-                .replace(/\n{3,}/g, '\n\n')
-                .trim();
+            return String(text).replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '').replace(/\n{3,}/g, '\n\n').trim();
         }
 
         // Одно действие за виток: послать тег в background, дождаться скрина, отправить скрин в чат.
@@ -2788,174 +2784,6 @@
                 _agentActionInFlight = false;
             }, 120000);
         }
-
-        // ===== TOOL: [TOOL:extract] — вынос функции из файла рабочей папки =====
-        // Сканирует исходник по строкам, находит начала всех объявлений функций,
-        // режет [start .. начало следующей]. Результат пишет в <имя>.txt в ту же
-        // папку и отправляет владением в чат через sendMessage().
-
-        // Отступ строки в пробелах: используется для отличения «функция верхнего
-        // уровня» от вложенных лямбд (`const x = function` внутри чужого тела).
-        function _fnIndent(line) {
-            var m = String(line || '').match(/^\s*/);
-            return m ? m[0].length : 0;
-        }
-
-        function _scanFnNames(src) {
-            var out = [];
-            if (!src) return out;
-            var lines = src.split('\n');
-            var res = [
-                /^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/,
-                /^\s*var\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?function\b/,
-                /^\s*(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?(?:function\b|\()/,
-                /^\s*([A-Za-z_$][\w$]*)\s*[:=]\s*(?:async\s+)?function\b/,
-                /^\s*class\s+([A-Za-z_$][\w$]*)/
-            ];
-            for (var i = 0; i < lines.length; i++) {
-                for (var r = 0; r < res.length; r++) {
-                    var m = lines[i].match(res[r]);
-                    if (m && m[1]) { out.push({ name: m[1], line: i }); break; }
-                }
-            }
-            return out;
-        }
-
-        function _fnIndent(line) {
-            var m = String(line || '').match(/^\s*/);
-            return m ? m[0].length : 0;
-        }
-
-        function _extractBlockByName(src, name) {
-            if (!src || !name) return null;
-            var lines = src.split('\n');
-            var fns = _scanFnNames(src);
-            for (var i = 0; i < fns.length; i++) {
-                if (fns[i].name === name) {
-                    var start = fns[i].line;
-                    var baseIndent = _fnIndent(lines[start]);
-                    var end = lines.length - 1;
-                    for (var j = start + 1; j < lines.length; j++) {
-                        if (_fnIndent(lines[j]) > baseIndent) continue;
-                        var isFn = /^\s*(?:async\s+)?function\s+[A-Za-z_$]/.test(lines[j])
-                            || /^\s*(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:async\s+)?(?:function\b|\()/.test(lines[j])
-                            || /^\s*class\s+[A-Za-z_$]/.test(lines[j])
-                            || /^\s*[A-Za-z_$][\w$]*\s*[:=]\s*(?:async\s+)?function\b/.test(lines[j]);
-                        if (isFn) { end = j; break; }
-                    }
-                    return {
-                        start: start + 1,
-                        end: end,
-                        text: lines.slice(start, end + 1).join('\n')
-                    };
-                }
-            }
-            return null;
-        }
-
-        async function _readWorkFileByName(fileName) {
-            if (!_deployHandles.work) {
-                try { await _restoreDeployHandles(); } catch(e) {}
-            }
-            if (!_deployHandles.work) return null;
-            var names = [];
-            try { names = await _listWorkFiles(_deployHandles.work); } catch(e) { names = []; }
-            if (!names.length) return null;
-            var real = fileName || null;
-            if (!real && names.length === 1) real = names[0];
-            if (!real) {
-                for (var i = 0; i < names.length; i++) {
-                    if (/v4flash\.html$/i.test(names[i])) { real = names[i]; break; }
-                }
-            }
-            if (!real) return null;
-            try {
-                var fh = await _deployHandles.work.getFileHandle(real);
-                var f = await fh.getFile();
-                return { name: real, text: await f.text() };
-            } catch(e) { return null; }
-        }
-
-        async function _writeWorkFileText(name, text) {
-            if (!_deployHandles.work) return null;
-            try {
-                var fh = await _deployHandles.work.getFileHandle(name, { create: true });
-                var w = await fh.createWritable();
-                await w.write(text);
-                await w.close();
-                return btoa(unescape(encodeURIComponent(text)));
-            } catch(e) { return null; }
-        }
-
-        async function _sendToolFileToChat(outName, b64, caption) {
-            // Результат тулза уходит user-сообщением с вложением.
-            // Подпись в поле ввода НЕ ставим — она дублирует имя файла.
-            // Флаг _tool_result: sendMessage не станет ждать ответа модели
-            // и не создаст пустой assistant-пузырь.
-            pendingFiles = [{ name: outName, mime: 'text/plain', data: b64, _status: 'ok', _tool_result: true }];
-            updateFileList();
-            try { await sendMessage(); return true; } catch(e) { return false; }
-        }
-
-        async function _toolExtract(fnName, opts) {
-            opts = opts || {};
-            if (!fnName) return { ok: false, error: 'no_name' };
-            var src = await _readWorkFileByName(opts.file || '');
-            if (!src) return { ok: false, error: 'no_work_file' };
-            var ext = _extractBlockByName(src.text, fnName);
-            if (!ext) return { ok: false, error: 'function_not_found: ' + fnName };
-            var outName = (opts.outName || fnName) + '.txt';
-            var header = '// ' + src.name + ' :: ' + fnName + ' [' + ext.start + '-' + ext.end + ']\n';
-            var b64 = await _writeWorkFileText(outName, header + ext.text);
-            if (!b64) return { ok: false, error: 'write_failed' };
-            var ok = await _sendToolFileToChat(outName, b64,
-                '[TOOL:extract] ' + fnName + ' — файл ' + outName + ' во вложении');
-            if (!ok) return { ok: false, error: 'send_failed' };
-            return { ok: true, name: fnName, file: outName, start: ext.start, end: ext.end, bytes: ext.text.length };
-        }
-
-        function _parseToolTag(text) {
-            if (!text) return null;
-            var _s = String(text).trim();
-            // Реальный вызов — только если тег стоит в самом начале ответа.
-            // Упоминание тега в объяснении/примере вызывает тулз ложно.
-            if (!/^\[TOOL:extract\]/i.test(_s)) return null;
-            // Берём ПОСЛЕДНЕЕ вхождение тега — модель часто дублирует его
-            // ("[TOOL:extract] [TOOL:extract] sendMessage"). Если брать первое,
-            // в name попадает "[TOOL".
-            var _re = /\[TOOL:extract\]/gi;
-            var _last = -1;
-            var _mm;
-            while ((_mm = _re.exec(_s)) !== null) _last = _mm.index;
-            if (_last === -1) return null;
-            var _tail = _s.slice(_last + '[TOOL:extract]'.length);
-            // ВАЛИДНЫЙ ВЫЗОВ: сразу за тегом идёт JSON-объект с полем name.
-            // Никаких fallback'ов на "первое слово" — иначе любой упомянутый
-            // в тексте тег запускает тулз и уходит в петлю [FAIL].
-            var _jm = _tail.match(/^\s*(\{[\s\S]*?\})/);
-            if (!_jm) return null;
-            var _args = {};
-            try {
-                var _parsed = JSON.parse(_jm[1]);
-                if (!_parsed || typeof _parsed !== 'object') return null;
-                _args = _parsed;
-            } catch(e) {
-                return null;
-            }
-            if (!_args.name || typeof _args.name !== 'string') return null;
-            return { tool: 'extract', args: _args };
-        }
-
-        async function _runLocalTool(parsed) {
-            if (!parsed) return null;
-            try {
-                if (parsed.tool === 'extract') return await _toolExtract(String(parsed.args.name || ''), parsed.args);
-            } catch(e) {
-                return { ok: false, error: String(e && e.message ? e.message : e) };
-            }
-            return null;
-        }
-        // ===== END TOOL =====
 
         async function loadChatsFromServer() {
             showLoading();
@@ -5322,18 +5150,6 @@
             var _userHtml = escapeHtml(_displayContent);
             if (msg.role === 'user') {
                 _userHtml = _stripImgMarkers(_userHtml);
-                // Модель могла выдать тег-вызов в своём ответе; в user-пузыре
-                // он не должен отображаться. Вырезаем тег целиком.
-                _userHtml = _userHtml.replace(/\[TOOL:extract\]\s*\{[^}]*\}/gi, '').trim();
-                // Служебные сообщения тулза: сам тег-вызов и ответ «файл … во вложении»
-                // не показываем в чате — иначе они засоряют пузырь.
-                var _rawUser = String(_displayContent || '').trim();
-                if (/^\[TOOL:extract\]/i.test(_rawUser)) {
-                    var _fileOnly = _rawUser.match(/—\s*файл\s+(\S+)\s+во вложении/i);
-                    _userHtml = _fileOnly
-                        ? '<span style="font-size:12px;color:#888;font-style:italic;">файл ' + escapeHtml(_fileOnly[1]) + ' во вложении</span>'
-                        : '';
-                }
                 if (_userHtml.indexOf('🎨 ') === 0) {
                     _userHtml = _svgFluxIcon + _userHtml.substring(3);
                 } else if (_userHtml === '🎨') {
@@ -5849,7 +5665,6 @@
             // Убираем служебные теги агента и прочую мету из озвучки.
             text = String(text)
                 .replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
-                .replace(/\[TOOL:(extract|map)\](?:\s*\{[^\n]*\})?/gi, '')
                 .replace(/\[LOCATION\][\s\S]*?\[\/LOCATION\]/gi, '')
                 .replace(/\[VALIDATION\][\s\S]*?\[\/VALIDATION\]/gi, '')
                 .replace(/\[INSTRUCTION\][\s\S]*?\[\/INSTRUCTION\]/gi, '')
@@ -8646,9 +8461,6 @@
             }
             var _isSysUser = (text === '[OK] patch applied · state committed') || (text === '[FAIL] patch failed');
             var _isOrchTurn = pendingFiles && pendingFiles.some(function(f){ return f && f._orchestrator_step; });
-            // Отправка результата тулза: user-сообщение с файлом нужно,
-            // а ответ модели и пустой assistant-пузырь — нет.
-            var _isToolResult = pendingFiles && pendingFiles.some(function(f){ return f && f._tool_result; });
             chat.messages.push({
                 role: 'user',
                 content: displayText,
@@ -8727,17 +8539,6 @@
                     _hasPdfAttach = true;
                     break;
                 }
-            }
-            // Результат тулза: user-сообщение с вложением уже добавлено выше.
-            // Ответ модели здесь не нужен — выходим, не создавая assistant-пузырь.
-            if (_isToolResult) {
-                pendingFiles = [];
-                updateFileList();
-                isSending = false;
-                activeStreamId = null;
-                sendBtnArrow();
-                if (currentChatId) renderChatList();
-                return;
             }
             var assistantMsg = { role: 'assistant', content: '', finished: false, _streaming: true, _reasoningBuffer: '', _fullBuffer: '', msg_id: null, _abortController: null, _fluxPlaceholder: fluxModeEnabled, _pdfReading: _hasPdfAttach };
             chat.messages.push(assistantMsg);
@@ -8924,6 +8725,20 @@
                                     }
                                 }
                             }
+                            if (parsed.extract_result) {
+                                assistantMsg._extract_result = parsed.extract_result;
+                            }
+                            if (parsed.extract_ok !== undefined) {
+                                assistantMsg._extract_ok = !!parsed.extract_ok;
+                                if (parsed.extract_error) assistantMsg._extract_error = parsed.extract_error;
+                            }
+                            if (parsed.extract_saved_msg_id) {
+                                assistantMsg._extract_saved_msg_id = parsed.extract_saved_msg_id;
+                                assistantMsg._extract_saved_file = parsed.extract_saved_file || '';
+                            }
+                            if (parsed.extract_source) {
+                                assistantMsg._extract_source = parsed.extract_source;
+                            }
                             if (parsed.assistant_msg_id) {
                                 finalMeta = parsed;
                             } else {
@@ -9016,25 +8831,6 @@
                     try { _pdfFn(); } catch(e) { console.warn('pdf render hook failed', e); }
                 }
                 if (_summaryFlow.active) { setTimeout(_summaryAfterReply, 300); }
-                // Тулз-триггер срабатывает ТОЛЬКО в assistant-ответе, и только если
-                // ответ начинается с тега. В user-сообщениях и в системных [OK]/[FAIL]
-                // парсер не запускается никогда.
-                var _lastMsgForTool = chat.messages[chat.messages.length - 1];
-                var _isAssistantTurn = _lastMsgForTool && _lastMsgForTool.role === 'assistant';
-                if (_isAssistantTurn) {
-                    var _agentFinalTextForTool = _lastMsgForTool.content || '';
-                    var _toolParsed = _parseToolTag(_agentFinalTextForTool);
-                    if (_toolParsed && _toolParsed.args && _toolParsed.args.name) {
-                        console.log('[TOOL] parsed=', _toolParsed);
-                        _runLocalTool(_toolParsed).then(function(_tr) {
-                            console.log('[TOOL] result=', _tr);
-                            if (!_tr || !_tr.ok) {
-                                console.warn('[TOOL] failed:', (_tr && _tr.error) ? _tr.error : 'unknown');
-                            }
-                        });
-                        return;
-                    }
-                }
                 if (currentPersonality === 'orchestrator') {
                     var _agentFinalText = chat.messages[chat.messages.length - 1] && chat.messages[chat.messages.length - 1].role === 'assistant'
                         ? (chat.messages[chat.messages.length - 1].content || '')
@@ -9874,8 +9670,7 @@
                 return '\u0000CODEC' + (_keep.length - 1) + '\u0000';
             });
             _s = _s
-                .replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
-                .replace(/\[TOOL:extract\](?:\s*\{[^\n]*\})?/gi, '')
+                .replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
                 .replace(/\n{3,}/g, '\n\n')
                 .trim();
             _s = _s.replace(/\u0000CODEC(\d+)\u0000/g, function(_, i) { return _keep[parseInt(i)]; });
@@ -11492,26 +11287,6 @@
         var _autoDeployConsecutiveTooMany = 0;
         var _fileNotFoundStreak = 0;
         var _githubPushPendingFiles = {};
-        // Счётчик подряд идущих [FAIL] patch failed. На 2-м — сами, без запроса
-        // пользователя, вытаскиваем функцию из упавшего [BEFORE] и шлём файлом.
-        var _failStreak = 0;
-        var _lastFailedFn = null;
-
-        function _extractFnNameFromFail(text) {
-            if (!text) return null;
-            var body = String(text);
-            var res = [
-                /(?:^|\n)\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/,
-                /(?:^|\n)\s*var\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?function\b/,
-                /(?:^|\n)\s*(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?(?:function\b|\()/,
-                /(?:^|\n)\s*([A-Za-z_$][\w$]*)\s*[:=]\s*(?:async\s+)?function\b/
-            ];
-            for (var i = 0; i < res.length; i++) {
-                var r = body.match(res[i]);
-                if (r && r[1]) return r[1];
-            }
-            return null;
-        }
 
         async function _sendDeployErrorLog(msg, chat, info) {
             var _lines = [];
@@ -11842,28 +11617,6 @@
             // Разбор результата по всем файлам.
             if (_failedFile) {
                 var _et = _failedErrorType || 'patch_failed';
-                // Счётчик подряд идущих FAIL. На втором — сами вытаскиваем функцию
-                // из упавшего [BEFORE] и шлём её файлом, без ожидания запроса.
-                if (_et === 'patch_failed' || _et === 'patch_ambiguous') {
-                    var _fnFromFail = _extractFnNameFromFail(msg.content || '');
-                    if (_fnFromFail) _lastFailedFn = _fnFromFail;
-                    _failStreak++;
-                    if (_failStreak >= 2 && _lastFailedFn) {
-                        var _fnToExtract = _lastFailedFn;
-                        _failStreak = 0;
-                        _lastFailedFn = null;
-                        try {
-                            var _tr = await _toolExtract(_fnToExtract, {});
-                            console.log('[TOOL/auto] extract result=', _tr);
-                        } catch(e) {
-                            console.warn('[TOOL/auto] extract failed', e);
-                        }
-                        return;
-                    }
-                } else {
-                    _failStreak = 0;
-                    _lastFailedFn = null;
-                }
                 var _ar = 'перевыдай эту же пару заново';
                 var _hint = _failedServerError ? String(_failedServerError).slice(0, 500) : '';
                 if (_et === 'patch_failed') {
@@ -11894,9 +11647,6 @@
 
             // Все файлы применены
             _autoDeployConsecutiveTooMany = 0;
-            // Успех — сбрасываем серию FAIL и запомненную функцию.
-            _failStreak = 0;
-            _lastFailedFn = null;
             var _targetMsgId = msg.msg_id;
             var _chatRef = chat;
             window._markAutodeploy = async function(_mid, _userId) {
