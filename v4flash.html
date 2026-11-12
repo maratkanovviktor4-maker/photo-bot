@@ -2915,7 +2915,10 @@
 
         function _parseToolTag(text) {
             if (!text) return null;
-            var _s = String(text);
+            var _s = String(text).trim();
+            // Реальный вызов — только если тег стоит в самом начале ответа.
+            // Упоминание тега в объяснении/примере вызывает тулз ложно.
+            if (!/^\[TOOL:extract\]/i.test(_s)) return null;
             // Берём ПОСЛЕДНЕЕ вхождение тега — модель часто дублирует его
             // ("[TOOL:extract] [TOOL:extract] sendMessage"). Если брать первое,
             // в name попадает "[TOOL".
