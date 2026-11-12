@@ -11842,6 +11842,28 @@
             // Разбор результата по всем файлам.
             if (_failedFile) {
                 var _et = _failedErrorType || 'patch_failed';
+                // Счётчик подряд идущих FAIL. На втором — сами вытаскиваем функцию
+                // из упавшего [BEFORE] и шлём её файлом, без ожидания запроса.
+                if (_et === 'patch_failed' || _et === 'patch_ambiguous') {
+                    var _fnFromFail = _extractFnNameFromFail(msg.content || '');
+                    if (_fnFromFail) _lastFailedFn = _fnFromFail;
+                    _failStreak++;
+                    if (_failStreak >= 2 && _lastFailedFn) {
+                        var _fnToExtract = _lastFailedFn;
+                        _failStreak = 0;
+                        _lastFailedFn = null;
+                        try {
+                            var _tr = await _toolExtract(_fnToExtract, {});
+                            console.log('[TOOL/auto] extract result=', _tr);
+                        } catch(e) {
+                            console.warn('[TOOL/auto] extract failed', e);
+                        }
+                        return;
+                    }
+                } else {
+                    _failStreak = 0;
+                    _lastFailedFn = null;
+                }
                 var _ar = 'перевыдай эту же пару заново';
                 var _hint = _failedServerError ? String(_failedServerError).slice(0, 500) : '';
                 if (_et === 'patch_failed') {
