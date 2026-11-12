@@ -2726,7 +2726,11 @@
 
         function _stripAgentTags(text) {
             if (!text) return text;
-            return String(text).replace(/\[AGENT:(look|click|type|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '').replace(/\n{3,}/g, '\n\n').trim();
+            return String(text)
+                .replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
+                .replace(/\[TOOL:extract\](?:\s*\{[^\n]*\})?/gi, '')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
         }
 
         // Одно действие за виток: послать тег в background, дождаться скрина, отправить скрин в чат.
