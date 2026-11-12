@@ -2833,7 +2833,16 @@
             for (var i = 0; i < fns.length; i++) {
                 if (fns[i].name === name) {
                     var start = fns[i].line;
-                    var end = (i + 1 < fns.length) ? fns[i + 1].line : lines.length - 1;
+                    var baseIndent = _fnIndent(lines[start]);
+                    var end = lines.length - 1;
+                    for (var j = start + 1; j < lines.length; j++) {
+                        if (_fnIndent(lines[j]) > baseIndent) continue;
+                        var isFn = /^\s*(?:async\s+)?function\s+[A-Za-z_$]/.test(lines[j])
+                            || /^\s*(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:async\s+)?(?:function\b|\()/.test(lines[j])
+                            || /^\s*class\s+[A-Za-z_$]/.test(lines[j])
+                            || /^\s*[A-Za-z_$][\w$]*\s*[:=]\s*(?:async\s+)?function\b/.test(lines[j]);
+                        if (isFn) { end = j; break; }
+                    }
                     return {
                         start: start + 1,
                         end: end,
