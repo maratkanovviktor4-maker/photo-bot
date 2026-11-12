@@ -2785,6 +2785,130 @@
             }, 120000);
         }
 
+        // ===== TOOL: [TOOL:extract] — вынос функции из файла рабочей папки =====
+        // Сканирует исходник по строкам, находит начала всех объявлений функций,
+        // режет [start .. начало следующей]. Результат пишет в <имя>.txt в ту же
+        // папку и отправляет владением в чат через sendMessage().
+
+        function _scanFnNames(src) {
+            var out = [];
+            if (!src) return out;
+            var lines = src.split('\n');
+            var res = [
+                /^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/,
+                /^\s*var\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?function\b/,
+                /^\s*(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?(?:function\b|\()/,
+                /^\s*([A-Za-z_$][\w$]*)\s*[:=]\s*(?:async\s+)?function\b/,
+                /^\s*class\s+([A-Za-z_$][\w$]*)/
+            ];
+            for (var i = 0; i < lines.length; i++) {
+                for (var r = 0; r < res.length; r++) {
+                    var m = lines[i].match(res[r]);
+                    if (m && m[1]) { out.push({ name: m[1], line: i }); break; }
+                }
+            }
+            return out;
+        }
+
+        function _extractBlockByName(src, name) {
+            if (!src || !name) return null;
+            var lines = src.split('\n');
+            var fns = _scanFnNames(src);
+            for (var i = 0; i < fns.length; i++) {
+                if (fns[i].name === name) {
+                    var start = fns[i].line;
+                    var end = (i + 1 < fns.length) ? fns[i + 1].line : lines.length - 1;
+                    return {
+                        start: start + 1,
+                        end: end,
+                        text: lines.slice(start, end + 1).join('\n')
+                    };
+                }
+            }
+            return null;
+        }
+
+        async function _readWorkFileByName(fileName) {
+            if (!_deployHandles.work) {
+                try { await _restoreDeployHandles(); } catch(e) {}
+            }
+            if (!_deployHandles.work) return null;
+            var names = [];
+            try { names = await _listWorkFiles(_deployHandles.work); } catch(e) { names = []; }
+            if (!names.length) return null;
+            var real = fileName || null;
+            if (!real && names.length === 1) real = names[0];
+            if (!real) {
+                for (var i = 0; i < names.length; i++) {
+                    if (/v4flash\.html$/i.test(names[i])) { real = names[i]; break; }
+                }
+            }
+            if (!real) return null;
+            try {
+                var fh = await _deployHandles.work.getFileHandle(real);
+                var f = await fh.getFile();
+                return { name: real, text: await f.text() };
+            } catch(e) { return null; }
+        }
+
+        async function _writeWorkFileText(name, text) {
+            if (!_deployHandles.work) return null;
+            try {
+                var fh = await _deployHandles.work.getFileHandle(name, { create: true });
+                var w = await fh.createWritable();
+                await w.write(text);
+                await w.close();
+                return btoa(unescape(encodeURIComponent(text)));
+            } catch(e) { return null; }
+        }
+
+        async function _sendToolFileToChat(outName, b64, caption) {
+            pendingFiles = [{ name: outName, mime: 'text/plain', data: b64, _status: 'ok' }];
+            updateFileList();
+            var input = document.getElementById('userInput');
+            input.value = caption;
+            input.dispatchEvent(new Event('input'));
+            try { await sendMessage(); return true; } catch(e) { return false; }
+        }
+
+        async function _toolExtract(fnName, opts) {
+            opts = opts || {};
+            if (!fnName) return { ok: false, error: 'no_name' };
+            var src = await _readWorkFileByName(opts.file || '');
+            if (!src) return { ok: false, error: 'no_work_file' };
+            var ext = _extractBlockByName(src.text, fnName);
+            if (!ext) return { ok: false, error: 'function_not_found: ' + fnName };
+            var outName = (opts.outName || fnName) + '.txt';
+            var header = '// ' + src.name + ' :: ' + fnName + ' [' + ext.start + '-' + ext.end + ']\n';
+            var b64 = await _writeWorkFileText(outName, header + ext.text);
+            if (!b64) return { ok: false, error: 'write_failed' };
+            var ok = await _sendToolFileToChat(outName, b64,
+                '[TOOL:extract] ' + fnName + ' — файл ' + outName + ' во вложении');
+            if (!ok) return { ok: false, error: 'send_failed' };
+            return { ok: true, name: fnName, file: outName, start: ext.start, end: ext.end, bytes: ext.text.length };
+        }
+
+        function _parseToolTag(text) {
+            if (!text) return null;
+            var _re = /\[TOOL:extract\](?:\s*(\{[^\n]*\}))?/i;
+            var _m = _re.exec(String(text));
+            if (!_m) return null;
+            var _args = {};
+            if (_m[2]) { try { _args = JSON.parse(_m[2]); } catch(e) { _args = {}; } }
+            return { tool: 'extract', args: _args };
+        }
+
+        async function _runLocalTool(parsed) {
+            if (!parsed) return null;
+            try {
+                if (parsed.tool === 'extract') return await _toolExtract(String(parsed.args.name || ''), parsed.args);
+            } catch(e) {
+                return { ok: false, error: String(e && e.message ? e.message : e) };
+            }
+            return null;
+        }
+        // ===== END TOOL =====
+
         async function loadChatsFromServer() {
             showLoading();
             try {
