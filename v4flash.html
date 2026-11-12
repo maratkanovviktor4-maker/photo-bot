@@ -8364,10 +8364,9 @@
             window.postMessage({ type: 'agent_start' }, '*');
             // Пробрасываем список «Мои сайты» в текст user-сообщения, чтобы модель
             // могла выбирать URL по тегам задачи.
+            // [MY_SITES] больше не вшивается в text — уйдёт на сервер отдельным полем,
+            // чтобы не отображаться в UI (модель получит через extra_context).
             var _favUrls = (localStorage.getItem('photobot_favorite_urls') || '').trim();
-            if (_favUrls && currentPersonality === 'orchestrator' && text) {
-                text = '[MY_SITES]\n' + _favUrls + '\n[/MY_SITES]\n\n' + text;
-            }
             var _targetChatId = overrideChatId || currentChatId;
             var _targetBranchId = overrideBranchId || currentBranchId;
             if (!_targetChatId) {
