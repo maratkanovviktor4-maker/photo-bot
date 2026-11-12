@@ -2766,13 +2766,12 @@
                 pendingFiles = [_agentFile];
                 updateFileList();
                 uploadStagedFile(_agentFile).then(function() {
-                    if (_agentFile._status === 'ok' && _agentFile.file_id) {
-                        // Файл лежит на Files API — base64 больше не нужен в /chat.
-                        _agentFile.data = '';
-                    } else {
+                    if (_agentFile._status !== 'ok') {
                         console.warn('[AGENT] screenshot upload failed, retrying via base64');
                         _agentFile._status = 'ok';
                     }
+                    // data оставляем — он нужен для рендера превью в чате.
+                    // В /chat пойдёт только file_id (см. files.map в sendMessage).
                     updateFileList();
                     setTimeout(function() { sendMessage(); }, 50);
                 });
