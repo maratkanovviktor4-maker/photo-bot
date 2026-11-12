@@ -8941,6 +8941,28 @@
                     try { _pdfFn(); } catch(e) { console.warn('pdf render hook failed', e); }
                 }
                 if (_summaryFlow.active) { setTimeout(_summaryAfterReply, 300); }
+                // Локальный тулз [TOOL:extract]: выполняется на странице, в background не уходит.
+                // Приоритет над [AGENT:*]. Работает при любой личности модели.
+                var _agentFinalTextForTool = chat.messages[chat.messages.length - 1] && chat.messages[chat.messages.length - 1].role === 'assistant'
+                    ? (chat.messages[chat.messages.length - 1].content || '')
+                    : '';
+                var _toolParsed = _parseToolTag(_agentFinalTextForTool);
+                if (_toolParsed) {
+                    console.log('[TOOL] parsed=', _toolParsed);
+                    _runLocalTool(_toolParsed).then(function(_tr) {
+                        console.log('[TOOL] result=', _tr);
+                        if (!_tr || !_tr.ok) {
+                            var _err = (_tr && _tr.error) ? _tr.error : 'unknown';
+                            setTimeout(function() {
+                                var _inp = document.getElementById('userInput');
+                                _inp.value = '[FAIL] tool failed: ' + _err;
+                                _inp.dispatchEvent(new Event('input'));
+                                sendMessage();
+                            }, 100);
+                        }
+                    });
+                    return;
+                }
                 if (currentPersonality === 'orchestrator') {
                     var _agentFinalText = chat.messages[chat.messages.length - 1] && chat.messages[chat.messages.length - 1].role === 'assistant'
                         ? (chat.messages[chat.messages.length - 1].content || '')
