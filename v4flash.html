@@ -11472,6 +11472,10 @@
                     setTimeout(function() { sendMessage(); }, 50);
                     return;
                 }
+                pendingFiles = pendingFiles.filter(function(f) { return !f.name || f.name.indexOf('frag_') !== 0; });
+                _fileQueue = _fileQueue.filter(function(f) { return !f.name || f.name.indexOf('frag_') !== 0; });
+                updateFileList();
+                updateSendBtn();
                 var _outFile = await (await _deployHandles.work.getFileHandle(res.outName)).getFile();
                 _fileQueue.push(_outFile);
                 if (!_isProcessing) processFileQueue();
