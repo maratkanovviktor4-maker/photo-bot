@@ -8845,6 +8845,13 @@
                                 else if (parsed.error_type === 'connection_error') {
                                     errorMessage = 'Сервер не дождался ответа от DeepSeek. Попробуйте позже.'
                                 }
+                                // Сбрасываем isSending/спиннер до показа модалки: иначе
+                                // closeAlertModal() будет единственным путём сброса, а он
+                                // вдобавок перезагружает все чаты.
+                                isSending = false;
+                                activeStreamId = null;
+                                if (sendBtnRef) { sendBtnRef.disabled = false; }
+                                sendBtnArrow();
                                 showAlertModal('Ошибка DeepSeek', errorMessage, '❌');
                                 return;
                             }
