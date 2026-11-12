@@ -8234,6 +8234,9 @@
                 // экранируются в HTML-сущности и регексп не совпадёт.
                 var _rawContent = String(msg.content || '')
                     .replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
+                    // Незакрытый [GEN:*] в стриме (нет ещё '}') — режем до конца.
+                    .replace(/\[GEN:(image|audio|ace)\]\s*\{[\s\S]*$/i, '')
+                    // Закрытый [GEN:*]{...}.
                     .replace(/\[GEN:(image|audio|ace)\]\s*\{[\s\S]*?\}/gi, '')
                     .replace(/\n{3,}/g, '\n\n')
                     .trim();
