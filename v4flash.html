@@ -2745,6 +2745,10 @@
                 console.log('[AGENT] tool result =', JSON.stringify(d && d.result ? d.result : d).slice(0, 500));
                 var imgB64 = d && d.result && d.result.image_b64 ? d.result.image_b64 : '';
                 var isComplete = !!(d && d.result && d.result.complete);
+                if (!imgB64 && !isComplete) {
+                    console.warn('[AGENT] no image_b64 in result, skip');
+                    return;
+                }
                 // Пробрасываем реальный размер скриншота в текст user-сообщения,
                 // чтобы модель знала, в какой сетке называть координаты.
                 var _vpSize = d && d.result && d.result.viewport ? d.result.viewport : null;
