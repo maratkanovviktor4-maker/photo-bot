@@ -5207,7 +5207,7 @@
             }
             if (msg.role === 'user' && (msg.image_b64 || (msg.extra_b64s && msg.extra_b64s.length) || (msg.display_b64s && msg.display_b64s.length) || (msg.files_meta && msg.files_meta.length))) {
                 var _allImgs = '';
-                if (msg.image_b64) {
+                if (msg.image_b64 && (!msg.image_mime || String(msg.image_mime).indexOf('image/') === 0)) {
                     var _imgMime = msg.image_mime || 'image/jpeg';
                     _allImgs += '<img src="data:' + _imgMime + ';base64,' + msg.image_b64 + '" style="width:120px;height:80px;border-radius:6px;object-fit:cover;cursor:pointer;flex-shrink:0;display:block;" onclick="toggleFullPreview(this)">';
                 }
