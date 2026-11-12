@@ -10163,6 +10163,17 @@
                 files: (document.getElementById('extraProviderFiles') || {}).value || ''
             };
         }
+        function _readFavoriteUrls() {
+            return (document.getElementById('favoriteUrlsInput') || {}).value || '';
+        }
+        function _saveFavoriteUrlsToLS() {
+            localStorage.setItem('photobot_favorite_urls', _readFavoriteUrls());
+        }
+        function _loadFavoriteUrlsFromLS() {
+            var el = document.getElementById('favoriteUrlsInput');
+            if (!el) return;
+            el.value = localStorage.getItem('photobot_favorite_urls') || '';
+        }
         function _writeExtraProviderSettings(s) {
             if (!s) return;
             var _vt = document.getElementById('extraProviderToggle');
