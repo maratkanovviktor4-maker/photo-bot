@@ -2766,7 +2766,10 @@
                 pendingFiles = [_agentFile];
                 updateFileList();
                 uploadStagedFile(_agentFile).then(function() {
-                    if (_agentFile._status !== 'ok') {
+                    if (_agentFile._status === 'ok' && _agentFile.file_id) {
+                        // Файл лежит на Files API — base64 больше не нужен в /chat.
+                        _agentFile.data = '';
+                    } else {
                         console.warn('[AGENT] screenshot upload failed, retrying via base64');
                         _agentFile._status = 'ok';
                     }
