@@ -2927,13 +2927,13 @@
         // Разбор тега модели. Работает со сбалансированным простым JSON без вложенных {}.
         function _parseToolTag(text) {
             if (!text) return null;
-            var _re = /\[TOOL:(extract|map)\](?:\s*(\{[^\n]*\}))?/i;
-            var _m = _re.exec(String(text));
-            if (!_m) return null;
-            var _args = {};
-            if (_m[2]) { try { _args = JSON.parse(_m[2]); } catch(e) { _args = {}; } }
-            return { tool: _m[1].toLowerCase(), args: _args };
-        }
+            var _t = String(text);
+            // Маскируем блоки кода и инлайн-код: пример тега в тексте ответа не должен
+            // запускать тул.
+            _t = _t.replace(/<code[\s\S]*?<\/code>/gi, function(m) {
+                return m.replace(/[^\n]/g, ' ');
+            });
+            _t = _t.replace(/
 
         // Диспетчер тулов. Возвращает результат или null если тега нет.
         async function _runLocalTool(parsed) {
