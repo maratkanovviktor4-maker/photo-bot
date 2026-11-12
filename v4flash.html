@@ -2763,12 +2763,8 @@
                     _status: 'ok',
                     _orchestrator_step: true
                 }];
-                // Подсказка о размере — попадёт в текст user-сообщения рядом со скрином.
-                var _inp = document.getElementById('userInput');
-                if (_inp) {
-                    _inp.value = window._agentViewportHint || '';
-                    _inp.dispatchEvent(new Event('input'));
-                }
+                // Размер viewport уходит на сервер отдельным полем extra_context,
+                // в поле ввода не пишем — пользователь должен видеть только скрин.
                 setTimeout(function() { sendMessage(); }, 50);
             };
             window.addEventListener('message', handler);
