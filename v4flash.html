@@ -2760,16 +2760,19 @@
                 if (!imgB64) return;
                 var chat = chats.find(function(c) { return c.id === currentChatId; });
                 if (!chat) return;
-                pendingFiles = [{
-                    name: 'screenshot.jpg',
-                    mime: 'image/jpeg',
-                    data: imgB64,
-                    _status: 'ok',
-                    _orchestrator_step: true
-                }];
-                // Размер viewport уходит на сервер отдельным полем extra_context,
-                // в поле ввода не пишем — пользователь должен видеть только скрин.
-                setTimeout(function() { sendMessage(); }, 50);
+                // Кладём скрин как обычное вложение: сначала загружаем на Files API,
+                // потом отправляем в /chat с file_id (единый путь с обычными вложениями).
+                var _agentFile = { name: 'screenshot.jpg', mime: 'image/jpeg', data: imgB64, _status: 'uploading', _orchestrator_step: true };
+                pendingFiles = [_agentFile];
+                updateFileList();
+                uploadStagedFile(_agentFile).then(function() {
+                    if (_agentFile._status !== 'ok') {
+                        console.warn('[AGENT] screenshot upload failed, retrying via base64');
+                        _agentFile._status = 'ok';
+                    }
+                    updateFileList();
+                    setTimeout(function() { sendMessage(); }, 50);
+                });
             };
             window.addEventListener('message', handler);
             window.postMessage({ type: 'agent_tool_call', tool: tool, args: args, call_id: callId }, '*');
