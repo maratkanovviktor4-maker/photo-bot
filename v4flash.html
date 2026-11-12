@@ -8577,11 +8577,7 @@
                         branch_id: _targetBranchId,
                         personality: currentPersonality,
                         web_search: webSearchEnabled,
-                        files: _sendFilesSnapshot.map(function(f) {
-                            // Если файл уже на Files API — base64 в /chat не шлём (только file_id).
-                            var _hasFid = !!f.file_id;
-                            return { data: _hasFid ? '' : (f.data || ''), name: f.name || '', mime: f.mime || '', file_id: f.file_id || '' };
-                        }),
+                        files: _sendFilesSnapshot.map(function(f) { return { data: f.data || '', name: f.name || '', mime: f.mime || '', file_id: f.file_id || '' }; }),
                         flux: fluxModeEnabled,
                         flux_resolution: fluxModeEnabled ? getFluxSelectedResolution() : '',
                         audio: audioModeEnabled,
