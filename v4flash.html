@@ -5321,6 +5321,9 @@
             var _userHtml = escapeHtml(_displayContent);
             if (msg.role === 'user') {
                 _userHtml = _stripImgMarkers(_userHtml);
+                // Модель могла выдать тег-вызов в своём ответе; в user-пузыре
+                // он не должен отображаться. Вырезаем тег целиком.
+                _userHtml = _userHtml.replace(/\[TOOL:extract\]\s*\{[^}]*\}/gi, '').trim();
                 // Служебные сообщения тулза: сам тег-вызов и ответ «файл … во вложении»
                 // не показываем в чате — иначе они засоряют пузырь.
                 var _rawUser = String(_displayContent || '').trim();
