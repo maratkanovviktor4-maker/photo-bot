@@ -2725,9 +2725,12 @@
 
         function _stripAgentTags(text) {
             if (!text) return text;
+            // Многострочный JSON аргументов: [^\n] не хватит — модель может
+            // отформатировать {"x":1,\n"y":2} и тогда хвост `{...}` осиротеет
+            // в тексте. [\s\S] + нежадный матч — захватывает до первой }.
             return String(text)
-                .replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
-                .replace(/\[TOOL:(extract|map)\](?:\s*\{[^\n]*\})?/gi, '')
+                .replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*\{[\s\S]*?\})?/gi, '')
+                .replace(/\[TOOL:(extract|map)\](?:\s*\{[\s\S]*?\})?/gi, '')
                 .replace(/\n{3,}/g, '\n\n')
                 .trim();
         }
