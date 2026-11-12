@@ -2888,10 +2888,11 @@
         }
 
         async function _sendToolFileToChat(outName, b64, caption) {
-            // Результат тулза уходит обычным user-сообщением с вложением.
-            // Подпись в поле ввода НЕ ставим — она дублирует имя файла и
-            // плодит лишний пузырь с текстом.
-            pendingFiles = [{ name: outName, mime: 'text/plain', data: b64, _status: 'ok' }];
+            // Результат тулза уходит user-сообщением с вложением.
+            // Подпись в поле ввода НЕ ставим — она дублирует имя файла.
+            // Флаг _tool_result: sendMessage не станет ждать ответа модели
+            // и не создаст пустой assistant-пузырь.
+            pendingFiles = [{ name: outName, mime: 'text/plain', data: b64, _status: 'ok', _tool_result: true }];
             updateFileList();
             try { await sendMessage(); return true; } catch(e) { return false; }
         }
