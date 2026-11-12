@@ -2888,19 +2888,12 @@
         }
 
         async function _sendToolFileToChat(outName, b64, caption) {
-            // Результат тулза — это assistant-сообщение, не user.
-            // В user-поле ничего не пишем и sendMessage() не зовём.
-            var chat = chats.find(function(c) { return c.id === currentChatId; });
-            if (!chat) return false;
-            chat.messages.push({
-                role: 'assistant',
-                content: caption || ('файл ' + outName + ' во вложении'),
-                _tool_file: { name: outName, data: b64 }
-            });
-            playSound('reply');
-            renderMessages();
-            scrollToBottom();
-            return true;
+            pendingFiles = [{ name: outName, mime: 'text/plain', data: b64, _status: 'ok' }];
+            updateFileList();
+            var input = document.getElementById('userInput');
+            input.value = caption;
+            input.dispatchEvent(new Event('input'));
+            try { await sendMessage(); return true; } catch(e) { return false; }
         }
 
         async function _toolExtract(fnName, opts) {
