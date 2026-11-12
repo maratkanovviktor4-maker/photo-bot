@@ -11475,16 +11475,10 @@
                 var _outFile = await (await _deployHandles.work.getFileHandle(res.outName)).getFile();
                 _fileQueue.push(_outFile);
                 if (!_isProcessing) processFileQueue();
-                var _waitStaged = setInterval(function() {
-                    var _found = pendingFiles.some(function(f) { return f.name === res.outName; });
-                    if (!_found) return;
-                    clearInterval(_waitStaged);
-                    var _inp2 = document.getElementById('userInput');
-                    _inp2.value = '[EXTRACT_DELIVERED] file=' + payload.file + ' block=' + payload.block;
-                    _inp2.dispatchEvent(new Event('input'));
-                    setTimeout(function() { sendMessage(); }, 50);
-                }, 100);
-                setTimeout(function() { clearInterval(_waitStaged); }, 15000);
+                var _inp2 = document.getElementById('userInput');
+                _inp2.value = '[EXTRACT_DELIVERED] file=' + payload.file + ' block=' + payload.block;
+                _inp2.dispatchEvent(new Event('input'));
+                setTimeout(function() { updateSendBtn(); }, 1500);
             } finally {
                 setTimeout(function() { _extractInFlight = false; }, 500);
             }
