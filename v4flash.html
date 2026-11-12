@@ -8763,12 +8763,25 @@
 
                 if (resp.status === 406) {
                     var errData = await resp.json().catch(() => ({}));
+                    // Сбрасываем «пустой» assistant до показа модалки, иначе спиннер
+                    // висит до того, как пользователь закроет OK (а тот ещё и перезагру-
+                    // жает все чаты в loadChatsFromServer).
+                    try { chat.messages.pop(); renderMessages(); } catch(_e) {}
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnRef.disabled = false;
+                    sendBtnArrow();
                     showAlertModal('Слишком длинный текст', errData.error || 'Суммарная длина текста превышает лимит.', '⚠️');
                     return;
                 }
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
                     let errorMessage = errData.error || 'Ошибка сервера.';
+                    try { chat.messages.pop(); renderMessages(); } catch(_e) {}
+                    isSending = false;
+                    activeStreamId = null;
+                    sendBtnRef.disabled = false;
+                    sendBtnArrow();
                     showAlertModal('Ошибка', errorMessage, '❌');
                     return;
                 }
