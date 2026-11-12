@@ -9008,19 +9008,26 @@
                     console.log('[AGENT] parsed=', _agentParsed, 'autoDeploy=', _autoDeployEnabled);
                     if (_agentParsed) {
                         _agentModeEnabled = _agentParsed.tool !== 'complete';
-                        // Пауза перед запуском действия. Агент стартует только если:
-                        // 1) тег есть (проверено выше),
-                        // 2) автодеплой включён (_autoDeployEnabled),
-                        // 3) в паузу не пришёл стоп (_agentModeEnabled !== false).
-                        var _agentDelayToken = {};
-                        window._pendingAgentAction = _agentDelayToken;
-                        setTimeout(function() {
-                            if (window._pendingAgentAction !== _agentDelayToken) return;
-                            window._pendingAgentAction = null;
-                            if (!_agentModeEnabled) return;
-                            if (!_autoDeployEnabled) { _agentModeEnabled = false; return; }
-                            _runAgentAction(_agentParsed.tool, _agentParsed.args);
-                        }, 1200);
+                        // complete отправляется в background безусловно: он должен
+                        // отпустить debugger и выставить stopped=true. Иначе дебаггер-бар
+                        // висит на вкладке и следующий прогон стартует с чужим состоянием.
+                        if (_agentParsed.tool === 'complete') {
+                            _runAgentAction('complete', {});
+                        } else {
+                            // Пауза перед запуском действия. Агент стартует только если:
+                            // 1) тег есть (проверено выше),
+                            // 2) автодеплой включён (_autoDeployEnabled),
+                            // 3) в паузу не пришёл стоп (_agentModeEnabled !== false).
+                            var _agentDelayToken = {};
+                            window._pendingAgentAction = _agentDelayToken;
+                            setTimeout(function() {
+                                if (window._pendingAgentAction !== _agentDelayToken) return;
+                                window._pendingAgentAction = null;
+                                if (!_agentModeEnabled) return;
+                                if (!_autoDeployEnabled) { _agentModeEnabled = false; return; }
+                                _runAgentAction(_agentParsed.tool, _agentParsed.args);
+                            }, 1200);
+                        }
                     }
                 }
             } catch (e) {
