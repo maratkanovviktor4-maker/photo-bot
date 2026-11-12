@@ -11866,6 +11866,26 @@
                     _ar = 'правка не применена из-за сбоя применения — перевыдай ту же пару заново без изменений';
                 }
 
+                // Счётчик подряд идущих FAIL. На третьем подряд — не шлём обычный
+                // [FAIL] в чат, а принудительно вытаскиваем функцию из последнего
+                // упавшего [BEFORE] через [TOOL:extract]. Делаем один раз на серию.
+                _failStreak++;
+                if (_et === 'patch_failed' || _et === 'patch_ambiguous') {
+                    var _fn = _extractFnNameFromFail(msg.content || '');
+                    if (_fn) _lastFailedFn = _fn;
+                }
+                if (_failStreak >= 3 && _lastFailedFn) {
+                    var _fnToExtract = _lastFailedFn;
+                    _failStreak = 0;
+                    try {
+                        var _ex = await _toolExtract(_fnToExtract, {});
+                        console.log('[TOOL/auto] extract result=', _ex);
+                    } catch (e) {
+                        console.warn('[TOOL/auto] extract failed', e);
+                    }
+                    return;
+                }
+
                 await _sendDeployErrorLog(msg, chat, {
                     error_type: _et,
                     action_required: _ar,
