@@ -5127,8 +5127,6 @@
                 if (_stripAgentTagsForRender) contentToShow = _stripAgentTagsForRender(contentToShow);
                 // Жёсткая страховка: вырезаем любые [AGENT:*]{...} из финального текста.
                 contentToShow = String(contentToShow || '').replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '').replace(/\n{3,}/g, '\n\n').trim();
-                // Убираем теги креатора [GEN:image|audio|ace]{...}.
-                contentToShow = String(contentToShow || '').replace(/\[GEN:(image|audio|ace)\]\s*\{[\s\S]*?\}/gi, '').replace(/\n{3,}/g, '\n\n').trim();
             }
             if (hasReasoning) {
                 var reasoningCollapsed = msg._reasoningCollapsed;
@@ -8230,14 +8228,7 @@
                 }
                 
                 var reasoningText = msg._reasoningBuffer || '';
-                // Убираем [GEN:*]{...} и [AGENT:*]{...} ДО formatMessage — иначе {}/кавычки
-                // экранируются в HTML-сущности и регексп не совпадёт.
-                var _rawContent = String(msg.content || '')
-                    .replace(/\[AGENT:(look|click|text|clear|key|scroll|navigate|complete)\](?:\s*\{[^\n]*\})?/gi, '')
-                    .replace(/\[GEN:(image|audio|ace)\]\s*\{[\s\S]*?\}/gi, '')
-                    .replace(/\n{3,}/g, '\n\n')
-                    .trim();
-                var contentHtml = formatMessage(_rawContent);
+                var contentHtml = formatMessage(msg.content || '');
                 
                 var parentEl = el.parentElement;
                 var prevHeight = parentEl.offsetHeight;
