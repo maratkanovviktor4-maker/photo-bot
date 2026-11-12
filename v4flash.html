@@ -8992,6 +8992,17 @@
                     try { _pdfFn(); } catch(e) { console.warn('pdf render hook failed', e); }
                 }
                 if (_summaryFlow.active) { setTimeout(_summaryAfterReply, 300); }
+                // Ручной вызов тула: пользователь шлёт текстом [TOOL:extract]{...} или
+                // [TOOL:map]{...}. Не зависит от личности модели — работает всегда.
+                (function _maybeRunUserTool(userText) {
+                    if (!userText) return;
+                    var _p = _parseToolTag(String(userText));
+                    if (!_p) return;
+                    console.log('[TOOL/user] parsed=', _p);
+                    _runLocalTool(_p).then(function(_r) {
+                        console.log('[TOOL/user] result=', _r);
+                    });
+                })(text);
                 if (currentPersonality === 'orchestrator') {
                     var _agentFinalText = chat.messages[chat.messages.length - 1] && chat.messages[chat.messages.length - 1].role === 'assistant'
                         ? (chat.messages[chat.messages.length - 1].content || '')
