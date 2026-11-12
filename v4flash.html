@@ -11465,8 +11465,12 @@
                 var _cxChat = chats.find(function(c) { return c.id === currentChatId; });
                 var _cxMsg = _cxChat ? _cxChat.messages[msgIndex] : null;
                 if (_cxMsg && _cxMsg.role === 'assistant') {
+                    if (_cxMsg._extractHandled) {
+                        return;
+                    }
                     var _cxPayload = _parseExtractTag(_cxMsg.content || '');
                     if (_cxPayload) {
+                        _cxMsg._extractHandled = true;
                         _cxMsg.content = _stripExtractTag(_cxMsg.content || '');
                         renderMessages();
                         _runExtractTool(_cxPayload);
