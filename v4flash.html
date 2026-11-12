@@ -2888,11 +2888,11 @@
         }
 
         async function _sendToolFileToChat(outName, b64, caption) {
+            // Результат тулза уходит обычным user-сообщением с вложением.
+            // Подпись в поле ввода НЕ ставим — она дублирует имя файла и
+            // плодит лишний пузырь с текстом.
             pendingFiles = [{ name: outName, mime: 'text/plain', data: b64, _status: 'ok' }];
             updateFileList();
-            var input = document.getElementById('userInput');
-            input.value = caption;
-            input.dispatchEvent(new Event('input'));
             try { await sendMessage(); return true; } catch(e) { return false; }
         }
 
