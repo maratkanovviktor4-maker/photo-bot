@@ -2928,26 +2928,20 @@
             while ((_mm = _re.exec(_s)) !== null) _last = _mm.index;
             if (_last === -1) return null;
             var _tail = _s.slice(_last + '[TOOL:extract]'.length);
-            // Снимаем ведущие повторы тега ("[TOOL:extract] [TOOL:extract] ...").
-            var _clean = _tail.replace(/^\s*(?:\[TOOL:extract\]\s*)+/i, '');
-            var _head = _clean.slice(0, 500);
+            // ВАЛИДНЫЙ ВЫЗОВ: сразу за тегом идёт JSON-объект с полем name.
+            // Никаких fallback'ов на "первое слово" — иначе любой упомянутый
+            // в тексте тег запускает тулз и уходит в петлю [FAIL].
+            var _jm = _tail.match(/^\s*(\{[\s\S]*?\})/);
+            if (!_jm) return null;
             var _args = {};
-            // 1) Ищем первый JSON-объект в окне 500 символов после тега.
-            //    Не требуем, чтобы он был вплотную — модель может поставить
-            //    пробел, перенос строки или бэктик между тегом и JSON.
-            var _jm = _head.match(/\{[\s\S]*?\}/);
-            if (_jm) {
-                try {
-                    var _parsed = JSON.parse(_jm[0]);
-                    if (_parsed && typeof _parsed === 'object') _args = _parsed;
-                } catch(e) { _args = {}; }
+            try {
+                var _parsed = JSON.parse(_jm[1]);
+                if (!_parsed || typeof _parsed !== 'object') return null;
+                _args = _parsed;
+            } catch(e) {
+                return null;
             }
-            // 2) Fallback: первое слово-идентификатор сразу после тега,
-            //    без бэктиков/кавычек.
-            if (!_args.name) {
-                var _wm = _head.match(/^\s*([A-Za-z_$][\w$]*)/);
-                if (_wm) _args.name = _wm[1];
-            }
+            if (!_args.name || typeof _args.name !== 'string') return null;
             return { tool: 'extract', args: _args };
         }
 
