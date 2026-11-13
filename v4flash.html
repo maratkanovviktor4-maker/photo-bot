@@ -8839,7 +8839,49 @@
                     window._pdfRenderAfterAssistant = null;
                     try { _pdfFn(); } catch(e) { console.warn('pdf render hook failed', e); }
                 }
-                if (_summaryFlow.active) { setTimeout(_summaryAfterReply, 300); }
+                (function() {
+                var _okRand = window._lastSummaryOkRand || '';
+                if (!_okRand) return;
+                var _userLast = null;
+                for (var _ui = chat.messages.length - 1; _ui >= 0; _ui--) {
+                    if (chat.messages[_ui].role === 'user') { _userLast = chat.messages[_ui]; break; }
+                }
+                if (!_userLast || !_userLast.content) return;
+                if (_userLast.content.indexOf('[SUMMARY_OK:' + _okRand + ']') === -1) return;
+                window._lastSummaryOkRand = '';
+                var _cutChatId = chat.id;
+                var _cutBranchId = currentBranchId;
+                setTimeout(async function() {
+                    try {
+                        var treeResp = await fetch(SERVER_URL + '/get_chat_tree?user_id=' + currentUserId + '&model=flash&chat_id=' + _cutChatId + '&session_token=' + sessionToken);
+                        if (!treeResp.ok) return;
+                        var tree = await treeResp.json();
+                        var branch = (tree.branches || {})[_cutBranchId] || {};
+                        var ids = branch.msg_ids || [];
+                        var lastAIdx = -1;
+                        for (var bi = ids.length - 1; bi >= 0; bi--) {
+                            var m = (tree.messages || {})[ids[bi]];
+                            if (m && m.role === 'assistant') { lastAIdx = bi; break; }
+                        }
+                        if (lastAIdx < 2) return;
+                        var userIdx = lastAIdx - 1;
+                        if (userIdx < 0) return;
+                        var msgIdsToDelete = [];
+                        for (var di = 0; di < userIdx; di++) msgIdsToDelete.push(ids[di]);
+                        if (!msgIdsToDelete.length) return;
+                        await fetch(SERVER_URL + '/delete_messages', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                            body: JSON.stringify({
+                                user_id: currentUserId, model: 'flash', chat_id: _cutChatId,
+                                branch_id: _cutBranchId, msg_ids: msgIdsToDelete
+                            })
+                        });
+                        await loadChatMessages(_cutChatId);
+                        fullRender();
+                    } catch(e) { console.warn('summary cut failed', e); }
+                }, 300);
+            })();
                 if (currentPersonality === 'orchestrator') {
                     var _agentFinalText = chat.messages[chat.messages.length - 1] && chat.messages[chat.messages.length - 1].role === 'assistant'
                         ? (chat.messages[chat.messages.length - 1].content || '')
