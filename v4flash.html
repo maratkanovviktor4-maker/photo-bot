@@ -11443,6 +11443,72 @@
             var outName = 'frag_' + _tag + ext;
             return { ok: true, chunk: chunk, outName: outName };
         }
+        async function _buildSummaryByParser(fileName, base, rulesText) {
+            var _out = { ok: false, content: '', parserFileName: 'summary_parser_' + base + '.txt', error: '' };
+            try {
+                var _rules = JSON.parse(rulesText);
+                var _ruleList = _rules.rules && _rules.rules.length ? _rules.rules : [_rules];
+                var _fh = await _deployHandles.work.getFileHandle(fileName);
+                var _file = await _fh.getFile();
+                var _raw = await _file.text();
+                var _txt = _raw.replace(/\r\n/g, '\n');
+                var _lines = _txt.split('\n');
+                var _starts = [];
+                for (var _ci = 0; _ci < _lines.length; _ci++) {
+                    var _ln = _lines[_ci];
+                    for (var _ri = 0; _ri < _ruleList.length; _ri++) {
+                        var _r = _ruleList[_ri];
+                        if (!_r || !_r.block_start) continue;
+                        if (_r.require_level0) {
+                            if (_ln.length > 0 && (_ln.charAt(0) === ' ' || _ln.charAt(0) === '\t')) continue;
+                        }
+                        var _re = null;
+                        try { _re = new RegExp(_r.block_start); } catch(e) { continue; }
+                        if (_re.test(_ln)) {
+                            _starts.push({ line: _ci, name: (_ln.trim().slice(0, 80)), rule: _r });
+                            break;
+                        }
+                    }
+                }
+                if (!_starts.length) {
+                    _out.error = 'по правилам не найдено ни одного блока';
+                    return _out;
+                }
+                var _blocks = [];
+                for (var _si = 0; _si < _starts.length; _si++) {
+                    var _st = _starts[_si];
+                    var _nextLine = (_si + 1 < _starts.length) ? _starts[_si + 1].line : -1;
+                    var _endLine = (_nextLine === -1) ? (_lines.length - 1) : (_nextLine - 1);
+                    while (_endLine > _st.line && _lines[_endLine].trim() === '') _endLine--;
+                    var _anchorSrc = _st.rule && _st.rule.anchor === 'start_line_full' ? _lines[_st.line] : _st.name;
+                    _blocks.push({ num: _si + 1, name: _st.name, anchor: _anchorSrc });
+                }
+                var _uniqProblems = [];
+                for (var _bi = 0; _bi < _blocks.length; _bi++) {
+                    var _b = _blocks[_bi];
+                    var _first = _txt.indexOf(_b.anchor);
+                    var _second = _txt.indexOf(_b.anchor, _first + _b.anchor.length);
+                    if (_first === -1 || _second !== -1) {
+                        _uniqProblems.push(_b.num);
+                    }
+                }
+                var _outLines = [];
+                for (var _oi = 0; _oi < _blocks.length; _oi++) {
+                    var _ob = _blocks[_oi];
+                    var _unq = _uniqProblems.indexOf(_ob.num) === -1 ? '' : ' | ERROR: неуникальный якорь';
+                    _outLines.push(_ob.num + ' | ' + _ob.name + ' | ' + _ob.anchor + _unq);
+                }
+                _out.ok = true;
+                _out.content = _outLines.join('\n') + '\n';
+                if (_uniqProblems.length) {
+                    _out.error = 'неуникальные якоря: ' + _uniqProblems.join(', ');
+                }
+                return _out;
+            } catch(e) {
+                _out.error = 'исключение: ' + (e && e.message ? e.message : e);
+                return _out;
+            }
+        }
         function _b64FromUtf8(str) {
             try { return btoa(unescape(encodeURIComponent(str))); } catch(e) { return ''; }
         }
