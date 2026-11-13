@@ -10086,11 +10086,11 @@
             var edits = [];
             if (!content) return edits;
             var tpl = String.fromCharCode(96, 96, 96);
-            var _masked = content.replace(new RegExp(tpl + tpl + tpl + "[\\s\\S]*?" + tpl + tpl + tpl, "g"), function(m) {
+            var _masked = content.replace(new RegExp("(?:^|\\n)[ \\t]*(?:\\*\\*|__)?[ \\t]*" + tpl + "[^\\n]*\\n[\\s\\S]*?\\n" + tpl + "[ \\t]*(?=\\n|$)", "g"), function(m) {
                 return m.replace(/[^\n]/g, ' ');
             });
             var _pre = "(?:^|\\n)[ \\t]*(?:\\*\\*|__)?[ \\t]*(.+?\\.[A-Za-z0-9]{1,8})[ \\t]+";
-            var _post = "[ \\t]*(?:\\*\\*|__)?[ \\t]*\\n\\s*" + tpl + "\\w*\\r?\\n([\\s\\S]*?)" + tpl;
+            var _post = "[ \\t]*(?:\\*\\*|__)?[ \\t]*\\n[ \\t]*" + tpl + "\\w*\\r?\\n([\\s\\S]*?)\\n" + tpl + "[ \\t]*(?=\\n|$)";
             var oldRe = new RegExp(_pre + "\\[BEFORE\\]" + _post, "gi");
             var newRe = new RegExp(_pre + "\\[AFTER\\]" + _post, "gi");
             var olds = [];
