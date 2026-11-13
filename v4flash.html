@@ -11786,25 +11786,6 @@
             try { return btoa(unescape(encodeURIComponent(str))); } catch(e) { return ''; }
         }
         /*__STRAY_BLOCK_START__*/
-            var _arr = [];
-            if (!txt) return _arr;
-            var _lines = String(txt).replace(/\r\n/g, '\n').split('\n');
-            for (var _i = 0; _i < _lines.length; _i++) {
-                var _ln = _lines[_i];
-                if (!_ln.trim()) continue;
-                if (_ln.indexOf(' | ERROR:') !== -1) {
-                    _ln = _ln.substring(0, _ln.indexOf(' | ERROR:'));
-                }
-                var _parts = _ln.split('|');
-                if (_parts.length < 2) continue;
-                var _num = _parts[0].trim();
-                if (!/^\d+$/.test(_num)) continue;
-                var _last = _parts[_parts.length - 1].trim();
-                var _name = _parts.length >= 3 ? _parts[1].trim() : '';
-                _arr.push({ num: _num, name: _name, anchor: _last });
-            }
-            return _arr;
-        }
         async function _compareSummaries(bases) {
             var _logLines = [];
             var _okFiles = [];
