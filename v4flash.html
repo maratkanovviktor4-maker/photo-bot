@@ -4936,48 +4936,7 @@
         }
 
         async function _summaryAfterReply() {
-            var _chatId = currentChatId;
-            if (!_chatId) return;
-            var chat = chats.find(function(c) { return c.id === _chatId; });
-            if (!chat) return;
-            var _branchId = currentBranchId || chat.activeBranch || 'main';
-            var lastA = null;
-            for (var i = chat.messages.length - 1; i >= 0; i--) {
-                if (chat.messages[i].role === 'assistant') { lastA = chat.messages[i]; break; }
-            }
-            if (!lastA) return;
-            try {
-                var msgIdsToDelete = [];
-                var treeResp = await fetch(SERVER_URL + '/get_chat_tree?user_id=' + currentUserId + '&model=flash&chat_id=' + _chatId + '&session_token=' + sessionToken);
-                if (!treeResp.ok) return;
-                var tree = await treeResp.json();
-                var branch = (tree.branches || {})[_branchId] || {};
-                var ids = branch.msg_ids || [];
-                var lastAIdx = -1;
-                for (var bi = ids.length - 1; bi >= 0; bi--) {
-                    var m = (tree.messages || {})[ids[bi]];
-                    if (m && m.role === 'assistant') { lastAIdx = bi; break; }
-                }
-                var userIdx = lastAIdx - 1;
-                if (userIdx >= 0 && lastAIdx >= 0) {
-                    for (var di = 0; di < userIdx; di++) msgIdsToDelete.push(ids[di]);
-                }
-                if (msgIdsToDelete.length) {
-                    await fetch(SERVER_URL + '/delete_messages', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                        body: JSON.stringify({
-                            user_id: currentUserId, model: 'flash', chat_id: _chatId,
-                            branch_id: _branchId, msg_ids: msgIdsToDelete
-                        })
-                    });
-                }
-                await loadChatMessages(_chatId);
-                fullRender();
-            } catch(e) {
-                console.warn('summary trim failed', e);
-            }
-        }
+            if (!_summaryFlow.active) return;
             var _chatId = _summaryFlow.chatId;
             if (currentChatId !== _chatId) { _summaryFlow.active = false; return; }
             var chat = chats.find(function(c) { return c.id === _chatId; });
@@ -8407,11 +8366,6 @@
             if (isSending) return;
             const input = document.getElementById('userInput');
             let text = input.value.trim();
-            var _summaryOkMarker = window._summaryOkMarker || '';
-            if (_summaryOkMarker && text.indexOf(_summaryOkMarker) !== -1) {
-                window._summaryOkMarker = '';
-                setTimeout(function() { try { _summaryAfterReply(); } catch(e) {} }, 200);
-            }
 
             // Стоп-интент: пользователь просит остановить агента — гасим флаг в background
             // и не отправляем это сообщение в /chat (иначе модель успевает выдать ещё один [AGENT:*]).
