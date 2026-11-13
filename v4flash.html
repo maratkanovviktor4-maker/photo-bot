@@ -4937,55 +4937,7 @@
 
         async function _summaryAfterReply() {
             if (!_summaryFlow.active) return;
-            var _chatId = _summaryFlow.chatId;
-            if (currentChatId !== _chatId) { _summaryFlow.active = false; return; }
-            var chat = chats.find(function(c) { return c.id === _chatId; });
-            if (!chat) { _summaryFlow.active = false; return; }
-            if (!_summaryFlow.branchId) _summaryFlow.branchId = chat.activeBranch || 'main';
-            var lastA = null;
-            for (var i = chat.messages.length - 1; i >= 0; i--) {
-                if (chat.messages[i].role === 'assistant') { lastA = chat.messages[i]; break; }
-            }
-            if (!lastA) { _summaryFlow.active = false; return; }
-            var summaryText = lastA.content || '';
-            if (!summaryText.trim()) { _summaryFlow.active = false; return; }
-
-            showLoading();
-            try {
-                var msgIdsToDelete = [];
-                var treeResp = await fetch(SERVER_URL + '/get_chat_tree?user_id=' + currentUserId + '&model=flash&chat_id=' + _chatId + '&session_token=' + sessionToken);
-                if (!treeResp.ok) { hideLoading(); _summaryFlow.active = false; return; }
-                var tree = await treeResp.json();
-                var branch = (tree.branches || {})[_summaryFlow.branchId] || {};
-                var ids = branch.msg_ids || [];
-                var lastAIdx = -1;
-                for (var bi = ids.length - 1; bi >= 0; bi--) {
-                    var m = (tree.messages || {})[ids[bi]];
-                    if (m && m.role === 'assistant') { lastAIdx = bi; break; }
-                }
-                var userIdx = lastAIdx - 1;
-                if (userIdx >= 0 && lastAIdx >= 0) {
-                    for (var di = 0; di < userIdx; di++) msgIdsToDelete.push(ids[di]);
-                }
-                if (msgIdsToDelete.length) {
-                    await fetch(SERVER_URL + '/delete_messages', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                        body: JSON.stringify({
-                            user_id: currentUserId, model: 'flash', chat_id: _chatId,
-                            branch_id: _summaryFlow.branchId, msg_ids: msgIdsToDelete
-                        })
-                    });
-                }
-                await loadChatMessages(_chatId);
-                fullRender();
-                hideLoading();
-                _summaryFlow.active = false;
-            } catch(e) {
-                console.warn('summary flow failed', e);
-                hideLoading();
-                _summaryFlow.active = false;
-            }
+            _summaryFlow.active = false;
         }
 
         function showMessageMenu(event, index) {
