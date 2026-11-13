@@ -8854,9 +8854,11 @@
                     window._pdfRenderAfterAssistant = null;
                     try { _pdfFn(); } catch(e) { console.warn('pdf render hook failed', e); }
                 }
-                // === SUMMARY COMPARE (после ответа ассистента) ===
+                // === SUMMARY COMPARE (только по кнопке «Выжимка») ===
             (async function() {
                 try {
+                if (!window._summaryComparePending) return;
+                window._summaryComparePending = false;
                 var _aiLast = chat.messages[chat.messages.length - 1];
                 if (!_aiLast || _aiLast.role !== 'assistant') return;
                 var _aiContent = _aiLast.content || '';
