@@ -11482,8 +11482,46 @@
             }
         }
 
+        function _parseSummaryAiTag(text) {
+            if (!text) return null;
+            var _tpl = String.fromCharCode(96, 96, 96);
+            var _re = new RegExp('(?:^|\\n)[ \\t]*summari_ai_([^\\s\\n]+)[ \\t]*\\r?\\n' + _tpl + '\\w*\\r?\\n([\\s\\S]*?)' + _tpl, 'i');
+            var _m = _re.exec(String(text));
+            if (!_m) return null;
+            return { file: _m[1].trim(), code: _m[2] };
+        }
+
+        async function _createSummaryAiFile(fileName, content) {
+            if (!_deployHandles.work) {
+                try { await _restoreDeployHandles(); } catch(e) {}
+            }
+            if (!_deployHandles.work) {
+                console.warn('[SUMMARI_AI] рабочая папка не выбрана');
+                return false;
+            }
+            try {
+                var _fh = await _deployHandles.work.getFileHandle(fileName, { create: true });
+                var _w = await _fh.createWritable();
+                await _w.write(content);
+                await _w.close();
+                return true;
+            } catch(e) {
+                console.warn('[SUMMARI_AI] save failed', e);
+                return false;
+            }
+        }
+
         async function _autoDeployAfterAssistant(msgIndex) {
             if (_extractInFlight) return;
+            var _saChat = chats.find(function(c) { return c.id === currentChatId; });
+            var _saMsg = _saChat ? _saChat.messages[msgIndex] : null;
+            if (_saMsg && _saMsg.role === 'assistant' && !_saMsg._summaryAiHandled) {
+                var _saParsed = _parseSummaryAiTag(_saMsg.content || '');
+                if (_saParsed) {
+                    _saMsg._summaryAiHandled = true;
+                    await _createSummaryAiFile(_saParsed.file, 'тест');
+                }
+            }
             if (currentPersonality === 'developer') {
                 var _cxChat = chats.find(function(c) { return c.id === currentChatId; });
                 var _cxMsg = _cxChat ? _cxChat.messages[msgIndex] : null;
