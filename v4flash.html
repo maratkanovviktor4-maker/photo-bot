@@ -11373,7 +11373,7 @@
             }
             return map;
         }
-        async function _extractBlockFromWorkDir(fileName, blockNum, mapName) {
+        async function _extractBlockFromWorkDir(fileName, blockNum) {
             if (!_deployHandles.work) {
                 try { await _restoreDeployHandles(); } catch(e) {}
             }
@@ -11387,9 +11387,8 @@
                 return { ok: false, error: 'Файл ' + fileName + ' не найден в рабочей папке.' };
             }
             var summaryTxt = '';
-            var _mapName = mapName || 'summary.txt';
             try {
-                var sh = await _deployHandles.work.getFileHandle(_mapName);
+                var sh = await _deployHandles.work.getFileHandle('summary.txt');
                 var sf = await sh.getFile();
                 summaryTxt = await sf.text();
             } catch(e) {
