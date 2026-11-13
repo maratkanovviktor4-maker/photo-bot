@@ -11393,12 +11393,22 @@
             }
             if (!_deployHandles.work) return { ok: false, error: 'Рабочая папка не выбрана.' };
             var summaryTxt = '';
+            var _baseName = fileName.replace(/\.[^./\\]+$/, '');
             try {
-                var sh = await _deployHandles.work.getFileHandle('summary.txt');
+                var sh = await _deployHandles.work.getFileHandle('summary_parser_' + _baseName + '.txt');
                 var sf = await sh.getFile();
                 summaryTxt = await sf.text();
             } catch(e) {
-                return { ok: false, error: 'summary.txt не найден в рабочей папке.' };
+                summaryTxt = '';
+            }
+            if (!summaryTxt) {
+                try {
+                    var sh2 = await _deployHandles.work.getFileHandle('summary.txt');
+                    var sf2 = await sh2.getFile();
+                    summaryTxt = await sf2.text();
+                } catch(e) {
+                    return { ok: false, error: 'summary_parser_' + _baseName + '.txt и summary.txt не найдены в рабочей папке.' };
+                }
             }
             var map = _parseSummaryBlocks(summaryTxt);
             if (!map[blockNum]) {
