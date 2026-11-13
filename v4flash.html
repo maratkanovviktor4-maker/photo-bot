@@ -8368,6 +8368,11 @@
             if (isSending) return;
             const input = document.getElementById('userInput');
             let text = input.value.trim();
+            var _summaryOkMarker = window._summaryOkMarker || '';
+            if (_summaryOkMarker && text.indexOf(_summaryOkMarker) !== -1) {
+                window._summaryOkMarker = '';
+                setTimeout(function() { try { _summaryAfterReply(); } catch(e) {} }, 200);
+            }
 
             // Стоп-интент: пользователь просит остановить агента — гасим флаг в background
             // и не отправляем это сообщение в /chat (иначе модель успевает выдать ещё один [AGENT:*]).
