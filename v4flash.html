@@ -4938,6 +4938,113 @@
         async function _summaryAfterReply() {
             if (!_summaryFlow.active) return;
             _summaryFlow.active = false;
+            var _chat = chats.find(function(c) { return c.id === _summaryFlow.chatId; });
+            if (!_chat) return;
+            if (!_deployHandles.work) {
+                try { await _restoreDeployHandles(); } catch(e) {}
+            }
+            if (!_deployHandles.work) return;
+            await _runSummaryDiffForServer();
+        }
+
+        // Читает файл из рабочей папки, возвращает текст или null.
+        async function _readWorkFile(name) {
+            try {
+                var fh = await _deployHandles.work.getFileHandle(name);
+                var f = await fh.getFile();
+                return await f.text();
+            } catch(e) {
+                return null;
+            }
+        }
+
+        // Парсит карту в объект { n: anchor }.
+        function _parseSummaryText(text) {
+            var out = {};
+            if (!text) return out;
+            var lines = String(text).split('\n');
+            for (var i = 0; i < lines.length; i++) {
+                var ln = lines[i].replace(/\r$/, '');
+                if (!ln.trim()) continue;
+                if (ln.trim().charAt(0) === '#') continue;
+                var parts = ln.split('|');
+                if (parts.length < 2) continue;
+                var n = parts[0].trim().replace(/^#/, '');
+                if (!/^\d+$/.test(n)) continue;
+                var anchor = parts[parts.length - 1].trim();
+                if (!anchor) continue;
+                out[String(parseInt(n, 10))] = anchor;
+            }
+            return out;
+        }
+
+        // Сверка A (summari_ai_<file>) и B (summari_parser_<file>).
+        // Возвращает массив расхождений.
+        async function _runSummaryDiffForServer() {
+            var fileName = 'server.py';
+            var aText = await _readWorkFile('summari_ai_' + fileName + '.txt');
+            var bText = await _readWorkFile('summari_parser_' + fileName + '.txt');
+            if (aText === null || bText === null) {
+                console.warn('[SUMMARY_DIFF] нет файлов: summari_ai_' + fileName + '.txt или summari_parser_' + fileName + '.txt');
+                return;
+            }
+            var A = _parseSummaryText(aText);
+            var B = _parseSummaryText(bText);
+            var diffs = [];
+            var keysA = Object.keys(A);
+            var keysB = Object.keys(B);
+            for (var i = 0; i < keysA.length; i++) {
+                var n = keysA[i];
+                if (!(n in B)) {
+                    diffs.push({ type: 'missing_in_parser', block: n, A: A[n], B: '' });
+                } else if (A[n] !== B[n]) {
+                    diffs.push({ type: 'anchor_mismatch', block: n, A: A[n], B: B[n] });
+                }
+            }
+            for (var j = 0; j < keysB.length; j++) {
+                var nb = keysB[j];
+                if (!(nb in A)) {
+                    diffs.push({ type: 'extra_in_parser', block: nb, A: '', B: B[nb] });
+                }
+            }
+            var lines = [];
+            lines.push('=== SUMMARY DIFF LOG ===');
+            lines.push('file: ' + fileName);
+            lines.push('A: summari_ai_' + fileName + '.txt (blocks: ' + keysA.length + ')');
+            lines.push('B: summari_parser_' + fileName + '.txt (blocks: ' + keysB.length + ')');
+            lines.push('generated_at: ' + new Date().toISOString());
+            lines.push('diffs_count: ' + diffs.length);
+            lines.push('');
+            if (!diffs.length) {
+                lines.push('OK: рaсхождений нет');
+            } else {
+                for (var k = 0; k < diffs.length; k++) {
+                    var d = diffs[k];
+                    lines.push('--- diff ' + (k + 1) + ' ---');
+                    lines.push('type: ' + d.type);
+                    lines.push('block: ' + d.block);
+                    lines.push('A: ' + (d.A || ''));
+                    lines.push('B: ' + (d.B || ''));
+                }
+            }
+            lines.push('=== END LOG ===');
+            var logText = lines.join('\n');
+            try {
+                var logName = 'summary_diff_' + fileName + '.txt';
+                var fh = await _deployHandles.work.getFileHandle(logName, { create: true });
+                var w = await fh.createWritable();
+                await w.write(logText);
+                await w.close();
+            } catch(e) {
+                console.warn('[SUMMARY_DIFF] save failed', e);
+            }
+            try {
+                var lf = await (await _deployHandles.work.getFileHandle('summary_diff_' + fileName + '.txt')).getFile();
+                _fileQueue.push(lf);
+                if (!_isProcessing) processFileQueue();
+            } catch(e) {
+                console.warn('[SUMMARY_DIFF] attach failed', e);
+            }
         }
 
         function showMessageMenu(event, index) {
