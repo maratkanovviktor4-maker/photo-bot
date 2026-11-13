@@ -8842,15 +8842,11 @@
                 // === SUMMARY COMPARE (после ответа ассистента) ===
             (async function() {
                 try {
-                    var _userLastSummary = null;
-                for (var _usi = chat.messages.length - 1; _usi >= 0; _usi--) {
-                    if (chat.messages[_usi].role === 'user') { _userLastSummary = chat.messages[_usi]; break; }
-                }
-                if (!_userLastSummary || !_userLastSummary.content) return;
-                if (_userLastSummary.content.indexOf('Сформируй саммари для проекта') === -1) return;
                 var _aiLast = chat.messages[chat.messages.length - 1];
                 if (!_aiLast || _aiLast.role !== 'assistant') return;
-                var _savedFiles = await _saveAiSummaryFiles(_aiLast.content || '');
+                var _aiContent = _aiLast.content || '';
+                if (_aiContent.indexOf('summary_ai_') === -1 && _aiContent.indexOf('summary_rules_') === -1) return;
+                var _savedFiles = await _saveAiSummaryFiles(_aiContent);
                 var _bases = [];
                 for (var _si = 0; _si < _savedFiles.length; _si++) {
                     var _sfn = _savedFiles[_si];
