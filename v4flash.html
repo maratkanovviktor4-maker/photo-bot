@@ -4921,18 +4921,79 @@
 
         async function startSummaryFlow() {
             if (isSending) return;
-            if (!currentChatId) { showAlertModal('Нет чата', 'Откройте чат с историей.', '⚠️'); return; }
             var _menu = document.querySelector('.message-menu');
             if (_menu) _menu.remove();
-            _summaryFlow.active = true;
-            _summaryFlow.chatId = currentChatId;
-            var _sc = chats.find(function(c) { return c.id === currentChatId; });
-            _summaryFlow.branchId = currentBranchId || (_sc && _sc.activeBranch) || 'main';
-            window._summaryPromptDone = null;
+            if (!_deployHandles || !_deployHandles.work) {
+                try { await _restoreDeployHandles(); } catch(e) {}
+            }
+            if (!_deployHandles || !_deployHandles.work) {
+                showAlertModal('Папка не выбрана', 'Выберите рабочую папку в модалке деплоя.', '⚠️');
+                return;
+            }
             var input = document.getElementById('userInput');
-            input.value = 'выдай выжимку проделанной работы в формате карты блоков. Проанализируй ВСЕ файлы кода, которые встречались в этой переписке (большие и маленькие, включая куски из вложений и правки [BEFORE]/[AFTER]). Для каждого файла выдай список строк строго в формате:\n\nN | путь/имя | <точная первая строка функции или блока как в реальном файле>\n\nгде N — порядковый номер блока (начиная с 1, отдельно для каждого файла), путь/имя — route-путь для эндпоинтов или имя функции/класса/секции, якорь — ТОЧНАЯ строка из файла (с отступами), которая уникальна и с которой начинается блок. Не выдумывай якоря — бери ровно из кода, который видел. Блоки упорядочивай так, чтобы якорь каждого следующего блока шёл после предыдущего в файле. Ответ — только карта, без пояснений и без markdown-обёрток.';
+            input.value = '';
             input.dispatchEvent(new Event('input'));
-            sendMessage();
+            showLoading();
+            try {
+                var _files = await _listWorkFiles(_deployHandles.work);
+                var _loaded = [];
+                for (var _fi = 0; _fi < _files.length; _fi++) {
+                    var _fn = _files[_fi];
+                    if (_fn.indexOf('summary_ai_') === 0) continue;
+                    if (_fn.indexOf('summary_parser_') === 0) continue;
+                    if (_fn.indexOf('summary_rules_') === 0) continue;
+                    var _bn = _fn.replace(/\.[^./\\]+$/, '');
+                    try {
+                        var _rfh = await _deployHandles.work.getFileHandle('summary_rules_' + _bn + '.json');
+                        var _rf = await _rfh.getFile();
+                        var _rtxt = await _rf.text();
+                        _loaded.push({ fileName: _fn, base: _bn, rulesText: _rtxt });
+                    } catch(e) { continue; }
+                }
+                if (!_loaded.length) {
+                    hideLoading();
+                    showAlertModal('Правила парсера не найдены', 'В рабочей папке нет файлов summary_rules_*.json. Их выдаёт ассистент при первичной настройке проекта.', '⚠️');
+                    return;
+                }
+                var _parserResults = [];
+                for (var _pi = 0; _pi < _loaded.length; _pi++) {
+                    var _it = _loaded[_pi];
+                    var _pr = await _buildSummaryByParser(_it.fileName, _it.base, _it.rulesText);
+                    _parserResults.push(_pr);
+                }
+                pendingFiles = _parserResults
+                    .filter(function(x) { return x.ok && x.content; })
+                    .map(function(x) {
+                        return {
+                            name: x.parserFileName,
+                            mime: 'text/plain',
+                            data: _b64FromUtf8(x.content),
+                            _status: 'ok'
+                        };
+                    });
+                var _reqLines = ['Сформируй саммари для проекта. Для каждого файла выдай два блока:',
+                    '',
+                    '1. summary_ai_<basename>.txt — карта блоков в формате:',
+                    '   N | имя/путь | <точная первая строка блока из файла>',
+                    '   (якорь дословный, уникальный в файле; порядок = порядок в файле; нумерация с 1)',
+                    '',
+                    '2. summary_rules_<basename>.json — JSON-правила для парсера, по которым парсер построит ту же карту:',
+                    '   {"file":"<basename>.<ext>","rules":[{"block_start":"<регекс>","block_end":"on_next_start","anchor":"start_line_full","require_level0":true}]}',
+                    '',
+                    'Файлы в проекте:'];
+                for (var _li = 0; _li < _loaded.length; _li++) _reqLines.push('- ' + _loaded[_li].fileName);
+                _reqLines.push('');
+                _reqLines.push('Ответ — только блоки с заголовками summary_ai_*.txt и summary_rules_*.json, без пояснений и без markdown-обёрток вокруг заголовков.');
+                input.value = _reqLines.join('\n');
+                input.dispatchEvent(new Event('input'));
+                hideLoading();
+                showAlertModal('Готово', 'Карты парсера готовы и приложены. Проверь превью вложений и нажми «Отправить» — ассистент выдаст свои карты и правила парсера.', '✅');
+                var _okBtn = document.querySelector('#alertModalOverlay .modal-actions button');
+                if (_okBtn) _okBtn.setAttribute('data-skip-reload', '1');
+            } catch(e) {
+                hideLoading();
+                showAlertModal('Ошибка', 'Парсер не смог построить карты: ' + e, '❌');
+            }
         }
 
         async function _summaryAfterReply() {
