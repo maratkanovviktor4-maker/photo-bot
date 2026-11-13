@@ -11378,25 +11378,6 @@
                 try { await _restoreDeployHandles(); } catch(e) {}
             }
             if (!_deployHandles.work) return { ok: false, error: 'Рабочая папка не выбрана.' };
-            var summaryTxt = '';
-            try {
-                var sh = await _deployHandles.work.getFileHandle('summary.txt');
-                var sf = await sh.getFile();
-                summaryTxt = await sf.text();
-            } catch(e) {
-                return { ok: false, error: 'summary.txt не найден в рабочей папке.' };
-            }
-            var map = _parseSummaryBlocks(summaryTxt);
-            if (!map[blockNum]) {
-                return { ok: false, error: 'Блок ' + blockNum + ' отсутствует в summary.txt.' };
-            }
-            var numsSorted = Object.keys(map).map(function(n) { return parseInt(n, 10); }).sort(function(a, b) { return a - b; });
-            var nextNum = null;
-            for (var _i = 0; _i < numsSorted.length; _i++) {
-                if (numsSorted[_i] > parseInt(blockNum, 10)) { nextNum = String(numsSorted[_i]); break; }
-            }
-            var anchorStart = map[blockNum];
-            var anchorEnd = nextNum ? map[nextNum] : null;
             var srcTxt = '';
             try {
                 var fh = await _deployHandles.work.getFileHandle(fileName);
@@ -11405,6 +11386,25 @@
             } catch(e) {
                 return { ok: false, error: 'Файл ' + fileName + ' не найден в рабочей папке.' };
             }
+            var summaryTxt = '';
+            try {
+                var sh = await _deployHandles.work.getFileHandle('summary.txt');
+                var sf = await sh.getFile();
+                summaryTxt = await sf.text();
+            } catch(e) {
+                summaryTxt = '';
+            }
+            var map = _parseSummaryBlocks(summaryTxt);
+            var numsSorted = Object.keys(map).map(function(n) { return parseInt(n, 10); }).sort(function(a, b) { return a - b; });
+            var anchorStart = map[blockNum] || null;
+            if (!anchorStart) {
+                return { ok: true, chunk: srcTxt.replace(/\r\n/g, '\n').replace(/\s+$/, '') + '\n', outName: 'frag_' + String(fileName).replace(/[^A-Za-z0-9._-]+/g, '_') };
+            }
+            var nextNum = null;
+            for (var _i = 0; _i < numsSorted.length; _i++) {
+                if (numsSorted[_i] > parseInt(blockNum, 10)) { nextNum = String(numsSorted[_i]); break; }
+            }
+            var anchorEnd = nextNum ? map[nextNum] : null;
             var _norm = srcTxt.replace(/\r\n/g, '\n');
             var iFrom = _norm.indexOf(anchorStart);
             if (iFrom === -1) {
