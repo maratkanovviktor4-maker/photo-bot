@@ -11443,6 +11443,45 @@
             var outName = 'frag_' + _tag + ext;
             return { ok: true, chunk: chunk, outName: outName };
         }
+        async function _saveAiSummaryFiles(aiText) {
+            if (!aiText) return [];
+            if (!_deployHandles || !_deployHandles.work) {
+                try { await _restoreDeployHandles(); } catch(e) {}
+            }
+            if (!_deployHandles || !_deployHandles.work) return [];
+            var _saved = [];
+            var _src = String(aiText);
+            var _re = /(summary_(?:ai|rules)_[A-Za-z0-9_.\-]+\.(?:txt|json))/g;
+            var _matches = [];
+            var _m;
+            while ((_m = _re.exec(_src)) !== null) {
+                _matches.push({ name: _m[1], idx: _m.index, end: _m.index + _m[0].length });
+            }
+            for (var _i = 0; _i < _matches.length; _i++) {
+                var _item = _matches[_i];
+                var _bodyStart = _item.end;
+                var _bodyEnd = (_i + 1 < _matches.length) ? _matches[_i + 1].idx : _src.length;
+                var _body = _src.substring(_bodyStart, _bodyEnd);
+                var _cb = _body.match(/`{3}[\w]*\r?\n([\s\S]*?)`{3}/);
+                var _content = _cb ? _cb[1] : _body.replace(/^[\s:]+/, '').replace(/\s+$/, '');
+                if (!_content) continue;
+                try {
+                    var _old = null;
+                    try { _old = await _deployHandles.work.getFileHandle(_item.name); } catch(e) { _old = null; }
+                    if (_old) {
+                        try { await _deployHandles.work.removeEntry(_item.name); } catch(e) {}
+                    }
+                    var _fh2 = await _deployHandles.work.getFileHandle(_item.name, { create: true });
+                    var _w = await _fh2.createWritable();
+                    await _w.write(_content);
+                    await _w.close();
+                    _saved.push(_item.name);
+                } catch(e) {
+                    console.warn('save ai summary failed', _item.name, e);
+                }
+            }
+            return _saved;
+        }
         async function _buildSummaryByParser(fileName, base, rulesText) {
             var _out = { ok: false, content: '', parserFileName: 'summary_parser_' + base + '.txt', error: '' };
             try {
