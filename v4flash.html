@@ -4935,20 +4935,101 @@
             sendMessage();
         }
 
-        // ===== SUMMARY PARSER + VERIFY (каркас) =====
-        // Строит карту блоков из кода по правилам из parser_rules_<filename>.
+        // ===== SUMMARY PARSER + VERIFY =====
+        // Парсит карту из текста (формат: N | file | anchor). Возвращает [{n, anchor}].
+        function _parseSummaryText(summaryText) {
+            var out = [];
+            if (!summaryText) return out;
+            var lines = String(summaryText).split('\n');
+            for (var i = 0; i < lines.length; i++) {
+                var ln = lines[i].replace(/\r$/, '');
+                if (!ln.trim()) continue;
+                if (ln.trim().charAt(0) === '#') continue;
+                var parts = ln.split('|');
+                if (parts.length < 2) continue;
+                var n = parts[0].trim().replace(/^#/, '');
+                if (!/^\d+$/.test(n)) continue;
+                var anchor = parts[parts.length - 1].trim();
+                if (!anchor) continue;
+                out.push({ n: String(parseInt(n, 10)), anchor: anchor });
+            }
+            return out;
+        }
+
+        // Определяет, является ли строка якорем блока по правилам.
+        // Формат правил (parser_rules_<filename>.txt):
+        //   Блоки: @app.route, def, class, # === секции ===
+        function _rulesMatchAnchorLine(line, keywords) {
+            var t = String(line);
+            var trimmed = t.trim();
+            if (!trimmed) return false;
+            for (var k = 0; k < keywords.length; k++) {
+                var kw = keywords[k];
+                if (kw === 'def' && /^\s*(async\s+)?def\s+\w+\s*\(/.test(t)) return true;
+                if (kw === 'class' && /^\s*class\s+\w+/.test(t)) return true;
+                if (kw === '@app.route' && /^\s*@app\.route\(/.test(t)) return true;
+                if (kw.indexOf('# ===') === 0 && /^\s*#\s*===/.test(t)) return true;
+                if (kw.charAt(0) !== '#' && kw !== 'def' && kw !== 'class' && kw !== '@app.route') {
+                    if (trimmed.indexOf(kw) === 0) return true;
+                }
+            }
+            return false;
+        }
+
+        // Строит карту блоков из кода по правилам.
         async function _buildSummaryFromRules(fileName, rulesText, codeText) {
-            // TODO: разобрать rulesText и построить карту вида:
-            //   [{ n: '1', anchor: 'def foo():' }, ...]
-            // Возврат: массив блоков.
-            return [];
+            var keywords = ['def', 'class', '@app.route', '# ==='];
+            var lines = String(codeText || '').split('\n');
+            if (rulesText) {
+                var rl = String(rulesText).split('\n');
+                for (var ri = 0; ri < rl.length; ri++) {
+                    var m = rl[ri].match(/Блоки:\s*(.+)$/i);
+                    if (m) {
+                        keywords = m[1].split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+                        break;
+                    }
+                }
+            }
+            var out = [];
+            var n = 0;
+            for (var i = 0; i < lines.length; i++) {
+                var ln = lines[i].replace(/\r$/, '');
+                if (_rulesMatchAnchorLine(ln, keywords)) {
+                    n++;
+                    out.push({ n: String(n), anchor: ln });
+                }
+            }
+            return out;
         }
 
         // Сверяет карту от ассистента (summari_ai_<filename>) с картой от парсера.
         // Возврат: массив расхождений [{ type, block, expected, actual }].
         function _diffSummaries(aAssistant, bParser) {
-            // TODO: сравнение по блокам/якорям.
-            return [];
+            var diffs = [];
+            var mapA = {};
+            var mapB = {};
+            for (var i = 0; i < aAssistant.length; i++) mapA[aAssistant[i].n] = aAssistant[i].anchor;
+            for (var j = 0; j < bParser.length; j++) mapB[bParser[j].n] = bParser[j].anchor;
+            var usedB = {};
+            for (var k = 0; k < aAssistant.length; k++) {
+                var n = aAssistant[k].n;
+                var a = aAssistant[k].anchor;
+                if (!mapB[n]) {
+                    diffs.push({ type: 'missing_in_parser', block: n, expected: a, actual: '' });
+                    continue;
+                }
+                usedB[n] = true;
+                if (mapB[n] !== a) {
+                    diffs.push({ type: 'anchor_mismatch', block: n, expected: a, actual: mapB[n] });
+                }
+            }
+            for (var m = 0; m < bParser.length; m++) {
+                var nn = bParser[m].n;
+                if (!mapA[nn] && !usedB[nn]) {
+                    diffs.push({ type: 'extra_in_parser', block: nn, expected: '', actual: bParser[m].anchor });
+                }
+            }
+            return diffs;
         }
 
         // Формирует текст лога расхождений.
