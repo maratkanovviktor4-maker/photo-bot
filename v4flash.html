@@ -4935,10 +4935,72 @@
             sendMessage();
         }
 
+        // ===== SUMMARY PARSER + VERIFY (каркас) =====
+        // Строит карту блоков из кода по правилам из parser_rules_<filename>.
+        async function _buildSummaryFromRules(fileName, rulesText, codeText) {
+            // TODO: разобрать rulesText и построить карту вида:
+            //   [{ n: '1', anchor: 'def foo():' }, ...]
+            // Возврат: массив блоков.
+            return [];
+        }
+
+        // Сверяет карту от ассистента (summari_ai_<filename>) с картой от парсера.
+        // Возврат: массив расхождений [{ type, block, expected, actual }].
+        function _diffSummaries(aAssistant, bParser) {
+            // TODO: сравнение по блокам/якорям.
+            return [];
+        }
+
+        // Формирует текст лога расхождений.
+        function _formatSummaryDiffLog(fileName, diffs) {
+            var lines = [];
+            lines.push('=== SUMMARY DIFF LOG ===');
+            lines.push('file: ' + fileName);
+            lines.push('generated_at: ' + new Date().toISOString());
+            lines.push('diffs_count: ' + diffs.length);
+            if (!diffs.length) {
+                lines.push('OK: расхождений нет');
+            } else {
+                for (var i = 0; i < diffs.length; i++) {
+                    var d = diffs[i];
+                    lines.push('--- diff ' + (i + 1) + ' ---');
+                    lines.push('type: ' + (d.type || ''));
+                    lines.push('block: ' + (d.block || ''));
+                    lines.push('expected: ' + (d.expected || ''));
+                    lines.push('actual: ' + (d.actual || ''));
+                }
+            }
+            lines.push('=== END LOG ===');
+            return lines.join('\n');
+        }
+
+        // Записывает лог расхождений в рабочую папку деплоя.
+        async function _saveSummaryDiffLog(fileName, logText) {
+            if (!_deployHandles.work) {
+                try { await _restoreDeployHandles(); } catch(e) {}
+            }
+            if (!_deployHandles.work) {
+                console.warn('[SUMMARY_DIFF] рабочая папка не выбрана');
+                return false;
+            }
+            try {
+                var _logName = 'summary_diff_' + String(fileName).replace(/[^A-Za-z0-9._-]+/g, '_') + '.txt';
+                var _fh = await _deployHandles.work.getFileHandle(_logName, { create: true });
+                var _w = await _fh.createWritable();
+                await _w.write(logText);
+                await _w.close();
+                return true;
+            } catch(e) {
+                console.warn('[SUMMARY_DIFF] save failed', e);
+                return false;
+            }
+        }
+
         async function _summaryAfterReply() {
             if (!_summaryFlow.active) return;
             _summaryFlow.active = false;
         }
+        // ===== END SUMMARY PARSER + VERIFY =====
 
         function showMessageMenu(event, index) {
             event.stopPropagation();
