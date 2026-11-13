@@ -11521,9 +11521,11 @@
             var _saMsg = _saChat ? _saChat.messages[msgIndex] : null;
             if (_saMsg && _saMsg.role === 'assistant' && !_saMsg._summaryAiHandled) {
                 var _saParsed = _parseSummaryAiTag(_saMsg.content || '');
-                if (_saParsed) {
+                if (_saParsed && _saParsed.length) {
                     _saMsg._summaryAiHandled = true;
-                    await _createSummaryAiFile(_saParsed.file, 'тест');
+                    for (var _sai = 0; _sai < _saParsed.length; _sai++) {
+                        await _createSummaryAiFile(_saParsed[_sai].file, 'тест');
+                    }
                 }
             }
             if (currentPersonality === 'developer') {
