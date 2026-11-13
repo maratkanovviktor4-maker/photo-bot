@@ -8839,7 +8839,51 @@
                     window._pdfRenderAfterAssistant = null;
                     try { _pdfFn(); } catch(e) { console.warn('pdf render hook failed', e); }
                 }
-                (function() {
+                // === SUMMARY COMPARE (после ответа ассистента) ===
+            (async function() {
+                try {
+                    var _userLastSummary = null;
+                for (var _usi = chat.messages.length - 1; _usi >= 0; _usi--) {
+                    if (chat.messages[_usi].role === 'user') { _userLastSummary = chat.messages[_usi]; break; }
+                }
+                if (!_userLastSummary || !_userLastSummary.content) return;
+                if (_userLastSummary.content.indexOf('Сформируй саммари для проекта') === -1) return;
+                var _aiLast = chat.messages[chat.messages.length - 1];
+                if (!_aiLast || _aiLast.role !== 'assistant') return;
+                var _savedFiles = await _saveAiSummaryFiles(_aiLast.content || '');
+                var _bases = [];
+                for (var _si = 0; _si < _savedFiles.length; _si++) {
+                    var _sfn = _savedFiles[_si];
+                    if (_sfn.indexOf('summary_ai_') === 0) {
+                        _bases.push(_sfn.replace(/^summary_ai_/, '').replace(/\.txt$/, ''));
+                    }
+                }
+                // Плюс файлы парсера, которых нет в ai (сравнение покажет их отсутствие)
+                var _parserBases = [];
+                for (var _pi = 0; _pi < pendingFiles.length; _pi++) {
+                    var _pfn = pendingFiles[_pi].name || '';
+                    if (_pfn.indexOf('summary_parser_') === 0) {
+                        _parserBases.push(_pfn.replace(/^summary_parser_/, '').replace(/\.txt$/, ''));
+                    }
+                }
+                for (var _pbi = 0; _pbi < _parserBases.length; _pbi++) {
+                    if (_bases.indexOf(_parserBases[_pbi]) === -1) _bases.push(_parserBases[_pbi]);
+                }
+                if (!_bases.length) return;
+                var _cmp = await _compareSummaries(_bases);
+                var _logName = _cmp.ok ? 'summary_ok.txt' : 'summary_error.txt';
+                pendingFiles = pendingFiles.filter(function(f) { return f.name !== _logName; });
+                pendingFiles.push({
+                    name: _logName,
+                    mime: 'text/plain',
+                    data: _b64FromUtf8(_cmp.log),
+                    _status: 'ok'
+                });
+                updateFileList();
+                updateSendBtn();
+                } catch(e) { console.warn('summary compare failed', e); }
+            })();
+            (function() {
                 var _okRand = window._lastSummaryOkRand || '';
                 if (!_okRand) return;
                 var _userLast = null;
