@@ -4921,101 +4921,71 @@
 
         async function startSummaryFlow() {
             if (isSending) return;
+            if (!currentChatId) { showAlertModal('Нет чата', 'Откройте чат с историей.', '⚠️'); return; }
             var _menu = document.querySelector('.message-menu');
             if (_menu) _menu.remove();
-            if (!_deployHandles || !_deployHandles.work) {
-                try { await _restoreDeployHandles(); } catch(e) {}
-            }
-            if (!_deployHandles || !_deployHandles.work) {
-                showAlertModal('Папка не выбрана', 'Выберите рабочую папку в модалке деплоя.', '⚠️');
-                return;
-            }
+            _summaryFlow.active = true;
+            _summaryFlow.chatId = currentChatId;
+            var _sc = chats.find(function(c) { return c.id === currentChatId; });
+            _summaryFlow.branchId = currentBranchId || (_sc && _sc.activeBranch) || 'main';
+            window._summaryPromptDone = null;
             var input = document.getElementById('userInput');
-            input.value = '';
+            input.value = 'выдай выжимку проделанной работы в формате карты блоков. Проанализируй ВСЕ файлы кода, которые встречались в этой переписке (большие и маленькие, включая куски из вложений и правки [BEFORE]/[AFTER]). Для каждого файла выдай список строк строго в формате:\n\nN | путь/имя | <точная первая строка функции или блока как в реальном файле>\n\nгде N — порядковый номер блока (начиная с 1, отдельно для каждого файла), путь/имя — route-путь для эндпоинтов или имя функции/класса/секции, якорь — ТОЧНАЯ строка из файла (с отступами), которая уникальна и с которой начинается блок. Не выдумывай якоря — бери ровно из кода, который видел. Блоки упорядочивай так, чтобы якорь каждого следующего блока шёл после предыдущего в файле. Ответ — только карта, без пояснений и без markdown-обёрток.';
             input.dispatchEvent(new Event('input'));
-            showLoading();
-            try {
-                var _files = await _listWorkFiles(_deployHandles.work);
-                var _loaded = [];
-                for (var _fi = 0; _fi < _files.length; _fi++) {
-                    var _fn = _files[_fi];
-                    if (_fn.indexOf('summary_ai_') === 0) continue;
-                    if (_fn.indexOf('summary_parser_') === 0) continue;
-                    if (_fn.indexOf('summary_rules_') === 0) continue;
-                    var _bn = _fn.replace(/\.[^./\\]+$/, '');
-                    try {
-                        var _rfh = await _deployHandles.work.getFileHandle('summary_rules_' + _bn + '.json');
-                        var _rf = await _rfh.getFile();
-                        var _rtxt = await _rf.text();
-                        _loaded.push({ fileName: _fn, base: _bn, rulesText: _rtxt });
-                    } catch(e) { continue; }
-                }
-                if (!_loaded.length) {
-                    hideLoading();
-                    showAlertModal('Правила парсера не найдены', 'В рабочей папке нет файлов summary_rules_*.json. Их выдаёт ассистент при первичной настройке проекта.', '⚠️');
-                    return;
-                }
-                var _parserResults = [];
-                for (var _pi = 0; _pi < _loaded.length; _pi++) {
-                    var _it = _loaded[_pi];
-                    var _pr = await _buildSummaryByParser(_it.fileName, _it.base, _it.rulesText);
-                    _parserResults.push(_pr);
-                    if (_pr.ok && _pr.content) {
-                        try {
-                            var _oldP = null;
-                            try { _oldP = await _deployHandles.work.getFileHandle(_pr.parserFileName); } catch(e) { _oldP = null; }
-                            if (_oldP) {
-                                try { await _deployHandles.work.removeEntry(_pr.parserFileName); } catch(e) {}
-                            }
-                            var _pfh = await _deployHandles.work.getFileHandle(_pr.parserFileName, { create: true });
-                            var _pw = await _pfh.createWritable();
-                            await _pw.write(_pr.content);
-                            await _pw.close();
-                        } catch(e) {
-                            console.warn('save parser summary failed', _pr.parserFileName, e);
-                        }
-                    }
-                }
-                pendingFiles = _parserResults
-                    .filter(function(x) { return x.ok && x.content; })
-                    .map(function(x) {
-                        return {
-                            name: x.parserFileName,
-                            mime: 'text/plain',
-                            data: _b64FromUtf8(x.content),
-                            _status: 'ok'
-                        };
-                    });
-                var _reqLines = ['Сформируй саммари для проекта. Для каждого файла выдай два блока:',
-                    '',
-                    '1. summary_ai_<basename>.txt — карта блоков в формате:',
-                    '   N | имя/путь | <точная первая строка блока из файла>',
-                    '   (якорь дословный, уникальный в файле; порядок = порядок в файле; нумерация с 1)',
-                    '',
-                    '2. summary_rules_<basename>.json — JSON-правила для парсера, по которым парсер построит ту же карту:',
-                    '   {"file":"<basename>.<ext>","rules":[{"block_start":"<регекс>","block_end":"on_next_start","anchor":"start_line_full","require_level0":true}]}',
-                    '',
-                    'Файлы в проекте:'];
-                for (var _li = 0; _li < _loaded.length; _li++) _reqLines.push('- ' + _loaded[_li].fileName);
-                _reqLines.push('');
-                _reqLines.push('Ответ — только блоки с заголовками summary_ai_*.txt и summary_rules_*.json, без пояснений и без markdown-обёрток вокруг заголовков.');
-                input.value = _reqLines.join('\n');
-                input.dispatchEvent(new Event('input'));
-                window._summaryComparePending = true;
-                hideLoading();
-                showAlertModal('Готово', 'Карты парсера готовы и приложены. Проверь превью вложений и нажми «Отправить» — ассистент выдаст свои карты и правила парсера.', '✅');
-                var _okBtn = document.querySelector('#alertModalOverlay .modal-actions button');
-                if (_okBtn) _okBtn.setAttribute('data-skip-reload', '1');
-            } catch(e) {
-                hideLoading();
-                showAlertModal('Ошибка', 'Парсер не смог построить карты: ' + e, '❌');
-            }
+            sendMessage();
         }
 
         async function _summaryAfterReply() {
-            // Автообрезка отключена. Чат режется ТОЛЬКО когда юзер присылает
-            // [SUMMARY_OK:<rand>] с матчем сохранённого рандома (см. обработчик sendMessage).
-            _summaryFlow.active = false;
+            if (!_summaryFlow.active) return;
+            var _chatId = _summaryFlow.chatId;
+            if (currentChatId !== _chatId) { _summaryFlow.active = false; return; }
+            var chat = chats.find(function(c) { return c.id === _chatId; });
+            if (!chat) { _summaryFlow.active = false; return; }
+            if (!_summaryFlow.branchId) _summaryFlow.branchId = chat.activeBranch || 'main';
+            var lastA = null;
+            for (var i = chat.messages.length - 1; i >= 0; i--) {
+                if (chat.messages[i].role === 'assistant') { lastA = chat.messages[i]; break; }
+            }
+            if (!lastA) { _summaryFlow.active = false; return; }
+            var summaryText = lastA.content || '';
+            if (!summaryText.trim()) { _summaryFlow.active = false; return; }
+
+            showLoading();
+            try {
+                var msgIdsToDelete = [];
+                var treeResp = await fetch(SERVER_URL + '/get_chat_tree?user_id=' + currentUserId + '&model=flash&chat_id=' + _chatId + '&session_token=' + sessionToken);
+                if (!treeResp.ok) { hideLoading(); _summaryFlow.active = false; return; }
+                var tree = await treeResp.json();
+                var branch = (tree.branches || {})[_summaryFlow.branchId] || {};
+                var ids = branch.msg_ids || [];
+                var lastAIdx = -1;
+                for (var bi = ids.length - 1; bi >= 0; bi--) {
+                    var m = (tree.messages || {})[ids[bi]];
+                    if (m && m.role === 'assistant') { lastAIdx = bi; break; }
+                }
+                var userIdx = lastAIdx - 1;
+                if (userIdx >= 0 && lastAIdx >= 0) {
+                    for (var di = 0; di < userIdx; di++) msgIdsToDelete.push(ids[di]);
+                }
+                if (msgIdsToDelete.length) {
+                    await fetch(SERVER_URL + '/delete_messages', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
+                        body: JSON.stringify({
+                            user_id: currentUserId, model: 'flash', chat_id: _chatId,
+                            branch_id: _summaryFlow.branchId, msg_ids: msgIdsToDelete
+                        })
+                    });
+                }
+                await loadChatMessages(_chatId);
+                fullRender();
+                hideLoading();
+                _summaryFlow.active = false;
+            } catch(e) {
+                console.warn('summary flow failed', e);
+                hideLoading();
+                _summaryFlow.active = false;
+            }
         }
 
         function showMessageMenu(event, index) {
@@ -8855,91 +8825,7 @@
                     window._pdfRenderAfterAssistant = null;
                     try { _pdfFn(); } catch(e) { console.warn('pdf render hook failed', e); }
                 }
-                // === SUMMARY COMPARE (только по кнопке «Выжимка») ===
-            (async function() {
-                try {
-                if (!window._summaryComparePending) return;
-                window._summaryComparePending = false;
-                var _aiLast = chat.messages[chat.messages.length - 1];
-                if (!_aiLast || _aiLast.role !== 'assistant') return;
-                var _aiContent = _aiLast.content || '';
-                if (_aiContent.indexOf('summary_ai_') === -1 && _aiContent.indexOf('summary_rules_') === -1) return;
-                var _savedFiles = await _saveAiSummaryFiles(_aiContent);
-                var _bases = [];
-                for (var _si = 0; _si < _savedFiles.length; _si++) {
-                    var _sfn = _savedFiles[_si];
-                    if (_sfn.indexOf('summary_ai_') === 0) {
-                        _bases.push(_sfn.replace(/^summary_ai_/, '').replace(/\.txt$/, ''));
-                    }
-                }
-                // Плюс файлы парсера, которых нет в ai (сравнение покажет их отсутствие)
-                var _parserBases = [];
-                for (var _pi = 0; _pi < pendingFiles.length; _pi++) {
-                    var _pfn = pendingFiles[_pi].name || '';
-                    if (_pfn.indexOf('summary_parser_') === 0) {
-                        _parserBases.push(_pfn.replace(/^summary_parser_/, '').replace(/\.txt$/, ''));
-                    }
-                }
-                for (var _pbi = 0; _pbi < _parserBases.length; _pbi++) {
-                    if (_bases.indexOf(_parserBases[_pbi]) === -1) _bases.push(_parserBases[_pbi]);
-                }
-                if (!_bases.length) return;
-                var _cmp = await _compareSummaries(_bases);
-                var _logName = _cmp.ok ? 'summary_ok.txt' : 'summary_error.txt';
-                pendingFiles = pendingFiles.filter(function(f) { return f.name !== _logName; });
-                pendingFiles.push({
-                    name: _logName,
-                    mime: 'text/plain',
-                    data: _b64FromUtf8(_cmp.log),
-                    _status: 'ok'
-                });
-                updateFileList();
-                updateSendBtn();
-                } catch(e) { console.warn('summary compare failed', e); }
-            })();
-            (function() {
-                var _okRand = window._lastSummaryOkRand || '';
-                if (!_okRand) return;
-                var _userLast = null;
-                for (var _ui = chat.messages.length - 1; _ui >= 0; _ui--) {
-                    if (chat.messages[_ui].role === 'user') { _userLast = chat.messages[_ui]; break; }
-                }
-                if (!_userLast || !_userLast.content) return;
-                if (_userLast.content.indexOf('[SUMMARY_OK:' + _okRand + ']') === -1) return;
-                window._lastSummaryOkRand = '';
-                var _cutChatId = chat.id;
-                var _cutBranchId = currentBranchId;
-                setTimeout(async function() {
-                    try {
-                        var treeResp = await fetch(SERVER_URL + '/get_chat_tree?user_id=' + currentUserId + '&model=flash&chat_id=' + _cutChatId + '&session_token=' + sessionToken);
-                        if (!treeResp.ok) return;
-                        var tree = await treeResp.json();
-                        var branch = (tree.branches || {})[_cutBranchId] || {};
-                        var ids = branch.msg_ids || [];
-                        var lastAIdx = -1;
-                        for (var bi = ids.length - 1; bi >= 0; bi--) {
-                            var m = (tree.messages || {})[ids[bi]];
-                            if (m && m.role === 'assistant') { lastAIdx = bi; break; }
-                        }
-                        if (lastAIdx < 2) return;
-                        var userIdx = lastAIdx - 1;
-                        if (userIdx < 0) return;
-                        var msgIdsToDelete = [];
-                        for (var di = 0; di < userIdx; di++) msgIdsToDelete.push(ids[di]);
-                        if (!msgIdsToDelete.length) return;
-                        await fetch(SERVER_URL + '/delete_messages', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-Session-Token': sessionToken },
-                            body: JSON.stringify({
-                                user_id: currentUserId, model: 'flash', chat_id: _cutChatId,
-                                branch_id: _cutBranchId, msg_ids: msgIdsToDelete
-                            })
-                        });
-                        await loadChatMessages(_cutChatId);
-                        fullRender();
-                    } catch(e) { console.warn('summary cut failed', e); }
-                }, 300);
-            })();
+                if (_summaryFlow.active) { setTimeout(_summaryAfterReply, 300); }
                 if (currentPersonality === 'orchestrator') {
                     var _agentFinalText = chat.messages[chat.messages.length - 1] && chat.messages[chat.messages.length - 1].role === 'assistant'
                         ? (chat.messages[chat.messages.length - 1].content || '')
@@ -11493,22 +11379,12 @@
             }
             if (!_deployHandles.work) return { ok: false, error: 'Рабочая папка не выбрана.' };
             var summaryTxt = '';
-            var _baseName = fileName.replace(/\.[^./\\]+$/, '');
             try {
-                var sh = await _deployHandles.work.getFileHandle('summary_parser_' + _baseName + '.txt');
+                var sh = await _deployHandles.work.getFileHandle('summary.txt');
                 var sf = await sh.getFile();
                 summaryTxt = await sf.text();
             } catch(e) {
-                summaryTxt = '';
-            }
-            if (!summaryTxt) {
-                try {
-                    var sh2 = await _deployHandles.work.getFileHandle('summary.txt');
-                    var sf2 = await sh2.getFile();
-                    summaryTxt = await sf2.text();
-                } catch(e) {
-                    return { ok: false, error: 'summary_parser_' + _baseName + '.txt и summary.txt не найдены в рабочей папке.' };
-                }
+                return { ok: false, error: 'summary.txt не найден в рабочей папке.' };
             }
             var map = _parseSummaryBlocks(summaryTxt);
             if (!map[blockNum]) {
@@ -11553,240 +11429,8 @@
             var outName = 'frag_' + _tag + ext;
             return { ok: true, chunk: chunk, outName: outName };
         }
-        function _parseSummaryFileContent(txt) {
-
-        async function _buildSummaryByParser(fileName, base, rulesText) {
-            var _out = { ok: false, content: '', parserFileName: 'summary_parser_' + base + '.txt', error: '' };
-            try {
-                var _rules = JSON.parse(rulesText);
-                var _ruleList = _rules.rules && _rules.rules.length ? _rules.rules : [_rules];
-                var _fh = await _deployHandles.work.getFileHandle(fileName);
-                var _file = await _fh.getFile();
-                var _raw = await _file.text();
-                var _txt = _raw.replace(/\r\n/g, '\n');
-                var _lines = _txt.split('\n');
-                var _starts = [];
-                for (var _ci = 0; _ci < _lines.length; _ci++) {
-                    var _ln = _lines[_ci];
-                    for (var _ri = 0; _ri < _ruleList.length; _ri++) {
-                        var _r = _ruleList[_ri];
-                        if (!_r || !_r.block_start) continue;
-                        if (_r.require_level0) {
-                            if (_ln.length > 0 && (_ln.charAt(0) === ' ' || _ln.charAt(0) === '\t')) continue;
-                        }
-                        var _re = null;
-                        try { _re = new RegExp(_r.block_start); } catch(e) { continue; }
-                        if (_re.test(_ln)) {
-                            _starts.push({ line: _ci, name: (_ln.trim().slice(0, 80)), rule: _r });
-                            break;
-                        }
-                    }
-                }
-                if (!_starts.length) {
-                    _out.error = 'по правилам не найдено ни одного блока';
-                    return _out;
-                }
-                var _blocks = [];
-                for (var _si = 0; _si < _starts.length; _si++) {
-                    var _st = _starts[_si];
-                    var _nextLine = (_si + 1 < _starts.length) ? _starts[_si + 1].line : -1;
-                    var _endLine = (_nextLine === -1) ? (_lines.length - 1) : (_nextLine - 1);
-                    while (_endLine > _st.line && _lines[_endLine].trim() === '') _endLine--;
-                    var _anchorSrc = _st.rule && _st.rule.anchor === 'start_line_full' ? _lines[_st.line] : _st.name;
-                    _blocks.push({ num: _si + 1, name: _st.name, anchor: _anchorSrc });
-                }
-                var _uniqProblems = [];
-                for (var _bi = 0; _bi < _blocks.length; _bi++) {
-                    var _b = _blocks[_bi];
-                    var _first = _txt.indexOf(_b.anchor);
-                    var _second = _txt.indexOf(_b.anchor, _first + _b.anchor.length);
-                    if (_first === -1 || _second !== -1) {
-                        _uniqProblems.push(_b.num);
-                    }
-                }
-                var _outLines = [];
-                for (var _oi = 0; _oi < _blocks.length; _oi++) {
-                    var _ob = _blocks[_oi];
-                    var _unq = _uniqProblems.indexOf(_ob.num) === -1 ? '' : ' | ERROR: неуникальный якорь';
-                    _outLines.push(_ob.num + ' | ' + _ob.name + ' | ' + _ob.anchor + _unq);
-                }
-                _out.ok = true;
-                _out.content = _outLines.join('\n') + '\n';
-                if (_uniqProblems.length) {
-                    _out.error = 'неуникальные якоря: ' + _uniqProblems.join(', ');
-                }
-                return _out;
-            } catch(e) {
-                _out.error = 'исключение: ' + (e && e.message ? e.message : e);
-                return _out;
-            }
-        }
-        async function _saveAiSummaryFiles(aiText) {
-            if (!aiText) return [];
-            if (!_deployHandles || !_deployHandles.work) {
-                try { await _restoreDeployHandles(); } catch(e) {}
-            }
-            if (!_deployHandles || !_deployHandles.work) return [];
-            var _saved = [];
-            var _src = String(aiText);
-            var _re = /(summary_(?:ai|rules)_[A-Za-z0-9_.\-]+\.(?:txt|json))/g;
-            var _matches = [];
-            var _m;
-            while ((_m = _re.exec(_src)) !== null) {
-                _matches.push({ name: _m[1], idx: _m.index, end: _m.index + _m[0].length });
-            }
-            for (var _i = 0; _i < _matches.length; _i++) {
-                var _item = _matches[_i];
-                var _bodyStart = _item.end;
-                var _bodyEnd = (_i + 1 < _matches.length) ? _matches[_i + 1].idx : _src.length;
-                var _body = _src.substring(_bodyStart, _bodyEnd);
-                var _cb = _body.match(/`{3}[\w]*\r?\n([\s\S]*?)`{3}/);
-                var _content = _cb ? _cb[1] : _body.replace(/^[\s:]+/, '').replace(/\s+$/, '');
-                if (!_content) continue;
-                try {
-                    var _old = null;
-                    try { _old = await _deployHandles.work.getFileHandle(_item.name); } catch(e) { _old = null; }
-                    if (_old) {
-                        try { await _deployHandles.work.removeEntry(_item.name); } catch(e) {}
-                    }
-                    var _fh2 = await _deployHandles.work.getFileHandle(_item.name, { create: true });
-                    var _w = await _fh2.createWritable();
-                    await _w.write(_content);
-                    await _w.close();
-                    _saved.push(_item.name);
-                } catch(e) {
-                    console.warn('save ai summary failed', _item.name, e);
-                }
-            }
-            return _saved;
-        }
         function _b64FromUtf8(str) {
             try { return btoa(unescape(encodeURIComponent(str))); } catch(e) { return ''; }
-        }
-
-        function _parseSummaryFileContent(txt) {
-            var _arr = [];
-            if (!txt) return _arr;
-            var _lines = String(txt).replace(/\r\n/g, '\n').split('\n');
-            for (var _i = 0; _i < _lines.length; _i++) {
-                var _ln = _lines[_i];
-                if (!_ln.trim()) continue;
-                if (_ln.indexOf(' | ERROR:') !== -1) {
-                    _ln = _ln.substring(0, _ln.indexOf(' | ERROR:'));
-                }
-                var _parts = _ln.split('|');
-                if (_parts.length < 2) continue;
-                var _num = _parts[0].trim();
-                if (!/^\d+$/.test(_num)) continue;
-                var _last = _parts[_parts.length - 1].trim();
-                var _name = _parts.length >= 3 ? _parts[1].trim() : '';
-                _arr.push({ num: _num, name: _name, anchor: _last });
-            }
-            return _arr;
-        }
-        async function _compareSummaries(bases) {
-            var _logLines = [];
-            var _okFiles = [];
-            var _errFiles = [];
-            if (!_deployHandles || !_deployHandles.work) {
-                return { ok: false, log: '[SUMMARY_ERROR]\nРабочая папка не выбрана.' };
-            }
-            for (var _ci = 0; _ci < bases.length; _ci++) {
-                var _b = bases[_ci];
-                var _aiName = 'summary_ai_' + _b + '.txt';
-                var _parserName = 'summary_parser_' + _b + '.txt';
-                var _aiTxt = null;
-                var _parserTxt = null;
-                try {
-                    var _afh = await _deployHandles.work.getFileHandle(_aiName);
-                    _aiTxt = await (await _afh.getFile()).text();
-                } catch(e) { _aiTxt = null; }
-                try {
-                    var _pfh = await _deployHandles.work.getFileHandle(_parserName);
-                    _parserTxt = await (await _pfh.getFile()).text();
-                } catch(e) { _parserTxt = null; }
-                if (_aiTxt === null && _parserTxt === null) {
-                    _errFiles.push({ base: _b, reason: 'оба файла отсутствуют', diffs: [] });
-                    continue;
-                }
-                if (_aiTxt === null) {
-                    _errFiles.push({ base: _b, reason: 'нет ' + _aiName, diffs: [] });
-                    continue;
-                }
-                if (_parserTxt === null) {
-                    _errFiles.push({ base: _b, reason: 'нет ' + _parserName, diffs: [] });
-                    continue;
-                }
-                var _a = _parseSummaryFileContent(_aiTxt);
-                var _p = _parseSummaryFileContent(_parserTxt);
-                var _diffs = [];
-                var _max = Math.max(_a.length, _p.length);
-                for (var _di = 0; _di < _max; _di++) {
-                    var _aa = _a[_di];
-                    var _pp = _p[_di];
-                    if (!_aa && _pp) {
-                        _diffs.push('только в ' + _parserName + ': ' + _pp.num + ' | ' + _pp.name + ' | ' + _pp.anchor);
-                        continue;
-                    }
-                    if (_aa && !_pp) {
-                        _diffs.push('только в ' + _aiName + ': ' + _aa.num + ' | ' + _aa.name + ' | ' + _aa.anchor);
-                        continue;
-                    }
-                    if (_aa.name !== _pp.name) {
-                        _diffs.push('блок ' + _aa.num + ': name ai="' + _aa.name + '", parser="' + _pp.name + '"');
-                    }
-                    if (_aa.anchor !== _pp.anchor) {
-                        _diffs.push('блок ' + _aa.num + ': anchor ai="' + _aa.anchor + '", parser="' + _pp.anchor + '"');
-                    }
-                }
-                var _fileInfo = { base: _b, aiCount: _a.length, parserCount: _p.length, diffs: _diffs };
-                if (_diffs.length === 0) {
-                    _okFiles.push(_fileInfo);
-                } else {
-                    _errFiles.push(_fileInfo);
-                }
-            }
-            var _rand = '';
-            var _chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-            for (var _ri = 0; _ri < 12; _ri++) _rand += _chars.charAt(Math.floor(Math.random() * _chars.length));
-            if (_errFiles.length === 0) {
-                _logLines.push('[SUMMARY_OK:' + _rand + ']');
-                _logLines.push('Все файлы совпали.');
-                for (var _oi = 0; _oi < _okFiles.length; _oi++) {
-                    var _of = _okFiles[_oi];
-                    _logLines.push('summary_ai_' + _of.base + '.txt — ' + _of.aiCount + ' блоков');
-                    _logLines.push('summary_parser_' + _of.base + '.txt — ' + _of.parserCount + ' блоков');
-                }
-                window._lastSummaryOkRand = _rand;
-                return { ok: true, log: _logLines.join('\n') };
-            }
-            _logLines.push('[SUMMARY_ERROR]');
-            if (_okFiles.length) {
-                _logLines.push('Файлы совпали.');
-                for (var _k = 0; _k < _okFiles.length; _k++) {
-                    var _okf = _okFiles[_k];
-                    _logLines.push('summary_ai_' + _okf.base + '.txt — ' + _okf.aiCount + ' блоков');
-                    _logLines.push('summary_parser_' + _okf.base + '.txt — ' + _okf.parserCount + ' блоков');
-                }
-            }
-            _logLines.push('');
-            _logLines.push('Файлы не совпали.');
-            for (var _e = 0; _e < _errFiles.length; _e++) {
-                var _ef = _errFiles[_e];
-                _logLines.push('summary_ai_' + _ef.base + '.txt — ' + (_ef.aiCount || 0) + ' блоков');
-                _logLines.push('summary_parser_' + _ef.base + '.txt — ' + (_ef.parserCount || 0) + ' блоков');
-            }
-            _logLines.push('');
-            _logLines.push('Детали:');
-            for (var _d = 0; _d < _errFiles.length; _d++) {
-                var _ed = _errFiles[_d];
-                _logLines.push(_ed.base + ':');
-                if (_ed.reason) _logLines.push('- ' + _ed.reason);
-                for (var _dd = 0; _dd < _ed.diffs.length; _dd++) {
-                    _logLines.push('- ' + _ed.diffs[_dd]);
-                }
-            }
-            return { ok: false, log: _logLines.join('\n') };
         }
         async function _runExtractTool(payload) {
             if (_extractInFlight) return;
