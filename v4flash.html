@@ -6322,11 +6322,11 @@
             var _hasImages = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
             var _previewBox = document.getElementById('inputPreviewBox');
             if (_previewBox) {
-                if (_hasImages) {
-                    var _previewsHtml = '<div style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px 0;">';
-                    for (var _pv = 0; _pv < pendingFiles.length; _pv++) {
-                        var _pf = pendingFiles[_pv];
-                        if (!(_pf.mime && _pf.mime.indexOf('image/') === 0)) continue;
+                var _previewsHtml = '<div style="display:flex;gap:8px;flex-wrap:wrap;padding:2px 0 6px 0;">';
+                for (var _pv = 0; _pv < pendingFiles.length; _pv++) {
+                    var _pf = pendingFiles[_pv];
+                    var _pfIsImg = (_pf.mime && _pf.mime.indexOf('image/') === 0);
+                    if (_pfIsImg) {
                         var _isUp = (_pf._status === 'uploading');
                         var _isErr = (_pf._status === 'error');
                         var _imgOpacity = _isUp ? '0.4' : (_isErr ? '0.6' : '1');
@@ -6340,14 +6340,25 @@
                             _errHtml = '<div style="position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,0.7);color:#e74c3c;font-size:9px;padding:1px 4px;border-radius:3px;font-family:Inter,sans-serif;">ошибка</div>';
                         }
                         _previewsHtml += '<div style="position:relative;flex-shrink:0;width:120px;height:80px;"><img src="data:' + _pf.mime + ';base64,' + _pf.data + '" style="width:120px;height:80px;border-radius:6px;object-fit:cover;cursor:pointer;display:block;opacity:' + _imgOpacity + ';filter:' + _imgFilter + ';transition:opacity 0.2s,filter 0.2s;" onclick="toggleFullPreview(this)">' + _spinnerHtml + _errHtml + '<button onclick="event.stopPropagation();removeFileAt(' + _pv + ');" style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);color:#fff;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:background 0.15s;" onmouseenter="this.style.background=\'rgba(231,76,60,0.9)\'" onmouseleave="this.style.background=\'rgba(0,0,0,0.7)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></div>';
+                    } else {
+                        var _ext = (_pf.name.split('.').pop() || '').toLowerCase();
+                        var _mimeOk = _pf.mime && (_pf.mime.startsWith('text/') || _pf.mime === 'application/pdf' || _pf.mime.includes('zip') || _pf.mime.includes('word') || _pf.mime.includes('excel') || _pf.mime.includes('powerpoint'));
+                        var _fileOk = SUPPORTED_EXTENSIONS[_ext] === 1 || _mimeOk;
+                        var _icon = _fileOk ? (FILE_ICON_MAP[_ext] || '📎') : '⚠️';
+                        var _sizeStr = '';
+                        if (_pf.data) {
+                            try {
+                                var _bytes = Math.round(_pf.data.length * 3 / 4);
+                                _sizeStr = _bytes < 1024 ? _bytes + ' B' : (_bytes < 1048576 ? (_bytes / 1024).toFixed(1) + ' KB' : (_bytes / 1048576).toFixed(1) + ' MB');
+                            } catch(e) {}
+                        }
+                        var _nameColor = _fileOk ? (document.body.classList.contains('light') ? '#111' : '#fff') : '#e74c3c';
+                        _previewsHtml += '<div style="position:relative;flex-shrink:0;display:inline-flex;align-items:center;gap:10px;padding:8px 28px 8px 12px;background:' + (document.body.classList.contains('light') ? '#ffffff' : '#2c2c2e') + ';border:1px solid rgba(255,255,255,0.08);border-radius:12px;max-width:240px;box-sizing:border-box;"><span style="flex-shrink:0;display:inline-flex;">' + _icon + '</span><span style="display:flex;flex-direction:column;min-width:0;"><span style="font-size:13px;font-weight:700;color:' + _nameColor + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(_pf.name) + '</span><span style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _ext.toUpperCase() + ' ' + _sizeStr + '</span></span><button onclick="event.stopPropagation();removeFileAt(' + _pv + ');" style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);color:#fff;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:background 0.15s;" onmouseenter="this.style.background=\'rgba(231,76,60,0.9)\'" onmouseleave="this.style.background=\'rgba(0,0,0,0.7)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></div>';
                     }
-                    _previewsHtml += '</div>';
-                    _previewBox.innerHTML = _previewsHtml;
-                    _previewBox.style.display = 'block';
-                } else {
-                    _previewBox.innerHTML = '';
-                    _previewBox.style.display = 'none';
                 }
+                _previewsHtml += '</div>';
+                _previewBox.innerHTML = _previewsHtml;
+                _previewBox.style.display = 'block';
             }
             if (inline) inline.innerHTML = '';
             updateSendBtn();
