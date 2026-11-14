@@ -5115,9 +5115,10 @@
             }
             lines.push('=== END LOG ===');
             var logText = lines.join('\n');
+            var _mhDiff = _deployHandles.meta || _deployHandles.work;
             try {
                 var logName = 'summary_diff_' + fileName + '.txt';
-                var fh = await _deployHandles.work.getFileHandle(logName, { create: true });
+                var fh = await _mhDiff.getFileHandle(logName, { create: true });
                 var w = await fh.createWritable();
                 await w.write(logText);
                 await w.close();
@@ -5125,7 +5126,7 @@
                 console.warn('[SUMMARY_DIFF] save failed', e);
             }
             try {
-                var lf = await (await _deployHandles.work.getFileHandle('summary_diff_' + fileName + '.txt')).getFile();
+                var lf = await (await _mhDiff.getFileHandle('summary_diff_' + fileName + '.txt')).getFile();
                 _fileQueue.push(lf);
                 if (!_isProcessing) processFileQueue();
             } catch(e) {
