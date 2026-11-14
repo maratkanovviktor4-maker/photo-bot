@@ -8567,6 +8567,14 @@
             }
             var _isSysUser = (text === '[OK] patch applied · state committed') || (text === '[FAIL] patch failed');
             var _isOrchTurn = pendingFiles && pendingFiles.some(function(f){ return f && f._orchestrator_step; });
+            var _filesRawForSave = [];
+            for (var _fri = 0; _fri < _sendFilesSnapshot.length; _fri++) {
+                var _frf = _sendFilesSnapshot[_fri];
+                if (!_frf) continue;
+                if (_frf.mime && _frf.mime.indexOf('image/') === 0) continue;
+                if (!_frf.data || !_frf.name) continue;
+                _filesRawForSave.push({ name: _frf.name, mime: _frf.mime || '', data: _frf.data });
+            }
             chat.messages.push({
                 role: 'user',
                 content: displayText,
@@ -8575,6 +8583,7 @@
                 extra_b64s: _sendDisplayB64s,
                 display_b64s: _sendDisplayB64s,
                 files_meta: _filesMeta.length ? _filesMeta : null,
+                _files_raw: _filesRawForSave.length ? _filesRawForSave : null,
                 _autodeploy: _isSysUser ? true : undefined,
                 _orchestrator_step: _isOrchTurn ? true : undefined
             });
