@@ -5140,6 +5140,7 @@
             }
             try {
                 var lf = await (await _mhDiff.getFileHandle('summary_diff_' + fileName + '.txt')).getFile();
+                while (_isProcessing) { await new Promise(function(r) { setTimeout(r, 50); }); }
                 _fileQueue.push(lf);
                 if (!_isProcessing) processFileQueue();
             } catch(e) {
