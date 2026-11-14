@@ -6490,6 +6490,9 @@
             }
             var _isNewImage = file.type && file.type.indexOf('image/') === 0;
             var _hasAnyImage = pendingFiles.some(function(f) { return f.mime && f.mime.indexOf('image/') === 0; });
+            var _TEXT_EXT = ['txt','md','json','csv','xml','html','htm','py','js','java','kt','cpp','c','h','css','gradle','properties','pro','yml','yaml','log','cfg','ini','conf','svg'];
+            var _newExt = file.name.split('.').pop().toLowerCase();
+            var _isNewText = _TEXT_EXT.indexOf(_newExt) !== -1 || (file.type && file.type.indexOf('text/') === 0);
             var _hasAnyNonImage = pendingFiles.some(function(f) { return !(f.mime && f.mime.indexOf('image/') === 0); });
             if (fluxModeEnabled && _isNewImage) {
                 pendingFiles = [];
@@ -6503,8 +6506,15 @@
                     return null;
                 }
                 if (!_isNewImage && _hasAnyNonImage) {
-                    if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Только один файл (кроме картинок)</span>';
-                    return null;
+                    var _existingHasNonText = pendingFiles.some(function(f) {
+                        var _e = (f.name.split('.').pop() || '').toLowerCase();
+                        var _isTxt = _TEXT_EXT.indexOf(_e) !== -1 || (f.mime && f.mime.indexOf('text/') === 0);
+                        return !_isTxt;
+                    });
+                    if (_existingHasNonText || !_isNewText) {
+                        if (inline) inline.innerHTML = '<span style="color:#e74c3c;">⚠️ Только один файл (кроме картинок); текстовые — можно несколько</span>';
+                        return null;
+                    }
                 }
             }
 
