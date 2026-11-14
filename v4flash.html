@@ -4946,10 +4946,22 @@
                 try { await _restoreDeployHandles(); } catch(e) {}
             }
             if (!_deployHandles.work) return;
-            await _buildSummaryFromRules('server.py');
-            await _buildSummaryFromRules('v4flash.html');
-            await _runSummaryDiffForServer('server.py');
-            await _runSummaryDiffForServer('v4flash.html');
+            var _mhList = _deployHandles.meta || _deployHandles.work;
+            var _ruleFiles = [];
+            try {
+                for await (var _entry of _mhList.values()) {
+                    if (_entry.kind !== 'file') continue;
+                    if (_entry.name.indexOf('parser_rules_') !== 0) continue;
+                    if (!_entry.name.endsWith('.txt')) continue;
+                    _ruleFiles.push(_entry.name);
+                }
+            } catch(e) { console.warn('[SUMMARY_FLOW] list failed', e); }
+            for (var _ri = 0; _ri < _ruleFiles.length; _ri++) {
+                var _tail = _ruleFiles[_ri].substring('parser_rules_'.length);
+                var _fileName = _tail.substring(0, _tail.length - '.txt'.length);
+                await _buildSummaryFromRules(_fileName);
+                await _runSummaryDiffForServer(_fileName);
+            }
         }
 
         // Читает служебный файл (саммари/правила) из папки meta.
