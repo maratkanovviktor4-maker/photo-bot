@@ -4097,7 +4097,10 @@
             var actionsDiv = row.querySelector('.message-actions');
             if (actionsDiv) actionsDiv.style.display = 'none';
             
-            var originalContent = msg.content;
+            var originalContent = String(msg.content || '')
+                .replace(/\[FILE-[^\]]+-\d+\]\s*/g, '')
+                .replace(/\[IMG-[^\]]+-\d+\]\s*/g, '')
+                .trim();
             var contentDiv = row.querySelector('.message-content');
             var _origContentDisplay = contentDiv.style.display;
             contentDiv.style.display = 'none';
