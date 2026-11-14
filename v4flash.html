@@ -4948,8 +4948,7 @@
             if (!_deployHandles.work) return;
             await _buildSummaryFromRules('server.py');
             await _buildSummaryFromRules('v4flash.html');
-            await _runSummaryDiffForServer('server.py');
-            await _runSummaryDiffForServer('v4flash.html');
+            await _runSummaryDiffForServer();
         }
 
         // Читает служебный файл (саммари/правила) из папки meta.
@@ -5067,8 +5066,8 @@
 
         // Сверка A (summari_ai_<file>) и B (summari_parser_<file>).
         // Возвращает массив расхождений.
-        async function _runSummaryDiffForServer(fileName) {
-            fileName = fileName || 'server.py';
+        async function _runSummaryDiffForServer() {
+            var fileName = 'server.py';
             var aText = await _readWorkFile('summari_ai_' + fileName + '.txt');
             var bText = await _readWorkFile('summari_parser_' + fileName + '.txt');
             if (aText === null || bText === null) {
