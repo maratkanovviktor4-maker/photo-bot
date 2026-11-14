@@ -4892,32 +4892,6 @@
         }        
         var _summaryFlow = { active: false, chatId: null, branchId: null };
 
-        async function _summaryReadWorkDirFiles() {
-            if (!_deployHandles.work) {
-                try { await _restoreDeployHandles(); } catch(e) {}
-            }
-            if (!_deployHandles.work) return [];
-            var names = [];
-            try { names = await _listWorkFiles(_deployHandles.work); } catch(e) { names = []; }
-            var out = [];
-            for (var i = 0; i < names.length; i++) {
-                try {
-                    var fh = await _deployHandles.work.getFileHandle(names[i]);
-                    var f = await fh.getFile();
-                    var txt = await f.text();
-                    var b64 = btoa(unescape(encodeURIComponent(txt)));
-                    var ext = (names[i].split('.').pop() || '').toLowerCase();
-                    var mime = 'text/plain';
-                    if (ext === 'json') mime = 'application/json';
-                    else if (ext === 'html' || ext === 'htm') mime = 'text/html';
-                    else if (ext === 'js') mime = 'application/javascript';
-                    else if (ext === 'css') mime = 'text/css';
-                    else if (ext === 'py') mime = 'text/x-python';
-                    out.push({ name: names[i], mime: mime, data: b64, _status: 'ok' });
-                } catch(e) { console.warn('summary read file failed', names[i], e); }
-            }
-            return out;
-        }
 
         async function startSummaryFlow() {
             if (isSending) return;
