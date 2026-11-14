@@ -10541,7 +10541,35 @@
             if (_autoDeployEnabled) {
                 // Включили автодеплой — снимаем флаг стопа в background, агент снова живой.
                 window.postMessage({ type: 'agent_start' }, '*');
-                openDeployModalSettings();
+                var _modalEl = document.getElementById('deployModal');
+                var _cancelBtn = document.getElementById('deployCancelBtn');
+                var _fb = document.getElementById('autoDeployFloatBtn');
+                if (_modalEl) _modalEl.classList.add('active');
+                _loadGithubSettingsFromLS();
+                _resetDeployDirty();
+                if (_fb && _cancelBtn) {
+                    var _fr = _fb.getBoundingClientRect();
+                    var _cw = _cancelBtn.offsetWidth || 100;
+                    var _ch = _cancelBtn.offsetHeight || 36;
+                    var _vw = window.innerWidth || document.documentElement.clientWidth;
+                    var _vh = window.innerHeight || document.documentElement.clientHeight;
+                    var _cx = _fr.left + _fr.width / 2 - _cw / 2;
+                    var _cy = _fr.top + _fr.height / 2 - _ch / 2;
+                    if (_cx + _cw > _vw - 8) _cx = _vw - _cw - 8;
+                    if (_cx < 8) _cx = 8;
+                    if (_cy + _ch > _vh - 8) _cy = _vh - _ch - 8;
+                    if (_cy < 8) _cy = 8;
+                    _cancelBtn.style.position = 'fixed';
+                    _cancelBtn.style.left = _cx + 'px';
+                    _cancelBtn.style.top = _cy + 'px';
+                    _cancelBtn.style.zIndex = '100102';
+                    _cancelBtn.style.width = _cw + 'px';
+                    _cancelBtn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.5)';
+                    if (_cancelBtn.parentNode !== document.body) {
+                        document.body.appendChild(_cancelBtn);
+                    }
+                }
+                _restoreDeployHandles();
             } else {
                 // Отжали кнопку автодеплоя — гасим агент немедленно.
                 _agentModeEnabled = false;
