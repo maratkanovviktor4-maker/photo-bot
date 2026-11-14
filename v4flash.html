@@ -541,9 +541,6 @@
         .modal-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3); }
         .modal-btn-danger { background: linear-gradient(90deg, #e74c3c, #c0392b); color: #fff; }
         .modal-btn-danger:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(231, 76, 60, 0.3); }
-        #deployModal .modal-box > div:first-child,
-        #deployModal > div > div > div { min-width: 0; }
-        #deployModal #deployCancelBtn { transition: none; }
         .modal-btn-secondary { background: rgba(255, 255, 255, 0.08); color: #a0a0b0; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
         .modal-btn-secondary:hover { background: rgba(255, 255, 255, 0.15); color: #e0e0e0; }
         body.light .modal-btn-secondary { background: rgba(0, 0, 0, 0.05); color: #666; border: 1px solid rgba(0, 0, 0, 0.1) !important; }
@@ -10544,36 +10541,7 @@
             if (_autoDeployEnabled) {
                 // Включили автодеплой — снимаем флаг стопа в background, агент снова живой.
                 window.postMessage({ type: 'agent_start' }, '*');
-                var _modalEl = document.getElementById('deployModal');
-                var _cancelBtn = document.getElementById('deployCancelBtn');
-                var _fb = document.getElementById('autoDeployFloatBtn');
-                if (_modalEl) _modalEl.classList.add('active');
-                _loadGithubSettingsFromLS();
-                _resetDeployDirty();
-                if (_fb && _cancelBtn) {
-                    var _fr = _fb.getBoundingClientRect();
-                    var _cw = _cancelBtn.offsetWidth || 100;
-                    var _ch = _cancelBtn.offsetHeight || 36;
-                    var _vw = window.innerWidth || document.documentElement.clientWidth;
-                    var _vh = window.innerHeight || document.documentElement.clientHeight;
-                    var _cx = _fr.left + _fr.width / 2 - _cw / 2;
-                    var _cy = _fr.top + _fr.height / 2 - _ch / 2;
-                    if (_cx + _cw > _vw - 8) _cx = _vw - _cw - 8;
-                    if (_cx < 8) _cx = 8;
-                    if (_cy + _ch > _vh - 8) _cy = _vh - _ch - 8;
-                    if (_cy < 8) _cy = 8;
-                    _cancelBtn.style.position = 'fixed';
-                    _cancelBtn.style.left = _cx + 'px';
-                    _cancelBtn.style.top = _cy + 'px';
-                    _cancelBtn.style.zIndex = '100102';
-                    _cancelBtn.style.width = _cw + 'px';
-                    _cancelBtn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.5)';
-                    if (!_cancelBtn._origParent) _cancelBtn._origParent = _cancelBtn.parentNode;
-                    if (_cancelBtn.parentNode !== document.body) {
-                        document.body.appendChild(_cancelBtn);
-                    }
-                }
-                _restoreDeployHandles();
+                openDeployModalSettings();
             } else {
                 // Отжали кнопку автодеплоя — гасим агент немедленно.
                 _agentModeEnabled = false;
@@ -11027,8 +10995,7 @@
             _updateAutoDeployCheckbox();
             _loadGithubSettingsFromLS();
             _resetDeployDirty();
-            var _modalEl = document.getElementById('deployModal');
-            _modalEl.classList.add('active');
+            document.getElementById('deployModal').classList.add('active');
             _restoreDeployHandles();
         }
 
@@ -11121,20 +11088,6 @@
 
         function closeDeployModal() {
             document.getElementById('deployModal').classList.remove('active');
-            var _cancelBtnEl = document.getElementById('deployCancelBtn');
-            if (_cancelBtnEl) {
-                _cancelBtnEl.style.position = '';
-                _cancelBtnEl.style.left = '';
-                _cancelBtnEl.style.top = '';
-                _cancelBtnEl.style.zIndex = '';
-                _cancelBtnEl.style.width = '';
-                _cancelBtnEl.style.boxShadow = '';
-                var _footer = _cancelBtnEl.getAttribute('data-orig-parent');
-                var _container = _cancelBtnEl._origParent;
-                if (_container && _cancelBtnEl.parentNode !== _container) {
-                    _container.appendChild(_cancelBtnEl);
-                }
-            }
             _deployMsgIndex = -1;
             _deployEdits = [];
             _deployFileContent = null;
@@ -13795,75 +13748,78 @@
         </div>
     </div>
     <div id="deployModal" class="modal-overlay">
-        <div class="modal-box" style="max-width:1180px;width:97vw;max-height:98vh;overflow:hidden;display:flex;flex-direction:column;padding:14px 16px;">
+        <div class="modal-box" style="max-width:720px;">
             <div class="modal-icon" style="background:rgba(0,203,245,0.15);color:#00CBF5;">
                 <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
             </div>
-            <div class="modal-title" style="margin-bottom:12px;">Размещение</div>
+            <div class="modal-title" style="margin-bottom:16px;">Размещение</div>
             <input type="file" id="deployFileInput" style="display:none;">
-            <div style="display:flex;gap:10px;align-items:center;">
-                <button onclick="document.getElementById('deployFileInput').click()" style="padding:9px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:#aaa;font-size:12px;font-family:Inter,sans-serif;cursor:pointer;flex-shrink:0;">Выберите файл</button>
-                <div style="display:flex;gap:6px;align-items:center;flex:1;min-width:0;">
-                    <input type="text" id="deployWorkDir" readonly placeholder="Рабочая папка" style="flex:1;min-width:0;padding:9px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;cursor:pointer;" onclick="pickDeployDir('work')">
-                    <button onclick="pickDeployDir('work')" title="Выбрать рабочую папку" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
+            <button onclick="document.getElementById('deployFileInput').click()" style="width:100%;padding:14px;border-radius:12px;border:2px dashed rgba(255,255,255,0.15);background:transparent;color:#aaa;font-size:13px;font-family:Inter,sans-serif;cursor:pointer;">Выберите файл</button>
+            <div id="deployFileName" style="font-size:12px;color:#00CBF5;margin-top:8px;font-family:Inter,sans-serif;display:none;"></div>
+            <div style="margin-top:14px;">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:6px;font-family:Inter,sans-serif;font-weight:500;">РАБОЧАЯ ПАПКА</label>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <input type="text" id="deployWorkDir" readonly placeholder="Папка не выбрана" style="flex:1;padding:10px 12px;background:#0d0d1a;color:#e0e0e0;border:2px solid rgba(255,255,255,0.1);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;cursor:pointer;" onclick="pickDeployDir('work')">
+                    <button onclick="pickDeployDir('work')" title="Выбрать рабочую папку" style="width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
                 </div>
+                <div id="deployFileInDir" style="font-size:11px;color:#666;font-family:Inter,sans-serif;margin-top:6px;display:none;"></div>
             </div>
-            <div id="deployFileName" style="font-size:11px;color:#00CBF5;margin-top:4px;font-family:Inter,sans-serif;display:none;"></div>
-            <div id="deployFileInDir" style="font-size:10px;color:#666;font-family:Inter,sans-serif;margin-top:2px;display:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:12px;"></div>
-            <div style="margin-top:14px;flex:1;min-height:0;display:flex;gap:12px;align-items:stretch;">
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:10px;min-height:260px;">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;">
-                    <input type="checkbox" id="githubSyncCheckbox" style="width:15px;height:15px;accent-color:#00CBF5;cursor:pointer;flex-shrink:0;">
-                    <span style="font-size:11px;color:#e0e0e0;font-family:Inter,sans-serif;font-weight:500;">Пушить в GitHub после автодеплоя</span>
+            <div style="margin-top:16px;padding:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:10px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
+                    <input type="checkbox" id="githubSyncCheckbox" style="width:16px;height:16px;accent-color:#00CBF5;cursor:pointer;flex-shrink:0;">
+                    <span style="font-size:12px;color:#e0e0e0;font-family:Inter,sans-serif;font-weight:500;">Пушить в GitHub после автодеплоя</span>
                 </label>
-                <div style="display:flex;flex-direction:column;gap:6px;">
-                    <input type="password" id="githubToken" autocomplete="new-password" name="gh_pat_field" placeholder="GitHub PAT (repo scope)" style="width:100%;padding:6px 8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:11px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
-                    <input type="text" id="githubRepo" placeholder="owner/repo" style="width:100%;padding:6px 8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:11px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
-                    <div style="display:flex;gap:6px;">
-                        <input type="text" id="githubBranch" placeholder="branch (main)" value="main" style="flex:1;padding:6px 8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:11px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
-                        <input type="text" id="githubFolder" placeholder="folder" style="flex:1;padding:6px 8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:11px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <input type="password" id="githubToken" autocomplete="new-password" name="gh_pat_field" placeholder="GitHub PAT (repo scope)" style="width:100%;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                    <input type="text" id="githubRepo" placeholder="owner/repo" style="width:100%;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="githubBranch" placeholder="branch (main)" value="main" style="flex:1;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                        <input type="text" id="githubFolder" placeholder="folder (deploy)" style="flex:1;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
                     </div>
-                    <input type="text" id="githubFiles" placeholder="файлы через запятую" style="width:100%;padding:6px 8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:11px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
-                    <div style="font-size:10px;color:#666;font-family:Inter,sans-serif;line-height:1.3;">Пусто = ничего не пушится.</div>
+                    <input type="text" id="githubFiles" placeholder="файлы через запятую: v4flash.html, v4pro.html" style="width:100%;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                    <div style="font-size:11px;color:#666;font-family:Inter,sans-serif;line-height:1.4;">Пушатся только файлы из списка. Пусто = ничего не пушится.</div>
                 </div>
             </div>
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:10px;min-height:260px;">
+            <div style="margin-top:14px;padding:12px;background:rgba(0,203,245,0.04);border:1px solid rgba(0,203,245,0.2);border-radius:10px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                    <div style="font-size:11px;color:#a0a0b0;font-family:Inter,sans-serif;font-weight:500;">Мои сайты</div>
+                    <div style="font-size:12px;color:#00CBF5;font-family:Inter,sans-serif;font-weight:600;">🌐 Мои сайты (для Оркестратора)</div>
+                    <a href="#" onclick="event.preventDefault();window.open(SERVER_URL + '/download_extension', '_blank');" style="font-size:11px;color:#00CBF5;text-decoration:none;font-family:Inter,sans-serif;border-bottom:1px dashed rgba(0,203,245,0.5);">скачать агент браузер</a>
                 </div>
-                <textarea id="favoriteUrlsInput" placeholder="теги | url" style="width:100%;flex:1;min-height:150px;padding:6px 8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:11px;font-family:Inter,sans-serif;outline:none;resize:none;box-sizing:border-box;line-height:1.4;"></textarea>
-                <a href="#" onclick="event.preventDefault();window.open(SERVER_URL + '/download_extension', '_blank');" style="font-size:10px;color:#666;text-decoration:none;font-family:Inter,sans-serif;margin-top:6px;text-align:right;">скачать агент браузер</a>
+                <textarea id="favoriteUrlsInput" placeholder="теги через запятую | url&#10;торренты, игры | https://itorrents-igruha.org/new-pc-games/&#10;1с, отчёты | https://1c.example.com/otchet" style="width:100%;min-height:90px;max-height:200px;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;resize:vertical;box-sizing:border-box;line-height:1.5;"></textarea>
+                <div style="font-size:11px;color:#666;font-family:Inter,sans-serif;margin-top:6px;line-height:1.4;">Одна строка = один сайт. Теги триггерят URL — если в задаче встретится тег, Оркестратор навигирует туда. Формат: <code style="background:rgba(255,255,255,0.06);padding:1px 4px;border-radius:3px;">тег1, тег2 | https://...</code></div>
             </div>
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:10px;min-height:260px;">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;">
-                    <input type="checkbox" id="extraProviderToggle" style="width:15px;height:15px;accent-color:#00CBF5;cursor:pointer;flex-shrink:0;" onchange="document.getElementById('extraProviderBlock').style.display=this.checked?'flex':'none';_markDeployDirty();">
-                    <span style="font-size:11px;color:#a0a0b0;font-family:Inter,sans-serif;font-weight:500;">Второй сервис</span>
+            <div style="margin-top:12px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 0;">
+                    <input type="checkbox" id="extraProviderToggle" style="width:16px;height:16px;accent-color:#00CBF5;cursor:pointer;flex-shrink:0;" onchange="document.getElementById('extraProviderBlock').style.display=this.checked?'block':'none';_markDeployDirty();">
+                    <span style="font-size:12px;color:#a0a0b0;font-family:Inter,sans-serif;font-weight:500;">Дополнительно (второй сервис)</span>
                 </label>
-                <div id="extraProviderBlock" style="display:none;flex-direction:column;gap:6px;flex:1;min-height:0;">
-                    <input type="text" id="extraProviderKind" placeholder="сервис: yandex / gitlab" style="width:100%;padding:6px 8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:11px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
-                    <input type="password" id="extraProviderToken" autocomplete="new-password" placeholder="токен" style="width:100%;padding:6px 8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:11px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
-                    <input type="text" id="extraProviderTarget" placeholder="owner/repo | /path" style="width:100%;padding:6px 8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:11px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
-                    <div style="display:flex;gap:6px;">
-                        <input type="text" id="extraProviderBranch" placeholder="ветка" style="flex:1;padding:6px 8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:11px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
-                        <input type="text" id="extraProviderFolder" placeholder="папка" style="flex:1;padding:6px 8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:11px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                <div id="extraProviderBlock" style="display:none;margin-top:6px;padding:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:10px;">
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <div style="font-size:11px;color:#888;font-family:Inter,sans-serif;margin-bottom:2px;">Если поля не заполнены — пуш сюда пропускается.</div>
+                        <input type="text" id="extraProviderKind" placeholder="сервис: yandex / gitlab" style="width:100%;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                        <input type="password" id="extraProviderToken" autocomplete="new-password" placeholder="токен" style="width:100%;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                        <input type="text" id="extraProviderTarget" placeholder="куда: owner/repo | /path/на/диске" style="width:100%;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                        <div style="display:flex;gap:8px;">
+                            <input type="text" id="extraProviderBranch" placeholder="ветка (если нужно)" style="flex:1;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                            <input type="text" id="extraProviderFolder" placeholder="папка (если нужно)" style="flex:1;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+                        </div>
+                        <input type="text" id="extraProviderFiles" placeholder="файлы через запятую (пусто = все)" style="width:100%;padding:8px 10px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
                     </div>
-                    <input type="text" id="extraProviderFiles" placeholder="файлы (пусто = все)" style="width:100%;padding:6px 8px;background:#0d0d1a;color:#e0e0e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:11px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
                 </div>
-            </div>
             </div>
 
-            <div style="margin-top:12px;display:flex;align-items:center;gap:10px;">
-                <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;flex-shrink:0;" onclick="toggleAutoDeployFromModal(event)">
-                    <input type="checkbox" id="autodeployCheckbox" style="width:14px;height:14px;accent-color:#00CBF5;cursor:pointer;flex-shrink:0;" onclick="event.stopPropagation();toggleAutoDeployFromModal()">
-                    <label for="autodeployCheckbox" style="font-size:11px;color:#e0e0e0;font-family:Inter,sans-serif;cursor:pointer;line-height:1.3;">Авторазмещение</label>
-                </div>
-                <div style="flex:1;"></div>
-                <button id="deployCancelBtn" class="modal-btn-secondary" onclick="closeDeployModal()" style="padding:9px 20px;min-width:0;font-size:12px;">Отмена</button>
-                <button id="deploySaveSettingsBtn" class="modal-btn-secondary" onclick="saveDeploySettings()" style="padding:9px 20px;min-width:0;font-size:12px;opacity:0.5;cursor:not-allowed;" disabled>Сохранить</button>
-                <button id="deployPushBtn" class="modal-btn-secondary" onclick="pushWorkFileToGithub()" style="padding:9px 20px;min-width:0;font-size:12px;">Разместить</button>
-                <button class="modal-btn-secondary" onclick="sendWorkFolderToTelegram()" style="padding:9px 20px;min-width:0;font-size:12px;">В Telegram</button>
-                <button id="deployCleanErrorsBtn" class="modal-btn-secondary" onclick="cleanDeployErrors()" title="Удалить все [FAIL] и deploy_error.txt из текущего чата" style="padding:9px 20px;min-width:0;font-size:12px;">Очистить ошибки</button>
-                <button id="deployConfirmBtn" class="modal-btn-primary" onclick="confirmDeploy()" style="padding:9px 20px;min-width:0;font-size:12px;" disabled>Применить</button>
+            <div style="margin-top:16px;display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,203,245,0.06);border:1px solid rgba(0,203,245,0.2);border-radius:10px;cursor:pointer;" onclick="toggleAutoDeployFromModal(event)">
+                <input type="checkbox" id="autodeployCheckbox" style="width:16px;height:16px;accent-color:#00CBF5;cursor:pointer;flex-shrink:0;" onclick="event.stopPropagation();toggleAutoDeployFromModal()">
+                <label for="autodeployCheckbox" style="font-size:12px;color:#e0e0e0;font-family:Inter,sans-serif;cursor:pointer;line-height:1.4;flex:1;">Авторазмещение: после ответа ассистента применять правки без открытия модалки</label>
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:#666;font-family:Inter,sans-serif;line-height:1.4;">Авторазмещение работает после первой ручной загрузки файла. Бэкап и лог ошибок сохраняются в рабочую папку с суффиксами «_бэкап» и «_ошибка».</div>
+            <div class="modal-actions" style="gap:12px;margin-top:16px;flex-wrap:wrap;">
+                <button class="modal-btn-secondary" onclick="closeDeployModal()" style="flex:1;padding:12px;min-width:100px;">Отмена</button>
+                <button id="deploySaveSettingsBtn" class="modal-btn-secondary" onclick="saveDeploySettings()" style="flex:1;padding:12px;min-width:100px;opacity:0.5;cursor:not-allowed;" disabled>Сохранить</button>
+                <button id="deployPushBtn" class="modal-btn-secondary" onclick="pushWorkFileToGithub()" style="flex:1;padding:12px;min-width:100px;">Разместить</button>
+                <button class="modal-btn-secondary" onclick="sendWorkFolderToTelegram()" style="flex:1;padding:12px;min-width:100px;">В Telegram</button>
+                <button id="deployCleanErrorsBtn" class="modal-btn-secondary" onclick="cleanDeployErrors()" title="Удалить все [FAIL] и deploy_error.txt из текущего чата" style="flex:1;padding:12px;min-width:100px;">Очистить ошибки</button>
+                <button id="deployConfirmBtn" class="modal-btn-primary" onclick="confirmDeploy()" style="flex:1;padding:12px;min-width:100px;" disabled>Применить</button>
             </div>
         </div>
     </div>    
