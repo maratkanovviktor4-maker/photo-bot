@@ -6349,39 +6349,9 @@
                     _previewBox.style.display = 'none';
                 }
             }
-            if (_hasImages) {
-                if (inline) inline.innerHTML = '';
-                updateSendBtn();
-                updateLengthExcess();
-                return;
-            }
-            // Non-image файл (максимум 1)
-            var pendingFile = pendingFiles[0];
-            var ext = pendingFile.name.split('.').pop().toLowerCase();
-            var mimeOk = pendingFile.mime && (pendingFile.mime.startsWith('image/') || pendingFile.mime.startsWith('text/') || pendingFile.mime === 'application/pdf' || pendingFile.mime.includes('zip') || pendingFile.mime.includes('word') || pendingFile.mime.includes('excel') || pendingFile.mime.includes('powerpoint'));
-            var fileOk = SUPPORTED_EXTENSIONS[ext] === 1 || mimeOk;
-            var icon = fileOk ? (FILE_ICON_MAP[ext] || '📎') : '⚠️';
-            var color = fileOk ? '#00CBF5' : '#e74c3c';
-            var sizeInfo = '';
-            if (pendingFile.data) {
-                var bytes = Math.round(pendingFile.data.length * 3 / 4);
-                var sizeStr = bytes < 1024 ? bytes + ' B' : (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB');
-                sizeInfo = ' (' + sizeStr;
-                var textExts = ['txt','json','csv','xml','html','htm','md','py','js','java','kt','cpp','c','h','css','gradle','properties','pro','yml','yaml','log','cfg','ini','conf'];
-                if (textExts.indexOf(ext) !== -1 || (pendingFile.mime && pendingFile.mime.startsWith('text/'))) {
-                    try {
-                        var decoded = atob(pendingFile.data);
-                        sizeInfo += ' / ' + decoded.length + ' симв';
-                    } catch(e) {}
-                }
-                sizeInfo += ')';
-            }
-            if (inline) {
-                inline.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;flex-shrink:1;min-width:0;max-width:100%;overflow:hidden;"><span style="color:' + color + ';flex-shrink:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">' + icon + ' ' + escapeHtml(pendingFile.name) + sizeInfo + '</span> <button onclick="removeFileAt(0);" style="background:transparent;border:none;color:#e74c3c;cursor:pointer;padding:2px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:18px;min-height:18px;transition:transform 0.15s ease;" onmouseenter="this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></span>';
-            }
+            if (inline) inline.innerHTML = '';
             updateSendBtn();
             updateLengthExcess();
-
         }
 
                 var _fileQueue = [];
