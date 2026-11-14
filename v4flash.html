@@ -4951,9 +4951,22 @@
             await _runSummaryDiffForServer();
         }
 
-        // Читает файл из рабочей папки, возвращает текст или null.
+        // Читает служебный файл (саммари/правила) из папки meta.
         async function _readWorkFile(name) {
             try {
+                var _h = _deployHandles.meta || _deployHandles.work;
+                if (!_h) return null;
+                var fh = await _h.getFileHandle(name);
+                var f = await fh.getFile();
+                return await f.text();
+            } catch(e) {
+                return null;
+            }
+        }
+        // Читает файл кода из рабочей папки (work).
+        async function _readCodeFile(name) {
+            try {
+                if (!_deployHandles.work) return null;
                 var fh = await _deployHandles.work.getFileHandle(name);
                 var f = await fh.getFile();
                 return await f.text();
