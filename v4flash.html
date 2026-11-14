@@ -10220,15 +10220,16 @@
                 if (_okBtnP) _okBtnP.setAttribute('data-skip-reload', '1');
                 return;
             }
+            var _hkey = (kind === 'meta') ? 'deploy_meta' : 'deploy_work';
+            var _inputId = (kind === 'meta') ? 'deployMetaDir' : 'deployWorkDir';
             // Сбрасываем старый битый handle, чтобы не тянуть denied-состояние
-            try { await _idbDelHandle('deploy_work'); } catch(_eD) {}
-            _deployHandles.work = null;
+            try { await _idbDelHandle(_hkey); } catch(_eD) {}
+            if (kind === 'meta') _deployHandles.meta = null; else _deployHandles.work = null;
             var handle = null;
             try {
                 handle = await window.showDirectoryPicker({ mode: 'readwrite' });
             } catch(e) {
                 if (e && e.name === 'AbortError') {
-                    // Второй шанс: разрываем микрозадачу и дёргаем пикер заново
                     await new Promise(function(r) { setTimeout(r, 0); });
                     try {
                         handle = await window.showDirectoryPicker({ mode: 'readwrite' });
@@ -10254,15 +10255,15 @@
             } catch(e) {
                 console.warn('permission check failed', e);
             }
-            // Даже если requestPermission не вернул granted, handle уже реальный — сохраняем его.
-            _deployHandles.work = handle;
-            await _idbSetHandle('deploy_work', handle);
-            var inputEl = document.getElementById('deployWorkDir');
+            if (kind === 'meta') _deployHandles.meta = handle;
+            else _deployHandles.work = handle;
+            await _idbSetHandle(_hkey, handle);
+            var inputEl = document.getElementById(_inputId);
             if (inputEl) {
                 inputEl.value = handle.name;
                 inputEl.title = handle.name;
             }
-            await _showFileInWorkDir();
+            if (kind !== 'meta') await _showFileInWorkDir();
             _markDeployDirty();
         }
 
