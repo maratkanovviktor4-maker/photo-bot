@@ -10465,19 +10465,36 @@
         async function _restoreDeployHandles() {
             try {
                 var h = await _idbGetHandle('deploy_work');
-                if (!h) return;
-                var perm = await h.queryPermission({ mode: 'readwrite' });
-                if (perm !== 'granted') {
-                    try { perm = await h.requestPermission({ mode: 'readwrite' }); } catch(_e) { perm = 'denied'; }
+                if (h) {
+                    var perm = await h.queryPermission({ mode: 'readwrite' });
+                    if (perm !== 'granted') {
+                        try { perm = await h.requestPermission({ mode: 'readwrite' }); } catch(_e) { perm = 'denied'; }
+                    }
+                    if (perm === 'granted') {
+                        _deployHandles.work = h;
+                        var inputEl = document.getElementById('deployWorkDir');
+                        if (inputEl) {
+                            inputEl.value = h.name;
+                            inputEl.title = h.name;
+                        }
+                        await _showFileInWorkDir();
+                    }
                 }
-                if (perm !== 'granted') return;
-                _deployHandles.work = h;
-                var inputEl = document.getElementById('deployWorkDir');
-                if (inputEl) {
-                    inputEl.value = h.name;
-                    inputEl.title = h.name;
+                var hm = await _idbGetHandle('deploy_meta');
+                if (hm) {
+                    var permm = await hm.queryPermission({ mode: 'readwrite' });
+                    if (permm !== 'granted') {
+                        try { permm = await hm.requestPermission({ mode: 'readwrite' }); } catch(_e2) { permm = 'denied'; }
+                    }
+                    if (permm === 'granted') {
+                        _deployHandles.meta = hm;
+                        var inputElm = document.getElementById('deployMetaDir');
+                        if (inputElm) {
+                            inputElm.value = hm.name;
+                            inputElm.title = hm.name;
+                        }
+                    }
                 }
-                await _showFileInWorkDir();
             } catch(e) {}
         }
 
