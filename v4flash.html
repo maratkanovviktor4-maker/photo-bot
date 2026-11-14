@@ -2869,6 +2869,20 @@
                         branches[bid] = { name: bidName, messages: msgs, msg_ids: msgIds, source_role: branchData.source_role || 'user' };
                     }
                 }
+                var _oldRawById = {};
+                if (chat.messages && chat.messages.length) {
+                    for (var _ori = 0; _ori < chat.messages.length; _ori++) {
+                        var _om = chat.messages[_ori];
+                        if (_om && _om.msg_id && _om._files_raw) _oldRawById[_om.msg_id] = _om._files_raw;
+                    }
+                }
+                for (var _bk in branches) {
+                    if (!branches[_bk] || !branches[_bk].messages) continue;
+                    for (var _bmi = 0; _bmi < branches[_bk].messages.length; _bmi++) {
+                        var _bmm = branches[_bk].messages[_bmi];
+                        if (_bmm && _bmm.msg_id && _oldRawById[_bmm.msg_id]) _bmm._files_raw = _oldRawById[_bmm.msg_id];
+                    }
+                }
                 chat.allBranches = branches;
                 var activeBid = chat.activeBranch || 'main';
                 if (branches[activeBid]) chat.messages = branches[activeBid].messages || [];
