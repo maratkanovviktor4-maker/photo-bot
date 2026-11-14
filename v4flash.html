@@ -4959,8 +4959,8 @@
             for (var _ri = 0; _ri < _ruleFiles.length; _ri++) {
                 var _tail = _ruleFiles[_ri].substring('parser_rules_'.length);
                 var _fileName = _tail.substring(0, _tail.length - '.txt'.length);
-                await _buildSummaryFromRules(_fileName);
-                await _runSummaryDiffForServer(_fileName);
+                try { await _buildSummaryFromRules(_fileName); } catch(e) { console.warn('[SUMMARY_FLOW] build failed', _fileName, e); }
+                try { await _runSummaryDiffForServer(_fileName); } catch(e) { console.warn('[SUMMARY_FLOW] diff failed', _fileName, e); }
             }
         }
 
