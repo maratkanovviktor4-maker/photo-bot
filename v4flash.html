@@ -11665,15 +11665,16 @@
         }
 
         async function _createSummaryAiFile(fileName, content) {
-            if (!_deployHandles.work) {
+            if (!_deployHandles.meta) {
                 try { await _restoreDeployHandles(); } catch(e) {}
             }
-            if (!_deployHandles.work) {
-                console.warn('[SUMMARI_AI] рабочая папка не выбрана');
+            var _h = _deployHandles.meta || _deployHandles.work;
+            if (!_h) {
+                console.warn('[SUMMARI_AI] папка саммари не выбрана');
                 return false;
             }
             try {
-                var _fh = await _deployHandles.work.getFileHandle(fileName, { create: true });
+                var _fh = await _h.getFileHandle(fileName, { create: true });
                 var _w = await _fh.createWritable();
                 await _w.write(content);
                 await _w.close();
