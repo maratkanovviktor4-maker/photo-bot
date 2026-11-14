@@ -4291,8 +4291,22 @@
                 row._editing = false;
                 autoScroll = true;
                 scrollToBottom();
+                var _rawByName = {};
+                var _origRaw = msg._files_raw || [];
+                for (var _ri_raw = 0; _ri_raw < _origRaw.length; _ri_raw++) {
+                    if (_origRaw[_ri_raw] && _origRaw[_ri_raw].name) {
+                        _rawByName[_origRaw[_ri_raw].name] = _origRaw[_ri_raw];
+                    }
+                }
+                var _filesRawNow = [];
+                for (var _ri_fm = 0; _ri_fm < _attachCopy.files_meta.length; _ri_fm++) {
+                    var _fmC = _attachCopy.files_meta[_ri_fm];
+                    if (!_fmC || !_fmC.name) continue;
+                    if (_rawByName[_fmC.name]) _filesRawNow.push(_rawByName[_fmC.name]);
+                }
                 var _keptAttachments = {
                     files_meta: _attachCopy.files_meta,
+                    files_raw: _filesRawNow,
                     image_b64: _attachCopy.image_b64,
                     image_mime: _attachCopy.image_mime,
                     extra_b64s: _attachCopy.display_b64s.slice(),
