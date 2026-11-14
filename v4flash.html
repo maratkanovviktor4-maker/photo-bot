@@ -4921,18 +4921,20 @@
 
         async function startSummaryFlow() {
             if (isSending) return;
-            if (!currentChatId) { showAlertModal('Нет чата', 'Откройте чат с историей.', '⚠️'); return; }
             var _menu = document.querySelector('.message-menu');
             if (_menu) _menu.remove();
+            if (!_deployHandles.work) {
+                try { await _restoreDeployHandles(); } catch(e) {}
+            }
+            if (!_deployHandles.work) { showAlertModal('Папка не выбрана', 'Выберите рабочую папку в модалке деплоя.', '⚠️'); return; }
             _summaryFlow.active = true;
             _summaryFlow.chatId = currentChatId;
             var _sc = chats.find(function(c) { return c.id === currentChatId; });
             _summaryFlow.branchId = currentBranchId || (_sc && _sc.activeBranch) || 'main';
-            window._summaryPromptDone = null;
-            var input = document.getElementById('userInput');
-            input.value = 'выдай выжимку проделанной работы в формате карты блоков. Проанализируй ВСЕ файлы кода, которые встречались в этой переписке (большие и маленькие, включая куски из вложений и правки [BEFORE]/[AFTER]). Для каждого файла выдай список строк строго в формате:\n\nN | путь/имя | <точная первая строка функции или блока как в реальном файле>\n\nгде N — порядковый номер блока (начиная с 1, отдельно для каждого файла), путь/имя — route-путь для эндпоинтов или имя функции/класса/секции, якорь — ТОЧНАЯ строка из файла (с отступами), которая уникальна и с которой начинается блок. Не выдумывай якоря — бери ровно из кода, который видел. Блоки упорядочивай так, чтобы якорь каждого следующего блока шёл после предыдущего в файле. Ответ — только карта, без пояснений и без markdown-обёрток.';
-            input.dispatchEvent(new Event('input'));
-            sendMessage();
+            await _buildSummaryFromRules('server.py');
+            await _buildSummaryFromRules('v4flash.html');
+            await _runSummaryDiffForServer();
+            _summaryFlow.active = false;
         }
 
         async function _summaryAfterReply() {
