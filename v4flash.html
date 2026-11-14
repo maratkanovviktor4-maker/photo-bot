@@ -4931,9 +4931,22 @@
             _summaryFlow.chatId = currentChatId;
             var _sc = chats.find(function(c) { return c.id === currentChatId; });
             _summaryFlow.branchId = currentBranchId || (_sc && _sc.activeBranch) || 'main';
-            await _buildSummaryFromRules('server.py');
-            await _buildSummaryFromRules('v4flash.html');
-            await _runSummaryDiffForServer();
+            var _mhList = _deployHandles.meta || _deployHandles.work;
+            var _ruleFiles = [];
+            try {
+                for await (var _entry of _mhList.values()) {
+                    if (_entry.kind !== 'file') continue;
+                    if (_entry.name.indexOf('parser_rules_') !== 0) continue;
+                    if (!_entry.name.endsWith('.txt')) continue;
+                    _ruleFiles.push(_entry.name);
+                }
+            } catch(e) { console.warn('[SUMMARY_FLOW] list failed', e); }
+            for (var _ri = 0; _ri < _ruleFiles.length; _ri++) {
+                var _tail = _ruleFiles[_ri].substring('parser_rules_'.length);
+                var _fileName = _tail.substring(0, _tail.length - '.txt'.length);
+                try { await _buildSummaryFromRules(_fileName); } catch(e) { console.warn('[SUMMARY_FLOW] build failed', _fileName, e); }
+                try { await _runSummaryDiffForServer(_fileName); } catch(e) { console.warn('[SUMMARY_FLOW] diff failed', _fileName, e); }
+            }
             _summaryFlow.active = false;
         }
 
