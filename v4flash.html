@@ -5032,7 +5032,8 @@
             }
             var text = out.join('\n') + '\n';
             try {
-                var fh = await _deployHandles.work.getFileHandle('summari_parser_' + fileName + '.txt', { create: true });
+                var _mh = _deployHandles.meta || _deployHandles.work;
+                var fh = await _mh.getFileHandle('summari_parser_' + fileName + '.txt', { create: true });
                 var w = await fh.createWritable();
                 await w.write(text);
                 await w.close();
